@@ -50,24 +50,15 @@ namespace SpiderSurge
                 if (spiderController.GetComponent<InputInterceptor>() == null)
                 {
                     spiderController.gameObject.AddComponent<InputInterceptor>();
-                    Logger.LogInfo($"Added InputInterceptor to player {playerInput.playerIndex}");
                 }
 
                 // Add TempShield if it doesn't exist
                 if (spiderController.GetComponent<TempShield>() == null)
                 {
                     spiderController.gameObject.AddComponent<TempShield>();
-                    Logger.LogInfo($"Added TempShield to player {playerInput.playerIndex}");
                 }
 
-                // Add SpeedBoost if it doesn't exist
-                if (spiderController.GetComponent<SpeedBoost>() == null)
-                {
-                    spiderController.gameObject.AddComponent<SpeedBoost>();
-                    Logger.LogInfo($"Added SpeedBoost to player {playerInput.playerIndex}");
-                }
 
-                Logger.LogInfo($"Initialized abilities for player {playerInput.playerIndex}");
             }
             catch (System.Exception ex)
             {

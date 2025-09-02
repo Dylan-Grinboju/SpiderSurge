@@ -88,7 +88,6 @@ namespace SpiderSurge
                 {
                     Color primaryColor = (Color)primaryColorField.GetValue(customizer);
                     playerData.PlayerColor = primaryColor;
-                    Logger.LogInfo($"Set initial color for player {playerId} to {primaryColor}");
                 }
             }
 

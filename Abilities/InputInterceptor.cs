@@ -24,22 +24,6 @@ namespace SpiderSurge
             if (playerInput != null)
             {
                 playerInterceptors[playerInput] = this;
-                Logger.LogInfo($"InputInterceptor initialized for player {playerInput.playerIndex}");
-
-                // Disable original south button jump binding and set up custom action
-                Invoke(nameof(SetupInputOverrides), 0.1f);
-            }
-        }
-
-        private void SetupInputOverrides()
-        {
-            try
-            {
-                Logger.LogInfo($"Input overrides setup for player {playerInput.playerIndex} - Ready for ability registration");
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error setting up input overrides: {ex.Message}");
             }
         }
 
@@ -76,7 +60,6 @@ namespace SpiderSurge
                 // Override the input binding for this button
                 OverrideInputBinding(actionName, bindingPath, (context) => OnAbilityButtonPressed(context, ability));
 
-                Logger.LogInfo($"Registered {abilityName} with button {bindingPath} (action: {actionName}) for player {playerInput.playerIndex}");
             }
             catch (System.Exception ex)
             {
@@ -208,7 +191,6 @@ namespace SpiderSurge
                             if (binding.effectivePath.Contains(bindingPath) || binding.path.Contains(bindingPath))
                             {
                                 originalAction.ChangeBinding(i).WithPath("");
-                                Logger.LogInfo($"Disabled original {actionName} binding for {bindingPath} on player {playerInput.playerIndex}");
                                 break;
                             }
                         }
@@ -230,7 +212,6 @@ namespace SpiderSurge
                 overriddenActions[key] = callback;
                 customActions[key] = customAction;
 
-                Logger.LogInfo($"Override setup for {actionName} on {bindingPath} for player {playerInput.playerIndex}");
             }
             catch (System.Exception ex)
             {

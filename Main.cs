@@ -49,6 +49,10 @@ namespace SpiderSurge
             abilityManagerObject.AddComponent<AbilityManager>();
             Logger.LogInfo("Ability Manager initialized");
 
+            // Initialize SurvivalPlatformDuplicator
+            SurvivalPlatformDuplicator.Initialize();
+            Logger.LogInfo("Survival Platform Duplicator initialized");
+
             Harmony harmony = new Harmony("com.SpiderSurge");
             harmony.PatchAll();
 
