@@ -6,20 +6,20 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     // SilkMod Attribute with with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("Stats Mod", new string[] { "Dylan" }, "0.1.2", "0.6.1", "Stats_Mod", 1)]
-    public class StatsMod : SilkMod
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.1", "0.6.1", "SpiderSurge", 1)]
+    public class SpiderSurge : SilkMod
     {
-        public static StatsMod Instance { get; private set; }
-        public const string ModId = "Stats_Mod";
+        public static SpiderSurge Instance { get; private set; }
+        public const string ModId = "SpiderSurge";
 
         // Called by Silk when Unity loads this mod
         public override void Initialize()
         {
             Instance = this;
-            Logger.LogInfo("Initializing Stats Mod...");
+            Logger.LogInfo("Initializing SpiderSurge...");
 
             // Initialize configuration with default values first
             SetupConfiguration();
@@ -34,7 +34,7 @@ namespace StatsMod
             // Check if tracking is enabled before initializing mod components
             if (!ModConfig.TrackingEnabled)
             {
-                Logger.LogInfo("Stats Mod tracking is disabled in configuration. Mod components will not be initialized.");
+                Logger.LogInfo("SpiderSurge tracking is disabled in configuration. Mod components will not be initialized.");
                 return;
             }
 
@@ -44,7 +44,7 @@ namespace StatsMod
             UIManager.Initialize();
             Logger.LogInfo("UI Manager initialized");
 
-            Harmony harmony = new Harmony("com.StatsMod");
+            Harmony harmony = new Harmony("com.SpiderSurge");
             harmony.PatchAll();
 
             Logger.LogInfo("Applied patches:");
@@ -97,12 +97,12 @@ namespace StatsMod
 
         public override void Unload()
         {
-            Logger.LogInfo("Unloading Stats Mod...");
+            Logger.LogInfo("Unloading SpiderSurge...");
 
             // Only unpatch if tracking was enabled and patches were applied
             if (ModConfig.TrackingEnabled)
             {
-                Harmony.UnpatchID("com.StatsMod");
+                Harmony.UnpatchID("com.SpiderSurge");
                 Logger.LogInfo("Harmony patches removed.");
             }
             else

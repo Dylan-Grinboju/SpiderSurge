@@ -10,7 +10,7 @@ using System.Linq;
 using Unity.Netcode;
 
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public static class EnemyDeathHelper
     {

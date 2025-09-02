@@ -3,7 +3,7 @@ using Silk;
 using Logger = Silk.Logger;
 using UnityEngine.InputSystem;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public class UIManager : MonoBehaviour
     {

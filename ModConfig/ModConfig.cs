@@ -5,11 +5,11 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public static class ModConfig
     {
-        private const string ModId = StatsMod.ModId;
+        private const string ModId = SpiderSurge.ModId;
 
         // Display settings
         public static bool ShowStatsWindow => Config.GetModConfigValue<bool>(ModId, "display.showStatsWindow", true);

@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public class PlayerTracker
     {

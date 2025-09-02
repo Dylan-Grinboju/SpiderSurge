@@ -3,7 +3,7 @@ using Silk;
 using Logger = Silk.Logger;
 using System;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public class BigUI : MonoBehaviour
     {

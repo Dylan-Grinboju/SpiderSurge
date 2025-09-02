@@ -8,7 +8,7 @@ using Interfaces;
 using UnityEngine.InputSystem;
 
 
-namespace StatsMod
+namespace SpiderSurge
 {
 
     public class EnemiesTracker

@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatsMod", "StatsMod.csproj", "{25B26455-CD17-6A40-1FE4-D4164BA182FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpiderSurge", "SpiderSurge.csproj", "{25B26455-CD17-6A40-1FE4-D4164BA182FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +19,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {A3651A63-A473-4A19-BF3F-7599B134E664}
+		SolutionGuid = {E6E9F9A5-3E4A-4D91-A15F-5F5A9C1E1E1E}
 	EndGlobalSection
 EndGlobal

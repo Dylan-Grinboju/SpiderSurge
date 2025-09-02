@@ -1,7 +1,6 @@
-# SpiderStats
+# SpiderSurge
 
-A statistics tracking mod for Spiderheck that monitors player performance and game events.
-
+An enhanced statistics tracking mod for Spiderheck that monitors player performance and game events.
 
 ## Features
 
@@ -20,12 +19,12 @@ A statistics tracking mod for Spiderheck that monitors player performance and ga
 ## Installation
 
 1. Install Silk Mod Loader: https://github.com/SilkModding/Silk
-2. Download the mod dll file from [here](https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases) or from the sidebar in the Github page, or build the project yourself from this repo
+2. Download the mod dll file from [here](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or from the sidebar in the Github page, or build the project yourself from this repo
 3. Place the mod file in your Silk mods folder
 4. Launch the game
 
 ## How to configure the Mod using the Yaml file:
-The first time after launching the game with the mod installed, the following file will be created at this path: `...\Silk\Config\Mods\Stats_Mod.yaml`
+The first time after launching the game with the mod installed, the following file will be created at this path: `...\Silk\Config\Mods\SpiderSurge.yaml`
 ```
 display:
   showStatsWindow: true

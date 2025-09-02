@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using Silk;
 using Logger = Silk.Logger;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public class StatsLogger
     {
@@ -44,7 +44,7 @@ namespace StatsMod
             try
             {
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                string fileName = $"Spiderheck_stats_{timestamp}.txt";
+                string fileName = $"SpiderSurge_stats_{timestamp}.txt";
                 string filePath = Path.Combine(logDirectory, fileName);
 
                 string formattedStats = FormatGameStats(statsSnapshot);

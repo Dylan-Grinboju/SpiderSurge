@@ -5,7 +5,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace StatsMod
+namespace SpiderSurge
 {
 
     [HarmonyPatch(typeof(SurvivalMode), "StartGame")]

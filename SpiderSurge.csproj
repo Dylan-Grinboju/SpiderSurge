@@ -3,22 +3,22 @@
   <!-- Mod Info -->
   <PropertyGroup>
     <!-- Mod name -->
-    <Title>Stats Mod</Title>
+    <Title>SpiderSurge</Title>
 
     <!-- Version -->
     <Version>0.1.2</Version>
 
     <!-- Description -->
-    <Description>Statistics tracking mod for Spiderheck - compatible with Silk 0.6.1</Description>
+    <Description>Enhanced statistics tracking mod for Spiderheck - compatible with Silk 0.6.1</Description>
 
     <!-- Author -->
     <Authors>Dylan</Authors>
 
     <!-- Repository (Optional) -->
-    <RepositoryUrl>https://github.com/Dylan-Grinboju/spiderheck_stats_mod</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Dylan-Grinboju/SpiderSurge</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <Product>Stats Mod</Product>
-    <AssemblyTitle>Spiderheck Stats Mod</AssemblyTitle>
+    <Product>SpiderSurge</Product>
+    <AssemblyTitle>Spiderheck SpiderSurge Mod</AssemblyTitle>
 
     <!-- You wont need to change this stuff -->
 

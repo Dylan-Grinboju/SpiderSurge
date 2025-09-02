@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 using Silk;
 using Logger = Silk.Logger;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public class StatsManager
     {
