@@ -13,9 +13,9 @@ namespace SpiderSurge
         public static Dictionary<PlayerInput, InputInterceptor> playerInterceptors = new Dictionary<PlayerInput, InputInterceptor>();
 
         private PlayerInput playerInput;
-        private InputAction customSouthButtonAction;
         private Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = new Dictionary<string, System.Action<InputAction.CallbackContext>>();
         private Dictionary<string, InputAction> customActions = new Dictionary<string, InputAction>();
+        private Dictionary<string, Ability> registeredAbilities = new Dictionary<string, Ability>();
 
         private void Awake()
         {
@@ -35,21 +35,7 @@ namespace SpiderSurge
         {
             try
             {
-                // Disable the south button binding for the Jump action
-                DisableOriginalJumpBinding();
-
-                // Create a new input action specifically for the south button
-                customSouthButtonAction = new InputAction(
-                    name: "CustomSouthButton",
-                    type: InputActionType.Button,
-                    binding: "<Gamepad>/buttonSouth"
-                );
-
-                // Subscribe to the action
-                customSouthButtonAction.performed += OnCustomSouthButtonPressed;
-                customSouthButtonAction.Enable();
-
-                Logger.LogInfo($"Input overrides setup for player {playerInput.playerIndex} - South button now activates shield");
+                Logger.LogInfo($"Input overrides setup for player {playerInput.playerIndex} - Ready for ability registration");
             }
             catch (System.Exception ex)
             {
@@ -57,92 +43,181 @@ namespace SpiderSurge
             }
         }
 
-        private void DisableOriginalJumpBinding()
+        /// <summary>
+        /// Register an ability with its activation button. This will override the original input binding.
+        /// </summary>
+        /// <param name="ability">The ability to register</param>
+        public void RegisterAbility(Ability ability)
         {
+            if (ability == null) return;
+
             try
             {
-                // Find the Jump action in the player's input actions
-                var jumpAction = playerInput.actions?.FindAction("Jump");
-                if (jumpAction == null)
+                string bindingPath = ability.ActivationButton;
+                string abilityName = ability.GetType().Name;
+
+                if (string.IsNullOrEmpty(bindingPath))
                 {
-                    Logger.LogWarning($"Could not find Jump action for player {playerInput.playerIndex}");
+                    Logger.LogWarning($"No activation button defined for {abilityName}");
                     return;
                 }
 
-                // Get all bindings for the jump action
-                var bindings = jumpAction.bindings.ToList();
+                // Store the ability for later reference
+                registeredAbilities[bindingPath] = ability;
 
-                // Find and disable the south button binding
-                for (int i = 0; i < bindings.Count; i++)
+                // Map button to correct action name based on game's input mapping
+                string actionName = GetActionNameFromBindingPath(bindingPath);
+                if (string.IsNullOrEmpty(actionName))
                 {
-                    var binding = bindings[i];
-                    if (binding.effectivePath.Contains("buttonSouth") || binding.path.Contains("buttonSouth"))
-                    {
-                        // Disable this binding by setting it to an empty path
-                        jumpAction.ChangeBinding(i).WithPath("");
-                        Logger.LogInfo($"Disabled south button binding for Jump action on player {playerInput.playerIndex}");
-                        break;
-                    }
+                    Logger.LogWarning($"No action mapping found for button {bindingPath} - ability {abilityName} will not be registered");
+                    return;
                 }
+
+                // Override the input binding for this button
+                OverrideInputBinding(actionName, bindingPath, (context) => OnAbilityButtonPressed(context, ability));
+
+                Logger.LogInfo($"Registered {abilityName} with button {bindingPath} (action: {actionName}) for player {playerInput.playerIndex}");
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error disabling original jump binding: {ex.Message}");
-            }
-        }
-
-        private void OnCustomSouthButtonPressed(InputAction.CallbackContext context)
-        {
-            try
-            {
-                Logger.LogInfo($"South button (A) pressed by player {playerInput.playerIndex} - activating TempShield");
-
-                TempShield shield = TempShield.GetPlayerShield(playerInput);
-                if (shield != null)
-                {
-                    shield.ActivateShield();
-                }
-                else
-                {
-                    Logger.LogWarning($"Could not find TempShield for player {playerInput.playerIndex}");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error handling custom south button press: {ex.Message}");
+                Logger.LogError($"Error registering ability: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Override any input binding with a custom action. This completely replaces the original functionality.
+        /// Maps a button binding path to the correct action name based on the game's input mapping
         /// </summary>
-        /// <param name="actionName">Name of the action to override (e.g., "Jump")</param>
+        /// <param name="bindingPath">The input binding path (e.g., "<Gamepad>/buttonSouth")</param>
+        /// <returns>The corresponding action name, or null if no mapping found</returns>
+        private string GetActionNameFromBindingPath(string bindingPath)
+        {
+            // Based on the game's SpiderInput.cs mapping
+
+            switch (bindingPath.ToLower())
+            {
+                case "<gamepad>/buttonsouth":
+                case "<keyboard>/space":
+                case "<gamepad>/leftshoulder":
+                case "<gamepad>/lefttrigger":
+                case "<keyboard>/ctrl":
+                    return "Jump";
+
+                case "<gamepad>/buttonwest":
+                case "<gamepad>/righttrigger":
+                case "<mouse>/leftbutton":
+                case "<keyboard>/f":
+                    return "Fire";
+
+                case "<gamepad>/buttoneast":
+                case "<gamepad>/rightshoulder":
+                case "<mouse>/rightbutton":
+                    return "Equip";
+
+                // buttonNorth is not mapped to any action in the original game
+                case "<gamepad>/buttonnorth":
+                    return "CustomAbility"; // Special handling for unmapped buttons
+
+                default:
+                    Logger.LogWarning($"Unknown binding path: {bindingPath}. No action mapping available.");
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Unregister an ability and restore original input binding if needed
+        /// </summary>
+        /// <param name="ability">The ability to unregister</param>
+        public void UnregisterAbility(Ability ability)
+        {
+            if (ability == null) return;
+
+            try
+            {
+                string bindingPath = ability.ActivationButton;
+                string abilityName = ability.GetType().Name;
+
+                if (registeredAbilities.ContainsKey(bindingPath))
+                {
+                    registeredAbilities.Remove(bindingPath);
+
+                    // Get the correct action name for this binding
+                    string actionName = GetActionNameFromBindingPath(bindingPath);
+                    if (!string.IsNullOrEmpty(actionName))
+                    {
+                        // Clean up the custom action
+                        string key = actionName + bindingPath;
+                        if (customActions.ContainsKey(key))
+                        {
+                            var customAction = customActions[key];
+                            if (customAction != null)
+                            {
+                                customAction.performed -= overriddenActions[key];
+                                customAction.Disable();
+                                customAction.Dispose();
+                            }
+                            customActions.Remove(key);
+                            overriddenActions.Remove(key);
+                        }
+                    }
+
+                    Logger.LogInfo($"Unregistered {abilityName} from button {bindingPath} for player {playerInput.playerIndex}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error unregistering ability: {ex.Message}");
+            }
+        }
+
+        private void OnAbilityButtonPressed(InputAction.CallbackContext context, Ability ability)
+        {
+            try
+            {
+                if (ability != null)
+                {
+                    Logger.LogInfo($"Button {ability.ActivationButton} pressed by player {playerInput.playerIndex} - activating {ability.GetType().Name}");
+                    ability.Activate();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error handling ability button press: {ex.Message}");
+            }
+        }
+
+
+        /// <param name="actionName">Name of the action to override (e.g., "Jump") or "CustomAbility" for unmapped buttons</param>
         /// <param name="bindingPath">Input binding path (e.g., "<Gamepad>/buttonSouth")</param>
         /// <param name="callback">Function to call when the input is pressed</param>
         public void OverrideInputBinding(string actionName, string bindingPath, System.Action<InputAction.CallbackContext> callback)
         {
             try
             {
-                // Disable the original binding
-                var originalAction = playerInput.actions?.FindAction(actionName);
-                if (originalAction != null)
+                // For unmapped buttons (like buttonNorth), we don't need to disable any original binding
+                // since there isn't one. We just create a custom action.
+                if (actionName != "CustomAbility")
                 {
-                    var bindings = originalAction.bindings.ToList();
-                    for (int i = 0; i < bindings.Count; i++)
+                    // Disable the original binding for mapped buttons
+                    var originalAction = playerInput.actions?.FindAction(actionName);
+                    if (originalAction != null)
                     {
-                        var binding = bindings[i];
-                        if (binding.effectivePath.Contains(bindingPath) || binding.path.Contains(bindingPath))
+                        var bindings = originalAction.bindings.ToList();
+                        for (int i = 0; i < bindings.Count; i++)
                         {
-                            originalAction.ChangeBinding(i).WithPath("");
-                            Logger.LogInfo($"Disabled original {actionName} binding for {bindingPath} on player {playerInput.playerIndex}");
-                            break;
+                            var binding = bindings[i];
+                            if (binding.effectivePath.Contains(bindingPath) || binding.path.Contains(bindingPath))
+                            {
+                                originalAction.ChangeBinding(i).WithPath("");
+                                Logger.LogInfo($"Disabled original {actionName} binding for {bindingPath} on player {playerInput.playerIndex}");
+                                break;
+                            }
                         }
                     }
                 }
 
                 // Create new custom action
                 var customAction = new InputAction(
-                    name: $"Custom{actionName}",
+                    name: actionName == "CustomAbility" ? $"CustomAbility{bindingPath.Replace("/", "").Replace("<", "").Replace(">", "")}" : $"Custom{actionName}",
                     type: InputActionType.Button,
                     binding: bindingPath
                 );
@@ -163,58 +238,27 @@ namespace SpiderSurge
             }
         }
 
-        /// <summary>
-        /// Example method showing how to override other buttons.
-        /// Call this from other ability scripts to set up custom button mappings.
-        /// </summary>
-        public void SetupExampleOverrides()
-        {
-            // Example 1: Override East button (B/Circle) to do something else
-            // OverrideInputBinding("Jump", "<Gamepad>/buttonEast", OnCustomEastButtonPressed);
-
-            // Example 2: Override West button (X/Square) for another ability
-            // OverrideInputBinding("Jump", "<Gamepad>/buttonWest", OnCustomWestButtonPressed);
-
-            // Example 3: Override North button (Y/Triangle) for yet another ability
-            // OverrideInputBinding("Jump", "<Gamepad>/buttonNorth", OnCustomNorthButtonPressed);
-        }
-
-        // Example callback methods for other buttons:
-        /*
-        private void OnCustomEastButtonPressed(InputAction.CallbackContext context)
-        {
-            Logger.LogInfo($"East button (B) pressed by player {playerInput.playerIndex} - custom action");
-            // Add your custom functionality here
-        }
-
-        private void OnCustomWestButtonPressed(InputAction.CallbackContext context)
-        {
-            Logger.LogInfo($"West button (X) pressed by player {playerInput.playerIndex} - custom action");
-            // Add your custom functionality here
-        }
-
-        private void OnCustomNorthButtonPressed(InputAction.CallbackContext context)
-        {
-            Logger.LogInfo($"North button (Y) pressed by player {playerInput.playerIndex} - custom action");
-            // Add your custom functionality here
-        }
-        */
-
         private void OnDestroy()
         {
-            if (customSouthButtonAction != null)
+            // Clean up any registered abilities
+            foreach (var ability in registeredAbilities.Values)
             {
-                customSouthButtonAction.performed -= OnCustomSouthButtonPressed;
-                customSouthButtonAction.Disable();
-                customSouthButtonAction.Dispose();
+                if (ability != null)
+                {
+                    UnregisterAbility(ability);
+                }
             }
+            registeredAbilities.Clear();
 
             // Clean up any other overridden actions
             foreach (var kvp in customActions)
             {
                 if (kvp.Value != null)
                 {
-                    kvp.Value.performed -= overriddenActions[kvp.Key];
+                    if (overriddenActions.ContainsKey(kvp.Key))
+                    {
+                        kvp.Value.performed -= overriddenActions[kvp.Key];
+                    }
                     kvp.Value.Disable();
                     kvp.Value.Dispose();
                 }

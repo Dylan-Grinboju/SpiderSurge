@@ -60,6 +60,13 @@ namespace SpiderSurge
                     Logger.LogInfo($"Added TempShield to player {playerInput.playerIndex}");
                 }
 
+                // Add SpeedBoost if it doesn't exist
+                if (spiderController.GetComponent<SpeedBoost>() == null)
+                {
+                    spiderController.gameObject.AddComponent<SpeedBoost>();
+                    Logger.LogInfo($"Added SpeedBoost to player {playerInput.playerIndex}");
+                }
+
                 Logger.LogInfo($"Initialized abilities for player {playerInput.playerIndex}");
             }
             catch (System.Exception ex)
