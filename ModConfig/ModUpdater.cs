@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 using Silk;
 using Logger = Silk.Logger;
 
-namespace StatsMod
+namespace SpiderSurge
 {
     public static class ModUpdater
     {
-        private const string ModId = StatsMod.ModId;
+        private const string ModId = SpiderSurgeMod.ModId;
         private const string CurrentVersion = "1.2";
 
-        private static string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/spiderheck_stats_mod/main/version.txt";
-        private static string DownloadUrl = "https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases/tag/v{0}";
+        private static string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
+        private static string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
         private static bool CheckForUpdates => Config.GetModConfigValue<bool>(ModId, "updater.checkForUpdates", true);
 
         public static async Task CheckForUpdatesAsync()
@@ -77,16 +77,16 @@ namespace StatsMod
                 {
                     try
                     {
-                        Logger.LogInfo("Opening Stats Mod download page...");
+                        Logger.LogInfo("Opening SpiderSurge download page...");
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                         {
-                            FileName = $"https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases/tag/v{latestVersion}",
+                            FileName = $"https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{latestVersion}",
                             UseShellExecute = true
                         });
 
                         Announcer.InformationPopup(
                             "To update:\n" +
-                            "1. Download the new StatsMod.dll\n" +
+                            "1. Download the new SpiderSurge.dll\n" +
                             "2. Replace the old file in your <Game_Path>/Silk/Mods folder\n" +
                             "3. Restart SpiderHeck"
                         );
@@ -94,7 +94,7 @@ namespace StatsMod
                     catch (Exception ex)
                     {
                         Logger.LogError($"Failed to open download page: {ex.Message}");
-                        Announcer.InformationPopup("Could not open download page automatically. Please visit:\nhttps://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases");
+                        Announcer.InformationPopup("Could not open download page automatically. Please visit:\nhttps://github.com/Dylan-Grinboju/SpiderSurge/releases");
                     }
                 },
                 () =>
