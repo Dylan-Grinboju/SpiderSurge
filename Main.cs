@@ -44,6 +44,11 @@ namespace SpiderSurge
             UIManager.Initialize();
             Logger.LogInfo("UI Manager initialized");
 
+            // Initialize AbilityManager
+            GameObject abilityManagerObject = new GameObject("SpiderSurge_AbilityManager");
+            abilityManagerObject.AddComponent<AbilityManager>();
+            Logger.LogInfo("Ability Manager initialized");
+
             Harmony harmony = new Harmony("com.SpiderSurge");
             harmony.PatchAll();
 
