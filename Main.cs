@@ -49,6 +49,11 @@ namespace SpiderSurge
             abilityManagerObject.AddComponent<AbilityManager>();
             Logger.LogInfo("Ability Manager initialized");
 
+            // Initialize SurgeModeManager
+            GameObject surgeModeManagerObject = new GameObject("SpiderSurge_SurgeModeManager");
+            surgeModeManagerObject.AddComponent<SurgeModeManager>();
+            Logger.LogInfo("Surge Mode Manager initialized");
+
             // Initialize SurvivalPlatformDuplicator
             SurvivalPlatformDuplicator.Initialize();
             Logger.LogInfo("Survival Platform Duplicator initialized");

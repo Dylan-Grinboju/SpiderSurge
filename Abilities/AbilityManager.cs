@@ -31,6 +31,13 @@ namespace SpiderSurge
 
             try
             {
+                // Check if abilities should be enabled
+                if (!SurgeModeManager.AbilitiesEnabled)
+                {
+                    Logger.LogInfo("Abilities disabled - skipping initialization");
+                    return;
+                }
+
                 PlayerInput playerInput = playerObject.GetComponentInParent<PlayerInput>();
                 if (playerInput == null)
                 {
@@ -64,6 +71,72 @@ namespace SpiderSurge
             {
                 Logger.LogError($"Error initializing player abilities: {ex.Message}");
             }
+        }
+
+        public static void EnableAllAbilities()
+        {
+            try
+            {
+                SpiderController[] players = FindObjectsOfType<SpiderController>();
+                foreach (SpiderController player in players)
+                {
+                    EnablePlayerAbilities(player.gameObject);
+                }
+                Logger.LogInfo("All player abilities enabled");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error enabling all abilities: {ex.Message}");
+            }
+        }
+
+        public static void DisableAllAbilities()
+        {
+            try
+            {
+                SpiderController[] players = FindObjectsOfType<SpiderController>();
+                foreach (SpiderController player in players)
+                {
+                    DisablePlayerAbilities(player.gameObject);
+                }
+                Logger.LogInfo("All player abilities disabled");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error disabling all abilities: {ex.Message}");
+            }
+        }
+
+        private static void EnablePlayerAbilities(GameObject playerObject)
+        {
+            if (playerObject == null) return;
+
+            SpiderController spiderController = playerObject.GetComponent<SpiderController>();
+            if (spiderController == null) return;
+
+            var inputInterceptor = spiderController.GetComponent<InputInterceptor>();
+            if (inputInterceptor != null)
+                inputInterceptor.enabled = true;
+
+            var tempShield = spiderController.GetComponent<TempShield>();
+            if (tempShield != null)
+                tempShield.enabled = true;
+        }
+
+        private static void DisablePlayerAbilities(GameObject playerObject)
+        {
+            if (playerObject == null) return;
+
+            SpiderController spiderController = playerObject.GetComponent<SpiderController>();
+            if (spiderController == null) return;
+
+            var inputInterceptor = spiderController.GetComponent<InputInterceptor>();
+            if (inputInterceptor != null)
+                inputInterceptor.enabled = false;
+
+            var tempShield = spiderController.GetComponent<TempShield>();
+            if (tempShield != null)
+                tempShield.enabled = false;
         }
     }
 

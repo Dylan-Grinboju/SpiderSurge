@@ -125,7 +125,6 @@ namespace SpiderSurge
                     }
                 }
 
-                Logger.LogInfo("Platform text update completed");
             }
             catch (Exception ex)
             {
@@ -150,7 +149,6 @@ namespace SpiderSurge
         {
             try
             {
-                Logger.LogInfo($"Scene loaded: {scene.name} (mode: {mode})");
 
                 // Only activate for lobby/main menu scenes
                 if (scene.name.ToLower().Contains("lobby") || scene.name.ToLower().Contains("main") || scene.name.ToLower().Contains("menu"))
