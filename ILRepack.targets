@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="ILRepackMerge" AfterTargets="Build">
+      <PropertyGroup>
+        <!-- Dynamically locate ILRepack package using MSBuild's automatic Pkg* property -->
+        <ILRepackExe Condition="'$(ILRepackExe)'=='' AND Exists('$(PkgILRepack)\tools\ILRepack.exe')">$(PkgILRepack)\tools\ILRepack.exe</ILRepackExe>
+      </PropertyGroup>
+
+      <!-- Fallback: Search in NuGetPackageRoot and User Profile -->
+      <ItemGroup Condition="'$(ILRepackExe)'==''">
+        <ILRepackCandidates Include="$(NuGetPackageRoot)ilrepack\**\tools\ILRepack.exe" Condition="'$(NuGetPackageRoot)'!=''" />
+        <ILRepackCandidates Include="$(USERPROFILE)\.nuget\packages\ilrepack\**\tools\ILRepack.exe" />
+      </ItemGroup>
+
+      <PropertyGroup Condition="'$(ILRepackExe)'=='' AND '@(ILRepackCandidates)'!=''">
+        <!-- Select the last candidate found (usually the latest version) -->
+        <ILRepackExe>%(ILRepackCandidates.Identity)</ILRepackExe>
+      </PropertyGroup>
+
+      <PropertyGroup>
+        <OutputPath>$(MSBuildThisFileDirectory)bin\$(Configuration)\$(TargetFramework)</OutputPath>
+      </PropertyGroup>
+      
+      <!-- Validate that ILRepack was found -->
+      <Error Condition="!Exists('$(ILRepackExe)')" Text="ILRepack.exe could not be found. Expected at: $(ILRepackExe)" />
+
+      <Message Text="Merging all dependencies into $(TargetFileName)..." Importance="High" />
+
+
+      <ItemGroup>
+        <ILRepackInputAssemblies Include="$(OutputPath)\$(TargetFileName)" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.Backports.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.ILHelpers.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.Utils.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.Core.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.RuntimeDetour.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\MonoMod.Iced.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.Rocks.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.Mdb.dll" />
+        <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.Pdb.dll" />
+        </ItemGroup>
+      <Exec Command="&quot;$(ILRepackExe)&quot; /out:&quot;$(OutputPath)\$(TargetFileName)&quot; @(ILRepackInputAssemblies->'&quot;%(Identity)&quot;', ' ') /lib:&quot;$(OutputPath)&quot; /internalize" />
+
+      <Message Text="Successfully merged all dependencies into $(TargetFileName)" Importance="High" />
+      
+      <!-- Clean up: Delete ALL dependency DLLs and PDBs, keeping only the final merged output -->
+      <Message Text="Cleaning up all dependency DLLs and PDB files..." Importance="High" />
+      
+      <ItemGroup>
+        <AllOutputDlls Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(TargetFileName)" />
+        <AllOutputPdbs Include="$(OutputPath)\*.pdb" Exclude="$(OutputPath)\$(AssemblyName).pdb" />
+      </ItemGroup>
+      
+      <Delete Files="@(AllOutputDlls)" />
+      <Delete Files="@(AllOutputPdbs)" />
+      
+      <Message Text="Cleanup complete - only $(TargetFileName) and its PDB remain" Importance="High" />
+  </Target>
+</Project>

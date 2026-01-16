@@ -9,19 +9,13 @@ namespace SpiderSurge
     public static class ModUpdater
     {
         private const string ModId = SpiderSurge.ModId;
-        private const string CurrentVersion = "1.2";
+        private static string CurrentVersion => SpiderSurge.Version;
 
         private static string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
         private static string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
 
         public static async Task CheckForUpdatesAsync()
         {
-            if (!ModConfig.CheckForUpdates)
-            {
-                Logger.LogInfo("Update checking is disabled for SpiderSurge");
-                return;
-            }
-
             try
             {
                 Logger.LogInfo("Checking for SpiderSurge updates...");
@@ -42,7 +36,7 @@ namespace SpiderSurge
 
         private static async Task<string> GetLatestVersionAsync()
         {
-            using (var client = new WebClient())
+            using (var client = new TimeoutWebClient(5000)) // 5 second timeout limit
             {
                 var response = await Task.Run(() => client.DownloadString(LatestVersionUrl));
                 return response.Trim();
@@ -102,6 +96,17 @@ namespace SpiderSurge
                 },
                 null
             );
+        }
+        private class TimeoutWebClient : WebClient
+        {
+            private readonly int _timeout;
+            public TimeoutWebClient(int timeout) => _timeout = timeout;
+            protected override WebRequest GetWebRequest(Uri uri)
+            {
+                var request = base.GetWebRequest(uri);
+                request.Timeout = _timeout;
+                return request;
+            }
         }
     }
 }

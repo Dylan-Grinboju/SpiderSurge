@@ -3,13 +3,12 @@
   <!-- Mod Info -->
   <PropertyGroup>
     <!-- Mod name -->
-    <Title>SpiderSurge</Title>
+    <Title>SpiderSurge Mod</Title>
 
     <!-- Version -->
-    <Version>0.1.2</Version>
-
-    <!-- Description -->
-    <Description>Enhanced statistics tracking mod for Spiderheck - compatible with Silk 0.6.1</Description>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
 
     <!-- Author -->
     <Authors>Dylan</Authors>
@@ -17,20 +16,40 @@
     <!-- Repository (Optional) -->
     <RepositoryUrl>https://github.com/Dylan-Grinboju/SpiderSurge</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <Product>SpiderSurge</Product>
-    <AssemblyTitle>Spiderheck SpiderSurge Mod</AssemblyTitle>
-
-    <!-- You wont need to change this stuff -->
+    <Product>SpiderSurge Mod</Product>
 
     <!-- Output Type -->
     <OutputType>library</OutputType>
 
     <!-- Target Framework -->
     <TargetFramework>net472</TargetFramework>
+
+  </PropertyGroup>
+
+  <!-- Default Silk Version (can be overridden by build configuration) -->
+  <PropertyGroup>
+    <SilkVersion Condition="'$(SilkVersion)'==''">0.7.0</SilkVersion>
+  </PropertyGroup>
+
+  <!-- Default configurations (Debug/Release use latest Silk) -->
+  <PropertyGroup Condition="'$(Configuration)'=='Debug' OR '$(Configuration)'=='Release'">
+    <SilkVersion>0.7.0</SilkVersion>
+    <AssemblyName>SpiderSurge</AssemblyName>
+    <Description>SpiderSurge mod for Spiderheck - compatible with Silk 0.7.0</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SilkLoader" Version="0.6.1" />
+    <PackageReference Include="ILRepack" Version="2.0.34" GeneratePathProperty="true">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="SilkLoader" Version="$(SilkVersion)" />
+    <PackageReference Include="MonoMod.Backports" Version="1.1.2" />
+  </ItemGroup>
+
+  <!-- Exclude Sourcecode folder from compilation (decompiled game source for reference only) -->
+  <ItemGroup>
+    <Compile Remove="Sourcecode\**\*.cs" />
   </ItemGroup>
 
   <!-- Assembly References -->
@@ -166,8 +185,19 @@
   <ItemGroup>
   <Reference Include="UnityEngine.TextRenderingModule">
     <HintPath>./lib/UnityEngine.TextRenderingModule.dll</HintPath>
+    <Private>false</Private>
   </Reference>
 </ItemGroup>
+
+  <!-- Auto-generate version.txt before build -->
+  <Target Name="GenerateVersionFile" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\version.txt" Lines="$(Version)" Overwrite="true" />
+    <Message Text="Generated version.txt with version $(Version)" Importance="high" />
+  </Target>
+
+  <!-- Import ILRepack targets for dependency merging -->
+  <Import Project="ILRepack.targets" />
+
 </Project>
 
 
