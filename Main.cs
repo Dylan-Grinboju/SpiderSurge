@@ -36,7 +36,10 @@ namespace SpiderSurge
         {
             Instance = this;
             Logger.LogInfo("Initializing SpiderSurge Mod...");
+            // Initialize configuration with default values first
+            SetupConfiguration();
 
+            new SurgeModeManager();
             // Check for updates asynchronously
             try
             {
@@ -61,6 +64,19 @@ namespace SpiderSurge
             }
 
             Logger.LogInfo("Harmony patches applied.");
+        }
+
+        private void SetupConfiguration()
+        {
+            // Define default configuration values
+            var defaultConfig = new Dictionary<string, object>
+            {
+                { "EnableSurgeMode", true },
+            };
+
+            // Load the configuration (this will create the YAML file if it doesn't exist)
+            Config.LoadModConfig(ModId, defaultConfig);
+            Logger.LogInfo("Configuration loaded");
         }
 
         public override void Unload()
