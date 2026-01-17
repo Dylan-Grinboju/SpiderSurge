@@ -40,6 +40,8 @@ namespace SpiderSurge
             SetupConfiguration();
 
             new SurgeModeManager();
+            // Create AbilityManager singleton
+            new GameObject("AbilityManager").AddComponent<AbilityManager>();
             // Check for updates asynchronously
             try
             {

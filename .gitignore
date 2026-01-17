@@ -3,9 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-/WeaponsSpawnMod
+/OtherMods
 /Sourcecode
-/Cheats
 *.instructions.md
 *.agent
 # User-specific files
