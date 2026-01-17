@@ -5,6 +5,7 @@ using System;
 using System.Reflection;
 using UnityEngine;
 using TMPro;
+using I2.Loc;
 
 namespace SpiderSurge
 {
@@ -19,9 +20,9 @@ namespace SpiderSurge
                 // Create a new ModifierData for Shield Ability
                 ModifierData shieldData = ScriptableObject.CreateInstance<ModifierData>();
                 shieldData.key = "shieldAbility";
-                shieldData.title = new I2.Loc.LocalizedString { mTerm = "Shield Ability" };
-                shieldData.description = new I2.Loc.LocalizedString { mTerm = "Unlocks the shield ability for use in survival mode" };
-                shieldData.descriptionPlus = new I2.Loc.LocalizedString { mTerm = "Unlocks the shield ability for use in survival mode" };
+                shieldData.title = "Shield Ability";
+                shieldData.description = "Unlocks the shield ability for use in survival mode";
+                shieldData.descriptionPlus = "Unlocks the shield ability for use in survival mode";
                 shieldData.maxLevel = 1;
                 shieldData.survival = true;
                 shieldData.versus = false;
@@ -53,7 +54,6 @@ namespace SpiderSurge
                     __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, currModsState);
                 }
 
-                Logger.LogInfo("Shield Ability modifier added to ModifierManager");
             }
             catch (Exception ex)
             {
@@ -70,8 +70,64 @@ namespace SpiderSurge
         {
             if (modifier.data.key == "shieldAbility" && mode == GameMode.Wave && value > 0)
             {
-                Logger.LogInfo("Shield ability modifier selected - enabling shield ability");
                 AbilityManager.EnableShieldAbility();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(SurvivalModifierChoiceCard), "SetupCard")]
+    public class SurvivalModifierChoiceCard_SetupCard_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
+        {
+            if (m.data.key == "shieldAbility")
+            {
+
+                // Fix localization for shield ability
+                var perkNameText = __instance.GetType().GetField("perkNameText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
+                var perkDescriptionText = __instance.GetType().GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
+
+
+                if (perkNameText != null)
+                {
+                    if (string.IsNullOrEmpty(perkNameText.text))
+                    {
+                        perkNameText.text = m.data.title.ToString();
+                        if (string.IsNullOrEmpty(perkNameText.text))
+                        {
+                            perkNameText.text = "Shield Ability";
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogInfo("perkNameText was not empty, skipping");
+                    }
+                }
+                else
+                {
+                    Logger.LogError("perkNameText field not found");
+                }
+
+                if (perkDescriptionText != null)
+                {
+                    if (string.IsNullOrEmpty(perkDescriptionText.text))
+                    {
+                        perkDescriptionText.text = m.data.description.ToString();
+                        if (string.IsNullOrEmpty(perkDescriptionText.text))
+                        {
+                            perkDescriptionText.text = "Unlocks the shield ability for use in survival mode";
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogInfo("perkDescriptionText was not empty, skipping");
+                    }
+                }
+                else
+                {
+                    Logger.LogError("perkDescriptionText field not found");
+                }
             }
         }
     }
