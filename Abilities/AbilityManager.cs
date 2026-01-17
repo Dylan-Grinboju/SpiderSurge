@@ -30,10 +30,10 @@ namespace SpiderSurge
 
             try
             {
-                // Check if abilities should be enabled
-                if (!SurgeGameModeManager.AbilitiesEnabled)
+                // Check if surge mode is active
+                if (!SurgeGameModeManager.Instance.IsActive)
                 {
-                    Logger.LogInfo("Abilities disabled - skipping initialization");
+                    Logger.LogInfo("Surge mode not active - skipping ability initialization");
                     return;
                 }
 
@@ -58,7 +58,8 @@ namespace SpiderSurge
 
                 if (spiderController.GetComponent<ShieldAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<ShieldAbility>();
+                    ShieldAbility shield = spiderController.gameObject.AddComponent<ShieldAbility>();
+                    shield.enabled = SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
                 }
 
 
@@ -86,20 +87,23 @@ namespace SpiderSurge
             }
         }
 
-        public static void DisableAllAbilities()
+        public static void EnableShieldAbility()
         {
             try
             {
+                SurgeGameModeManager.Instance.UnlockShieldAbility();
                 SpiderController[] players = FindObjectsOfType<SpiderController>();
                 foreach (SpiderController player in players)
                 {
-                    DisablePlayerAbilities(player.gameObject);
+                    var shieldAbility = player.GetComponent<ShieldAbility>();
+                    if (shieldAbility != null)
+                        shieldAbility.enabled = true;
                 }
-                Logger.LogInfo("All player abilities disabled");
+                Logger.LogInfo("Shield ability enabled for all players");
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error disabling all abilities: {ex.Message}");
+                Logger.LogError($"Error enabling shield ability: {ex.Message}");
             }
         }
 
@@ -116,7 +120,7 @@ namespace SpiderSurge
 
             var shieldAbility = spiderController.GetComponent<ShieldAbility>();
             if (shieldAbility != null)
-                shieldAbility.enabled = true;
+                shieldAbility.enabled = SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
         }
 
         private static void DisablePlayerAbilities(GameObject playerObject)
