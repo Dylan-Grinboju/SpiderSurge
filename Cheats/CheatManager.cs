@@ -47,9 +47,7 @@ namespace SpiderSurge
             ("shieldCap2", "Shield Capacity +1"),
             ("shieldCap3", "Shield Capacity +2"),
             ("stillness10s", "Stillness Charge (10s)"),
-            ("stillness5s", "Stillness Charge (5s)"),
             ("airborne10s", "Airborne Charge (10s)"),
-            ("airborne5s", "Airborne Charge (5s)"),
             ("explosionImmunity", "Explosion Immunity")
         };
 
@@ -631,11 +629,13 @@ namespace SpiderSurge
                     ? SurgeGameModeManager.Instance.GetPerkLevel(key)
                     : 0;
 
-                string levelSuffix = currentLevel > 0 ? " +" : "";
+                string levelSuffix = currentLevel == 2 ? " ++" : currentLevel == 1 ? " +" : "";
                 string buttonText = $"{title}{levelSuffix}";
 
                 Color originalColor = GUI.backgroundColor;
-                if (currentLevel > 0)
+                if (currentLevel == 2)
+                    GUI.backgroundColor = new Color(1f, 0.4f, 1f); // Purple for level 2
+                else if (currentLevel == 1)
                     GUI.backgroundColor = Color.cyan;
 
                 if (GUILayout.Button(buttonText))
@@ -679,7 +679,15 @@ namespace SpiderSurge
             if (SurgeGameModeManager.Instance == null) return;
 
             int currentLevel = SurgeGameModeManager.Instance.GetPerkLevel(key);
-            int nextLevel = currentLevel > 0 ? 0 : 1;
+            int maxLevel = GetMaxLevelForPerk(key);
+            int nextLevel;
+
+            if (currentLevel == 0)
+                nextLevel = 1;
+            else if (currentLevel == 1 && maxLevel >= 2)
+                nextLevel = 2;
+            else
+                nextLevel = 0;
 
             SurgeGameModeManager.Instance.SetPerkLevel(key, nextLevel);
 
@@ -694,6 +702,14 @@ namespace SpiderSurge
             }
 
             Logger.LogInfo($"Surge perk '{key}' set to level {nextLevel}");
+        }
+
+        private int GetMaxLevelForPerk(string key)
+        {
+            // Only stillness and airborne have upgradeable levels
+            if (key == "stillness10s" || key == "airborne10s")
+                return 2;
+            return 1;
         }
 
         private void ResetAllSurgePerks()

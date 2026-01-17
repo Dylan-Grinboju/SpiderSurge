@@ -104,31 +104,33 @@ namespace SpiderSurge
             if (tracker == null) return;
 
             // Check stillness charges
-            if (SurgeGameModeManager.Instance.GetPerkLevel("stillness10s") > 0 && tracker.HasTime(playerInput, "stillness", 10f))
-            {
-                SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
-                tracker.ResetTime(playerInput, "stillness");
-                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 10s stillness");
-            }
-            else if (SurgeGameModeManager.Instance.GetPerkLevel("stillness5s") > 0 && tracker.HasTime(playerInput, "stillness", 5f))
+            int stillnessLevel = SurgeGameModeManager.Instance.GetPerkLevel("stillness10s");
+            if (stillnessLevel >= 2 && tracker.HasTime(playerInput, "stillness", 5f))
             {
                 SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
                 tracker.ResetTime(playerInput, "stillness");
                 Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 5s stillness");
             }
-
-            // Check airborne charges
-            if (SurgeGameModeManager.Instance.GetPerkLevel("airborne10s") > 0 && tracker.HasTime(playerInput, "airborne", 10f))
+            else if (stillnessLevel >= 1 && tracker.HasTime(playerInput, "stillness", 10f))
             {
                 SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
-                tracker.ResetTime(playerInput, "airborne");
-                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 10s airborne");
+                tracker.ResetTime(playerInput, "stillness");
+                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 10s stillness");
             }
-            else if (SurgeGameModeManager.Instance.GetPerkLevel("airborne5s") > 0 && tracker.HasTime(playerInput, "airborne", 5f))
+
+            // Check airborne charges
+            int airborneLevel = SurgeGameModeManager.Instance.GetPerkLevel("airborne10s");
+            if (airborneLevel >= 2 && tracker.HasTime(playerInput, "airborne", 5f))
             {
                 SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
                 tracker.ResetTime(playerInput, "airborne");
                 Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 5s airborne");
+            }
+            else if (airborneLevel >= 1 && tracker.HasTime(playerInput, "airborne", 10f))
+            {
+                SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
+                tracker.ResetTime(playerInput, "airborne");
+                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from 10s airborne");
             }
         }
 

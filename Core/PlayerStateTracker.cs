@@ -13,6 +13,9 @@ namespace SpiderSurge
 
         private Dictionary<PlayerInput, PlayerStateData> playerStates = new Dictionary<PlayerInput, PlayerStateData>();
 
+        private bool isPaused = false;
+        private float lastLogTime = 0f;
+
         private void Awake()
         {
             if (instance == null)
@@ -26,6 +29,22 @@ namespace SpiderSurge
             }
         }
 
+        private void Update()
+        {
+            if (Time.time - lastLogTime >= 1f)
+            {
+                lastLogTime = Time.time;
+                foreach (var kvp in playerStates)
+                {
+                    PlayerStateData data = kvp.Value;
+                    float stillnessTime = (float)data.GetTotalTime("stillness").TotalSeconds;
+                    float airborneTime = (float)data.GetTotalTime("airborne").TotalSeconds;
+                    float speed = data.Rigidbody != null ? data.Rigidbody.velocity.magnitude : 0f;
+                    Logger.LogInfo($"Player {kvp.Key.playerIndex}: Speed={speed:F2}, Stillness={stillnessTime:F1}s, Airborne={airborneTime:F1}s");
+                }
+            }
+        }
+
         public class PlayerStateData
         {
             public PlayerInput PlayerInput { get; set; }
@@ -35,6 +54,7 @@ namespace SpiderSurge
 
             private Dictionary<string, TimeSpan> totalTimes = new Dictionary<string, TimeSpan>();
             private Dictionary<string, DateTime?> startTimes = new Dictionary<string, DateTime?>();
+            private Dictionary<string, bool> wasRunningWhenPaused = new Dictionary<string, bool>();
 
             public PlayerStateData(PlayerInput playerInput)
             {
@@ -77,13 +97,37 @@ namespace SpiderSurge
 
             public bool IsStill()
             {
-                return Rigidbody != null && Rigidbody.velocity.magnitude < 0.1f;
+                return Rigidbody != null && Rigidbody.velocity.magnitude < 2f;
             }
 
             public void ResetTimer(string key)
             {
                 totalTimes[key] = TimeSpan.Zero;
                 startTimes[key] = null;
+            }
+
+            public void PauseTimer(string key)
+            {
+                if (startTimes.ContainsKey(key) && startTimes[key].HasValue)
+                {
+                    TimeSpan session = DateTime.Now - startTimes[key].Value;
+                    totalTimes[key] += session;
+                    startTimes[key] = null;
+                    wasRunningWhenPaused[key] = true;
+                }
+                else
+                {
+                    wasRunningWhenPaused[key] = false;
+                }
+            }
+
+            public void ResumeTimer(string key)
+            {
+                if (wasRunningWhenPaused.ContainsKey(key) && wasRunningWhenPaused[key])
+                {
+                    startTimes[key] = DateTime.Now;
+                    wasRunningWhenPaused[key] = false;
+                }
             }
 
             public bool IsAirborne()
@@ -95,6 +139,7 @@ namespace SpiderSurge
             {
                 totalTimes.Clear();
                 startTimes.Clear();
+                wasRunningWhenPaused.Clear();
             }
         }
 
@@ -118,6 +163,8 @@ namespace SpiderSurge
 
         private void FixedUpdate()
         {
+            if (isPaused) return;
+
             foreach (var kvp in playerStates)
             {
                 PlayerStateData data = kvp.Value;
@@ -129,7 +176,7 @@ namespace SpiderSurge
                 }
                 else
                 {
-                    data.StopTimer("airborne");
+                    data.ResetTimer("airborne");
                 }
 
                 // Stillness tracking
@@ -139,7 +186,7 @@ namespace SpiderSurge
                 }
                 else
                 {
-                    data.StopTimer("stillness");
+                    data.ResetTimer("stillness");
                 }
             }
         }
@@ -156,6 +203,34 @@ namespace SpiderSurge
             {
                 data.Reset();
             }
+        }
+
+        public void PauseTimers()
+        {
+            if (isPaused)
+                return;
+
+            isPaused = true;
+            foreach (var data in playerStates.Values)
+            {
+                data.PauseTimer("airborne");
+                data.PauseTimer("stillness");
+            }
+            Logger.LogInfo("PlayerStateTracker: Timers paused for airborne and stillness");
+        }
+
+        public void ResumeTimers()
+        {
+            if (!isPaused)
+                return;
+
+            isPaused = false;
+            foreach (var data in playerStates.Values)
+            {
+                data.ResumeTimer("airborne");
+                data.ResumeTimer("stillness");
+            }
+            Logger.LogInfo("PlayerStateTracker: Timers resumed for airborne and stillness");
         }
 
         // Methods to check if enough time has passed for charge gain

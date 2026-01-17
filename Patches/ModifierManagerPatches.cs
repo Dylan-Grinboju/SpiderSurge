@@ -24,29 +24,27 @@ namespace SpiderSurge
                 Sprite icon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
 
                 // Define perks
-                var perks = new (string key, string title, string description)[]
+                var perks = new (string key, string title, string description, string descriptionPlus, int maxLevel)[]
                 {
-                    ("shieldAbility", "Shield Ability", "Unlocks the shield ability for use in survival mode"),
-                    ("shieldCap2", "Shield Capacity +1", "Increases shield charge capacity to 2"),
-                    ("shieldCap3", "Shield Capacity +2", "Increases shield charge capacity to 3"),
-                    ("stillness10s", "Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds"),
-                    ("stillness5s", "Stillness Charge (5s)", "Gain a shield charge after standing still for 5 seconds"),
-                    ("airborne10s", "Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds"),
-                    ("airborne5s", "Airborne Charge (5s)", "Gain a shield charge after being airborne for 5 seconds"),
-                    ("explosionImmunity", "Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity")
+                    ("shieldAbility", "Shield Ability", "Unlocks the shield ability for use in survival mode", null, 1),
+                    ("shieldCap2", "Shield Capacity +1", "Increases shield charge capacity to 2", null, 1),
+                    ("shieldCap3", "Shield Capacity +2", "Increases shield charge capacity to 3", null, 1),
+                    ("stillness10s", "Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds", "Upgrade: Gain a shield charge after standing still for 5 seconds", 2),
+                    ("airborne10s", "Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds", "Upgrade: Gain a shield charge after being airborne for 5 seconds", 2),
+                    ("explosionImmunity", "Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity", null, 1)
                 };
 
                 var modifiersList = __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as System.Collections.Generic.List<Modifier> ?? new System.Collections.Generic.List<Modifier>();
                 var currModsState = __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as ModifierManager.NetworkModifier[];
 
-                foreach (var (key, title, description) in perks)
+                foreach (var (key, title, description, descriptionPlus, maxLevel) in perks)
                 {
                     ModifierData data = ScriptableObject.CreateInstance<ModifierData>();
                     data.key = key;
                     data.title = title;
                     data.description = description;
-                    data.descriptionPlus = description;
-                    data.maxLevel = 1;
+                    data.descriptionPlus = descriptionPlus;
+                    data.maxLevel = maxLevel;
                     data.survival = true;
                     data.versus = false;
                     data.customTiers = false;
@@ -117,9 +115,7 @@ namespace SpiderSurge
                     { "shieldCap2", ("Shield Capacity +1", "Increases shield charge capacity to 2") },
                     { "shieldCap3", ("Shield Capacity +2", "Increases shield charge capacity to 3") },
                     { "stillness10s", ("Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds") },
-                    { "stillness5s", ("Stillness Charge (5s)", "Gain a shield charge after standing still for 5 seconds") },
                     { "airborne10s", ("Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds") },
-                    { "airborne5s", ("Airborne Charge (5s)", "Gain a shield charge after being airborne for 5 seconds") },
                     { "explosionImmunity", ("Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity") }
                 };
 
@@ -155,10 +151,6 @@ namespace SpiderSurge
                     return surgeManager.GetPerkLevel("shieldAbility") > 0;
                 if (key == "shieldCap3")
                     return surgeManager.GetPerkLevel("shieldCap2") > 0;
-                if (key == "stillness5s")
-                    return surgeManager.GetPerkLevel("stillness10s") > 0;
-                if (key == "airborne5s")
-                    return surgeManager.GetPerkLevel("airborne10s") > 0;
                 return true; // Other perks are always available
             }).ToList();
 
@@ -203,8 +195,7 @@ namespace SpiderSurge
         private static bool IsModPerk(string key)
         {
             return key == "shieldAbility" || key == "shieldCap2" || key == "shieldCap3" ||
-                   key == "stillness10s" || key == "stillness5s" || key == "airborne10s" ||
-                   key == "airborne5s" || key == "explosionImmunity";
+                   key == "stillness10s" || key == "airborne10s" || key == "explosionImmunity";
         }
     }
 }
