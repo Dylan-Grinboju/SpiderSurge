@@ -18,12 +18,22 @@ namespace SpiderSurge
                 DontDestroyOnLoad(gameObject);
                 Logger.LogInfo("AbilityManager initialized");
 
-                // Ensure SurgeGameModeManager exists
+                // Ensure managers exist
                 if (SurgeGameModeManager.Instance == null)
                 {
                     GameObject surgeManager = new GameObject("SurgeGameModeManager");
                     surgeManager.AddComponent<SurgeGameModeManager>();
                 }
+                if (PlayerStateTracker.Instance == null)
+                {
+                    GameObject tracker = new GameObject("PlayerStateTracker");
+                    tracker.AddComponent<PlayerStateTracker>();
+                }
+
+                // Create Shield Charge UI
+                GameObject uiObj = new GameObject("ShieldChargeUI");
+                uiObj.AddComponent<ShieldChargeUI>();
+                DontDestroyOnLoad(uiObj);
             }
             else
             {
@@ -68,6 +78,12 @@ namespace SpiderSurge
                     ShieldAbility shield = spiderController.gameObject.AddComponent<ShieldAbility>();
                 }
 
+                // Register with managers
+                SurgeGameModeManager.Instance.RegisterPlayer(playerInput);
+                if (PlayerStateTracker.Instance != null)
+                {
+                    PlayerStateTracker.Instance.RegisterPlayer(playerInput);
+                }
 
             }
             catch (System.Exception ex)
@@ -90,6 +106,27 @@ namespace SpiderSurge
             catch (System.Exception ex)
             {
                 Logger.LogError($"Error enabling all abilities: {ex.Message}");
+            }
+        }
+
+        public static void EnableExplosionImmunity()
+        {
+            try
+            {
+                SpiderController[] players = FindObjectsOfType<SpiderController>();
+                foreach (SpiderController player in players)
+                {
+                    var shieldAbility = player.GetComponent<ShieldAbility>();
+                    if (shieldAbility != null)
+                    {
+                        shieldAbility.SetExplosionImmunityPerk(true);
+                    }
+                }
+                Logger.LogInfo("Explosion immunity perk enabled for all players");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error enabling explosion immunity: {ex.Message}");
             }
         }
 

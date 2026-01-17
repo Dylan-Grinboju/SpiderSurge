@@ -172,7 +172,6 @@ namespace SpiderSurge
 
                 if (ability != null)
                 {
-                    Logger.LogInfo($"Button {bindingPath} pressed by player {playerInput.playerIndex} - activating {ability.GetType().Name}");
                     ability.Activate();
                 }
             }

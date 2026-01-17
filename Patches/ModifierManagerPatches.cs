@@ -2,7 +2,9 @@ using HarmonyLib;
 using Silk;
 using Logger = Silk.Logger;
 using System;
+using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using I2.Loc;
@@ -17,47 +19,56 @@ namespace SpiderSurge
         {
             try
             {
-                // Create a new ModifierData for Shield Ability
-                ModifierData shieldData = ScriptableObject.CreateInstance<ModifierData>();
-                shieldData.key = "shieldAbility";
-                shieldData.title = "Shield Ability";
-                shieldData.description = "Unlocks the shield ability for use in survival mode";
-                shieldData.descriptionPlus = "Unlocks the shield ability for use in survival mode";
-                shieldData.maxLevel = 1;
-                shieldData.survival = true;
-                shieldData.versus = false;
-                shieldData.customTiers = false;
-                shieldData.mapEditor = false;
-
                 // Use an existing modifier's icon as placeholder
                 var existingMods = ModifierManager.instance.GetNonMaxedSurvivalMods();
-                if (existingMods.Count > 0)
-                {
-                    shieldData.icon = existingMods[0].data.icon;
-                }
-                else
-                {
-                    shieldData.icon = null;
-                }
+                Sprite icon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
 
-                // Add to the modifiers list
-                Modifier shieldModifier = new Modifier(shieldData);
-                __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance,
-                    new System.Collections.Generic.List<Modifier>(__instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as System.Collections.Generic.List<Modifier> ?? new System.Collections.Generic.List<Modifier>()) { shieldModifier });
+                // Define perks
+                var perks = new (string key, string title, string description)[]
+                {
+                    ("shieldAbility", "Shield Ability", "Unlocks the shield ability for use in survival mode"),
+                    ("shieldCap2", "Shield Capacity +1", "Increases shield charge capacity to 2"),
+                    ("shieldCap3", "Shield Capacity +2", "Increases shield charge capacity to 3"),
+                    ("stillness10s", "Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds"),
+                    ("stillness5s", "Stillness Charge (5s)", "Gain a shield charge after standing still for 5 seconds"),
+                    ("airborne10s", "Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds"),
+                    ("airborne5s", "Airborne Charge (5s)", "Gain a shield charge after being airborne for 5 seconds"),
+                    ("explosionImmunity", "Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity")
+                };
 
-                // Also update the currModsState array
+                var modifiersList = __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as System.Collections.Generic.List<Modifier> ?? new System.Collections.Generic.List<Modifier>();
                 var currModsState = __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as ModifierManager.NetworkModifier[];
-                if (currModsState != null)
+
+                foreach (var (key, title, description) in perks)
                 {
-                    Array.Resize(ref currModsState, currModsState.Length + 1);
-                    currModsState[currModsState.Length - 1] = new ModifierManager.NetworkModifier { levelInVersus = 0, levelInWaves = 0 };
-                    __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, currModsState);
+                    ModifierData data = ScriptableObject.CreateInstance<ModifierData>();
+                    data.key = key;
+                    data.title = title;
+                    data.description = description;
+                    data.descriptionPlus = description;
+                    data.maxLevel = 1;
+                    data.survival = true;
+                    data.versus = false;
+                    data.customTiers = false;
+                    data.mapEditor = false;
+                    data.icon = icon;
+
+                    Modifier modifier = new Modifier(data);
+                    modifiersList.Add(modifier);
+
+                    if (currModsState != null)
+                    {
+                        Array.Resize(ref currModsState, currModsState.Length + 1);
+                        currModsState[currModsState.Length - 1] = new ModifierManager.NetworkModifier { levelInVersus = 0, levelInWaves = 0 };
+                    }
                 }
 
+                __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, modifiersList);
+                __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, currModsState);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error adding Shield Ability modifier: {ex.Message}");
+                Logger.LogError($"Error adding Shield Ability modifiers: {ex.Message}");
             }
         }
     }
@@ -68,9 +79,18 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(Modifier modifier, GameMode mode, int value)
         {
-            if (modifier.data.key == "shieldAbility" && mode == GameMode.Wave && value > 0)
+            if (mode == GameMode.Wave && value > 0)
             {
-                AbilityManager.EnableShieldAbility();
+                SurgeGameModeManager.Instance.SetPerkLevel(modifier.data.key, value);
+
+                if (modifier.data.key == "shieldAbility")
+                {
+                    AbilityManager.EnableShieldAbility();
+                }
+                else if (modifier.data.key == "explosionImmunity")
+                {
+                    AbilityManager.EnableExplosionImmunity();
+                }
             }
         }
     }
@@ -81,54 +101,110 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
-            if (m.data.key == "shieldAbility")
+            string key = m.data.key;
+            if (key == "shieldAbility" || key == "shieldCap2" || key == "shieldCap3" ||
+                key == "stillness10s" || key == "stillness5s" || key == "airborne10s" ||
+                key == "airborne5s" || key == "explosionImmunity")
             {
-
-                // Fix localization for shield ability
+                // Fix localization for custom perks
                 var perkNameText = __instance.GetType().GetField("perkNameText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
                 var perkDescriptionText = __instance.GetType().GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
 
+                // Define titles and descriptions
+                var perkTexts = new Dictionary<string, (string title, string description)>
+                {
+                    { "shieldAbility", ("Shield Ability", "Unlocks the shield ability for use in survival mode") },
+                    { "shieldCap2", ("Shield Capacity +1", "Increases shield charge capacity to 2") },
+                    { "shieldCap3", ("Shield Capacity +2", "Increases shield charge capacity to 3") },
+                    { "stillness10s", ("Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds") },
+                    { "stillness5s", ("Stillness Charge (5s)", "Gain a shield charge after standing still for 5 seconds") },
+                    { "airborne10s", ("Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds") },
+                    { "airborne5s", ("Airborne Charge (5s)", "Gain a shield charge after being airborne for 5 seconds") },
+                    { "explosionImmunity", ("Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity") }
+                };
 
-                if (perkNameText != null)
+                if (perkTexts.TryGetValue(key, out var texts))
                 {
-                    if (string.IsNullOrEmpty(perkNameText.text))
+                    if (perkNameText != null)
                     {
-                        perkNameText.text = m.data.title.ToString();
-                        if (string.IsNullOrEmpty(perkNameText.text))
-                        {
-                            perkNameText.text = "Shield Ability";
-                        }
+                        perkNameText.text = texts.title;
                     }
-                    else
-                    {
-                        Logger.LogInfo("perkNameText was not empty, skipping");
-                    }
-                }
-                else
-                {
-                    Logger.LogError("perkNameText field not found");
-                }
 
-                if (perkDescriptionText != null)
-                {
-                    if (string.IsNullOrEmpty(perkDescriptionText.text))
+                    if (perkDescriptionText != null)
                     {
-                        perkDescriptionText.text = m.data.description.ToString();
-                        if (string.IsNullOrEmpty(perkDescriptionText.text))
-                        {
-                            perkDescriptionText.text = "Unlocks the shield ability for use in survival mode";
-                        }
+                        perkDescriptionText.text = texts.description;
                     }
-                    else
-                    {
-                        Logger.LogInfo("perkDescriptionText was not empty, skipping");
-                    }
-                }
-                else
-                {
-                    Logger.LogError("perkDescriptionText field not found");
                 }
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(ModifierManager), "GetNonMaxedSurvivalMods")]
+    public class ModifierManager_GetNonMaxedSurvivalMods_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(ref List<Modifier> __result)
+        {
+            var surgeManager = SurgeGameModeManager.Instance;
+            if (surgeManager == null) return;
+
+            var filtered = __result.Where(mod =>
+            {
+                string key = mod.data.key;
+                if (key == "shieldCap2" || key == "explosionImmunity" || key == "stillness10s" || key == "airborne10s")
+                    return surgeManager.GetPerkLevel("shieldAbility") > 0;
+                if (key == "shieldCap3")
+                    return surgeManager.GetPerkLevel("shieldCap2") > 0;
+                if (key == "stillness5s")
+                    return surgeManager.GetPerkLevel("stillness10s") > 0;
+                if (key == "airborne5s")
+                    return surgeManager.GetPerkLevel("airborne10s") > 0;
+                return true; // Other perks are always available
+            }).ToList();
+
+            // Separate mod and vanilla perks
+            var modPerks = filtered.Where(mod => IsModPerk(mod.data.key)).ToList();
+            var vanillaPerks = filtered.Where(mod => !IsModPerk(mod.data.key)).ToList();
+
+            Logger.LogInfo($"Available mod perks: {string.Join(", ", modPerks.Select(m => m.data.key))}");
+
+            var result = new List<Modifier>();
+
+            // Position 1: always mod
+            if (modPerks.Count > 0)
+            {
+                int index = UnityEngine.Random.Range(0, modPerks.Count);
+                result.Add(modPerks[index]);
+                modPerks.RemoveAt(index);
+            }
+
+            // For subsequent positions (up to 5 total perks)
+            for (int pos = 2; pos <= 5 && result.Count < 5; pos++)
+            {
+                float prob = 1f / (1 << (pos - 1)); // 1 / 2^(pos-1)
+                bool pickMod = UnityEngine.Random.value < prob;
+                if (pickMod && modPerks.Count > 0)
+                {
+                    int index = UnityEngine.Random.Range(0, modPerks.Count);
+                    result.Add(modPerks[index]);
+                    modPerks.RemoveAt(index);
+                }
+                else if (vanillaPerks.Count > 0)
+                {
+                    int index = UnityEngine.Random.Range(0, vanillaPerks.Count);
+                    result.Add(vanillaPerks[index]);
+                    vanillaPerks.RemoveAt(index);
+                }
+            }
+
+            __result = result;
+        }
+
+        private static bool IsModPerk(string key)
+        {
+            return key == "shieldAbility" || key == "shieldCap2" || key == "shieldCap3" ||
+                   key == "stillness10s" || key == "stillness5s" || key == "airborne10s" ||
+                   key == "airborne5s" || key == "explosionImmunity";
         }
     }
 }
