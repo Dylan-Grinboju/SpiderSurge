@@ -24,21 +24,14 @@ namespace SpiderSurge
             }
         }
 
+        protected override bool ShouldRegister()
+        {
+            return SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
+        }
+
         protected override bool CanActivate()
         {
-            if (spiderHealthSystem != null && spiderHealthSystem.HasShield())
-            {
-                Logger.LogError($"Player {playerInput.playerIndex} already has a shield active!");
-                return false;
-            }
-
-            if (spiderHealthSystem == null)
-            {
-                Logger.LogError($"SpiderHealthSystem not found for player {playerInput.playerIndex}!");
-                return false;
-            }
-
-            return true;
+            return SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
         }
 
         protected override void OnActivate()

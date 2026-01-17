@@ -62,28 +62,16 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(SurvivalModifierChoiceCard), "SetupCard")]
-    public class SurvivalModifierChoiceCard_SetupCard_Patch
+    [HarmonyPatch(typeof(ModifierManager), "SetModLevel")]
+    public class ModifierManager_SetModLevel_Patch
     {
         [HarmonyPostfix]
-        public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
+        public static void Postfix(Modifier modifier, GameMode mode, int value)
         {
-            if (m.data.key == "shieldAbility")
+            if (modifier.data.key == "shieldAbility" && mode == GameMode.Wave && value > 0)
             {
-                Logger.LogInfo("Setting up shield ability card text");
-                // Set the texts directly since localization may not have the term
-                var perkNameText = __instance.GetType().GetField("perkNameText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TextMeshProUGUI;
-                var perkDescriptionText = __instance.GetType().GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TextMeshProUGUI;
-                if (perkNameText != null)
-                {
-                    perkNameText.text = "Shield Ability";
-                    Logger.LogInfo("Set perkNameText to Shield Ability");
-                }
-                if (perkDescriptionText != null)
-                {
-                    perkDescriptionText.text = "Unlocks the shield ability for use in survival mode";
-                    Logger.LogInfo("Set perkDescriptionText");
-                }
+                Logger.LogInfo("Shield ability modifier selected - enabling shield ability");
+                AbilityManager.EnableShieldAbility();
             }
         }
     }

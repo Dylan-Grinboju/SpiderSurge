@@ -17,6 +17,13 @@ namespace SpiderSurge
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 Logger.LogInfo("AbilityManager initialized");
+
+                // Ensure SurgeGameModeManager exists
+                if (SurgeGameModeManager.Instance == null)
+                {
+                    GameObject surgeManager = new GameObject("SurgeGameModeManager");
+                    surgeManager.AddComponent<SurgeGameModeManager>();
+                }
             }
             else
             {
@@ -59,7 +66,6 @@ namespace SpiderSurge
                 if (spiderController.GetComponent<ShieldAbility>() == null)
                 {
                     ShieldAbility shield = spiderController.gameObject.AddComponent<ShieldAbility>();
-                    shield.enabled = SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
                 }
 
 
@@ -92,14 +98,17 @@ namespace SpiderSurge
             try
             {
                 SurgeGameModeManager.Instance.UnlockShieldAbility();
+                // Register shield abilities with input interceptor now that they're unlocked
                 SpiderController[] players = FindObjectsOfType<SpiderController>();
                 foreach (SpiderController player in players)
                 {
                     var shieldAbility = player.GetComponent<ShieldAbility>();
                     if (shieldAbility != null)
-                        shieldAbility.enabled = true;
+                    {
+                        shieldAbility.RegisterWithInputInterceptor();
+                    }
                 }
-                Logger.LogInfo("Shield ability enabled for all players");
+                Logger.LogInfo("Shield ability unlocked and registered for all players");
             }
             catch (System.Exception ex)
             {
@@ -118,9 +127,7 @@ namespace SpiderSurge
             if (inputInterceptor != null)
                 inputInterceptor.enabled = true;
 
-            var shieldAbility = spiderController.GetComponent<ShieldAbility>();
-            if (shieldAbility != null)
-                shieldAbility.enabled = SurgeGameModeManager.Instance.IsShieldAbilityUnlocked;
+            // Shield ability component is always enabled - unlock check is in ShouldRegister/CanActivate
         }
 
         private static void DisablePlayerAbilities(GameObject playerObject)

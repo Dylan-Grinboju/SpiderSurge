@@ -38,9 +38,9 @@ namespace SpiderSurge
                 Logger.LogError($"PlayerController not found for {GetType().Name} on player {playerInput?.playerIndex}");
             }
 
-            // Find and register with InputInterceptor
+            // Find and register with InputInterceptor only if the ability should be registered
             inputInterceptor = GetComponentInParent<InputInterceptor>();
-            if (inputInterceptor != null && ActivationButtons != null)
+            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
             {
                 foreach (string button in ActivationButtons)
                 {
@@ -50,6 +50,10 @@ namespace SpiderSurge
                         Logger.LogInfo($"{GetType().Name} registered with InputInterceptor using button {button} for player {playerInput?.playerIndex}");
                     }
                 }
+            }
+            else if (!ShouldRegister())
+            {
+                Logger.LogInfo($"{GetType().Name} not registered with InputInterceptor (perk not unlocked) for player {playerInput?.playerIndex}");
             }
             else if (ActivationButtons == null || ActivationButtons.Length == 0)
             {
@@ -122,9 +126,29 @@ namespace SpiderSurge
             return onCooldown;
         }
 
+        protected virtual bool ShouldRegister()
+        {
+            return true;
+        }
+
         protected virtual bool CanActivate()
         {
             return true;
+        }
+
+        public void RegisterWithInputInterceptor()
+        {
+            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+            {
+                foreach (string button in ActivationButtons)
+                {
+                    if (!string.IsNullOrEmpty(button))
+                    {
+                        inputInterceptor.RegisterAbility(this, button);
+                        Logger.LogInfo($"{GetType().Name} registered with InputInterceptor using button {button} for player {playerInput?.playerIndex}");
+                    }
+                }
+            }
         }
 
         protected abstract void OnActivate();
