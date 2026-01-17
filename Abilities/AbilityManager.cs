@@ -31,7 +31,7 @@ namespace SpiderSurge
             try
             {
                 // Check if abilities should be enabled
-                if (!SurgeModeManager.AbilitiesEnabled)
+                if (!SurgeGameModeManager.AbilitiesEnabled)
                 {
                     Logger.LogInfo("Abilities disabled - skipping initialization");
                     return;
@@ -133,23 +133,6 @@ namespace SpiderSurge
             var shieldAbility = spiderController.GetComponent<ShieldAbility>();
             if (shieldAbility != null)
                 shieldAbility.enabled = false;
-        }
-    }
-
-    // Harmony patch to initialize abilities when players spawn
-    [HarmonyPatch(typeof(SpiderController), "Start")]
-    public class SpiderController_Start_Patch
-    {
-        static void Postfix(SpiderController __instance)
-        {
-            try
-            {
-                AbilityManager.InitializePlayerAbilities(__instance.gameObject);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error in SpiderController Start patch: {ex.Message}");
-            }
         }
     }
 }

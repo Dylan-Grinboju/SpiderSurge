@@ -3,9 +3,9 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
-    public class SurgeModeManager
+    public class SurgeGameModeManager
     {
-        public static SurgeModeManager Instance { get; private set; }
+        public static SurgeGameModeManager Instance { get; private set; }
 
         public bool IsActive { get; private set; }
         public static bool AbilitiesEnabled => Instance != null && Instance.IsActive;
@@ -15,7 +15,7 @@ namespace SpiderSurge
             IsActive = active;
         }
 
-        public SurgeModeManager()
+        public SurgeGameModeManager()
         {
             Instance = this;
         }

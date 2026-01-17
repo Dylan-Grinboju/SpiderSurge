@@ -9,7 +9,7 @@ namespace SpiderSurge
 {
     public class ShieldAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
+        private static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
 
         public override string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
         public override float Duration => 5f;

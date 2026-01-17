@@ -1,0 +1,37 @@
+using HarmonyLib;
+using Silk;
+using Logger = Silk.Logger;
+using UnityEngine.SceneManagement;
+using System;
+using System.Reflection;
+
+namespace SpiderSurge
+{
+    [HarmonyPatch(typeof(SurvivalMode), "StopGameMode")]
+    public class SurvivalMode_StopGameMode_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.Instance.IsActive)
+            {
+                Logger.LogInfo("Surge mode ended");
+                SurgeGameModeManager.Instance.SetActive(false);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(LobbyController), "OnSceneLoaded")]
+    public class LobbyController_OnSceneLoaded_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(Scene scene)
+        {
+            if (scene.name == "Lobby" && SurgeGameModeManager.Instance.IsActive)
+            {
+                Logger.LogInfo("Surge mode ended (lobby entered)");
+                SurgeGameModeManager.Instance.SetActive(false);
+            }
+        }
+    }
+}

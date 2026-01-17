@@ -11,8 +11,8 @@ namespace SpiderSurge
         private const string ModId = SpiderSurge.ModId;
         private static string CurrentVersion => SpiderSurge.Version;
 
-        private static string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
-        private static string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
+        private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
+        private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
 
         public static async Task CheckForUpdatesAsync()
         {

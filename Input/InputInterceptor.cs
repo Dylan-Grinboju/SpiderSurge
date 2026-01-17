@@ -9,7 +9,7 @@ namespace SpiderSurge
 {
     public class InputInterceptor : MonoBehaviour
     {
-        public static Dictionary<PlayerInput, InputInterceptor> playerInterceptors = new Dictionary<PlayerInput, InputInterceptor>();
+        private static Dictionary<PlayerInput, InputInterceptor> playerInterceptors = new Dictionary<PlayerInput, InputInterceptor>();
 
         private PlayerInput playerInput;
         private Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = new Dictionary<string, System.Action<InputAction.CallbackContext>>();

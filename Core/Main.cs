@@ -39,7 +39,7 @@ namespace SpiderSurge
             // Initialize configuration with default values first
             SetupConfiguration();
 
-            new SurgeModeManager();
+            new SurgeGameModeManager();
             // Create AbilityManager singleton
             new GameObject("AbilityManager").AddComponent<AbilityManager>();
             // Check for updates asynchronously
