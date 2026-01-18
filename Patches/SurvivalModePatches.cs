@@ -44,6 +44,13 @@ namespace SpiderSurge
                     PerksManager.Instance.AddShieldCharge(player);
                 }
                 Logger.LogInfo($"Added shield charges after wave {value}");
+
+                // Reset shield cooldown for all players
+                foreach (var kvp in ShieldAbility.playerShields)
+                {
+                    kvp.Value.SetCooldownToZero();
+                }
+                Logger.LogInfo($"Reset shield cooldowns for wave {value}");
             }
         }
     }

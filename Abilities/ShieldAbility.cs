@@ -9,13 +9,11 @@ namespace SpiderSurge
 {
     public class ShieldAbility : BaseAbility
     {
-        private static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
+        public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
 
         public override string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
-        public override float Duration => 5f;
-        public override float CooldownTime => 1f;
-
-        private bool explosionImmunityPerk = false;
+        public override float Duration => PerksManager.Instance.GetShieldDuration();
+        public override float CooldownTime => PerksManager.Instance.GetShieldCooldown();
 
         protected override void Awake()
         {
@@ -151,17 +149,6 @@ namespace SpiderSurge
             {
                 Logger.LogError($"Failed to trigger shield explosion for player {playerInput.playerIndex}: {e.Message}");
             }
-        }
-
-        public void SetExplosionImmunityPerk(bool enabled)
-        {
-            explosionImmunityPerk = enabled;
-        }
-
-        public static ShieldAbility GetPlayerShield(PlayerInput playerInput)
-        {
-            playerShields.TryGetValue(playerInput, out ShieldAbility shield);
-            return shield;
         }
     }
 }

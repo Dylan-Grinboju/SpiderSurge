@@ -19,7 +19,8 @@ namespace SpiderSurge
             ["capacity"] = "Shield Capacity",
             ["stillness"] = "Stillness Charge",
             ["airborne"] = "Airborne Charge",
-            ["explosionImmunity"] = "Explosion Immunity"
+            ["shieldCooldown"] = "Shield Cooldown",
+            ["shieldDuration"] = "Shield Duration"
         };
 
         private Dictionary<string, string> descriptions = new Dictionary<string, string>
@@ -28,7 +29,8 @@ namespace SpiderSurge
             ["capacity"] = "Increases shield charge capacity to 2.",
             ["stillness"] = "Gain shield charge after 10s of stillness.",
             ["airborne"] = "Gain shield charge after 10s airborne.",
-            ["explosionImmunity"] = "Grants 1s immunity when activating shield while shielded."
+            ["shieldCooldown"] = "Reduces shield cooldown from 30s to 20s.",
+            ["shieldDuration"] = "Increases shield duration to 2s."
         };
 
         private Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -37,7 +39,8 @@ namespace SpiderSurge
             ["capacity"] = "Increases shield charge capacity to 3.",
             ["stillness"] = "Gain shield charge after 5s of stillness.",
             ["airborne"] = "Gain shield charge after 5s airborne.",
-            ["explosionImmunity"] = ""
+            ["shieldCooldown"] = "Reduces shield cooldown from 20s to 10s.",
+            ["shieldDuration"] = "Increases shield duration to 3s."
         };
 
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
@@ -46,7 +49,8 @@ namespace SpiderSurge
             ["capacity"] = 2,
             ["stillness"] = 2,
             ["airborne"] = 2,
-            ["explosionImmunity"] = 1
+            ["shieldCooldown"] = 2,
+            ["shieldDuration"] = 2
         };
 
         private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
@@ -55,7 +59,8 @@ namespace SpiderSurge
             ["capacity"] = new List<string> { "shieldAbility" },
             ["stillness"] = new List<string> { "shieldAbility" },
             ["airborne"] = new List<string> { "shieldAbility" },
-            ["explosionImmunity"] = new List<string> { "shieldAbility" }
+            ["shieldCooldown"] = new List<string> { "shieldAbility" },
+            ["shieldDuration"] = new List<string> { "shieldAbility" }
         };
 
         private Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -139,27 +144,6 @@ namespace SpiderSurge
             catch (System.Exception ex)
             {
                 Logger.LogError($"Error initializing player abilities: {ex.Message}");
-            }
-        }
-
-        public static void EnableExplosionImmunity()
-        {
-            try
-            {
-                SpiderController[] players = FindObjectsOfType<SpiderController>();
-                foreach (SpiderController player in players)
-                {
-                    var shieldAbility = player.GetComponent<ShieldAbility>();
-                    if (shieldAbility != null)
-                    {
-                        shieldAbility.SetExplosionImmunityPerk(true);
-                    }
-                }
-                Logger.LogInfo("Explosion immunity perk enabled for all players");
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error enabling explosion immunity: {ex.Message}");
             }
         }
 
@@ -260,7 +244,7 @@ namespace SpiderSurge
         public float GetStillnessDuration()
         {
             int level = GetPerkLevel("stillness");
-            return level == 1 ? 10f : level == 2 ? 5f : 0f;
+            return level == 1 ? 15f : level == 2 ? 10f : 0f;
         }
 
         public float GetAirborneDuration()
@@ -269,9 +253,16 @@ namespace SpiderSurge
             return level == 1 ? 10f : level == 2 ? 5f : 0f;
         }
 
-        public bool HasExplosionImmunity()
+        public float GetShieldCooldown()
         {
-            return GetPerkLevel("explosionImmunity") > 0;
+            int level = GetPerkLevel("shieldCooldown");
+            return level == 1 ? 20f : level == 2 ? 10f : 30f;
+        }
+
+        public float GetShieldDuration()
+        {
+            int level = GetPerkLevel("shieldDuration");
+            return level == 1 ? 2f : level == 2 ? 3f : 1f;
         }
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
@@ -292,10 +283,6 @@ namespace SpiderSurge
             if (name == "shieldAbility")
             {
                 EnableShieldAbility();
-            }
-            else if (name == "explosionImmunity")
-            {
-                EnableExplosionImmunity();
             }
         }
     }

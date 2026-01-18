@@ -47,7 +47,8 @@ namespace SpiderSurge
             ("capacity", "Shield Capacity"),
             ("stillness", "Stillness Charge"),
             ("airborne", "Airborne Charge"),
-            ("explosionImmunity", "Explosion Immunity")
+            ("shieldCooldown", "Shield Cooldown"),
+            ("shieldDuration", "Shield Duration")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -694,10 +695,6 @@ namespace SpiderSurge
             if (key == "shieldAbility" && nextLevel > 0)
             {
                 PerksManager.EnableShieldAbility();
-            }
-            else if (key == "explosionImmunity" && nextLevel > 0)
-            {
-                PerksManager.EnableExplosionImmunity();
             }
 
             Logger.LogInfo($"Surge perk '{key}' set to level {nextLevel}");

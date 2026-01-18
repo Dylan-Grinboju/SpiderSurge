@@ -15,6 +15,9 @@ namespace SpiderSurge
 
         private bool isPaused = false;
         private float lastLogTime = 0f;
+        private Dictionary<PlayerInput, float> maxStillnessThisSecond = new Dictionary<PlayerInput, float>();
+
+        private const float STILLNESS_SPEED_THRESHOLD = 2.5f;
 
         private void Awake()
         {
@@ -31,17 +34,28 @@ namespace SpiderSurge
 
         private void Update()
         {
+            // Update max stillness for this second
+            foreach (var kvp in playerStates)
+            {
+                float currentStillness = (float)kvp.Value.GetTotalTime("stillness").TotalSeconds;
+                if (!maxStillnessThisSecond.ContainsKey(kvp.Key) || currentStillness > maxStillnessThisSecond[kvp.Key])
+                {
+                    maxStillnessThisSecond[kvp.Key] = currentStillness;
+                }
+            }
+
             if (Time.time - lastLogTime >= 1f)
             {
                 lastLogTime = Time.time;
                 foreach (var kvp in playerStates)
                 {
                     PlayerStateData data = kvp.Value;
-                    float stillnessTime = (float)data.GetTotalTime("stillness").TotalSeconds;
+                    float maxStillness = maxStillnessThisSecond.ContainsKey(kvp.Key) ? maxStillnessThisSecond[kvp.Key] : 0f;
                     float airborneTime = (float)data.GetTotalTime("airborne").TotalSeconds;
                     float speed = data.Rigidbody != null ? data.Rigidbody.velocity.magnitude : 0f;
-                    Logger.LogInfo($"Player {kvp.Key.playerIndex}: Speed={speed:F2}, Stillness={stillnessTime:F1}s, Airborne={airborneTime:F1}s");
+                    Logger.LogInfo($"Player {kvp.Key.playerIndex}: Speed={speed:F2}, Stillness={maxStillness:F1}s, Airborne={airborneTime:F1}s");
                 }
+                maxStillnessThisSecond.Clear();
             }
         }
 
@@ -97,7 +111,7 @@ namespace SpiderSurge
 
             public bool IsStill()
             {
-                return Rigidbody != null && Rigidbody.velocity.magnitude < 2f;
+                return Rigidbody != null && Rigidbody.velocity.magnitude < STILLNESS_SPEED_THRESHOLD;
             }
 
             public void ResetTimer(string key)

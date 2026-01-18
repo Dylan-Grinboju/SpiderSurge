@@ -77,13 +77,13 @@ namespace SpiderSurge
         {
             if (onCooldown)
             {
-                Logger.LogError($"{GetType().Name} ability is on cooldown for player {playerInput.playerIndex}!");
+                Logger.LogInfo($"{GetType().Name} ability is on cooldown for player {playerInput.playerIndex}!");
                 return;
             }
 
             if (isActive)
             {
-                Logger.LogError($"{GetType().Name} ability is already active for player {playerInput.playerIndex}!");
+                Logger.LogInfo($"{GetType().Name} ability is already active for player {playerInput.playerIndex}!");
                 return;
             }
 
@@ -124,6 +124,17 @@ namespace SpiderSurge
         public virtual bool IsOnCooldown()
         {
             return onCooldown;
+        }
+
+        public void SetCooldownToZero()
+        {
+            if (cooldownCoroutine != null)
+            {
+                StopCoroutine(cooldownCoroutine);
+                cooldownCoroutine = null;
+            }
+            onCooldown = false;
+            Logger.LogInfo($"{GetType().Name} cooldown reset for player {playerInput.playerIndex}");
         }
 
         protected virtual bool ShouldRegister()
