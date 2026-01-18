@@ -24,15 +24,7 @@ namespace SpiderSurge
                 Sprite icon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
 
                 // Define perks
-                var perks = new (string key, string title, string description, string descriptionPlus, int maxLevel)[]
-                {
-                    ("shieldAbility", "Shield Ability", "Unlocks the shield ability for use in survival mode", null, 1),
-                    ("shieldCap2", "Shield Capacity +1", "Increases shield charge capacity to 2", null, 1),
-                    ("shieldCap3", "Shield Capacity +2", "Increases shield charge capacity to 3", null, 1),
-                    ("stillness10s", "Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds", "Upgrade: Gain a shield charge after standing still for 5 seconds", 2),
-                    ("airborne10s", "Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds", "Upgrade: Gain a shield charge after being airborne for 5 seconds", 2),
-                    ("explosionImmunity", "Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity", null, 1)
-                };
+                var perks = PerksManager.Instance.GetAllPerkNames().Select(name => (name, PerksManager.Instance.GetDisplayName(name), PerksManager.Instance.GetDescription(name), PerksManager.Instance.GetUpgradeDescription(name), PerksManager.Instance.GetMaxLevel(name))).ToArray();
 
                 var modifiersList = __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as System.Collections.Generic.List<Modifier> ?? new System.Collections.Generic.List<Modifier>();
                 var currModsState = __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as ModifierManager.NetworkModifier[];
@@ -79,16 +71,10 @@ namespace SpiderSurge
         {
             if (mode == GameMode.Wave && value > 0)
             {
-                SurgeGameModeManager.Instance.SetPerkLevel(modifier.data.key, value);
+                PerksManager.Instance.SetPerkLevel(modifier.data.key, value);
 
-                if (modifier.data.key == "shieldAbility")
-                {
-                    AbilityManager.EnableShieldAbility();
-                }
-                else if (modifier.data.key == "explosionImmunity")
-                {
-                    AbilityManager.EnableExplosionImmunity();
-                }
+                var surgeManager = SurgeGameModeManager.Instance;
+                PerksManager.Instance.OnSelected(modifier.data.key);
             }
         }
     }
@@ -100,36 +86,21 @@ namespace SpiderSurge
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
             string key = m.data.key;
-            if (key == "shieldAbility" || key == "shieldCap2" || key == "shieldCap3" ||
-                key == "stillness10s" || key == "stillness5s" || key == "airborne10s" ||
-                key == "airborne5s" || key == "explosionImmunity")
+            var surgeManager = SurgeGameModeManager.Instance;
+            if (surgeManager != null && PerksManager.Instance.GetAllPerkNames().Contains(key))
             {
                 // Fix localization for custom perks
                 var perkNameText = __instance.GetType().GetField("perkNameText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
                 var perkDescriptionText = __instance.GetType().GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
 
-                // Define titles and descriptions
-                var perkTexts = new Dictionary<string, (string title, string description)>
+                if (perkNameText != null)
                 {
-                    { "shieldAbility", ("Shield Ability", "Unlocks the shield ability for use in survival mode") },
-                    { "shieldCap2", ("Shield Capacity +1", "Increases shield charge capacity to 2") },
-                    { "shieldCap3", ("Shield Capacity +2", "Increases shield charge capacity to 3") },
-                    { "stillness10s", ("Stillness Charge (10s)", "Gain a shield charge after standing still for 10 seconds") },
-                    { "airborne10s", ("Airborne Charge (10s)", "Gain a shield charge after being airborne for 10 seconds") },
-                    { "explosionImmunity", ("Explosion Immunity", "Activating shield while shielded causes explosion and grants 1 second immunity") }
-                };
+                    perkNameText.text = PerksManager.Instance.GetDisplayName(key);
+                }
 
-                if (perkTexts.TryGetValue(key, out var texts))
+                if (perkDescriptionText != null)
                 {
-                    if (perkNameText != null)
-                    {
-                        perkNameText.text = texts.title;
-                    }
-
-                    if (perkDescriptionText != null)
-                    {
-                        perkDescriptionText.text = texts.description;
-                    }
+                    perkDescriptionText.text = PerksManager.Instance.GetDescription(key);
                 }
             }
         }
@@ -147,16 +118,16 @@ namespace SpiderSurge
             var filtered = __result.Where(mod =>
             {
                 string key = mod.data.key;
-                if (key == "shieldCap2" || key == "explosionImmunity" || key == "stillness10s" || key == "airborne10s")
-                    return surgeManager.GetPerkLevel("shieldAbility") > 0;
-                if (key == "shieldCap3")
-                    return surgeManager.GetPerkLevel("shieldCap2") > 0;
+                if (PerksManager.Instance.GetAllPerkNames().Contains(key))
+                {
+                    return PerksManager.Instance.IsAvailable(key);
+                }
                 return true; // Other perks are always available
             }).ToList();
 
             // Separate mod and vanilla perks
-            var modPerks = filtered.Where(mod => IsModPerk(mod.data.key)).ToList();
-            var vanillaPerks = filtered.Where(mod => !IsModPerk(mod.data.key)).ToList();
+            var modPerks = filtered.Where(mod => PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key)).ToList();
+            var vanillaPerks = filtered.Where(mod => !PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key)).ToList();
 
             Logger.LogInfo($"Available mod perks: {string.Join(", ", modPerks.Select(m => m.data.key))}");
 
@@ -190,12 +161,6 @@ namespace SpiderSurge
             }
 
             __result = result;
-        }
-
-        private static bool IsModPerk(string key)
-        {
-            return key == "shieldAbility" || key == "shieldCap2" || key == "shieldCap3" ||
-                   key == "stillness10s" || key == "airborne10s" || key == "explosionImmunity";
         }
     }
 }

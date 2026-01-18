@@ -44,10 +44,9 @@ namespace SpiderSurge
         private static readonly (string key, string title)[] _surgePerks = new (string key, string title)[]
         {
             ("shieldAbility", "Shield Ability"),
-            ("shieldCap2", "Shield Capacity +1"),
-            ("shieldCap3", "Shield Capacity +2"),
-            ("stillness10s", "Stillness Charge (10s)"),
-            ("airborne10s", "Airborne Charge (10s)"),
+            ("capacity", "Shield Capacity"),
+            ("stillness", "Stillness Charge"),
+            ("airborne", "Airborne Charge"),
             ("explosionImmunity", "Explosion Immunity")
         };
 
@@ -214,7 +213,7 @@ namespace SpiderSurge
                     PlayerInput playerInput = PlayerInput.GetPlayerByIndex(playerController.playerInputIndex.Value);
                     if (playerInput != null)
                     {
-                        SurgeGameModeManager.Instance.AddShieldCharge(playerInput);
+                        PerksManager.Instance.AddShieldCharge(playerInput);
                         chargesAdded++;
                     }
                 }
@@ -626,7 +625,7 @@ namespace SpiderSurge
             foreach (var (key, title) in _surgePerks)
             {
                 int currentLevel = SurgeGameModeManager.Instance != null
-                    ? SurgeGameModeManager.Instance.GetPerkLevel(key)
+                    ? PerksManager.Instance.GetPerkLevel(key)
                     : 0;
 
                 string levelSuffix = currentLevel == 2 ? " ++" : currentLevel == 1 ? " +" : "";
@@ -678,7 +677,7 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance == null) return;
 
-            int currentLevel = SurgeGameModeManager.Instance.GetPerkLevel(key);
+            int currentLevel = PerksManager.Instance.GetPerkLevel(key);
             int maxLevel = GetMaxLevelForPerk(key);
             int nextLevel;
 
@@ -689,16 +688,16 @@ namespace SpiderSurge
             else
                 nextLevel = 0;
 
-            SurgeGameModeManager.Instance.SetPerkLevel(key, nextLevel);
+            PerksManager.Instance.SetPerkLevel(key, nextLevel);
 
             // Apply perk effects
             if (key == "shieldAbility" && nextLevel > 0)
             {
-                AbilityManager.EnableShieldAbility();
+                PerksManager.EnableShieldAbility();
             }
             else if (key == "explosionImmunity" && nextLevel > 0)
             {
-                AbilityManager.EnableExplosionImmunity();
+                PerksManager.EnableExplosionImmunity();
             }
 
             Logger.LogInfo($"Surge perk '{key}' set to level {nextLevel}");
@@ -706,10 +705,7 @@ namespace SpiderSurge
 
         private int GetMaxLevelForPerk(string key)
         {
-            // Only stillness and airborne have upgradeable levels
-            if (key == "stillness10s" || key == "airborne10s")
-                return 2;
-            return 1;
+            return PerksManager.Instance.GetMaxLevel(key);
         }
 
         private void ResetAllSurgePerks()
@@ -718,7 +714,7 @@ namespace SpiderSurge
 
             foreach (var (key, _) in _surgePerks)
             {
-                SurgeGameModeManager.Instance.SetPerkLevel(key, 0);
+                PerksManager.Instance.SetPerkLevel(key, 0);
             }
 
             Logger.LogInfo("All surge perks reset");

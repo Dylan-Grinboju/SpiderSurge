@@ -12,7 +12,7 @@ namespace SpiderSurge
         {
             try
             {
-                AbilityManager.InitializePlayerAbilities(__instance.gameObject);
+                PerksManager.InitializePlayerAbilities(__instance.gameObject);
             }
             catch (System.Exception ex)
             {

@@ -40,8 +40,8 @@ namespace SpiderSurge
             SetupConfiguration();
 
             new SurgeGameModeManager();
-            // Create AbilityManager singleton
-            new GameObject("AbilityManager").AddComponent<AbilityManager>();
+            // Create PerksManager singleton
+            new GameObject("PerksManager").AddComponent<PerksManager>();
             // Create PauseHandler singleton
             new GameObject("PauseHandler").AddComponent<PauseHandler>();
             // Initialize CheatManager

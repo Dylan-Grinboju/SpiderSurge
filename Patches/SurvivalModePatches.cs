@@ -41,7 +41,7 @@ namespace SpiderSurge
                 PlayerInput[] players = UnityEngine.Object.FindObjectsOfType<PlayerInput>();
                 foreach (PlayerInput player in players)
                 {
-                    SurgeGameModeManager.Instance.AddShieldCharge(player);
+                    PerksManager.Instance.AddShieldCharge(player);
                 }
                 Logger.LogInfo($"Added shield charges after wave {value}");
             }

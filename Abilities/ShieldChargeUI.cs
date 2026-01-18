@@ -32,7 +32,7 @@ namespace SpiderSurge
         {
             bool newShouldShow = SurgeGameModeManager.Instance != null &&
                                  SurgeGameModeManager.Instance.IsActive &&
-                                 SurgeGameModeManager.Instance.IsShieldAbilityUnlocked &&
+                                 PerksManager.Instance.IsShieldAbilityUnlocked &&
                                  localPlayerInput != null;
 
             if (newShouldShow != shouldShow)
@@ -69,7 +69,7 @@ namespace SpiderSurge
         {
             if (!shouldShow) return;
 
-            int currentCharges = SurgeGameModeManager.Instance.GetShieldCharges(localPlayerInput);
+            int currentCharges = PerksManager.Instance.GetShieldCharges(localPlayerInput);
 
             // Position in bottom right corner
             float width = 100f;
