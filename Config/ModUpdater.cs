@@ -18,7 +18,6 @@ namespace SpiderSurge
         {
             try
             {
-                Logger.LogInfo("Checking for SpiderSurge updates...");
                 var latestVersion = await GetLatestVersionAsync();
                 Logger.LogInfo($"Latest version: {latestVersion}, Current version: {CurrentVersion}");
 

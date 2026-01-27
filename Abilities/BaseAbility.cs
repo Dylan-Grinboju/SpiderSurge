@@ -26,15 +26,15 @@ namespace SpiderSurge
         protected AbilityIndicator abilityIndicator;
 
         public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
-        
+
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;
         public virtual float BaseCooldown => 30f;
-        
+
         // How much each perk level affects the values
         public virtual float DurationPerPerkLevel => 0f;
         public virtual float CooldownPerPerkLevel => 0f;
-        
+
         // Computed values based on perk levels
         public virtual float Duration => BaseDuration + (PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel;
         public virtual float CooldownTime => BaseCooldown - (PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel;
@@ -42,10 +42,6 @@ namespace SpiderSurge
         protected virtual void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
-            if (playerInput != null)
-            {
-                Logger.LogInfo($"{GetType().Name} initialized for player {playerInput.playerIndex}");
-            }
         }
 
         protected virtual void Start()
@@ -65,17 +61,8 @@ namespace SpiderSurge
                     if (!string.IsNullOrEmpty(button))
                     {
                         inputInterceptor.RegisterAbility(this, button);
-                        Logger.LogInfo($"{GetType().Name} registered with InputInterceptor using button {button} for player {playerInput?.playerIndex}");
                     }
                 }
-            }
-            else if (!ShouldRegister())
-            {
-                Logger.LogInfo($"{GetType().Name} not registered with InputInterceptor (perk not unlocked) for player {playerInput?.playerIndex}");
-            }
-            else if (ActivationButtons == null || ActivationButtons.Length == 0)
-            {
-                Logger.LogInfo($"{GetType().Name} has no activation buttons defined - manual activation only");
             }
             else
             {
@@ -122,32 +109,27 @@ namespace SpiderSurge
             // Radius and offset can be adjusted via Unity Inspector on the AbilityIndicator component
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
 
-            Logger.LogInfo($"{GetType().Name} ability indicator created for player {playerInput?.playerIndex}");
         }
 
         public virtual void Activate()
         {
             if (!IsUnlocked())
             {
-                Logger.LogInfo($"{GetType().Name} ability is not unlocked for player {playerInput.playerIndex}!");
                 return;
             }
 
             if (onCooldown)
             {
-                Logger.LogInfo($"{GetType().Name} ability is on cooldown for player {playerInput.playerIndex}!");
                 return;
             }
 
             if (isActive)
             {
-                Logger.LogInfo($"{GetType().Name} ability is already active for player {playerInput.playerIndex}!");
                 return;
             }
 
             isActive = true;
             OnActivate();
-            Logger.LogInfo($"{GetType().Name} ACTIVATED for player {playerInput.playerIndex}!");
 
             if (Duration > 0)
             {
@@ -165,7 +147,6 @@ namespace SpiderSurge
             {
                 isActive = false;
                 OnDeactivate();
-                Logger.LogInfo($"{GetType().Name} DEACTIVATED for player {playerInput.playerIndex}!, cooldown: {CooldownTime}s");
             }
         }
 
@@ -187,7 +168,6 @@ namespace SpiderSurge
                 cooldownCoroutine = null;
             }
             onCooldown = false;
-            Logger.LogInfo($"{GetType().Name} cooldown reset for player {playerInput.playerIndex}");
         }
 
         public bool IsUnlocked()
@@ -209,7 +189,6 @@ namespace SpiderSurge
                     if (!string.IsNullOrEmpty(button))
                     {
                         inputInterceptor.RegisterAbility(this, button);
-                        Logger.LogInfo($"{GetType().Name} registered with InputInterceptor using button {button} for player {playerInput?.playerIndex}");
                     }
                 }
             }
@@ -248,7 +227,6 @@ namespace SpiderSurge
             yield return new WaitForSeconds(CooldownTime);
 
             onCooldown = false;
-            Logger.LogInfo($"{GetType().Name} cooldown finished for player {playerInput.playerIndex}");
         }
 
         protected virtual void OnDestroy()

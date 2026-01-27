@@ -14,6 +14,7 @@ namespace SpiderSurge
             {
                 Logger.LogInfo("Surge mode ended");
                 SurgeGameModeManager.Instance.SetActive(false);
+                PerksManager.Instance.ResetPerks();
             }
         }
     }
@@ -28,6 +29,7 @@ namespace SpiderSurge
             {
                 Logger.LogInfo("Surge mode ended (lobby entered)");
                 SurgeGameModeManager.Instance.SetActive(false);
+                PerksManager.Instance.ResetPerks();
             }
         }
     }

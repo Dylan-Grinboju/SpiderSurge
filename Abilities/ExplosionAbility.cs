@@ -60,11 +60,7 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            Logger.LogInfo($"ExplosionAbility ACTIVATED for player {playerInput.playerIndex}!");
-
-            // Trigger the explosion immediately
             TriggerExplosion();
-
             // Start cooldown immediately since this is an instant ability
             isActive = false;
             StartCooldown();
@@ -144,7 +140,6 @@ namespace SpiderSurge
                     PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
                     if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
                     {
-                        Logger.LogInfo($"Skip damage to own player {playerID} in ExplosionAbility");
                         continue;
                     }
                 }
@@ -257,8 +252,6 @@ namespace SpiderSurge
                         Logger.LogWarning($"ExplosionAbility: Could not set explosion color: {ex.Message}");
                     }
                 }
-
-                Logger.LogInfo($"ExplosionAbility: Spawned explosion VFX at {position} with scale {ExplosionSizeMultiplier}");
             }
             catch (System.Exception ex)
             {
@@ -287,7 +280,6 @@ namespace SpiderSurge
                         cachedExplosionPrefab = prefabField.GetValue(spiderHealthSystem) as GameObject;
                         if (cachedExplosionPrefab != null)
                         {
-                            Logger.LogInfo("ExplosionAbility: Successfully obtained DeadExplosionParticlePrefab from SpiderHealthSystem");
                             return cachedExplosionPrefab;
                         }
                     }

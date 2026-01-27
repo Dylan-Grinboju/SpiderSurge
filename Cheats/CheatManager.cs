@@ -66,7 +66,6 @@ namespace SpiderSurge
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
-                Logger.LogInfo("CheatManager initialized");
             }
             else
             {
@@ -121,7 +120,6 @@ namespace SpiderSurge
             {
                 _showModifiersMenu = false;
                 _showSpawnMenus = !_showSpawnMenus;
-                Logger.LogInfo($"Spawn menus {(_showSpawnMenus ? "SHOWN" : "HIDDEN")}");
             }
 
             // - - Toggle modifiers menu (hides spawn menus)
@@ -129,7 +127,6 @@ namespace SpiderSurge
             {
                 _showSpawnMenus = false;
                 _showModifiersMenu = !_showModifiersMenu;
-                Logger.LogInfo($"Modifiers menu {(_showModifiersMenu ? "SHOWN" : "HIDDEN")}");
             }
 
 
@@ -165,7 +162,6 @@ namespace SpiderSurge
             }
 
             string status = _enemiesFrozen ? "FROZEN" : "UNFROZEN";
-            Logger.LogInfo($"Enemies {status}! ({enemies.Length} enemies affected)");
         }
 
         public void GiveShieldToPlayers()
@@ -181,9 +177,6 @@ namespace SpiderSurge
                     shieldsGiven++;
                 }
             }
-
-            Logger.LogInfo($"Shield given to {shieldsGiven} players!");
-
         }
 
 
@@ -192,23 +185,16 @@ namespace SpiderSurge
         {
             if (SurvivalMode.instance == null)
             {
-                Logger.LogInfo("Cannot add life - SurvivalMode not active");
                 return;
             }
 
             if (!SurvivalMode.instance.GameModeActive())
             {
-                Logger.LogInfo("Cannot add life - Not in Survival game mode");
                 return;
             }
 
             int currentLives = SurvivalMode.instance.Lives;
             int maxLives = SurvivalMode.instance.MaxLives;
-
-            if (currentLives >= maxLives)
-            {
-                Logger.LogInfo($"Cannot add life - Already at max lives ({currentLives}/{maxLives})");
-            }
 
             // Use reflection to set the Lives property since the setter might be private
             try
@@ -217,7 +203,6 @@ namespace SpiderSurge
                 if (livesProperty != null && livesProperty.CanWrite)
                 {
                     livesProperty.SetValue(SurvivalMode.instance, currentLives + 1);
-                    Logger.LogInfo($"Added life! ({currentLives + 1}/{maxLives})");
 
                     if (Announcer.instance != null)
                     {
@@ -239,7 +224,6 @@ namespace SpiderSurge
                             if (valueProperty != null)
                             {
                                 valueProperty.SetValue(networkVar, currentLives + 1);
-                                Logger.LogInfo($"Added life via field! ({currentLives + 1}/{maxLives})");
 
                             }
                         }
@@ -256,21 +240,18 @@ namespace SpiderSurge
         {
             if (LobbyController.instance == null)
             {
-                Logger.LogInfo("Cannot respawn players - LobbyController not found");
                 return;
             }
 
             var playerControllers = LobbyController.instance.GetPlayerControllers();
             if (playerControllers == null || !playerControllers.Any())
             {
-                Logger.LogInfo("No player controllers found");
                 return;
             }
 
             var spawnPoints = LobbyController.instance.GetSpawnPoints();
             if (spawnPoints == null || spawnPoints.Length == 0)
             {
-                Logger.LogInfo("No spawn points found");
                 return;
             }
 
@@ -283,15 +264,6 @@ namespace SpiderSurge
                     playerController.SpawnCharacter(spawnPoint.position, spawnPoint.rotation);
                     respawnedCount++;
                 }
-            }
-
-            if (respawnedCount > 0)
-            {
-                Logger.LogInfo($"Respawned {respawnedCount} dead player(s)!");
-            }
-            else
-            {
-                Logger.LogInfo("No dead players to respawn");
             }
         }
 
@@ -310,9 +282,6 @@ namespace SpiderSurge
                     ApplyGodMode(player, _godModeEnabled);
                 }
             }
-
-            string status = _godModeEnabled ? "ENABLED" : "DISABLED";
-            Logger.LogInfo($"God mode {status}! ({players.Length} players affected)");
         }
 
         private void ApplyGodMode(SpiderHealthSystem player, bool enable)
@@ -383,8 +352,6 @@ namespace SpiderSurge
             {
                 EnemySpawner.instance.StopAllCoroutines();
             }
-
-            Logger.LogInfo($"Enemy spawning {(_spawningFrozen ? "FROZEN" : "UNFROZEN")}");
         }
 
         private void SpawnWeapon(Weapon weapon)
@@ -411,7 +378,6 @@ namespace SpiderSurge
             }
 
             _spawnedWeapons.Add(spawnedObj);
-            Logger.LogInfo($"Spawned weapon: {weapon.name}");
         }
 
         private void SpawnEnemy(EnemyHealthSystem enemy)
@@ -421,7 +387,6 @@ namespace SpiderSurge
             GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("EnemySpawn");
             if (spawnPoints.Length == 0)
             {
-                Logger.LogInfo("No enemy spawn points found");
                 return;
             }
 
@@ -443,7 +408,6 @@ namespace SpiderSurge
             }
 
             _spawnedEnemies.Add(spawnedObj);
-            Logger.LogInfo($"Spawned enemy: {enemy.name}");
         }
 
         private void ClearSpawnedWeapons()
@@ -460,7 +424,6 @@ namespace SpiderSurge
                 }
             }
             _spawnedWeapons.Clear();
-            Logger.LogInfo("Cleared all spawned weapons");
         }
 
         private void ClearSpawnedEnemies()
@@ -477,7 +440,6 @@ namespace SpiderSurge
                 }
             }
             _spawnedEnemies.Clear();
-            Logger.LogInfo("Cleared all spawned enemies");
         }
 
         private void OnGUI()
@@ -629,14 +591,12 @@ namespace SpiderSurge
                 nextLevel = 0;
 
             ModifierManager.instance.SetModSurvivalLevel(modifierData.key, nextLevel);
-            Logger.LogInfo($"Modifier '{modifierData.key}' set to level {nextLevel}");
         }
 
         private void ResetAllModifiers()
         {
             if (ModifierManager.instance == null) return;
             ModifierManager.instance.ResetAllSurvivalModifiers();
-            Logger.LogInfo("All modifiers reset");
         }
 
         private void ToggleSurgePerk(string key)
@@ -672,8 +632,6 @@ namespace SpiderSurge
                     PerksManager.EnableExplosionAbility();
                 }
             }
-
-            Logger.LogInfo($"Surge perk '{key}' set to level {nextLevel}");
         }
 
         private int GetMaxLevelForPerk(string key)
@@ -689,21 +647,17 @@ namespace SpiderSurge
             {
                 PerksManager.Instance.SetPerkLevel(key, 0);
             }
-
-            Logger.LogInfo("All surge perks reset");
         }
 
         public static void Initialize()
         {
             if (Instance != null)
             {
-                Logger.LogInfo("CheatManager already initialized");
                 return;
             }
 
             var go = new GameObject("CheatsModCheatManager");
             go.AddComponent<CheatManager>();
-            Logger.LogInfo("CheatManager created and ready");
         }
 
         private void OnDestroy()
@@ -711,14 +665,12 @@ namespace SpiderSurge
             if (Instance == this)
             {
                 Instance = null;
-                Logger.LogInfo("CheatManager destroyed");
             }
         }
 
         public static void SetElementLists(ElementLists elements)
         {
             _elements = elements;
-            Logger.LogInfo($"ElementLists captured: {elements.allWeapons?.Count ?? 0} weapons, {elements.allEnemies?.Count ?? 0} enemies");
         }
     }
 

@@ -22,7 +22,6 @@ namespace SpiderSurge
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
         private static FieldInfo networkAmmoField;
-        private int logThrottle = 0;
 
         protected override void Awake()
         {
@@ -35,14 +34,10 @@ namespace SpiderSurge
             // Cache reflection field for networkAmmo
             if (networkAmmoField == null)
             {
-                networkAmmoField = typeof(Weapon).GetField("networkAmmo", 
+                networkAmmoField = typeof(Weapon).GetField("networkAmmo",
                     BindingFlags.NonPublic | BindingFlags.Instance);
-                
-                if (networkAmmoField != null)
-                {
-                    Logger.LogInfo("InfiniteAmmoAbility: Successfully found networkAmmo field via reflection");
-                }
-                else
+
+                if (networkAmmoField == null)
                 {
                     Logger.LogError("InfiniteAmmoAbility: Could not find networkAmmo field!");
                 }
@@ -59,7 +54,6 @@ namespace SpiderSurge
                 // Try from the player controller's health system
                 weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
             }
-            Logger.LogInfo($"InfiniteAmmoAbility Start: weaponManager = {(weaponManager != null ? "found" : "null")}");
         }
 
         protected override void Update()
@@ -82,19 +76,11 @@ namespace SpiderSurge
                 if (storedMaxAmmo <= 0f || weapon.maxAmmo > storedMaxAmmo)
                 {
                     storedMaxAmmo = weapon.maxAmmo;
-                    Logger.LogInfo($"InfiniteAmmoAbility: Stored new maxAmmo: {storedMaxAmmo}");
                 }
 
                 if (weapon.ammo < storedMaxAmmo)
                 {
-                    float previousAmmo = weapon.ammo;
                     SetWeaponAmmo(weapon, storedMaxAmmo);
-                    
-                    logThrottle++;
-                    if (logThrottle % 60 == 1) // Log every ~1 second at 60fps
-                    {
-                        Logger.LogInfo($"InfiniteAmmoAbility: Refilled ammo {previousAmmo:F1} -> {weapon.ammo:F1} (target: {storedMaxAmmo:F1})");
-                    }
                 }
             }
         }
@@ -105,7 +91,7 @@ namespace SpiderSurge
 
             // First try using the normal setter (works if we're host)
             weapon.ammo = value;
-            
+
             // If that didn't work (we're not host), use reflection
             if (weapon.ammo < value && networkAmmoField != null)
             {
@@ -127,38 +113,23 @@ namespace SpiderSurge
         protected override void OnActivate()
         {
             storedMaxAmmo = 0f;
-            logThrottle = 0;
-
-            Logger.LogInfo($"InfiniteAmmoAbility OnActivate: weaponManager = {(weaponManager != null ? "found" : "null")}");
-
-            if (weaponManager != null)
-            {
-                Logger.LogInfo($"InfiniteAmmoAbility OnActivate: equippedWeapon = {(weaponManager.equippedWeapon != null ? weaponManager.equippedWeapon.name : "null")}");
-            }
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)
             {
                 storedMaxAmmo = weaponManager.equippedWeapon.maxAmmo;
                 float previousAmmo = weaponManager.equippedWeapon.ammo;
-                
+
                 SetWeaponAmmo(weaponManager.equippedWeapon, storedMaxAmmo);
-                
-                Logger.LogInfo($"Infinite Ammo ACTIVATED for player {playerInput.playerIndex}");
-                Logger.LogInfo($"  - Weapon: {weaponManager.equippedWeapon.name}");
-                Logger.LogInfo($"  - maxAmmo: {storedMaxAmmo}");
-                Logger.LogInfo($"  - ammo before: {previousAmmo}");
-                Logger.LogInfo($"  - ammo after: {weaponManager.equippedWeapon.ammo}");
             }
             else
             {
-                Logger.LogInfo($"Infinite Ammo ACTIVATED for player {playerInput.playerIndex} - no weapon equipped");
+                Logger.LogWarning($"Infinite Ammo ACTIVATED for player {playerInput.playerIndex} - no weapon equipped");
             }
         }
 
         protected override void OnDeactivate()
         {
             storedMaxAmmo = 0f;
-            Logger.LogInfo($"Infinite Ammo DEACTIVATED for player {playerInput.playerIndex}");
         }
 
         protected override void OnDestroy()

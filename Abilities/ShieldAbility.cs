@@ -34,7 +34,6 @@ namespace SpiderSurge
 
             if (spiderHealthSystem.HasShield())
             {
-                Logger.LogInfo($"Player {playerInput.playerIndex} already has shield active");
                 return;
             }
 
@@ -55,7 +54,6 @@ namespace SpiderSurge
             if (isActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 isActive = false;
-                Logger.LogInfo($"ShieldAbility was broken by damage for player {playerInput.playerIndex}!");
 
                 if (durationCoroutine != null)
                 {

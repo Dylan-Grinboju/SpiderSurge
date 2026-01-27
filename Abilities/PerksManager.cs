@@ -76,7 +76,6 @@ namespace SpiderSurge
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
-                Logger.LogInfo("PerksManager initialized");
 
                 // Ensure managers exist
                 if (SurgeGameModeManager.Instance == null)
@@ -100,7 +99,7 @@ namespace SpiderSurge
                 // Check if surge mode is active
                 if (!SurgeGameModeManager.Instance.IsActive)
                 {
-                    Logger.LogInfo("Surge mode not active - skipping ability initialization");
+                    Logger.LogWarning("Surge mode not active - skipping ability initialization");
                     return;
                 }
 
@@ -251,7 +250,6 @@ namespace SpiderSurge
         public void SetPerkLevel(string perkKey, int level)
         {
             perkLevels[perkKey] = level;
-            Logger.LogInfo($"Perk {perkKey} set to level {level}");
         }
 
         public void OnSelected(string name)
@@ -268,6 +266,12 @@ namespace SpiderSurge
             {
                 EnableExplosionAbility();
             }
+        }
+
+        public void ResetPerks()
+        {
+            perkLevels.Clear();
+            IsFirstNormalPerkSelection = true;
         }
     }
 }

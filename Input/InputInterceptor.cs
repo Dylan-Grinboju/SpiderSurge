@@ -141,7 +141,6 @@ namespace SpiderSurge
                         }
                     }
 
-                    Logger.LogInfo($"Unregistered {abilityName} from button {bindingPath} for player {playerInput.playerIndex}");
                 }
             }
             catch (System.Exception ex)
@@ -202,7 +201,6 @@ namespace SpiderSurge
                             if (binding.effectivePath.ToLower().Contains(bindingPath.ToLower()) || binding.path.ToLower().Contains(bindingPath.ToLower()))
                             {
                                 action.ChangeBinding(i).WithPath("");
-                                Logger.LogInfo($"Disabled original binding {bindingPath} on action {action.name} for player {playerInput.playerIndex}");
                                 break;
                             }
                         }
@@ -263,7 +261,6 @@ namespace SpiderSurge
             if (playerInput != null && playerInterceptors.ContainsKey(playerInput))
             {
                 playerInterceptors.Remove(playerInput);
-                Logger.LogInfo($"InputInterceptor removed for player {playerInput.playerIndex}");
             }
         }
 

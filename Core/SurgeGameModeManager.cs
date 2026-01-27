@@ -18,7 +18,6 @@ namespace SpiderSurge
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
-                Logger.LogInfo("SurgeGameModeManager initialized and set to persist across scenes");
             }
             else
             {

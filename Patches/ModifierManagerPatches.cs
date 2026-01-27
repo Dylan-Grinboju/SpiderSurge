@@ -92,9 +92,7 @@ namespace SpiderSurge
                         if (PerksManager.Instance.IsFirstNormalPerkSelection)
                         {
                             PerksManager.Instance.IsFirstNormalPerkSelection = false;
-                            Logger.LogInfo("First perk selection completed");
                         }
-                        Logger.LogInfo($"Ability {modifier.data.key} selected");
                     }
                 }
             }

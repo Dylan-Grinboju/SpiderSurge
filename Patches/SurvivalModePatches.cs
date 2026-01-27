@@ -20,8 +20,7 @@ namespace SpiderSurge
             {
                 SurgeGameModeManager.Instance.SetActive(true);
                 // Reset perk selection for new game
-                PerksManager.Instance.IsFirstNormalPerkSelection = true;
-                Logger.LogInfo("Surge mode started - perk selection reset");
+                PerksManager.Instance.ResetPerks();
                 // Refresh high score display to show Surge scores
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
                 if (eventField != null)
@@ -46,7 +45,6 @@ namespace SpiderSurge
                 {
                     kvp.Value.SetCooldownToZero();
                 }
-                Logger.LogInfo($"Reset shield cooldowns for wave {value}");
             }
         }
     }
