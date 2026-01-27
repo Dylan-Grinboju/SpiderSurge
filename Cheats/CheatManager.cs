@@ -45,6 +45,7 @@ namespace SpiderSurge
         {
             ("shieldAbility", "Shield Ability"),
             ("infiniteAmmoAbility", "Infinite Ammo Ability"),
+            ("explosionAbility", "Explosion Ability"),
             ("abilityCooldown", "Ability Cooldown"),
             ("abilityDuration", "Ability Duration")
         };
@@ -665,6 +666,10 @@ namespace SpiderSurge
                 else if (key == "infiniteAmmoAbility")
                 {
                     PerksManager.EnableInfiniteAmmoAbility();
+                }
+                else if (key == "explosionAbility")
+                {
+                    PerksManager.EnableExplosionAbility();
                 }
             }
 

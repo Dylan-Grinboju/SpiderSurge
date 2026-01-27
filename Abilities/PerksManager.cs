@@ -14,7 +14,7 @@ namespace SpiderSurge
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
         // Ability perks - shown in special ability selection screen
-        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility" };
+        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility", "explosionAbility" };
 
         // Upgrade perks - shown in normal perk selection
         private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration" };
@@ -23,6 +23,7 @@ namespace SpiderSurge
         {
             ["shieldAbility"] = "Shield Ability",
             ["infiniteAmmoAbility"] = "Infinite Ammo",
+            ["explosionAbility"] = "Explosion Ability",
             ["abilityCooldown"] = "Ability Cooldown",
             ["abilityDuration"] = "Ability Duration"
         };
@@ -31,6 +32,7 @@ namespace SpiderSurge
         {
             ["shieldAbility"] = "Unlocks the shield ability.",
             ["infiniteAmmoAbility"] = "Unlocks the infinite ammo ability.",
+            ["explosionAbility"] = "Unlocks the explosion ability.",
             ["abilityCooldown"] = "Reduces ability cooldown.",
             ["abilityDuration"] = "Increases ability duration."
         };
@@ -39,14 +41,20 @@ namespace SpiderSurge
         {
             ["shieldAbility"] = "",
             ["infiniteAmmoAbility"] = "",
+            ["explosionAbility"] = "",
             ["abilityCooldown"] = "Further reduces ability cooldown.",
             ["abilityDuration"] = "Further increases ability duration."
         };
+
+        // Descriptions when explosion ability is unlocked (duration also affects explosion size)
+        private const string DURATION_DESC_WITH_EXPLOSION = "Increases explosion size.";
+        private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Further increases explosion size.";
 
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
             ["shieldAbility"] = 1,
             ["infiniteAmmoAbility"] = 1,
+            ["explosionAbility"] = 1,
             ["abilityCooldown"] = 2,
             ["abilityDuration"] = 2
         };
@@ -55,6 +63,7 @@ namespace SpiderSurge
         {
             ["shieldAbility"] = new List<string>(),
             ["infiniteAmmoAbility"] = new List<string>(),
+            ["explosionAbility"] = new List<string>(),
             ["abilityCooldown"] = new List<string>(),
             ["abilityDuration"] = new List<string>()
         };
@@ -124,6 +133,11 @@ namespace SpiderSurge
                     spiderController.gameObject.AddComponent<InfiniteAmmoAbility>();
                 }
 
+                if (spiderController.GetComponent<ExplosionAbility>() == null)
+                {
+                    spiderController.gameObject.AddComponent<ExplosionAbility>();
+                }
+
 
             }
             catch (System.Exception ex)
@@ -140,6 +154,11 @@ namespace SpiderSurge
         public static void EnableInfiniteAmmoAbility()
         {
             EnableAbility<InfiniteAmmoAbility>("infiniteAmmoAbility");
+        }
+
+        public static void EnableExplosionAbility()
+        {
+            EnableAbility<ExplosionAbility>("explosionAbility");
         }
 
         private static void EnableAbility<T>(string perkName) where T : BaseAbility
@@ -204,14 +223,29 @@ namespace SpiderSurge
 
         public bool HasAnyAbilityUnlocked()
         {
-            return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0;
+            return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0 || GetPerkLevel("explosionAbility") > 0;
         }
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
 
         public string GetDisplayName(string name) => displayNames.ContainsKey(name) ? displayNames[name] : name;
-        public string GetDescription(string name) => descriptions.ContainsKey(name) ? descriptions[name] : "";
-        public string GetUpgradeDescription(string name) => upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+        public string GetDescription(string name)
+        {
+            if (name == "abilityDuration" && GetPerkLevel("explosionAbility") > 0)
+            {
+                return DURATION_DESC_WITH_EXPLOSION;
+            }
+            return descriptions.ContainsKey(name) ? descriptions[name] : "";
+        }
+
+        public string GetUpgradeDescription(string name)
+        {
+            if (name == "abilityDuration" && GetPerkLevel("explosionAbility") > 0)
+            {
+                return DURATION_UPGRADE_DESC_WITH_EXPLOSION;
+            }
+            return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+        }
         public int GetMaxLevel(string name) => maxLevels.ContainsKey(name) ? maxLevels[name] : 1;
 
         public void SetPerkLevel(string perkKey, int level)
@@ -229,6 +263,10 @@ namespace SpiderSurge
             else if (name == "infiniteAmmoAbility")
             {
                 EnableInfiniteAmmoAbility();
+            }
+            else if (name == "explosionAbility")
+            {
+                EnableExplosionAbility();
             }
         }
     }
