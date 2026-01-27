@@ -12,9 +12,12 @@ namespace SpiderSurge
         public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
 
         public override string PerkName => "shieldAbility";
-        public override string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
-        public override float Duration => PerksManager.Instance.GetShieldDuration();
-        public override float CooldownTime => PerksManager.Instance.GetShieldCooldown();
+        
+        public override float BaseDuration => 1f;
+        public override float DurationPerPerkLevel => 1f;
+        
+        public override float BaseCooldown => 30f;
+        public override float CooldownPerPerkLevel => 10f;
 
         protected override void Awake()
         {

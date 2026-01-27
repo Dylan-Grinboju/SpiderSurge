@@ -14,44 +14,49 @@ namespace SpiderSurge
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
         // Ability perks - shown in special ability selection screen
-        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility" };
+        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility" };
 
         // Upgrade perks - shown in normal perk selection
-        private HashSet<string> upgradePerks = new HashSet<string> { "shieldCooldown", "shieldDuration" };
+        private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration" };
 
         private Dictionary<string, string> displayNames = new Dictionary<string, string>
         {
             ["shieldAbility"] = "Shield Ability",
-            ["shieldCooldown"] = "Shield Cooldown",
-            ["shieldDuration"] = "Shield Duration"
+            ["infiniteAmmoAbility"] = "Infinite Ammo",
+            ["abilityCooldown"] = "Ability Cooldown",
+            ["abilityDuration"] = "Ability Duration"
         };
 
         private Dictionary<string, string> descriptions = new Dictionary<string, string>
         {
             ["shieldAbility"] = "Unlocks the shield ability.",
-            ["shieldCooldown"] = "Reduces shield cooldown from 30s to 20s.",
-            ["shieldDuration"] = "Increases shield duration to 2s."
+            ["infiniteAmmoAbility"] = "Unlocks the infinite ammo ability.",
+            ["abilityCooldown"] = "Reduces ability cooldown.",
+            ["abilityDuration"] = "Increases ability duration."
         };
 
         private Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
         {
             ["shieldAbility"] = "",
-            ["shieldCooldown"] = "Reduces shield cooldown from 20s to 10s.",
-            ["shieldDuration"] = "Increases shield duration to 3s."
+            ["infiniteAmmoAbility"] = "",
+            ["abilityCooldown"] = "Further reduces ability cooldown.",
+            ["abilityDuration"] = "Further increases ability duration."
         };
 
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
             ["shieldAbility"] = 1,
-            ["shieldCooldown"] = 2,
-            ["shieldDuration"] = 2
+            ["infiniteAmmoAbility"] = 1,
+            ["abilityCooldown"] = 2,
+            ["abilityDuration"] = 2
         };
 
         private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
         {
             ["shieldAbility"] = new List<string>(),
-            ["shieldCooldown"] = new List<string> { "shieldAbility" },
-            ["shieldDuration"] = new List<string> { "shieldAbility" }
+            ["infiniteAmmoAbility"] = new List<string>(),
+            ["abilityCooldown"] = new List<string>(),
+            ["abilityDuration"] = new List<string>()
         };
 
         private Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -111,7 +116,12 @@ namespace SpiderSurge
 
                 if (spiderController.GetComponent<ShieldAbility>() == null)
                 {
-                    ShieldAbility shield = spiderController.gameObject.AddComponent<ShieldAbility>();
+                    spiderController.gameObject.AddComponent<ShieldAbility>();
+                }
+
+                if (spiderController.GetComponent<InfiniteAmmoAbility>() == null)
+                {
+                    spiderController.gameObject.AddComponent<InfiniteAmmoAbility>();
                 }
 
 
@@ -124,24 +134,34 @@ namespace SpiderSurge
 
         public static void EnableShieldAbility()
         {
+            EnableAbility<ShieldAbility>("shieldAbility");
+        }
+
+        public static void EnableInfiniteAmmoAbility()
+        {
+            EnableAbility<InfiniteAmmoAbility>("infiniteAmmoAbility");
+        }
+
+        private static void EnableAbility<T>(string perkName) where T : BaseAbility
+        {
             try
             {
-                Instance.SetPerkLevel("shieldAbility", 1);
+                Instance.SetPerkLevel(perkName, 1);
 
-                // Register shield abilities with input interceptor now that they're unlocked
+                // Register abilities with input interceptor now that they're unlocked
                 SpiderController[] players = FindObjectsOfType<SpiderController>();
                 foreach (SpiderController player in players)
                 {
-                    var shieldAbility = player.GetComponent<ShieldAbility>();
-                    if (shieldAbility != null)
+                    var ability = player.GetComponent<T>();
+                    if (ability != null)
                     {
-                        shieldAbility.RegisterWithInputInterceptor();
+                        ability.RegisterWithInputInterceptor();
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error enabling shield ability: {ex.Message}");
+                Logger.LogError($"Error enabling {typeof(T).Name}: {ex.Message}");
             }
         }
 
@@ -182,16 +202,9 @@ namespace SpiderSurge
             return true;
         }
 
-        public float GetShieldCooldown()
+        public bool HasAnyAbilityUnlocked()
         {
-            int level = GetPerkLevel("shieldCooldown");
-            return level == 1 ? 20f : level == 2 ? 10f : 30f;
-        }
-
-        public float GetShieldDuration()
-        {
-            int level = GetPerkLevel("shieldDuration");
-            return level == 1 ? 2f : level == 2 ? 3f : 1f;
+            return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0;
         }
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
@@ -212,6 +225,10 @@ namespace SpiderSurge
             if (name == "shieldAbility")
             {
                 EnableShieldAbility();
+            }
+            else if (name == "infiniteAmmoAbility")
+            {
+                EnableInfiniteAmmoAbility();
             }
         }
     }

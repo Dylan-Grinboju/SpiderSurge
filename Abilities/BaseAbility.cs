@@ -18,9 +18,19 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
-        public virtual string[] ActivationButtons => new string[] { "<Gamepad>/buttonSouth", "<keyboard>/q" };
-        public virtual float Duration => 5f;
-        public virtual float CooldownTime => 10f;
+        public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
+        
+        // Base values that abilities should override
+        public virtual float BaseDuration => 5f;
+        public virtual float BaseCooldown => 30f;
+        
+        // How much each perk level affects the values
+        public virtual float DurationPerPerkLevel => 0f;
+        public virtual float CooldownPerPerkLevel => 0f;
+        
+        // Computed values based on perk levels
+        public virtual float Duration => BaseDuration + (PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel;
+        public virtual float CooldownTime => BaseCooldown - (PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel;
 
         protected virtual void Awake()
         {
