@@ -31,18 +31,14 @@ namespace SpiderSurge
 
         protected override bool CanActivate()
         {
-            return PerksManager.Instance.IsShieldAbilityUnlocked && PerksManager.Instance.GetShieldCharges(playerInput) > 0;
+            return PerksManager.Instance.IsShieldAbilityUnlocked;
         }
 
         public override void Activate()
         {
             if (!CanActivate())
             {
-                int charges = PerksManager.Instance.GetShieldCharges(playerInput);
-                if (charges == 0)
-                {
-                    Logger.LogInfo($"Player {playerInput.playerIndex} tried to activate shield but has 0 charges");
-                }
+                Logger.LogInfo($"Player {playerInput.playerIndex} tried to activate shield but ability is not unlocked");
                 return;
             }
             base.Activate();
@@ -53,16 +49,13 @@ namespace SpiderSurge
             if (spiderHealthSystem == null) return;
             if (spiderHealthSystem.HasShield())
             {
-                int remainingCharges = PerksManager.Instance.GetShieldCharges(playerInput);
-                Logger.LogInfo($"Player {playerInput.playerIndex} has {remainingCharges} shield charges remaining");
+                Logger.LogInfo($"Player {playerInput.playerIndex} already has shield active");
             }
             else
             {
                 // Normal activation
                 spiderHealthSystem.EnableShield();
-                PerksManager.Instance.ConsumeShieldCharge(playerInput);
-                int remainingCharges = PerksManager.Instance.GetShieldCharges(playerInput);
-                Logger.LogInfo($"Player {playerInput.playerIndex} activated shield, {remainingCharges} charges remaining");
+                Logger.LogInfo($"Player {playerInput.playerIndex} activated shield");
             }
         }
 
@@ -89,32 +82,6 @@ namespace SpiderSurge
                 }
 
                 StartCooldown();
-            }
-        }
-
-        private void FixedUpdate()
-        {
-            if (!SurgeGameModeManager.Instance.IsActive || playerInput == null) return;
-
-            var tracker = PlayerStateTracker.Instance;
-            if (tracker == null) return;
-
-            // Check stillness charges
-            float stillnessDuration = PerksManager.Instance.GetStillnessDuration();
-            if (stillnessDuration > 0 && tracker.HasTime(playerInput, "stillness", stillnessDuration))
-            {
-                PerksManager.Instance.AddShieldCharge(playerInput);
-                tracker.ResetTime(playerInput, "stillness");
-                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from {stillnessDuration}s stillness");
-            }
-
-            // Check airborne charges
-            float airborneDuration = PerksManager.Instance.GetAirborneDuration();
-            if (airborneDuration > 0 && tracker.HasTime(playerInput, "airborne", airborneDuration))
-            {
-                PerksManager.Instance.AddShieldCharge(playerInput);
-                tracker.ResetTime(playerInput, "airborne");
-                Logger.LogInfo($"Player {playerInput.playerIndex} gained shield charge from {airborneDuration}s airborne");
             }
         }
 

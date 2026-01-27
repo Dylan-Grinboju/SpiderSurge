@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -10,15 +11,18 @@ namespace SpiderSurge
     {
         public static PerksManager Instance { get; private set; }
 
-        private Dictionary<PlayerInput, int> shieldCharges = new Dictionary<PlayerInput, int>();
         public bool IsShieldAbilityUnlocked { get; private set; }
+        public bool IsFirstNormalPerkSelection { get; set; } = true;
+
+        // Ability perks - shown in special ability selection screen
+        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility" };
+
+        // Upgrade perks - shown in normal perk selection
+        private HashSet<string> upgradePerks = new HashSet<string> { "shieldCooldown", "shieldDuration" };
 
         private Dictionary<string, string> displayNames = new Dictionary<string, string>
         {
             ["shieldAbility"] = "Shield Ability",
-            ["capacity"] = "Shield Capacity",
-            ["stillness"] = "Stillness Charge",
-            ["airborne"] = "Airborne Charge",
             ["shieldCooldown"] = "Shield Cooldown",
             ["shieldDuration"] = "Shield Duration"
         };
@@ -26,9 +30,6 @@ namespace SpiderSurge
         private Dictionary<string, string> descriptions = new Dictionary<string, string>
         {
             ["shieldAbility"] = "Unlocks the shield ability.",
-            ["capacity"] = "Increases shield charge capacity to 2.",
-            ["stillness"] = "Gain shield charge after 10s of stillness.",
-            ["airborne"] = "Gain shield charge after 10s airborne.",
             ["shieldCooldown"] = "Reduces shield cooldown from 30s to 20s.",
             ["shieldDuration"] = "Increases shield duration to 2s."
         };
@@ -36,9 +37,6 @@ namespace SpiderSurge
         private Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
         {
             ["shieldAbility"] = "",
-            ["capacity"] = "Increases shield charge capacity to 3.",
-            ["stillness"] = "Gain shield charge after 5s of stillness.",
-            ["airborne"] = "Gain shield charge after 5s airborne.",
             ["shieldCooldown"] = "Reduces shield cooldown from 20s to 10s.",
             ["shieldDuration"] = "Increases shield duration to 3s."
         };
@@ -46,9 +44,6 @@ namespace SpiderSurge
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
             ["shieldAbility"] = 1,
-            ["capacity"] = 2,
-            ["stillness"] = 2,
-            ["airborne"] = 2,
             ["shieldCooldown"] = 2,
             ["shieldDuration"] = 2
         };
@@ -56,9 +51,6 @@ namespace SpiderSurge
         private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
         {
             ["shieldAbility"] = new List<string>(),
-            ["capacity"] = new List<string> { "shieldAbility" },
-            ["stillness"] = new List<string> { "shieldAbility" },
-            ["airborne"] = new List<string> { "shieldAbility" },
             ["shieldCooldown"] = new List<string> { "shieldAbility" },
             ["shieldDuration"] = new List<string> { "shieldAbility" }
         };
@@ -79,16 +71,6 @@ namespace SpiderSurge
                     GameObject surgeManager = new GameObject("SurgeGameModeManager");
                     surgeManager.AddComponent<SurgeGameModeManager>();
                 }
-                if (PlayerStateTracker.Instance == null)
-                {
-                    GameObject tracker = new GameObject("PlayerStateTracker");
-                    tracker.AddComponent<PlayerStateTracker>();
-                }
-
-                // Create Shield Charge UI
-                GameObject uiObj = new GameObject("ShieldChargeUI");
-                uiObj.AddComponent<ShieldChargeUI>();
-                DontDestroyOnLoad(uiObj);
             }
             else
             {
@@ -133,12 +115,6 @@ namespace SpiderSurge
                     ShieldAbility shield = spiderController.gameObject.AddComponent<ShieldAbility>();
                 }
 
-                // Register with managers
-                PerksManager.Instance.RegisterPlayer(playerInput);
-                if (PlayerStateTracker.Instance != null)
-                {
-                    PlayerStateTracker.Instance.RegisterPlayer(playerInput);
-                }
 
             }
             catch (System.Exception ex)
@@ -170,51 +146,24 @@ namespace SpiderSurge
             }
         }
 
-        public int GetShieldChargeCap()
+        public bool IsAbilityPerk(string perkName)
         {
-            return GetShieldCapacity();
+            return abilityPerks.Contains(perkName);
         }
 
-        public int GetShieldCharges(PlayerInput playerInput)
+        public bool IsUpgradePerk(string perkName)
         {
-            return shieldCharges.ContainsKey(playerInput) ? shieldCharges[playerInput] : 0;
+            return upgradePerks.Contains(perkName);
         }
 
-        public void SetShieldCharges(PlayerInput playerInput, int charges)
+        public IEnumerable<string> GetAbilityPerkNames()
         {
-            int cap = GetShieldChargeCap();
-            shieldCharges[playerInput] = Mathf.Min(charges, cap);
+            return abilityPerks;
         }
 
-        public void AddShieldCharge(PlayerInput playerInput)
+        public IEnumerable<string> GetUpgradePerkNames()
         {
-            int current = GetShieldCharges(playerInput);
-            SetShieldCharges(playerInput, current + 1);
-        }
-
-        public void ConsumeShieldCharge(PlayerInput playerInput)
-        {
-            int current = GetShieldCharges(playerInput);
-            if (current > 0)
-            {
-                SetShieldCharges(playerInput, current - 1);
-            }
-        }
-
-        public void RegisterPlayer(PlayerInput playerInput)
-        {
-            if (!shieldCharges.ContainsKey(playerInput))
-            {
-                shieldCharges[playerInput] = 0;
-            }
-        }
-
-        public void UnregisterPlayer(PlayerInput playerInput)
-        {
-            if (shieldCharges.ContainsKey(playerInput))
-            {
-                shieldCharges.Remove(playerInput);
-            }
+            return upgradePerks;
         }
 
         public int GetPerkLevel(string perkName)
@@ -234,25 +183,6 @@ namespace SpiderSurge
             return true;
         }
 
-        public int GetShieldCapacity()
-        {
-            int baseCap = 1;
-            int level = GetPerkLevel("capacity");
-            return baseCap + level; // level 1: +1, level 2: +2
-        }
-
-        public float GetStillnessDuration()
-        {
-            int level = GetPerkLevel("stillness");
-            return level == 1 ? 15f : level == 2 ? 10f : 0f;
-        }
-
-        public float GetAirborneDuration()
-        {
-            int level = GetPerkLevel("airborne");
-            return level == 1 ? 10f : level == 2 ? 5f : 0f;
-        }
-
         public float GetShieldCooldown()
         {
             int level = GetPerkLevel("shieldCooldown");
@@ -267,10 +197,10 @@ namespace SpiderSurge
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
 
-        public string GetDisplayName(string name) => displayNames[name];
-        public string GetDescription(string name) => descriptions[name];
-        public string GetUpgradeDescription(string name) => upgradeDescriptions[name];
-        public int GetMaxLevel(string name) => maxLevels[name];
+        public string GetDisplayName(string name) => displayNames.ContainsKey(name) ? displayNames[name] : name;
+        public string GetDescription(string name) => descriptions.ContainsKey(name) ? descriptions[name] : "";
+        public string GetUpgradeDescription(string name) => upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+        public int GetMaxLevel(string name) => maxLevels.ContainsKey(name) ? maxLevels[name] : 1;
 
         public void SetPerkLevel(string perkKey, int level)
         {

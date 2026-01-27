@@ -23,13 +23,20 @@ namespace SpiderSurge
                 var existingMods = ModifierManager.instance.GetNonMaxedSurvivalMods();
                 Sprite icon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
 
-                // Define perks
-                var perks = PerksManager.Instance.GetAllPerkNames().Select(name => (name, PerksManager.Instance.GetDisplayName(name), PerksManager.Instance.GetDescription(name), PerksManager.Instance.GetUpgradeDescription(name), PerksManager.Instance.GetMaxLevel(name))).ToArray();
+                // Register ALL perks (abilities + upgrades) with ModifierManager so they have valid IDs
+                var allPerks = PerksManager.Instance.GetAllPerkNames()
+                    .Select(name => (
+                        name,
+                        PerksManager.Instance.GetDisplayName(name),
+                        PerksManager.Instance.GetDescription(name),
+                        PerksManager.Instance.GetUpgradeDescription(name),
+                        PerksManager.Instance.GetMaxLevel(name)
+                    )).ToArray();
 
                 var modifiersList = __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as System.Collections.Generic.List<Modifier> ?? new System.Collections.Generic.List<Modifier>();
                 var currModsState = __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(__instance) as ModifierManager.NetworkModifier[];
 
-                foreach (var (key, title, description, descriptionPlus, maxLevel) in perks)
+                foreach (var (key, title, description, descriptionPlus, maxLevel) in allPerks)
                 {
                     ModifierData data = ScriptableObject.CreateInstance<ModifierData>();
                     data.key = key;
@@ -55,10 +62,12 @@ namespace SpiderSurge
 
                 __instance.GetType().GetField("_modifiers", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, modifiersList);
                 __instance.GetType().GetField("_currModsState", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(__instance, currModsState);
+
+                Logger.LogInfo($"Registered {allPerks.Length} surge perks with ModifierManager (abilities + upgrades)");
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error adding Shield Ability modifiers: {ex.Message}");
+                Logger.LogError($"Error adding surge modifiers: {ex.Message}");
             }
         }
     }
@@ -71,10 +80,23 @@ namespace SpiderSurge
         {
             if (mode == GameMode.Wave && value > 0)
             {
-                PerksManager.Instance.SetPerkLevel(modifier.data.key, value);
+                // Handle all surge perks (abilities and upgrades)
+                if (PerksManager.Instance.GetAllPerkNames().Contains(modifier.data.key))
+                {
+                    PerksManager.Instance.SetPerkLevel(modifier.data.key, value);
+                    PerksManager.Instance.OnSelected(modifier.data.key);
 
-                var surgeManager = SurgeGameModeManager.Instance;
-                PerksManager.Instance.OnSelected(modifier.data.key);
+                    // If this was an ability perk, mark ability selection as occurred
+                    if (PerksManager.Instance.IsAbilityPerk(modifier.data.key))
+                    {
+                        if (PerksManager.Instance.IsFirstNormalPerkSelection)
+                        {
+                            PerksManager.Instance.IsFirstNormalPerkSelection = false;
+                            Logger.LogInfo("First perk selection completed");
+                        }
+                        Logger.LogInfo($"Ability {modifier.data.key} selected");
+                    }
+                }
             }
         }
     }
@@ -113,54 +135,34 @@ namespace SpiderSurge
         public static void Postfix(ref List<Modifier> __result)
         {
             var surgeManager = SurgeGameModeManager.Instance;
-            if (surgeManager == null) return;
+            if (surgeManager == null || !surgeManager.IsActive) return;
 
             var filtered = __result.Where(mod =>
             {
                 string key = mod.data.key;
+
+                // Check if this is a surge perk
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
-                    return PerksManager.Instance.IsAvailable(key);
+                    if (PerksManager.Instance.IsFirstNormalPerkSelection)
+                    {
+                        // First perk selection: only show ability perks
+                        return PerksManager.Instance.IsAbilityPerk(key) && PerksManager.Instance.IsAvailable(key);
+                    }
+                    else
+                    {
+                        // Subsequent selections: show upgrade perks (non-ability mod perks)
+                        return PerksManager.Instance.IsUpgradePerk(key) && PerksManager.Instance.IsAvailable(key);
+                    }
                 }
-                return true; // Other perks are always available
+
+                // Vanilla perks: exclude on first selection (abilities only), include on subsequent
+                return !PerksManager.Instance.IsFirstNormalPerkSelection;
             }).ToList();
 
-            // Separate mod and vanilla perks
-            var modPerks = filtered.Where(mod => PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key)).ToList();
-            var vanillaPerks = filtered.Where(mod => !PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key)).ToList();
+            __result = filtered;
 
-            Logger.LogInfo($"Available mod perks: {string.Join(", ", modPerks.Select(m => m.data.key))}");
-
-            var result = new List<Modifier>();
-
-            // Position 1: always mod
-            if (modPerks.Count > 0)
-            {
-                int index = UnityEngine.Random.Range(0, modPerks.Count);
-                result.Add(modPerks[index]);
-                modPerks.RemoveAt(index);
-            }
-
-            // For subsequent positions (up to 5 total perks)
-            for (int pos = 2; pos <= 5 && result.Count < 5; pos++)
-            {
-                float prob = 1f / (1 << (pos - 1)); // 1 / 2^(pos-1)
-                bool pickMod = UnityEngine.Random.value < prob;
-                if (pickMod && modPerks.Count > 0)
-                {
-                    int index = UnityEngine.Random.Range(0, modPerks.Count);
-                    result.Add(modPerks[index]);
-                    modPerks.RemoveAt(index);
-                }
-                else if (vanillaPerks.Count > 0)
-                {
-                    int index = UnityEngine.Random.Range(0, vanillaPerks.Count);
-                    result.Add(vanillaPerks[index]);
-                    vanillaPerks.RemoveAt(index);
-                }
-            }
-
-            __result = result;
+            Logger.LogInfo($"Available perks after filtering: {string.Join(", ", __result.Select(m => m.data.key))}");
         }
     }
 }

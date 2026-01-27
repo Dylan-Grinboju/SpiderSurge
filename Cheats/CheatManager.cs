@@ -19,7 +19,7 @@ namespace SpiderSurge
     /// \ - Freeze/Unfreeze enemy spawning
     /// = - Toggle spawn menus (weapons/enemies)
     /// - - Toggle modifiers menu (regular mods + surge perks)
-    /// ] - Add shield charge to all players
+
     /// </summary>
     public class CheatManager : MonoBehaviour
     {
@@ -44,9 +44,6 @@ namespace SpiderSurge
         private static readonly (string key, string title)[] _surgePerks = new (string key, string title)[]
         {
             ("shieldAbility", "Shield Ability"),
-            ("capacity", "Shield Capacity"),
-            ("stillness", "Stillness Charge"),
-            ("airborne", "Airborne Charge"),
             ("shieldCooldown", "Shield Cooldown"),
             ("shieldDuration", "Shield Duration")
         };
@@ -133,11 +130,7 @@ namespace SpiderSurge
                 Logger.LogInfo($"Modifiers menu {(_showModifiersMenu ? "SHOWN" : "HIDDEN")}");
             }
 
-            // ] - Add shield charge to all players
-            if (Keyboard.current.rightBracketKey.wasPressedThisFrame)
-            {
-                AddShieldChargeToAllPlayers();
-            }
+
         }
 
         public void ToggleFreezeEnemies()
@@ -191,37 +184,7 @@ namespace SpiderSurge
 
         }
 
-        public void AddShieldChargeToAllPlayers()
-        {
-            if (SurgeGameModeManager.Instance == null)
-            {
-                Logger.LogInfo("Cannot add shield charge - Surge mode not active");
-                return;
-            }
 
-            var playerControllers = LobbyController.instance?.GetPlayerControllers();
-            if (playerControllers == null || !playerControllers.Any())
-            {
-                Logger.LogInfo("No player controllers found");
-                return;
-            }
-
-            int chargesAdded = 0;
-            foreach (var playerController in playerControllers)
-            {
-                if (playerController != null)
-                {
-                    PlayerInput playerInput = PlayerInput.GetPlayerByIndex(playerController.playerInputIndex.Value);
-                    if (playerInput != null)
-                    {
-                        PerksManager.Instance.AddShieldCharge(playerInput);
-                        chargesAdded++;
-                    }
-                }
-            }
-
-            Logger.LogInfo($"Added shield charge to {chargesAdded} players!");
-        }
 
         public void AddLife()
         {

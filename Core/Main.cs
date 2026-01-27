@@ -42,8 +42,6 @@ namespace SpiderSurge
             new SurgeGameModeManager();
             // Create PerksManager singleton
             new GameObject("PerksManager").AddComponent<PerksManager>();
-            // Create PauseHandler singleton
-            new GameObject("PauseHandler").AddComponent<PauseHandler>();
             // Initialize CheatManager
             CheatManager.Initialize();
             // Check for updates asynchronously
