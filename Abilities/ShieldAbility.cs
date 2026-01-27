@@ -11,6 +11,7 @@ namespace SpiderSurge
     {
         public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
 
+        public override string PerkName => "shieldAbility";
         public override string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
         public override float Duration => PerksManager.Instance.GetShieldDuration();
         public override float CooldownTime => PerksManager.Instance.GetShieldCooldown();
@@ -24,39 +25,17 @@ namespace SpiderSurge
             }
         }
 
-        protected override bool ShouldRegister()
-        {
-            return PerksManager.Instance.IsShieldAbilityUnlocked;
-        }
-
-        protected override bool CanActivate()
-        {
-            return PerksManager.Instance.IsShieldAbilityUnlocked;
-        }
-
-        public override void Activate()
-        {
-            if (!CanActivate())
-            {
-                Logger.LogInfo($"Player {playerInput.playerIndex} tried to activate shield but ability is not unlocked");
-                return;
-            }
-            base.Activate();
-        }
-
         protected override void OnActivate()
         {
             if (spiderHealthSystem == null) return;
+
             if (spiderHealthSystem.HasShield())
             {
                 Logger.LogInfo($"Player {playerInput.playerIndex} already has shield active");
+                return;
             }
-            else
-            {
-                // Normal activation
-                spiderHealthSystem.EnableShield();
-                Logger.LogInfo($"Player {playerInput.playerIndex} activated shield");
-            }
+
+            spiderHealthSystem.EnableShield();
         }
 
         protected override void OnDeactivate()
@@ -100,12 +79,11 @@ namespace SpiderSurge
             try
             {
                 var breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (breakShieldMethod != null)
                 {
                     breakShieldMethod.Invoke(spiderHealthSystem, null);
-                    Logger.LogInfo($"Shield explosion animation triggered for player {playerInput.playerIndex}!");
                 }
                 else
                 {

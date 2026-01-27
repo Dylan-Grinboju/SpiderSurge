@@ -11,7 +11,6 @@ namespace SpiderSurge
     {
         public static PerksManager Instance { get; private set; }
 
-        public bool IsShieldAbilityUnlocked { get; private set; }
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
         // Ability perks - shown in special ability selection screen
@@ -127,7 +126,8 @@ namespace SpiderSurge
         {
             try
             {
-                Instance.IsShieldAbilityUnlocked = true;
+                Instance.SetPerkLevel("shieldAbility", 1);
+
                 // Register shield abilities with input interceptor now that they're unlocked
                 SpiderController[] players = FindObjectsOfType<SpiderController>();
                 foreach (SpiderController player in players)
@@ -138,7 +138,6 @@ namespace SpiderSurge
                         shieldAbility.RegisterWithInputInterceptor();
                     }
                 }
-                Logger.LogInfo("Shield ability unlocked and registered for all players");
             }
             catch (System.Exception ex)
             {

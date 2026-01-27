@@ -141,7 +141,6 @@ namespace SpiderSurge
             {
                 string key = mod.data.key;
 
-                // Check if this is a surge perk
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
                     if (PerksManager.Instance.IsFirstNormalPerkSelection)

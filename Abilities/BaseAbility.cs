@@ -7,6 +7,7 @@ namespace SpiderSurge
 {
     public abstract class BaseAbility : MonoBehaviour
     {
+        public abstract string PerkName { get; }
         protected PlayerInput playerInput;
         protected PlayerController playerController;
         protected SpiderHealthSystem spiderHealthSystem;
@@ -75,6 +76,12 @@ namespace SpiderSurge
 
         public virtual void Activate()
         {
+            if (!IsUnlocked())
+            {
+                Logger.LogInfo($"{GetType().Name} ability is not unlocked for player {playerInput.playerIndex}!");
+                return;
+            }
+
             if (onCooldown)
             {
                 Logger.LogInfo($"{GetType().Name} ability is on cooldown for player {playerInput.playerIndex}!");
@@ -84,11 +91,6 @@ namespace SpiderSurge
             if (isActive)
             {
                 Logger.LogInfo($"{GetType().Name} ability is already active for player {playerInput.playerIndex}!");
-                return;
-            }
-
-            if (!CanActivate())
-            {
                 return;
             }
 
@@ -112,7 +114,7 @@ namespace SpiderSurge
             {
                 isActive = false;
                 OnDeactivate();
-                Logger.LogInfo($"{GetType().Name} DEACTIVATED for player {playerInput.playerIndex}!");
+                Logger.LogInfo($"{GetType().Name} DEACTIVATED for player {playerInput.playerIndex}!, cooldown: {CooldownTime}s");
             }
         }
 
@@ -137,14 +139,14 @@ namespace SpiderSurge
             Logger.LogInfo($"{GetType().Name} cooldown reset for player {playerInput.playerIndex}");
         }
 
-        protected virtual bool ShouldRegister()
+        public bool IsUnlocked()
         {
-            return true;
+            return PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
         }
 
-        protected virtual bool CanActivate()
+        protected virtual bool ShouldRegister()
         {
-            return true;
+            return IsUnlocked();
         }
 
         public void RegisterWithInputInterceptor()
@@ -191,7 +193,6 @@ namespace SpiderSurge
         private IEnumerator CooldownCoroutine()
         {
             onCooldown = true;
-            Logger.LogInfo($"{GetType().Name} cooldown started for player {playerInput.playerIndex} ({CooldownTime}s)");
 
             yield return new WaitForSeconds(CooldownTime);
 
