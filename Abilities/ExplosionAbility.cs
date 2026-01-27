@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Reflection;
 using Unity.Netcode;
 using Interfaces;
 using Logger = Silk.Logger;
@@ -33,6 +34,9 @@ namespace SpiderSurge
 
         // Layer mask for detecting damageable objects
         private LayerMask explosionLayers;
+
+        // Cached explosion VFX prefab (obtained from SpiderHealthSystem at runtime)
+        private static GameObject cachedExplosionPrefab;
 
         protected override void Awake()
         {
@@ -92,6 +96,9 @@ namespace SpiderSurge
             {
                 Logger.LogWarning($"ExplosionAbility: Could not trigger camera effects: {ex.Message}");
             }
+
+            // Spawn explosion particle VFX
+            SpawnExplosionVFX(explosionPosition);
 
             // Only process damage/knockback on the host/server
             if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
@@ -155,8 +162,6 @@ namespace SpiderSurge
                 }
             }
 
-            Logger.LogInfo($"ExplosionAbility: Explosion hit {hitCount} targets, damaged {damageCount} at position {explosionPosition}");
-
             // Show visual circles for explosion radius
             CreateExplosionCircle(explosionPosition, DeathRadius, Color.red, 0.5f);
             CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 0.5f); // Orange for knockback
@@ -214,6 +219,86 @@ namespace SpiderSurge
             }
 
             Destroy(circleObj);
+        }
+
+        private void SpawnExplosionVFX(Vector3 position)
+        {
+            try
+            {
+                GameObject explosionPrefab = GetExplosionPrefab();
+                if (explosionPrefab == null)
+                {
+                    Logger.LogWarning("ExplosionAbility: Could not get explosion prefab");
+                    return;
+                }
+
+                // Instantiate the explosion VFX
+                GameObject explosionVFX = Object.Instantiate(explosionPrefab, position, Quaternion.identity);
+
+                // Scale the explosion based on our size multiplier
+                explosionVFX.transform.localScale *= ExplosionSizeMultiplier;
+
+                // Try to set the explosion color to match the player's color
+                if (playerController != null)
+                {
+                    try
+                    {
+                        Color playerColor = playerController.playerColor.Value;
+
+                        // Try ChangeExplosionColor component (used in BoomSpear)
+                        var changeColor = explosionVFX.GetComponent<ChangeExplosionColor>();
+                        if (changeColor != null)
+                        {
+                            changeColor.SetExplosionColor(playerColor);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.LogWarning($"ExplosionAbility: Could not set explosion color: {ex.Message}");
+                    }
+                }
+
+                Logger.LogInfo($"ExplosionAbility: Spawned explosion VFX at {position} with scale {ExplosionSizeMultiplier}");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"ExplosionAbility: Failed to spawn explosion VFX: {ex.Message}");
+            }
+        }
+
+        private GameObject GetExplosionPrefab()
+        {
+            // Return cached prefab if we have it
+            if (cachedExplosionPrefab != null)
+            {
+                return cachedExplosionPrefab;
+            }
+
+            // Try to get the DeadExplosionParticlePrefab from SpiderHealthSystem using reflection
+            if (spiderHealthSystem != null)
+            {
+                try
+                {
+                    FieldInfo prefabField = typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    if (prefabField != null)
+                    {
+                        cachedExplosionPrefab = prefabField.GetValue(spiderHealthSystem) as GameObject;
+                        if (cachedExplosionPrefab != null)
+                        {
+                            Logger.LogInfo("ExplosionAbility: Successfully obtained DeadExplosionParticlePrefab from SpiderHealthSystem");
+                            return cachedExplosionPrefab;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.LogWarning($"ExplosionAbility: Failed to get DeadExplosionParticlePrefab via reflection: {ex.Message}");
+                }
+            }
+
+            return null;
         }
 
         protected override void OnDestroy()
