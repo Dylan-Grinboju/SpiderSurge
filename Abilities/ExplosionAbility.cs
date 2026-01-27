@@ -233,7 +233,7 @@ namespace SpiderSurge
                 }
 
                 // Instantiate the explosion VFX
-                GameObject explosionVFX = Object.Instantiate(explosionPrefab, position, Quaternion.identity);
+                GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
 
                 // Scale the explosion based on our size multiplier
                 explosionVFX.transform.localScale *= ExplosionSizeMultiplier;

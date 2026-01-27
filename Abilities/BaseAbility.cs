@@ -18,6 +18,13 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
+        // Ability indicator settings
+        [Header("Ability Indicator")]
+        [SerializeField]
+        protected bool showIndicator = true;
+
+        protected AbilityIndicator abilityIndicator;
+
         public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
         
         // Base values that abilities should override
@@ -74,6 +81,9 @@ namespace SpiderSurge
             {
                 Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex}");
             }
+
+            // Create ability indicator if enabled and ability is unlocked
+            CreateAbilityIndicator();
         }
 
         protected virtual void Update()
@@ -81,7 +91,38 @@ namespace SpiderSurge
             if (spiderHealthSystem == null && playerController != null)
             {
                 spiderHealthSystem = playerController.spiderHealthSystem;
+
+                // Try to create indicator now that we have spiderHealthSystem
+                if (abilityIndicator == null && showIndicator && IsUnlocked())
+                {
+                    CreateAbilityIndicator();
+                }
             }
+        }
+
+        protected virtual void CreateAbilityIndicator()
+        {
+            if (!showIndicator || !IsUnlocked() || abilityIndicator != null)
+            {
+                return;
+            }
+
+            // Need spiderHealthSystem for the target transform
+            if (spiderHealthSystem == null)
+            {
+                // Will try again in Update when spiderHealthSystem is available
+                return;
+            }
+
+            // Create a new GameObject for the indicator
+            GameObject indicatorObj = new GameObject($"{GetType().Name}_Indicator");
+            abilityIndicator = indicatorObj.AddComponent<AbilityIndicator>();
+
+            // Initialize with this ability and the spider's transform
+            // Radius and offset can be adjusted via Unity Inspector on the AbilityIndicator component
+            abilityIndicator.Initialize(this, spiderHealthSystem.transform);
+
+            Logger.LogInfo($"{GetType().Name} ability indicator created for player {playerInput?.playerIndex}");
         }
 
         public virtual void Activate()
@@ -231,6 +272,13 @@ namespace SpiderSurge
             if (cooldownCoroutine != null)
             {
                 StopCoroutine(cooldownCoroutine);
+            }
+
+            // Clean up ability indicator
+            if (abilityIndicator != null)
+            {
+                Destroy(abilityIndicator.gameObject);
+                abilityIndicator = null;
             }
         }
     }

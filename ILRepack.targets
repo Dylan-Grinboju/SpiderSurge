@@ -40,7 +40,7 @@
         <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.Mdb.dll" />
         <ILRepackInputAssemblies Include="$(OutputPath)\Mono.Cecil.Pdb.dll" />
         </ItemGroup>
-      <Exec Command="&quot;$(ILRepackExe)&quot; /out:&quot;$(OutputPath)\$(TargetFileName)&quot; @(ILRepackInputAssemblies->'&quot;%(Identity)&quot;', ' ') /lib:&quot;$(OutputPath)&quot; /internalize" />
+      <Exec Command="&quot;$(ILRepackExe)&quot; /out:&quot;$(OutputPath)\$(TargetFileName)&quot; @(ILRepackInputAssemblies->'&quot;%(Identity)&quot;', ' ') /lib:&quot;$(OutputPath)&quot; /lib:&quot;$(MSBuildProjectDirectory)\lib&quot; /internalize" />
 
       <Message Text="Successfully merged all dependencies into $(TargetFileName)" Importance="High" />
       
