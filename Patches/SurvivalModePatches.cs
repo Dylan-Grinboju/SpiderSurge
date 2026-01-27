@@ -13,6 +13,23 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
     public class SurvivalMode_StartGame_Patch
     {
+        [HarmonyPrefix]
+        public static void Prefix(ref SurvivalConfig survivalConfig)
+        {
+            if (ModConfig.enableSurgeMode && survivalConfig != null)
+            {
+                SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
+                surgeConfig.name = survivalConfig.name + "_Surge";
+
+                // Double the enemy budget to spawn twice as many enemies
+                surgeConfig.startingBudget *= 2f;
+                surgeConfig.budgetPerWave *= 2f;
+                surgeConfig.budgetPerPlayer *= 2f;
+
+                survivalConfig = surgeConfig;
+            }
+        }
+
         [HarmonyPostfix]
         public static void Postfix(bool __result, SurvivalConfig survivalConfig)
         {

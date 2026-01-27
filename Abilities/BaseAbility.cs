@@ -109,6 +109,20 @@ namespace SpiderSurge
             // Radius and offset can be adjusted via Unity Inspector on the AbilityIndicator component
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
 
+            // Apply configuration values from ModConfig
+            try
+            {
+                abilityIndicator.SetRadius(ModConfig.IndicatorRadius);
+                abilityIndicator.SetOffset(new Vector3(ModConfig.IndicatorOffsetX, ModConfig.IndicatorOffsetY, 0f));
+                abilityIndicator.SetAvailableColor(ModConfig.IndicatorAvailableColor);
+                abilityIndicator.SetCooldownColor(ModConfig.IndicatorCooldownColor);
+                abilityIndicator.SetShowOnlyWhenReady(ModConfig.IndicatorShowOnlyWhenReady);
+            }
+            catch (System.Exception)
+            {
+                // If ModConfig isn't available for some reason, silently continue with defaults
+            }
+
         }
 
         public virtual void Activate()

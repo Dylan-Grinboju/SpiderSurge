@@ -23,14 +23,13 @@ namespace SpiderSurge
         [Tooltip("Color when ability is on cooldown")]
         public Color cooldownColor = Color.red;
 
-        // Reference to the ability this indicator is tracking
+        [Header("Visibility")]
+        [SerializeField]
+        [Tooltip("If true, the indicator will only be visible when the ability is ready")]
+        public bool showOnlyWhenReady = false;
         private BaseAbility trackedAbility;
-
-        // The visual circle GameObject
         private GameObject circleObject;
         private SpriteRenderer spriteRenderer;
-
-        // Transform to follow
         private Transform targetTransform;
 
         public void Initialize(BaseAbility ability, Transform followTarget)
@@ -44,21 +43,15 @@ namespace SpiderSurge
 
         private void CreateIndicatorVisual()
         {
-            // Create a child GameObject for the indicator
             circleObject = new GameObject("AbilityIndicatorDot");
             circleObject.transform.SetParent(transform);
-            
-            // Add SpriteRenderer for the dot
-            spriteRenderer = circleObject.AddComponent<SpriteRenderer>();
 
-            // Create a simple circle sprite programmatically
+            spriteRenderer = circleObject.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = CreateCircleSprite();
 
             // Set to highest possible sorting order to render on top of other sprites
             spriteRenderer.sortingLayerName = "Foreground";
             spriteRenderer.sortingOrder = 32767;
-
-            // Set initial scale based on radius
             UpdateIndicatorScale();
         }
 
@@ -102,9 +95,6 @@ namespace SpiderSurge
         {
             if (circleObject != null)
             {
-                // Scale the sprite to match the desired radius
-                // The sprite is 64 pixels at 100 pixels/unit = 0.64 units diameter
-                // We want it to have diameter = indicatorRadius * 2
                 float targetDiameter = indicatorRadius * 2f;
                 float currentDiameter = 0.64f;
                 float scale = targetDiameter / currentDiameter;
@@ -122,10 +112,7 @@ namespace SpiderSurge
             // Follow the target with offset
             transform.position = targetTransform.position + offset;
 
-            // Update the visual state
             UpdateIndicatorState();
-
-            // Update scale in case it was modified in inspector
             UpdateIndicatorScale();
         }
 
@@ -136,12 +123,17 @@ namespace SpiderSurge
                 return;
             }
 
-            // Determine the color based on ability state
-            // Green if ability is unlocked and not on cooldown
-            // Red if ability is on cooldown or not unlocked
             bool canUse = trackedAbility.IsUnlocked() && !trackedAbility.IsOnCooldown() && !trackedAbility.IsActive();
-
             spriteRenderer.color = canUse ? availableColor : cooldownColor;
+
+            if (showOnlyWhenReady)
+            {
+                spriteRenderer.enabled = canUse;
+            }
+            else
+            {
+                spriteRenderer.enabled = true;
+            }
         }
 
         public void SetRadius(float newRadius)
@@ -153,6 +145,21 @@ namespace SpiderSurge
         public void SetOffset(Vector3 newOffset)
         {
             offset = newOffset;
+        }
+
+        public void SetAvailableColor(Color c)
+        {
+            availableColor = c;
+        }
+
+        public void SetCooldownColor(Color c)
+        {
+            cooldownColor = c;
+        }
+
+        public void SetShowOnlyWhenReady(bool v)
+        {
+            showOnlyWhenReady = v;
         }
 
         private void OnDestroy()

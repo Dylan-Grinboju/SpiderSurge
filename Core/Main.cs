@@ -76,6 +76,13 @@ namespace SpiderSurge
             var defaultConfig = new Dictionary<string, object>
             {
                 { "EnableSurgeMode", true },
+                // Ability indicator defaults
+                { "indicator.radius", 1.5f },
+                { "indicator.offset.x", 3f },
+                { "indicator.offset.y", 8f },
+                { "indicator.availableColor", "#00FF00" },
+                { "indicator.cooldownColor", "#FF0000" },
+                { "indicator.showOnlyWhenReady", false },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)
