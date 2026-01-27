@@ -44,8 +44,9 @@ namespace SpiderSurge
         private static readonly (string key, string title)[] _surgePerks = new (string key, string title)[]
         {
             ("shieldAbility", "Shield Ability"),
-            ("shieldCooldown", "Shield Cooldown"),
-            ("shieldDuration", "Shield Duration")
+            ("infiniteAmmoAbility", "Infinite Ammo Ability"),
+            ("abilityCooldown", "Ability Cooldown"),
+            ("abilityDuration", "Ability Duration")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -654,10 +655,17 @@ namespace SpiderSurge
 
             PerksManager.Instance.SetPerkLevel(key, nextLevel);
 
-            // Apply perk effects
-            if (key == "shieldAbility" && nextLevel > 0)
+            // Apply perk effects for abilities
+            if (nextLevel > 0)
             {
-                PerksManager.EnableShieldAbility();
+                if (key == "shieldAbility")
+                {
+                    PerksManager.EnableShieldAbility();
+                }
+                else if (key == "infiniteAmmoAbility")
+                {
+                    PerksManager.EnableInfiniteAmmoAbility();
+                }
             }
 
             Logger.LogInfo($"Surge perk '{key}' set to level {nextLevel}");
