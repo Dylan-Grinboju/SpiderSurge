@@ -33,6 +33,7 @@ namespace SpiderSurge
         private InputAction leftStickPressAction;
         private InputAction rightStickPressAction;
         private InputAction upgradeButtonAction;
+        private InputAction dpadActivationAction;
         private bool leftStickPressed = false;
         private bool rightStickPressed = false;
         private float lastLeftStickPressTime = 0f;
@@ -107,27 +108,47 @@ namespace SpiderSurge
         {
             try
             {
-                // Dual stick combo: left stick press
-                leftStickPressAction = new InputAction(
-                    name: $"{GetType().Name}_LeftStickPress",
-                    type: InputActionType.Button,
-                    binding: "<Gamepad>/leftStickPress"
-                );
-                leftStickPressAction.performed += OnLeftStickPressed;
-                leftStickPressAction.canceled += OnLeftStickReleased;
-                leftStickPressAction.Enable();
+                bool useDpad = ModConfig.UpgradeUseDpadActivation;
+                Logger.LogInfo($"Ability {GetType().Name} Upgrade Config: useDpad={useDpad}");
 
-                // Dual stick combo: right stick press
-                rightStickPressAction = new InputAction(
-                    name: $"{GetType().Name}_RightStickPress",
-                    type: InputActionType.Button,
-                    binding: "<Gamepad>/rightStickPress"
-                );
-                rightStickPressAction.performed += OnRightStickPressed;
-                rightStickPressAction.canceled += OnRightStickReleased;
-                rightStickPressAction.Enable();
+                if (useDpad)
+                {
+                    // D-pad activation: any D-pad direction activates the upgrade
+                    dpadActivationAction = new InputAction(
+                        name: $"{GetType().Name}_DpadActivation",
+                        type: InputActionType.Button
+                    );
+                    dpadActivationAction.AddBinding("<Gamepad>/dpad/up");
+                    dpadActivationAction.AddBinding("<Gamepad>/dpad/down");
+                    dpadActivationAction.AddBinding("<Gamepad>/dpad/left");
+                    dpadActivationAction.AddBinding("<Gamepad>/dpad/right");
+                    dpadActivationAction.performed += OnDpadPressed;
+                    dpadActivationAction.Enable();
+                }
+                else
+                {
+                    // Dual stick combo: left stick press
+                    leftStickPressAction = new InputAction(
+                        name: $"{GetType().Name}_LeftStickPress",
+                        type: InputActionType.Button,
+                        binding: "<Gamepad>/leftStickPress"
+                    );
+                    leftStickPressAction.performed += OnLeftStickPressed;
+                    leftStickPressAction.canceled += OnLeftStickReleased;
+                    leftStickPressAction.Enable();
 
-                // Keyboard upgrade button
+                    // Dual stick combo: right stick press
+                    rightStickPressAction = new InputAction(
+                        name: $"{GetType().Name}_RightStickPress",
+                        type: InputActionType.Button,
+                        binding: "<Gamepad>/rightStickPress"
+                    );
+                    rightStickPressAction.performed += OnRightStickPressed;
+                    rightStickPressAction.canceled += OnRightStickReleased;
+                    rightStickPressAction.Enable();
+                }
+
+                // Keyboard upgrade button (always available)
                 if (!string.IsNullOrEmpty(UpgradeActivationButton))
                 {
                     upgradeButtonAction = new InputAction(
@@ -143,6 +164,12 @@ namespace SpiderSurge
             {
                 Logger.LogError($"Error setting up upgrade inputs for {GetType().Name}: {ex.Message}");
             }
+        }
+
+        private void OnDpadPressed(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            ActivateUpgrade();
         }
 
         private void OnLeftStickPressed(InputAction.CallbackContext context)
@@ -247,6 +274,7 @@ namespace SpiderSurge
                 abilityIndicator.SetOffset(new Vector3(ModConfig.IndicatorOffsetX, ModConfig.IndicatorOffsetY, 0f));
                 abilityIndicator.SetAvailableColor(ModConfig.IndicatorAvailableColor);
                 abilityIndicator.SetCooldownColor(ModConfig.IndicatorCooldownColor);
+                abilityIndicator.SetActiveColor(ModConfig.IndicatorActiveColor);
                 abilityIndicator.SetShowOnlyWhenReady(ModConfig.IndicatorShowOnlyWhenReady);
             }
             catch (System.Exception)
@@ -460,6 +488,12 @@ namespace SpiderSurge
                 upgradeButtonAction.performed -= OnUpgradeButtonPressed;
                 upgradeButtonAction.Disable();
                 upgradeButtonAction.Dispose();
+            }
+            if (dpadActivationAction != null)
+            {
+                dpadActivationAction.performed -= OnDpadPressed;
+                dpadActivationAction.Disable();
+                dpadActivationAction.Dispose();
             }
 
             if (durationCoroutine != null)

@@ -82,7 +82,10 @@ namespace SpiderSurge
                 { "indicator.offset.y", 8f },
                 { "indicator.availableColor", "#00FF00" },
                 { "indicator.cooldownColor", "#FF0000" },
+                { "indicator.activeColor", "#0000FF" },
                 { "indicator.showOnlyWhenReady", false },
+                // Upgrade activation
+                { "UseDpadForAbilities", false },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)

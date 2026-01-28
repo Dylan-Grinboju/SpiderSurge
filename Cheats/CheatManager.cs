@@ -47,11 +47,7 @@ namespace SpiderSurge
             ("infiniteAmmoAbility", "Infinite Ammo Ability"),
             ("explosionAbility", "Explosion Ability"),
             ("abilityCooldown", "Ability Cooldown"),
-            ("abilityDuration", "Ability Duration"),
-            // Ability upgrades (require base ability)
-            ("shieldAbilityUpgrade", "Shield Immunity (Upgrade)"),
-            ("infiniteAmmoAbilityUpgrade", "Weapon Arsenal (Upgrade)"),
-            ("explosionAbilityUpgrade", "Deadly Explosion (Upgrade)")
+            ("abilityDuration", "Ability Duration")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -556,9 +552,16 @@ namespace SpiderSurge
 
             foreach (var (key, title) in _surgePerks)
             {
-                int currentLevel = SurgeGameModeManager.Instance != null
-                    ? PerksManager.Instance.GetPerkLevel(key)
-                    : 0;
+                int currentLevel = 0;
+                if (SurgeGameModeManager.Instance != null)
+                {
+                    currentLevel = PerksManager.Instance.GetPerkLevel(key);
+                    // Add upgrade level for abilities
+                    if (key.EndsWith("Ability"))
+                    {
+                        currentLevel += PerksManager.Instance.GetPerkLevel(key + "Upgrade");
+                    }
+                }
 
                 string levelSuffix = currentLevel == 2 ? " ++" : currentLevel == 1 ? " +" : "";
                 string buttonText = $"{title}{levelSuffix}";
@@ -607,47 +610,48 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance == null) return;
 
-            int currentLevel = PerksManager.Instance.GetPerkLevel(key);
-            int maxLevel = GetMaxLevelForPerk(key);
-            int nextLevel;
-
-            if (currentLevel == 0)
-                nextLevel = 1;
-            else if (currentLevel == 1 && maxLevel >= 2)
-                nextLevel = 2;
-            else
-                nextLevel = 0;
-
-            PerksManager.Instance.SetPerkLevel(key, nextLevel);
-
-            // Apply perk effects for abilities
-            if (nextLevel > 0)
+            // Handle abilities (level 1 -> level 2 upgrade -> reset)
+            if (key.EndsWith("Ability"))
             {
-                if (key == "shieldAbility")
-                {
-                    PerksManager.EnableShieldAbility();
-                }
-                else if (key == "infiniteAmmoAbility")
-                {
-                    PerksManager.EnableInfiniteAmmoAbility();
-                }
-                else if (key == "explosionAbility")
-                {
-                    PerksManager.EnableExplosionAbility();
-                }
+                int baseLevel = PerksManager.Instance.GetPerkLevel(key);
+                string upgradeKey = key + "Upgrade";
+                int upgradeLevel = PerksManager.Instance.GetPerkLevel(upgradeKey);
 
-                // Enable upgrade perk when ability reaches level 2
-                if (nextLevel == 2)
+                if (baseLevel == 0)
                 {
-                    string upgradePerkKey = key + "Upgrade";
-                    PerksManager.Instance.SetPerkLevel(upgradePerkKey, 1);
+                    // Activate base ability
+                    if (key == "shieldAbility") PerksManager.EnableShieldAbility();
+                    else if (key == "infiniteAmmoAbility") PerksManager.EnableInfiniteAmmoAbility();
+                    else if (key == "explosionAbility") PerksManager.EnableExplosionAbility();
+                    else PerksManager.Instance.SetPerkLevel(key, 1);
+                }
+                else if (baseLevel == 1 && upgradeLevel == 0)
+                {
+                    // Activate upgrade
+                    PerksManager.Instance.SetPerkLevel(upgradeKey, 1);
+                }
+                else
+                {
+                    // Reset both
+                    PerksManager.Instance.SetPerkLevel(key, 0);
+                    PerksManager.Instance.SetPerkLevel(upgradeKey, 0);
                 }
             }
             else
             {
-                // When resetting ability to 0, also reset its upgrade
-                string upgradePerkKey = key + "Upgrade";
-                PerksManager.Instance.SetPerkLevel(upgradePerkKey, 0);
+                // Handle standard perks (cooldown, duration)
+                int currentLevel = PerksManager.Instance.GetPerkLevel(key);
+                int maxLevel = GetMaxLevelForPerk(key);
+                int nextLevel;
+
+                if (currentLevel == 0)
+                    nextLevel = 1;
+                else if (currentLevel == 1 && maxLevel >= 2)
+                    nextLevel = 2;
+                else
+                    nextLevel = 0;
+
+                PerksManager.Instance.SetPerkLevel(key, nextLevel);
             }
         }
 

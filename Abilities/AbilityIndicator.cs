@@ -23,6 +23,10 @@ namespace SpiderSurge
         [Tooltip("Color when ability is on cooldown")]
         public Color cooldownColor = Color.red;
 
+        [SerializeField]
+        [Tooltip("Color when ability is currently active")]
+        public Color activeColor = Color.blue;
+
         [Header("Visibility")]
         [SerializeField]
         [Tooltip("If true, the indicator will only be visible when the ability is ready")]
@@ -123,8 +127,22 @@ namespace SpiderSurge
                 return;
             }
 
-            bool canUse = trackedAbility.IsUnlocked() && !trackedAbility.IsOnCooldown() && !trackedAbility.IsActive();
-            spriteRenderer.color = canUse ? availableColor : cooldownColor;
+            bool isActive = trackedAbility.IsActive();
+            bool canUse = trackedAbility.IsUnlocked() && !trackedAbility.IsOnCooldown() && !isActive;
+            
+            // Priority: Active (blue) > Cooldown (red) > Available (green)
+            if (isActive)
+            {
+                spriteRenderer.color = activeColor;
+            }
+            else if (canUse)
+            {
+                spriteRenderer.color = availableColor;
+            }
+            else
+            {
+                spriteRenderer.color = cooldownColor;
+            }
 
             if (showOnlyWhenReady)
             {
@@ -160,6 +178,11 @@ namespace SpiderSurge
         public void SetShowOnlyWhenReady(bool v)
         {
             showOnlyWhenReady = v;
+        }
+
+        public void SetActiveColor(Color c)
+        {
+            activeColor = c;
         }
 
         private void OnDestroy()

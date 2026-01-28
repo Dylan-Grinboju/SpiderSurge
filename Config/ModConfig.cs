@@ -18,7 +18,11 @@ namespace SpiderSurge
         public static float IndicatorOffsetY => Config.GetModConfigValue(ModId, "indicator.offset.y", 8f);
         public static Color IndicatorAvailableColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.availableColor", "#00FF00"), Color.green);
         public static Color IndicatorCooldownColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.cooldownColor", "#FF0000"), Color.red);
+        public static Color IndicatorActiveColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.activeColor", "#0000FF"), Color.blue);
         public static bool IndicatorShowOnlyWhenReady => Config.GetModConfigValue(ModId, "indicator.showOnlyWhenReady", false);
+
+        // Upgrade activation configuration
+        public static bool UpgradeUseDpadActivation => Config.GetModConfigValue(ModId, "UseDpadForAbilities", false);
 
         private static float ValidateIndicatorRadius(float value)
         {
