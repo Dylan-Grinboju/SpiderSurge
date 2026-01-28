@@ -27,6 +27,12 @@ namespace SpiderSurge
         // Cached reflection field for immunity
         private static FieldInfo immuneTimeField;
 
+        private bool hadShieldOnActivate = false;
+
+        // Track if the current activation is an Ultimate
+        private bool isUltSession = false;
+        private bool wasHitDuringUltimate = false;
+
         protected override void Awake()
         {
             base.Awake();
@@ -38,19 +44,50 @@ namespace SpiderSurge
             // Cache reflection field for immunity
             if (immuneTimeField == null)
             {
-                immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                // Field name is _immuneTill (was incorrectly _immuneTime)
+                immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                     BindingFlags.NonPublic | BindingFlags.Instance);
+                    
+                if (immuneTimeField == null)
+                {
+                    Logger.LogError("ShieldAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
+                }
             }
+        }
+
+        public static ShieldAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
+        {
+            foreach (var ability in playerShields.Values)
+            {
+                if (ability.spiderHealthSystem == healthSystem)
+                    return ability;
+            }
+            return null;
+        }
+
+        public void RegisterHit()
+        {
+            if (isActive && isUltSession)
+            {
+                wasHitDuringUltimate = true;
+            }
+        }
+
+        public override void Activate()
+        {         
+            if (spiderHealthSystem != null && spiderHealthSystem.HasShield())
+            {
+                return;
+            }
+
+            base.Activate();
         }
 
         protected override void OnActivate()
         {
+            isUltSession = false; // Normal activation
+            
             if (spiderHealthSystem == null) return;
-
-            if (spiderHealthSystem.HasShield())
-            {
-                return;
-            }
 
             spiderHealthSystem.EnableShield();
         }
@@ -59,13 +96,33 @@ namespace SpiderSurge
         {
             if (spiderHealthSystem != null)
             {
-                DestroyShield();
-                spiderHealthSystem.DisableShield();
+                bool shouldKeepShield = false;
+
+                // if player had shield before Ult and didn't get hit, keep it
+                if (isUltSession && hadShieldOnActivate && !wasHitDuringUltimate)
+                {
+                    shouldKeepShield = true;
+                }
+
+                if (!shouldKeepShield)
+                {
+                    DestroyShield();
+                    spiderHealthSystem.DisableShield();
+                }
             }
+            
+            isUltSession = false;
+            wasHitDuringUltimate = false;
         }
 
         protected override void OnActivateUltimate()
         {
+            isUltSession = true;
+            wasHitDuringUltimate = false;
+            
+            // Record state before applying anything
+            hadShieldOnActivate = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+
             ApplyImmunity(true);
 
             // Also enable shield visual
@@ -74,39 +131,41 @@ namespace SpiderSurge
                 spiderHealthSystem.EnableShield();
             }
             
-            Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}");
+            Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}. HadShield: {hadShieldOnActivate}");
         }
 
         protected override void OnDeactivateUltimate()
         {
             ApplyImmunity(false);
             
-            Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}");
+            Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}. WasHit: {wasHitDuringUltimate}");
         }
 
         private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
 
-            // Removed isTrigger modification to prevent falling through map or getting stuck in walls
-            var colliders = spiderHealthSystem.GetComponents<Collider2D>();
-            foreach (var collider in colliders)
-            {
-                if (collider != null)
-                {
-                    collider.isTrigger = enable;
-                }
-            }
-
             if (enable)
             {
                 try
                 {
-                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
                     if (immuneTimeField != null)
                     {
                         immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
+                    }
+                    else
+                    {
+                         // Try to get it one more time if cached is null (fallback)
+                         var field = typeof(SpiderHealthSystem).GetField("_immuneTill", BindingFlags.NonPublic | BindingFlags.Instance);
+                         if (field != null)
+                         {
+                             immuneTimeField = field;
+                             field.SetValue(spiderHealthSystem, float.MaxValue);
+                         }
+                         else
+                         {
+                             Logger.LogError("Could not find _immuneTill field in SpiderHealthSystem");
+                         }
                     }
                 }
                 catch (System.Exception ex)
@@ -118,11 +177,10 @@ namespace SpiderSurge
             {
                 try
                 {
-                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
                     if (immuneTimeField != null)
                     {
-                        immuneTimeField.SetValue(spiderHealthSystem, 0f);
+                        // Reset immunity to current time (expired)
+                        immuneTimeField.SetValue(spiderHealthSystem, Time.time);
                     }
                 }
                 catch (System.Exception ex)

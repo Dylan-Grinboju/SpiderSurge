@@ -80,11 +80,17 @@ namespace SpiderSurge
         {
             if (mode == GameMode.Wave && value > 0)
             {
+                string key = modifier.data.key;
                 // Handle all surge perks (abilities and upgrades)
-                if (PerksManager.Instance.GetAllPerkNames().Contains(modifier.data.key))
+                if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
-                    PerksManager.Instance.SetPerkLevel(modifier.data.key, value);
-                    PerksManager.Instance.OnSelected(modifier.data.key);
+                    // If selecting level 2 when level was 0, also set level 1
+                    if (value == 2 && PerksManager.Instance.GetPerkLevel(key) == 0)
+                    {
+                        PerksManager.Instance.SetPerkLevel(key, 1);
+                    }
+                    PerksManager.Instance.SetPerkLevel(key, value);
+                    PerksManager.Instance.OnSelected(key);
 
                     // If this was an ability perk, mark ability selection as occurred
                     if (PerksManager.Instance.IsAbilityPerk(modifier.data.key))
@@ -93,6 +99,18 @@ namespace SpiderSurge
                         {
                             PerksManager.Instance.IsFirstNormalPerkSelection = false;
                         }
+                    }
+
+                    // If this was selected during post-30 wave perk selection, reset the flag
+                    if (PerksManager.Instance.IsPost30WavePerkSelection)
+                    {
+                        PerksManager.Instance.IsPost30WavePerkSelection = false;
+                    }
+
+                    // If this was selected during post-60 wave perk selection, reset the flag
+                    if (PerksManager.Instance.IsPost60WavePerkSelection)
+                    {
+                        PerksManager.Instance.IsPost60WavePerkSelection = false;
                     }
                 }
             }
@@ -115,12 +133,30 @@ namespace SpiderSurge
 
                 if (perkNameText != null)
                 {
-                    perkNameText.text = PerksManager.Instance.GetDisplayName(key);
+                    string displayName = PerksManager.Instance.GetDisplayName(key);
+                    if (m.levelInSurvival == 1 && PerksManager.Instance.GetPerkLevel(key) == 0)
+                    {
+                        displayName += " Level 2";
+                    }
+                    else if (m.levelInSurvival == 1)
+                    {
+                        displayName += " +";
+                    }
+                    perkNameText.text = displayName;
                 }
 
                 if (perkDescriptionText != null)
                 {
-                    perkDescriptionText.text = PerksManager.Instance.GetDescription(key);
+                    string description = PerksManager.Instance.GetDescription(key);
+                    if (m.levelInSurvival == 1 && PerksManager.Instance.GetPerkLevel(key) == 0)
+                    {
+                        description = "Unlocks both levels of " + description.ToLower();
+                    }
+                    else if (m.levelInSurvival == 1)
+                    {
+                        description = PerksManager.Instance.GetUpgradeDescription(key);
+                    }
+                    perkDescriptionText.text = description;
                 }
             }
         }
@@ -135,16 +171,59 @@ namespace SpiderSurge
             var surgeManager = SurgeGameModeManager.Instance;
             if (surgeManager == null || !surgeManager.IsActive) return;
 
+            HashSet<string> allowedPerks = null;
+
+            if (PerksManager.Instance.IsPost60WavePerkSelection)
+            {
+                allowedPerks = new HashSet<string>();
+
+                // Add ults of not unlocked abilities
+                foreach (var ult in PerksManager.Instance.GetAbilityUltimatePerkNames())
+                {
+                    string baseAbility = ult.Replace("Ultimate", "");
+                    if (PerksManager.Instance.GetPerkLevel(baseAbility) == 0)
+                    {
+                        allowedPerks.Add(ult);
+                    }
+                }
+
+                // Add one random unchosen upgrade perk if available
+                var unchosenUpgrades = PerksManager.Instance.GetUpgradePerkNames()
+                    .Where(p => PerksManager.Instance.GetPerkLevel(p) == 0 && PerksManager.Instance.IsAvailable(p))
+                    .ToList();
+                if (unchosenUpgrades.Any())
+                {
+                    string randomUpgrade = unchosenUpgrades[UnityEngine.Random.Range(0, unchosenUpgrades.Count)];
+                    allowedPerks.Add(randomUpgrade);
+                }
+            }
+
             var filtered = __result.Where(mod =>
             {
                 string key = mod.data.key;
 
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
-                    if (PerksManager.Instance.IsFirstNormalPerkSelection)
+                    if (allowedPerks != null)
+                    {
+                        // For post-60, only show allowed perks
+                        return allowedPerks.Contains(key);
+                    }
+                    else if (PerksManager.Instance.IsFirstNormalPerkSelection)
                     {
                         // First perk selection: only show ability perks
                         return PerksManager.Instance.IsAbilityPerk(key) && PerksManager.Instance.IsAvailable(key);
+                    }
+                    else if (PerksManager.Instance.IsPost30WavePerkSelection)
+                    {
+                        // Post-30 wave perk selection: show ult and unchosen upgrade perks
+                        string ult = PerksManager.Instance.GetChosenAbilityUltimate();
+                        if (key == ult && PerksManager.Instance.IsAvailable(key))
+                        {
+                            return true; // Ult first
+                        }
+                        // Then unchosen upgrade perks
+                        return PerksManager.Instance.IsUpgradePerk(key) && PerksManager.Instance.GetPerkLevel(key) == 0 && PerksManager.Instance.IsAvailable(key);
                     }
                     else
                     {
@@ -153,11 +232,40 @@ namespace SpiderSurge
                     }
                 }
 
-                // Vanilla perks: exclude on first selection (abilities only), include on subsequent
-                return !PerksManager.Instance.IsFirstNormalPerkSelection;
+                // Vanilla perks: exclude on first selection (abilities only), include on subsequent or when no upgrade perks available for post-60
+                return !PerksManager.Instance.IsFirstNormalPerkSelection || (allowedPerks != null && !allowedPerks.Any(p => PerksManager.Instance.IsUpgradePerk(p)));
+            }).OrderBy(mod => 
+            {
+                string key = mod.data.key;
+                if (PerksManager.Instance.IsPost30WavePerkSelection)
+                {
+                    string ult = PerksManager.Instance.GetChosenAbilityUltimate();
+                    if (key == ult) return 0; // Ult first
+                    else return 1; // Others after
+                }
+                else if (PerksManager.Instance.IsPost60WavePerkSelection)
+                {
+                    if (PerksManager.Instance.GetAbilityUltimatePerkNames().Contains(key)) return 0; // Ults first
+                    else return 1; // Upgrade after
+                }
+                return 0; // Default order
             }).ToList();
 
             __result = filtered;
+
+            // Apply perk luck: randomly upgrade some level 1 choices to level 2 choices
+            if (PerksManager.Instance.GetPerkLevel("perkLuck") > 0)
+            {
+                float chance = PerksManager.Instance.GetPerkLuckChance();
+                foreach (var mod in __result)
+                {
+                    string key = mod.data.key;
+                    if (PerksManager.Instance.IsUpgradePerk(key) && PerksManager.Instance.GetMaxLevel(key) > 1 && PerksManager.Instance.GetPerkLevel(key) == 0 && UnityEngine.Random.value < chance)
+                    {
+                        mod.levelInSurvival = 1; // Make it a level 2 choice
+                    }
+                }
+            }
 
             Logger.LogInfo($"Available perks after filtering: {string.Join(", ", __result.Select(m => m.data.key))}");
         }

@@ -49,7 +49,8 @@ namespace SpiderSurge
             ("abilityCooldown", "Ability Cooldown"),
             ("abilityDuration", "Ability Duration"),
             ("shortTermInvestment", "Short Term Investment"),
-            ("longTermInvestment", "Long Term Investment")
+            ("longTermInvestment", "Long Term Investment"),
+            ("perkLuck", "Perk Luck")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -290,37 +291,20 @@ namespace SpiderSurge
         {
             if (player == null) return;
 
-            var rb = player.GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                if (enable)
-                {
-                    rb.gravityScale = 0f;
-                }
-                else
-                {
-                    rb.gravityScale = 2f;
-                }
-            }
-
-            var colliders = player.GetComponents<Collider2D>();
-            foreach (var collider in colliders)
-            {
-                if (collider != null)
-                {
-                    collider.isTrigger = enable;
-                }
-            }
-
             if (enable)
             {
                 try
                 {
-                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                    // Fixed field name from _immuneTime to _immuneTill
+                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     if (immuneTimeField != null)
                     {
                         immuneTimeField.SetValue(player, float.MaxValue);
+                    }
+                    else
+                    {
+                        Logger.LogError("CheatManager: Could not find _immuneTill field for God Mode");
                     }
                 }
                 catch (System.Exception ex)
@@ -332,11 +316,11 @@ namespace SpiderSurge
             {
                 try
                 {
-                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     if (immuneTimeField != null)
                     {
-                        immuneTimeField.SetValue(player, 0f);
+                        immuneTimeField.SetValue(player, 0f); // Reset to 0 (expired)
                     }
                 }
                 catch (System.Exception ex)

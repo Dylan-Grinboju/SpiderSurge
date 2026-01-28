@@ -13,11 +13,15 @@ namespace SpiderSurge
 
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
+        public bool IsPost30WavePerkSelection { get; set; } = false;
+
+        public bool IsPost60WavePerkSelection { get; set; } = false;
+
         // Ability perks - shown in special ability selection screen
         private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility", "explosionAbility" };
 
         // Upgrade perks - shown in normal perk selection
-        private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration", "shortTermInvestment", "longTermInvestment" };
+        private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration", "shortTermInvestment", "longTermInvestment", "perkLuck" };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
         private HashSet<string> abilityUltimatePerks = new HashSet<string> { "shieldAbilityUltimate", "infiniteAmmoAbilityUltimate", "explosionAbilityUltimate" };
@@ -31,6 +35,7 @@ namespace SpiderSurge
             ["abilityDuration"] = "Ability Duration",
             ["shortTermInvestment"] = "Short Term Investment",
             ["longTermInvestment"] = "Long Term Investment",
+            ["perkLuck"] = "Perk Luck",
             // Ultimate perks - dynamic names based on which ability is active
             ["shieldAbilityUltimate"] = "Shield Immunity",
             ["infiniteAmmoAbilityUltimate"] = "Weapon Arsenal",
@@ -46,6 +51,7 @@ namespace SpiderSurge
             ["abilityDuration"] = "Increases ability duration.",
             ["shortTermInvestment"] = "Increases ability duration by 2 levels, but increases cooldown by 1 level.",
             ["longTermInvestment"] = "Decreases cooldown by 2 levels, but decreases ability duration by 1 level.",
+            ["perkLuck"] = "Chance to see level 2 perks even without level 1.",
             // Ultimate perks
             ["shieldAbilityUltimate"] = "Grants complete damage immunity (3x cooldown).",
             ["infiniteAmmoAbilityUltimate"] = "Spawns weapons at all spawn points (3x cooldown).",
@@ -61,6 +67,7 @@ namespace SpiderSurge
             ["abilityDuration"] = "Further increases ability duration.",
             ["shortTermInvestment"] = "",
             ["longTermInvestment"] = "",
+            ["perkLuck"] = "Increases chance to see level 2 perks.",
             // Ultimate perks don't have upgrade descriptions (max level 1)
             ["shieldAbilityUltimate"] = "",
             ["infiniteAmmoAbilityUltimate"] = "",
@@ -80,6 +87,7 @@ namespace SpiderSurge
             ["abilityDuration"] = 2,
             ["shortTermInvestment"] = 1,
             ["longTermInvestment"] = 1,
+            ["perkLuck"] = 2,
             // Ultimate perks are level 1 only
             ["shieldAbilityUltimate"] = 1,
             ["infiniteAmmoAbilityUltimate"] = 1,
@@ -95,6 +103,7 @@ namespace SpiderSurge
             ["abilityDuration"] = new List<string>(),
             ["shortTermInvestment"] = new List<string>(),
             ["longTermInvestment"] = new List<string>(),
+            ["perkLuck"] = new List<string>(),
             // Ultimate perks require the base ability to be unlocked
             ["shieldAbilityUltimate"] = new List<string> { "shieldAbility" },
             ["infiniteAmmoAbilityUltimate"] = new List<string> { "infiniteAmmoAbility" },
@@ -193,6 +202,21 @@ namespace SpiderSurge
             EnableAbility<ExplosionAbility>("explosionAbility");
         }
 
+        public static void EnableShieldUltimate()
+        {
+            EnableUltimate<ShieldAbility>("shieldAbilityUltimate");
+        }
+
+        public static void EnableInfiniteAmmoUltimate()
+        {
+            EnableUltimate<InfiniteAmmoAbility>("infiniteAmmoAbilityUltimate");
+        }
+
+        public static void EnableExplosionUltimate()
+        {
+            EnableUltimate<ExplosionAbility>("explosionAbilityUltimate");
+        }
+
         private static void EnableAbility<T>(string perkName) where T : BaseAbility
         {
             try
@@ -216,6 +240,32 @@ namespace SpiderSurge
             }
         }
 
+        private static void EnableUltimate<T>(string perkName) where T : BaseAbility
+        {
+            try
+            {
+                // Also enable the base ability
+                string baseAbility = perkName.Replace("Ultimate", "");
+                Instance.SetPerkLevel(baseAbility, 1);
+                Instance.SetPerkLevel(perkName, 1);
+
+                // Register abilities with input interceptor now that they're unlocked
+                SpiderController[] players = FindObjectsOfType<SpiderController>();
+                foreach (SpiderController player in players)
+                {
+                    var ability = player.GetComponent<T>();
+                    if (ability != null)
+                    {
+                        ability.RegisterWithInputInterceptor();
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error enabling {typeof(T).Name} ultimate: {ex.Message}");
+            }
+        }
+
         public bool IsAbilityPerk(string perkName)
         {
             return abilityPerks.Contains(perkName);
@@ -234,6 +284,11 @@ namespace SpiderSurge
         public IEnumerable<string> GetUpgradePerkNames()
         {
             return upgradePerks;
+        }
+
+        public IEnumerable<string> GetAbilityUltimatePerkNames()
+        {
+            return abilityUltimatePerks;
         }
 
         public int GetPerkLevel(string perkName)
@@ -256,6 +311,14 @@ namespace SpiderSurge
         public bool HasAnyAbilityUnlocked()
         {
             return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0 || GetPerkLevel("explosionAbility") > 0;
+        }
+
+        public string GetChosenAbilityUltimate()
+        {
+            if (GetPerkLevel("shieldAbility") > 0) return "shieldAbilityUltimate";
+            if (GetPerkLevel("infiniteAmmoAbility") > 0) return "infiniteAmmoAbilityUltimate";
+            if (GetPerkLevel("explosionAbility") > 0) return "explosionAbilityUltimate";
+            return null;
         }
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
@@ -299,12 +362,34 @@ namespace SpiderSurge
             {
                 EnableExplosionAbility();
             }
+            else if (name == "shieldAbilityUltimate")
+            {
+                EnableShieldUltimate();
+            }
+            else if (name == "infiniteAmmoAbilityUltimate")
+            {
+                EnableInfiniteAmmoUltimate();
+            }
+            else if (name == "explosionAbilityUltimate")
+            {
+                EnableExplosionUltimate();
+            }
         }
 
         public void ResetPerks()
         {
             perkLevels.Clear();
             IsFirstNormalPerkSelection = true;
+            IsPost30WavePerkSelection = false;
+            IsPost60WavePerkSelection = false;
+        }
+
+        public float GetPerkLuckChance()
+        {
+            int level = GetPerkLevel("perkLuck");
+            if (level == 1) return 0.1f;
+            if (level == 2) return 1f;
+            return 0f;
         }
     }
 }
