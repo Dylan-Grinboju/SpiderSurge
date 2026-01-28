@@ -15,7 +15,7 @@ namespace SpiderSurge
     /// F4 - Give shield to all players
     /// F5 - Add one life (if possible)
     /// F6 - Respawn dead players
-    /// F8 - Toggle god mode (invincibility, phase through walls, fly)
+    /// F8 - Toggle god mode (invincibility)
     /// \ - Freeze/Unfreeze enemy spawning
     /// = - Toggle spawn menus (weapons/enemies)
     /// - - Toggle modifiers menu (regular mods + surge perks)
@@ -47,7 +47,9 @@ namespace SpiderSurge
             ("infiniteAmmoAbility", "Infinite Ammo Ability"),
             ("explosionAbility", "Explosion Ability"),
             ("abilityCooldown", "Ability Cooldown"),
-            ("abilityDuration", "Ability Duration")
+            ("abilityDuration", "Ability Duration"),
+            ("shortTermInvestment", "Short Term Investment"),
+            ("longTermInvestment", "Long Term Investment")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -556,10 +558,10 @@ namespace SpiderSurge
                 if (SurgeGameModeManager.Instance != null)
                 {
                     currentLevel = PerksManager.Instance.GetPerkLevel(key);
-                    // Add upgrade level for abilities
+                    // Add Ultimate level for abilities
                     if (key.EndsWith("Ability"))
                     {
-                        currentLevel += PerksManager.Instance.GetPerkLevel(key + "Upgrade");
+                        currentLevel += PerksManager.Instance.GetPerkLevel(key + "Ultimate");
                     }
                 }
 
@@ -610,12 +612,12 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance == null) return;
 
-            // Handle abilities (level 1 -> level 2 upgrade -> reset)
+            // Handle abilities (level 1 -> Ultimate -> reset)
             if (key.EndsWith("Ability"))
             {
                 int baseLevel = PerksManager.Instance.GetPerkLevel(key);
-                string upgradeKey = key + "Upgrade";
-                int upgradeLevel = PerksManager.Instance.GetPerkLevel(upgradeKey);
+                string ultimateKey = key + "Ultimate";
+                int ultimateLevel = PerksManager.Instance.GetPerkLevel(ultimateKey);
 
                 if (baseLevel == 0)
                 {
@@ -625,16 +627,16 @@ namespace SpiderSurge
                     else if (key == "explosionAbility") PerksManager.EnableExplosionAbility();
                     else PerksManager.Instance.SetPerkLevel(key, 1);
                 }
-                else if (baseLevel == 1 && upgradeLevel == 0)
+                else if (baseLevel == 1 && ultimateLevel == 0)
                 {
-                    // Activate upgrade
-                    PerksManager.Instance.SetPerkLevel(upgradeKey, 1);
+                    // Activate Ultimate
+                    PerksManager.Instance.SetPerkLevel(ultimateKey, 1);
                 }
                 else
                 {
                     // Reset both
                     PerksManager.Instance.SetPerkLevel(key, 0);
-                    PerksManager.Instance.SetPerkLevel(upgradeKey, 0);
+                    PerksManager.Instance.SetPerkLevel(ultimateKey, 0);
                 }
             }
             else

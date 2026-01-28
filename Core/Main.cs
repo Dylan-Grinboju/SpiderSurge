@@ -85,7 +85,7 @@ namespace SpiderSurge
                 { "indicator.activeColor", "#0000FF" },
                 { "indicator.showOnlyWhenReady", false },
                 // Upgrade activation
-                { "UseDpadForAbilities", false },
+                { "UseDpadForUltimate", false },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)

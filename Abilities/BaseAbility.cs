@@ -25,14 +25,14 @@ namespace SpiderSurge
 
         protected AbilityIndicator abilityIndicator;
 
-        // Upgrade activation settings
-        protected bool isUpgradeActive = false;
-        protected float lastUpgradeCooldownMultiplier = 1f;
+        // Resulting Ultimate activation settings
+        protected bool isUltimateActive = false;
+        protected float lastUltimateCooldownMultiplier = 1f;
 
-        // Upgrade input tracking
+        // Ultimate input tracking
         private InputAction leftStickPressAction;
         private InputAction rightStickPressAction;
-        private InputAction upgradeButtonAction;
+        private InputAction ultimateButtonAction;
         private InputAction dpadActivationAction;
         private bool leftStickPressed = false;
         private bool rightStickPressed = false;
@@ -40,17 +40,17 @@ namespace SpiderSurge
         private float lastRightStickPressTime = 0f;
         private const float COMBO_WINDOW = 0.15f;
 
-        // Override these in derived classes to enable upgrades
-        public virtual bool HasUpgrade => false;
-        public virtual string UpgradePerkName => $"{PerkName}Upgrade";
-        public virtual string UpgradePerkDisplayName => "Upgrade";
-        public virtual string UpgradePerkDescription => "Enhanced version of the ability.";
-        public virtual float UpgradeCooldownMultiplier => 3f;
+        // Override these in derived classes to enable Ultimate
+        public virtual bool HasUltimate => false;
+        public virtual string UltimatePerkName => $"{PerkName}Ultimate";
+        public virtual string UltimatePerkDisplayName => "Ultimate";
+        public virtual string UltimatePerkDescription => "Ultimate version of the ability.";
+        public virtual float UltimateCooldownMultiplier => 3f;
 
         public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
         
-        // Upgrade activation: E key (dual stick combo handled separately)
-        public virtual string UpgradeActivationButton => "<Keyboard>/e";
+        // Ultimate activation: E key (dual stick combo handled separately)
+        public virtual string UltimateActivationButton => "<Keyboard>/e";
 
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;
@@ -61,8 +61,14 @@ namespace SpiderSurge
         public virtual float CooldownPerPerkLevel => 0f;
 
         // Computed values based on perk levels
-        public virtual float Duration => BaseDuration + (PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel;
-        public virtual float CooldownTime => BaseCooldown - (PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel;
+        public virtual float Duration => BaseDuration + 
+            ((PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel) +
+            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 2 * DurationPerPerkLevel) -
+            ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 1 * DurationPerPerkLevel);
+        public virtual float CooldownTime => BaseCooldown - 
+            ((PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel) -
+            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 1 * CooldownPerPerkLevel) +
+            ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 2 * CooldownPerPerkLevel);
 
         protected virtual void Awake()
         {
@@ -94,26 +100,26 @@ namespace SpiderSurge
                 Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex}");
             }
 
-            // Set up upgrade activation inputs if this ability has upgrades
-            if (HasUpgrade)
+            // Set up Ultimate activation inputs if this ability has Ultimate
+            if (HasUltimate)
             {
-                SetupUpgradeInputs();
+                SetupUltimateInputs();
             }
 
             // Create ability indicator if enabled and ability is unlocked
             CreateAbilityIndicator();
         }
 
-        private void SetupUpgradeInputs()
+        private void SetupUltimateInputs()
         {
             try
             {
-                bool useDpad = ModConfig.UpgradeUseDpadActivation;
-                Logger.LogInfo($"Ability {GetType().Name} Upgrade Config: useDpad={useDpad}");
+                bool useDpad = ModConfig.UltimateUseDpadActivation;
+                Logger.LogInfo($"Ability {GetType().Name} Ultimate Config: useDpad={useDpad}");
 
                 if (useDpad)
                 {
-                    // D-pad activation: any D-pad direction activates the upgrade
+                    // D-pad activation: any D-pad direction activates the Ultimate
                     dpadActivationAction = new InputAction(
                         name: $"{GetType().Name}_DpadActivation",
                         type: InputActionType.Button
@@ -148,28 +154,28 @@ namespace SpiderSurge
                     rightStickPressAction.Enable();
                 }
 
-                // Keyboard upgrade button (always available)
-                if (!string.IsNullOrEmpty(UpgradeActivationButton))
+                // Keyboard Ultimate button (always available)
+                if (!string.IsNullOrEmpty(UltimateActivationButton))
                 {
-                    upgradeButtonAction = new InputAction(
-                        name: $"{GetType().Name}_UpgradeButton",
+                    ultimateButtonAction = new InputAction(
+                        name: $"{GetType().Name}_UltimateButton",
                         type: InputActionType.Button,
-                        binding: UpgradeActivationButton
+                        binding: UltimateActivationButton
                     );
-                    upgradeButtonAction.performed += OnUpgradeButtonPressed;
-                    upgradeButtonAction.Enable();
+                    ultimateButtonAction.performed += OnUltimateButtonPressed;
+                    ultimateButtonAction.Enable();
                 }
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error setting up upgrade inputs for {GetType().Name}: {ex.Message}");
+                Logger.LogError($"Error setting up Ultimate inputs for {GetType().Name}: {ex.Message}");
             }
         }
 
         private void OnDpadPressed(InputAction.CallbackContext context)
         {
             if (!IsDeviceAssigned(context.control.device)) return;
-            ActivateUpgrade();
+            ActivateUltimate();
         }
 
         private void OnLeftStickPressed(InputAction.CallbackContext context)
@@ -207,15 +213,15 @@ namespace SpiderSurge
                 float timeDiff = Mathf.Abs(lastLeftStickPressTime - lastRightStickPressTime);
                 if (timeDiff <= COMBO_WINDOW)
                 {
-                    ActivateUpgrade();
+                    ActivateUltimate();
                 }
             }
         }
 
-        private void OnUpgradeButtonPressed(InputAction.CallbackContext context)
+        private void OnUltimateButtonPressed(InputAction.CallbackContext context)
         {
             if (!IsDeviceAssigned(context.control.device)) return;
-            ActivateUpgrade();
+            ActivateUltimate();
         }
 
         private bool IsDeviceAssigned(InputDevice device)
@@ -319,23 +325,23 @@ namespace SpiderSurge
             if (isActive)
             {
                 isActive = false;
-                if (isUpgradeActive)
+                if (isUltimateActive)
                 {
-                    isUpgradeActive = false;
-                    OnDeactivateUpgrade();
+                    isUltimateActive = false;
+                    OnDeactivateUltimate();
                 }
                 OnDeactivate();
             }
         }
 
-        public virtual void ActivateUpgrade()
+        public virtual void ActivateUltimate()
         {
             if (!IsUnlocked())
             {
                 return;
             }
 
-            if (!IsUpgradeUnlocked())
+            if (!IsUltimateUnlocked())
             {
                 return;
             }
@@ -351,9 +357,9 @@ namespace SpiderSurge
             }
 
             isActive = true;
-            isUpgradeActive = true;
-            lastUpgradeCooldownMultiplier = UpgradeCooldownMultiplier;
-            OnActivateUpgrade();
+            isUltimateActive = true;
+            lastUltimateCooldownMultiplier = UltimateCooldownMultiplier;
+            OnActivateUltimate();
 
             if (Duration > 0)
             {
@@ -390,9 +396,9 @@ namespace SpiderSurge
             return PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
         }
 
-        public bool IsUpgradeUnlocked()
+        public bool IsUltimateUnlocked()
         {
-            return HasUpgrade && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UpgradePerkName) > 0;
+            return HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
         }
 
         protected virtual bool ShouldRegister()
@@ -416,8 +422,8 @@ namespace SpiderSurge
 
         protected abstract void OnActivate();
         protected virtual void OnDeactivate() { }
-        protected virtual void OnActivateUpgrade() { OnActivate(); }
-        protected virtual void OnDeactivateUpgrade() { }
+        protected virtual void OnActivateUltimate() { OnActivate(); }
+        protected virtual void OnDeactivateUltimate() { }
 
         private IEnumerator DurationCoroutine()
         {
@@ -446,8 +452,8 @@ namespace SpiderSurge
         {
             onCooldown = true;
 
-            float cooldown = CooldownTime * lastUpgradeCooldownMultiplier;
-            lastUpgradeCooldownMultiplier = 1f; // Reset for next activation
+            float cooldown = CooldownTime * lastUltimateCooldownMultiplier;
+            lastUltimateCooldownMultiplier = 1f; // Reset for next activation
 
             yield return new WaitForSeconds(cooldown);
 
@@ -468,7 +474,7 @@ namespace SpiderSurge
                 }
             }
 
-            // Clean up upgrade input actions
+            // Clean up Ultimate input actions
             if (leftStickPressAction != null)
             {
                 leftStickPressAction.performed -= OnLeftStickPressed;
@@ -483,11 +489,11 @@ namespace SpiderSurge
                 rightStickPressAction.Disable();
                 rightStickPressAction.Dispose();
             }
-            if (upgradeButtonAction != null)
+            if (ultimateButtonAction != null)
             {
-                upgradeButtonAction.performed -= OnUpgradeButtonPressed;
-                upgradeButtonAction.Disable();
-                upgradeButtonAction.Dispose();
+                ultimateButtonAction.performed -= OnUltimateButtonPressed;
+                ultimateButtonAction.Disable();
+                ultimateButtonAction.Dispose();
             }
             if (dpadActivationAction != null)
             {

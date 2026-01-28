@@ -19,10 +19,10 @@ namespace SpiderSurge
         public override float BaseCooldown => 11f;
         public override float CooldownPerPerkLevel => 5f;
 
-        // Upgrade: Immunity
-        public override bool HasUpgrade => true;
-        public override string UpgradePerkDisplayName => "Shield Immunity";
-        public override string UpgradePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
+        // Ultimate: Immunity
+        public override bool HasUltimate => true;
+        public override string UltimatePerkDisplayName => "Shield Immunity";
+        public override string UltimatePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
 
         // Cached reflection field for immunity
         private static FieldInfo immuneTimeField;
@@ -64,55 +64,79 @@ namespace SpiderSurge
             }
         }
 
-        protected override void OnActivateUpgrade()
+        protected override void OnActivateUltimate()
         {
-            if (spiderHealthSystem == null) return;
-
-            // Grant immunity by setting immune time to maximum
-            try
-            {
-                if (immuneTimeField != null)
-                {
-                    immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
-                    Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Failed to set immunity: {ex.Message}");
-            }
+            ApplyImmunity(true);
 
             // Also enable shield visual
-            if (!spiderHealthSystem.HasShield())
+            if (spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 spiderHealthSystem.EnableShield();
             }
+            
+            Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}");
         }
 
-        protected override void OnDeactivateUpgrade()
+        protected override void OnDeactivateUltimate()
+        {
+            ApplyImmunity(false);
+            
+            Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}");
+        }
+
+        private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
 
-            // Reset immunity
-            try
+            // Removed isTrigger modification to prevent falling through map or getting stuck in walls
+            var colliders = spiderHealthSystem.GetComponents<Collider2D>();
+            foreach (var collider in colliders)
             {
-                if (immuneTimeField != null)
+                if (collider != null)
                 {
-                    immuneTimeField.SetValue(spiderHealthSystem, 0f);
-                    Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}");
+                    collider.isTrigger = enable;
                 }
             }
-            catch (System.Exception ex)
+
+            if (enable)
             {
-                Logger.LogError($"Failed to reset immunity: {ex.Message}");
+                try
+                {
+                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (immuneTimeField != null)
+                    {
+                        immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.LogError($"Failed to set immune time: {ex.Message}");
+                }
+            }
+            else
+            {
+                try
+                {
+                    var immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (immuneTimeField != null)
+                    {
+                        immuneTimeField.SetValue(spiderHealthSystem, 0f);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.LogError($"Failed to reset immune time: {ex.Message}");
+                }
             }
         }
 
         private void LateUpdate()
         {
-            // Only check for shield break in non-upgrade mode
-            // In upgrade mode we maintain immunity
-            if (isActive && !isUpgradeActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
+            // Only check for shield break in non-Ultimate mode
+            // In Ultimate mode we maintain immunity
+            if (isActive && !isUltimateActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 isActive = false;
 

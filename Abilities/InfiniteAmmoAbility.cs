@@ -19,10 +19,10 @@ namespace SpiderSurge
         public override float BaseCooldown => 11f;
         public override float CooldownPerPerkLevel => 5f;
 
-        // Upgrade: Weapon Arsenal
-        public override bool HasUpgrade => true;
-        public override string UpgradePerkDisplayName => "Weapon Arsenal";
-        public override string UpgradePerkDescription => "Spawns weapons at all weapon spawn points on the map.";
+        // Ultimate: Weapon Arsenal
+        public override bool HasUltimate => true;
+        public override string UltimatePerkDisplayName => "Weapon Arsenal";
+        public override string UltimatePerkDescription => "Spawns weapons at all weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
@@ -137,7 +137,7 @@ namespace SpiderSurge
             storedMaxAmmo = 0f;
         }
 
-        protected override void OnActivateUpgrade()
+        protected override void OnActivateUltimate()
         {
             // First, activate normal infinite ammo effect
             OnActivate();

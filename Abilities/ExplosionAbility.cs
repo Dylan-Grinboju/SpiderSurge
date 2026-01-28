@@ -18,10 +18,10 @@ namespace SpiderSurge
         public override float BaseCooldown => 11f;
         public override float CooldownPerPerkLevel => 5f;
 
-        // Upgrade: Deadly Explosion
-        public override bool HasUpgrade => true;
-        public override string UpgradePerkDisplayName => "Deadly Explosion";
-        public override string UpgradePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
+        // Ultimate: Deadly Explosion
+        public override bool HasUltimate => true;
+        public override string UltimatePerkDisplayName => "Deadly Explosion";
+        public override string UltimatePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
 
         // Base explosion parameters - matching afterlife explosion from SpiderHealthSystem
         private const float BASE_KNOCKBACK_RADIUS = 80f;
@@ -72,13 +72,13 @@ namespace SpiderSurge
             StartCooldown();
         }
 
-        protected override void OnActivateUpgrade()
+        protected override void OnActivateUltimate()
         {
-            // Upgrade activation - deadly explosion with damage
+            // Ultimate activation - deadly explosion with damage
             TriggerExplosion(deadly: true);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
-            isUpgradeActive = false;
+            isUltimateActive = false;
             StartCooldown();
         }
 
@@ -170,7 +170,7 @@ namespace SpiderSurge
                     // Inside death radius
                     if (deadly)
                     {
-                        // Upgrade: full damage
+                        // Ultimate: full damage
                         damageable.Damage(force, closestPoint, true);
                         damageCount++;
                     }

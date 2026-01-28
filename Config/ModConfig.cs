@@ -21,8 +21,8 @@ namespace SpiderSurge
         public static Color IndicatorActiveColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.activeColor", "#0000FF"), Color.blue);
         public static bool IndicatorShowOnlyWhenReady => Config.GetModConfigValue(ModId, "indicator.showOnlyWhenReady", false);
 
-        // Upgrade activation configuration
-        public static bool UpgradeUseDpadActivation => Config.GetModConfigValue(ModId, "UseDpadForAbilities", false);
+        // Ultimate activation configuration
+        public static bool UltimateUseDpadActivation => Config.GetModConfigValue(ModId, "UseDpadForUltimate", false);
 
         private static float ValidateIndicatorRadius(float value)
         {
