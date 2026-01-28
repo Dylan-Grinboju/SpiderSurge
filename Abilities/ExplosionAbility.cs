@@ -18,6 +18,11 @@ namespace SpiderSurge
         public override float BaseCooldown => 11f;
         public override float CooldownPerPerkLevel => 5f;
 
+        // Upgrade: Deadly Explosion
+        public override bool HasUpgrade => true;
+        public override string UpgradePerkDisplayName => "Deadly Explosion";
+        public override string UpgradePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
+
         // Base explosion parameters - matching afterlife explosion from SpiderHealthSystem
         private const float BASE_KNOCKBACK_RADIUS = 80f;
         private const float BASE_KNOCKBACK_STRENGTH = 50f;
@@ -60,9 +65,20 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            TriggerExplosion();
+            // Normal activation - knockback only, no damage
+            TriggerExplosion(deadly: false);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
+            StartCooldown();
+        }
+
+        protected override void OnActivateUpgrade()
+        {
+            // Upgrade activation - deadly explosion with damage
+            TriggerExplosion(deadly: true);
+            // Start cooldown immediately since this is an instant ability
+            isActive = false;
+            isUpgradeActive = false;
             StartCooldown();
         }
 
@@ -71,7 +87,7 @@ namespace SpiderSurge
             // Nothing to do - explosion is instant
         }
 
-        private void TriggerExplosion()
+        private void TriggerExplosion(bool deadly)
         {
             if (playerController == null || spiderHealthSystem == null)
             {
@@ -151,15 +167,28 @@ namespace SpiderSurge
                 }
                 else
                 {
-                    // Inside death radius - full damage
-                    damageable.Damage(force, closestPoint, true);
-                    damageCount++;
+                    // Inside death radius
+                    if (deadly)
+                    {
+                        // Upgrade: full damage
+                        damageable.Damage(force, closestPoint, true);
+                        damageCount++;
+                    }
+                    else
+                    {
+                        // Normal: stronger knockback but no damage
+                        damageable.Impact(force * 6f, closestPoint, true, true);
+                    }
                 }
             }
 
             // Show visual circles for explosion radius
-            CreateExplosionCircle(explosionPosition, DeathRadius, Color.red, 0.5f);
-            CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 0.5f); // Orange for knockback
+            if (deadly)
+            {
+                // Red death zone for deadly explosion
+                CreateExplosionCircle(explosionPosition, DeathRadius, Color.red, 1.5f);
+            }
+            CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 1.5f); // Orange for knockback
         }
 
         private void CreateExplosionCircle(Vector3 center, float radius, Color color, float duration)

@@ -47,7 +47,11 @@ namespace SpiderSurge
             ("infiniteAmmoAbility", "Infinite Ammo Ability"),
             ("explosionAbility", "Explosion Ability"),
             ("abilityCooldown", "Ability Cooldown"),
-            ("abilityDuration", "Ability Duration")
+            ("abilityDuration", "Ability Duration"),
+            // Ability upgrades (require base ability)
+            ("shieldAbilityUpgrade", "Shield Immunity (Upgrade)"),
+            ("infiniteAmmoAbilityUpgrade", "Weapon Arsenal (Upgrade)"),
+            ("explosionAbilityUpgrade", "Deadly Explosion (Upgrade)")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -631,6 +635,19 @@ namespace SpiderSurge
                 {
                     PerksManager.EnableExplosionAbility();
                 }
+
+                // Enable upgrade perk when ability reaches level 2
+                if (nextLevel == 2)
+                {
+                    string upgradePerkKey = key + "Upgrade";
+                    PerksManager.Instance.SetPerkLevel(upgradePerkKey, 1);
+                }
+            }
+            else
+            {
+                // When resetting ability to 0, also reset its upgrade
+                string upgradePerkKey = key + "Upgrade";
+                PerksManager.Instance.SetPerkLevel(upgradePerkKey, 0);
             }
         }
 

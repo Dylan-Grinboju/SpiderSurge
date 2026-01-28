@@ -58,7 +58,6 @@ namespace SpiderSurge
 
                 // Override the input binding for this button
                 OverrideInputBinding(actionName, bindingPath, (context) => OnAbilityButtonPressed(context, ability, bindingPath));
-
             }
             catch (System.Exception ex)
             {

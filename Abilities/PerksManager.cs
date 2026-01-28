@@ -19,13 +19,20 @@ namespace SpiderSurge
         // Upgrade perks - shown in normal perk selection
         private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration" };
 
+        // Ability upgrade perks - enhanced versions of abilities (requires base ability)
+        private HashSet<string> abilityUpgradePerks = new HashSet<string> { "shieldAbilityUpgrade", "infiniteAmmoAbilityUpgrade", "explosionAbilityUpgrade" };
+
         private Dictionary<string, string> displayNames = new Dictionary<string, string>
         {
             ["shieldAbility"] = "Shield Ability",
             ["infiniteAmmoAbility"] = "Infinite Ammo",
             ["explosionAbility"] = "Explosion Ability",
             ["abilityCooldown"] = "Ability Cooldown",
-            ["abilityDuration"] = "Ability Duration"
+            ["abilityDuration"] = "Ability Duration",
+            // Upgrade perks - dynamic names based on which ability is active
+            ["shieldAbilityUpgrade"] = "Shield Immunity",
+            ["infiniteAmmoAbilityUpgrade"] = "Weapon Arsenal",
+            ["explosionAbilityUpgrade"] = "Deadly Explosion"
         };
 
         private Dictionary<string, string> descriptions = new Dictionary<string, string>
@@ -34,7 +41,11 @@ namespace SpiderSurge
             ["infiniteAmmoAbility"] = "Unlocks the infinite ammo ability.",
             ["explosionAbility"] = "Unlocks the explosion ability.",
             ["abilityCooldown"] = "Reduces ability cooldown.",
-            ["abilityDuration"] = "Increases ability duration."
+            ["abilityDuration"] = "Increases ability duration.",
+            // Upgrade perks
+            ["shieldAbilityUpgrade"] = "Grants complete damage immunity (3x cooldown).",
+            ["infiniteAmmoAbilityUpgrade"] = "Spawns weapons at all spawn points (3x cooldown).",
+            ["explosionAbilityUpgrade"] = "Explosion deals lethal damage (3x cooldown)."
         };
 
         private Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -43,7 +54,11 @@ namespace SpiderSurge
             ["infiniteAmmoAbility"] = "",
             ["explosionAbility"] = "",
             ["abilityCooldown"] = "Further reduces ability cooldown.",
-            ["abilityDuration"] = "Further increases ability duration."
+            ["abilityDuration"] = "Further increases ability duration.",
+            // Upgrade perks don't have upgrade descriptions (max level 1)
+            ["shieldAbilityUpgrade"] = "",
+            ["infiniteAmmoAbilityUpgrade"] = "",
+            ["explosionAbilityUpgrade"] = ""
         };
 
         // Descriptions when explosion ability is unlocked (duration also affects explosion size)
@@ -56,7 +71,11 @@ namespace SpiderSurge
             ["infiniteAmmoAbility"] = 1,
             ["explosionAbility"] = 1,
             ["abilityCooldown"] = 2,
-            ["abilityDuration"] = 2
+            ["abilityDuration"] = 2,
+            // Upgrade perks are level 1 only
+            ["shieldAbilityUpgrade"] = 1,
+            ["infiniteAmmoAbilityUpgrade"] = 1,
+            ["explosionAbilityUpgrade"] = 1
         };
 
         private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
@@ -65,7 +84,11 @@ namespace SpiderSurge
             ["infiniteAmmoAbility"] = new List<string>(),
             ["explosionAbility"] = new List<string>(),
             ["abilityCooldown"] = new List<string>(),
-            ["abilityDuration"] = new List<string>()
+            ["abilityDuration"] = new List<string>(),
+            // Upgrade perks require the base ability to be unlocked
+            ["shieldAbilityUpgrade"] = new List<string> { "shieldAbility" },
+            ["infiniteAmmoAbilityUpgrade"] = new List<string> { "infiniteAmmoAbility" },
+            ["explosionAbilityUpgrade"] = new List<string> { "explosionAbility" }
         };
 
         private Dictionary<string, int> perkLevels = new Dictionary<string, int>();

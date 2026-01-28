@@ -25,7 +25,31 @@ namespace SpiderSurge
 
         protected AbilityIndicator abilityIndicator;
 
+        // Upgrade activation settings
+        protected bool isUpgradeActive = false;
+        protected float lastUpgradeCooldownMultiplier = 1f;
+
+        // Upgrade input tracking
+        private InputAction leftStickPressAction;
+        private InputAction rightStickPressAction;
+        private InputAction upgradeButtonAction;
+        private bool leftStickPressed = false;
+        private bool rightStickPressed = false;
+        private float lastLeftStickPressTime = 0f;
+        private float lastRightStickPressTime = 0f;
+        private const float COMBO_WINDOW = 0.15f;
+
+        // Override these in derived classes to enable upgrades
+        public virtual bool HasUpgrade => false;
+        public virtual string UpgradePerkName => $"{PerkName}Upgrade";
+        public virtual string UpgradePerkDisplayName => "Upgrade";
+        public virtual string UpgradePerkDescription => "Enhanced version of the ability.";
+        public virtual float UpgradeCooldownMultiplier => 3f;
+
         public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
+        
+        // Upgrade activation: E key (dual stick combo handled separately)
+        public virtual string UpgradeActivationButton => "<Keyboard>/e";
 
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;
@@ -69,8 +93,115 @@ namespace SpiderSurge
                 Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex}");
             }
 
+            // Set up upgrade activation inputs if this ability has upgrades
+            if (HasUpgrade)
+            {
+                SetupUpgradeInputs();
+            }
+
             // Create ability indicator if enabled and ability is unlocked
             CreateAbilityIndicator();
+        }
+
+        private void SetupUpgradeInputs()
+        {
+            try
+            {
+                // Dual stick combo: left stick press
+                leftStickPressAction = new InputAction(
+                    name: $"{GetType().Name}_LeftStickPress",
+                    type: InputActionType.Button,
+                    binding: "<Gamepad>/leftStickPress"
+                );
+                leftStickPressAction.performed += OnLeftStickPressed;
+                leftStickPressAction.canceled += OnLeftStickReleased;
+                leftStickPressAction.Enable();
+
+                // Dual stick combo: right stick press
+                rightStickPressAction = new InputAction(
+                    name: $"{GetType().Name}_RightStickPress",
+                    type: InputActionType.Button,
+                    binding: "<Gamepad>/rightStickPress"
+                );
+                rightStickPressAction.performed += OnRightStickPressed;
+                rightStickPressAction.canceled += OnRightStickReleased;
+                rightStickPressAction.Enable();
+
+                // Keyboard upgrade button
+                if (!string.IsNullOrEmpty(UpgradeActivationButton))
+                {
+                    upgradeButtonAction = new InputAction(
+                        name: $"{GetType().Name}_UpgradeButton",
+                        type: InputActionType.Button,
+                        binding: UpgradeActivationButton
+                    );
+                    upgradeButtonAction.performed += OnUpgradeButtonPressed;
+                    upgradeButtonAction.Enable();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error setting up upgrade inputs for {GetType().Name}: {ex.Message}");
+            }
+        }
+
+        private void OnLeftStickPressed(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            leftStickPressed = true;
+            lastLeftStickPressTime = Time.time;
+            CheckStickCombo();
+        }
+
+        private void OnLeftStickReleased(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            leftStickPressed = false;
+        }
+
+        private void OnRightStickPressed(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            rightStickPressed = true;
+            lastRightStickPressTime = Time.time;
+            CheckStickCombo();
+        }
+
+        private void OnRightStickReleased(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            rightStickPressed = false;
+        }
+
+        private void CheckStickCombo()
+        {
+            if (leftStickPressed && rightStickPressed)
+            {
+                float timeDiff = Mathf.Abs(lastLeftStickPressTime - lastRightStickPressTime);
+                if (timeDiff <= COMBO_WINDOW)
+                {
+                    ActivateUpgrade();
+                }
+            }
+        }
+
+        private void OnUpgradeButtonPressed(InputAction.CallbackContext context)
+        {
+            if (!IsDeviceAssigned(context.control.device)) return;
+            ActivateUpgrade();
+        }
+
+        private bool IsDeviceAssigned(InputDevice device)
+        {
+            if (playerInput == null) return false;
+            foreach (var assignedDevice in playerInput.devices)
+            {
+                if (assignedDevice == device)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         protected virtual void Update()
@@ -160,7 +291,49 @@ namespace SpiderSurge
             if (isActive)
             {
                 isActive = false;
+                if (isUpgradeActive)
+                {
+                    isUpgradeActive = false;
+                    OnDeactivateUpgrade();
+                }
                 OnDeactivate();
+            }
+        }
+
+        public virtual void ActivateUpgrade()
+        {
+            if (!IsUnlocked())
+            {
+                return;
+            }
+
+            if (!IsUpgradeUnlocked())
+            {
+                return;
+            }
+
+            if (onCooldown)
+            {
+                return;
+            }
+
+            if (isActive)
+            {
+                return;
+            }
+
+            isActive = true;
+            isUpgradeActive = true;
+            lastUpgradeCooldownMultiplier = UpgradeCooldownMultiplier;
+            OnActivateUpgrade();
+
+            if (Duration > 0)
+            {
+                if (durationCoroutine != null)
+                {
+                    StopCoroutine(durationCoroutine);
+                }
+                durationCoroutine = StartCoroutine(DurationCoroutine());
             }
         }
 
@@ -189,6 +362,11 @@ namespace SpiderSurge
             return PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
         }
 
+        public bool IsUpgradeUnlocked()
+        {
+            return HasUpgrade && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UpgradePerkName) > 0;
+        }
+
         protected virtual bool ShouldRegister()
         {
             return IsUnlocked();
@@ -210,6 +388,8 @@ namespace SpiderSurge
 
         protected abstract void OnActivate();
         protected virtual void OnDeactivate() { }
+        protected virtual void OnActivateUpgrade() { OnActivate(); }
+        protected virtual void OnDeactivateUpgrade() { }
 
         private IEnumerator DurationCoroutine()
         {
@@ -238,7 +418,10 @@ namespace SpiderSurge
         {
             onCooldown = true;
 
-            yield return new WaitForSeconds(CooldownTime);
+            float cooldown = CooldownTime * lastUpgradeCooldownMultiplier;
+            lastUpgradeCooldownMultiplier = 1f; // Reset for next activation
+
+            yield return new WaitForSeconds(cooldown);
 
             onCooldown = false;
         }
@@ -255,6 +438,28 @@ namespace SpiderSurge
                         inputInterceptor.UnregisterAbility(this, button);
                     }
                 }
+            }
+
+            // Clean up upgrade input actions
+            if (leftStickPressAction != null)
+            {
+                leftStickPressAction.performed -= OnLeftStickPressed;
+                leftStickPressAction.canceled -= OnLeftStickReleased;
+                leftStickPressAction.Disable();
+                leftStickPressAction.Dispose();
+            }
+            if (rightStickPressAction != null)
+            {
+                rightStickPressAction.performed -= OnRightStickPressed;
+                rightStickPressAction.canceled -= OnRightStickReleased;
+                rightStickPressAction.Disable();
+                rightStickPressAction.Dispose();
+            }
+            if (upgradeButtonAction != null)
+            {
+                upgradeButtonAction.performed -= OnUpgradeButtonPressed;
+                upgradeButtonAction.Disable();
+                upgradeButtonAction.Dispose();
             }
 
             if (durationCoroutine != null)

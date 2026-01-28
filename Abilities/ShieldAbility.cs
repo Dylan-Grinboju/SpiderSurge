@@ -12,12 +12,20 @@ namespace SpiderSurge
         public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
 
         public override string PerkName => "shieldAbility";
-        
+
         public override float BaseDuration => 1f;
         public override float DurationPerPerkLevel => 1f;
-        
-        public override float BaseCooldown => 30f;
-        public override float CooldownPerPerkLevel => 10f;
+
+        public override float BaseCooldown => 11f;
+        public override float CooldownPerPerkLevel => 5f;
+
+        // Upgrade: Immunity
+        public override bool HasUpgrade => true;
+        public override string UpgradePerkDisplayName => "Shield Immunity";
+        public override string UpgradePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
+
+        // Cached reflection field for immunity
+        private static FieldInfo immuneTimeField;
 
         protected override void Awake()
         {
@@ -25,6 +33,13 @@ namespace SpiderSurge
             if (playerInput != null)
             {
                 playerShields[playerInput] = this;
+            }
+
+            // Cache reflection field for immunity
+            if (immuneTimeField == null)
+            {
+                immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTime",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
             }
         }
 
@@ -49,9 +64,55 @@ namespace SpiderSurge
             }
         }
 
+        protected override void OnActivateUpgrade()
+        {
+            if (spiderHealthSystem == null) return;
+
+            // Grant immunity by setting immune time to maximum
+            try
+            {
+                if (immuneTimeField != null)
+                {
+                    immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
+                    Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Failed to set immunity: {ex.Message}");
+            }
+
+            // Also enable shield visual
+            if (!spiderHealthSystem.HasShield())
+            {
+                spiderHealthSystem.EnableShield();
+            }
+        }
+
+        protected override void OnDeactivateUpgrade()
+        {
+            if (spiderHealthSystem == null) return;
+
+            // Reset immunity
+            try
+            {
+                if (immuneTimeField != null)
+                {
+                    immuneTimeField.SetValue(spiderHealthSystem, 0f);
+                    Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Failed to reset immunity: {ex.Message}");
+            }
+        }
+
         private void LateUpdate()
         {
-            if (isActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
+            // Only check for shield break in non-upgrade mode
+            // In upgrade mode we maintain immunity
+            if (isActive && !isUpgradeActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 isActive = false;
 

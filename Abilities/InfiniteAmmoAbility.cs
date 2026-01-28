@@ -16,8 +16,13 @@ namespace SpiderSurge
         public override float BaseDuration => 5f;
         public override float DurationPerPerkLevel => 5f;
 
-        public override float BaseCooldown => 40f;
+        public override float BaseCooldown => 11f;
         public override float CooldownPerPerkLevel => 5f;
+
+        // Upgrade: Weapon Arsenal
+        public override bool HasUpgrade => true;
+        public override string UpgradePerkDisplayName => "Weapon Arsenal";
+        public override string UpgradePerkDescription => "Spawns weapons at all weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
@@ -130,6 +135,89 @@ namespace SpiderSurge
         protected override void OnDeactivate()
         {
             storedMaxAmmo = 0f;
+        }
+
+        protected override void OnActivateUpgrade()
+        {
+            // First, activate normal infinite ammo effect
+            OnActivate();
+
+            // Then spawn weapons at all weapon spawn points
+            SpawnWeaponsAtAllSpawnPoints();
+        }
+
+        private void SpawnWeaponsAtAllSpawnPoints()
+        {
+            // // Only spawn on host/server
+            // if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
+            // {
+            //     Logger.LogInfo("Weapon Arsenal: Client-side only, skipping weapon spawn");
+            //     return;
+            // }
+
+            try
+            {
+                // Find all weapon spawners in the scene
+                WeaponSpawner[] weaponSpawners = FindObjectsOfType<WeaponSpawner>();
+
+                if (weaponSpawners.Length == 0)
+                {
+                    Logger.LogWarning("Weapon Arsenal: No weapon spawners found");
+                    return;
+                }
+
+                int spawnedCount = 0;
+
+                foreach (WeaponSpawner spawner in weaponSpawners)
+                {
+                    if (spawner == null) continue;
+
+                    try
+                    {
+                        // Get a random weapon and spawn it at this spawner's position
+                        GameObject weaponPrefab = GetRandomWeaponPrefab();
+                        if (weaponPrefab == null) continue;
+
+                        GameObject spawnedWeapon = Instantiate(weaponPrefab, spawner.transform.position, spawner.transform.rotation);
+
+                        NetworkObject netObj = spawnedWeapon.GetComponent<NetworkObject>();
+                        if (netObj != null)
+                        {
+                            netObj.Spawn(true);
+                            netObj.DestroyWithScene = true;
+                        }
+
+                        spawnedCount++;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.LogWarning($"Weapon Arsenal: Failed to spawn at {spawner.name}: {ex.Message}");
+                    }
+                }
+
+                Logger.LogInfo($"Weapon Arsenal: Spawned {spawnedCount} weapons at {weaponSpawners.Length} spawn points");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Weapon Arsenal: Error spawning weapons: {ex.Message}");
+            }
+        }
+
+        private GameObject GetRandomWeaponPrefab()
+        {
+            try
+            {
+                // Try to get weapons from VersusMode or SurvivalMode
+                if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive())
+                {
+                    return SurvivalMode.instance.GetRandomWeapon(false);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"Weapon Arsenal: Failed to get random weapon: {ex.Message}");
+            }
+            return null;
         }
 
         protected override void OnDestroy()
