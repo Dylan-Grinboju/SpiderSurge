@@ -79,10 +79,18 @@ namespace SpiderSurge
             if (mode == GameMode.Wave && value == 1 && modifier != null && modifier.data != null)
             {
                 string key = modifier.data.key;
-                if (ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key) && PerksManager.Instance.GetPerkLevel(key) == 0)
+                bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
+                
+                if (isLucky)
                 {
-                    value = 2;
-                    Logger.LogInfo($"[Perk Luck] Applied lucky upgrade for '{key}', setting level to 2");
+                    bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
+                    bool isLevel0 = isSurgePerk ? PerksManager.Instance.GetPerkLevel(key) == 0 : modifier.levelInSurvival == 0;
+
+                    if (isLevel0)
+                    {
+                        value = 2;
+                        Logger.LogInfo($"[Perk Luck] Applied lucky upgrade for '{key}', setting level to 2");
+                    }
                 }
             }
         }
@@ -135,24 +143,42 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
-            string key = m.data.key;
             var surgeManager = SurgeGameModeManager.Instance;
-            if (surgeManager != null && PerksManager.Instance.GetAllPerkNames().Contains(key))
-            {
-                // Fix localization for custom perks
-                var perkNameText = __instance.GetType().GetField("perkNameText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
-                var perkDescriptionText = __instance.GetType().GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.Instance)?.GetValue(__instance) as TMP_Text;
+            if (surgeManager == null || !surgeManager.IsActive) return;
 
+            string key = m.data.key;
+            bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
+            bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
+
+            if (!isSurgePerk && !isLucky) return;
+
+            // Helper to find TMP_Text with multiple possible names and binding flags
+            TMP_Text GetTextComponent(string[] names)
+            {
+                foreach (var name in names)
+                {
+                    var field = __instance.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (field != null)
+                    {
+                        return field.GetValue(__instance) as TMP_Text;
+                    }
+                }
+                return null;
+            }
+
+            var perkNameText = GetTextComponent(new[] { "perkNameText" });
+            var perkDescriptionText = GetTextComponent(new[] { "perkDescriptionText" });
+
+            if (perkNameText == null) Logger.LogWarning($"[Surge] Could not find perkNameText for card {key}");
+            if (perkDescriptionText == null) Logger.LogWarning($"[Surge] Could not find perkDescriptionText for card {key}");
+
+            if (isSurgePerk)
+            {
                 if (perkNameText != null)
                 {
                     string displayName = PerksManager.Instance.GetDisplayName(key);
-                    bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 
-                    if ((m.levelInSurvival == 1 || isLucky) && PerksManager.Instance.GetPerkLevel(key) == 0)
-                    {
-                        displayName += " Level 2";
-                    }
-                    else if (m.levelInSurvival == 1)
+                    if (m.levelInSurvival == 1)
                     {
                         displayName += " +";
                     }
@@ -162,23 +188,25 @@ namespace SpiderSurge
                 if (perkDescriptionText != null)
                 {
                     string description = PerksManager.Instance.GetDescription(key);
-                    bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 
-                    if ((m.levelInSurvival == 1 || isLucky) && PerksManager.Instance.GetPerkLevel(key) == 0)
-                    {
-                        description = "Unlocks both levels of " + description.ToLower();
-                    }
-                    else if (m.levelInSurvival == 1)
+                    if (m.levelInSurvival == 1)
                     {
                         description = PerksManager.Instance.GetUpgradeDescription(key);
                     }
 
-                    if (ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key))
+                    if (isLucky)
                     {
                         description += "\n<color=#FFD700>Lucky Upgrade</color>";
                     }
 
                     perkDescriptionText.text = description;
+                }
+            }
+            else if (isLucky) // Vanilla but Lucky
+            {
+                if (perkDescriptionText != null)
+                {
+                    perkDescriptionText.text += "\n<color=#FFD700>Lucky Upgrade</color>";
                 }
             }
         }
@@ -217,7 +245,7 @@ namespace SpiderSurge
                     // We knowingly bypass IsAvailable's dependency check here.
                     bool isUlt = perksManager.GetAbilityUltimatePerkNames().Contains(key);
                     bool isPost60 = perksManager.IsPost60WavePerkSelection;
-                    
+
                     if (isPost60 && isUlt)
                     {
                         // Specifically check max level, since we are bypassing IsAvailable
