@@ -48,7 +48,7 @@ namespace SpiderSurge
         public virtual float UltimateCooldownMultiplier => 3f;
 
         public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
-        
+
         // Ultimate activation: E key (dual stick combo handled separately)
         public virtual string UltimateActivationButton => "<Keyboard>/e";
 
@@ -61,13 +61,13 @@ namespace SpiderSurge
         public virtual float CooldownPerPerkLevel => 0f;
 
         // Computed values based on perk levels
-        public virtual float Duration => BaseDuration + 
+        public virtual float Duration => BaseDuration +
             ((PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel) +
             ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 2 * DurationPerPerkLevel) -
             ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 1 * DurationPerPerkLevel);
-        public virtual float CooldownTime => BaseCooldown - 
-            ((PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel) -
-            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 1 * CooldownPerPerkLevel) +
+        public virtual float CooldownTime => BaseCooldown -
+            ((PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel) +
+            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 1 * CooldownPerPerkLevel) -
             ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 2 * CooldownPerPerkLevel);
 
         protected virtual void Awake()

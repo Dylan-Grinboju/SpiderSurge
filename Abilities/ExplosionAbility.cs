@@ -20,7 +20,7 @@ namespace SpiderSurge
 
         // Ultimate: Deadly Explosion
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Deadly Explosion";
+        public override string UltimatePerkDisplayName => "Explosion Ultimate";
         public override string UltimatePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
 
         // Base explosion parameters - matching afterlife explosion from SpiderHealthSystem
@@ -102,7 +102,10 @@ namespace SpiderSurge
             try
             {
                 CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
-                CameraEffects.instance?.DoScreenShake(KnockBackRadius / 2f, 5f);
+                
+                // Shake half as much for normal ability compared to ultimate
+                float shakeStrength = deadly ? (KnockBackRadius / 2f) : (KnockBackRadius / 4f);
+                CameraEffects.instance?.DoScreenShake(shakeStrength, 5f);
             }
             catch (System.Exception ex)
             {
@@ -110,7 +113,10 @@ namespace SpiderSurge
             }
 
             // Spawn explosion particle VFX
-            SpawnExplosionVFX(explosionPosition);
+            if (deadly)
+            {
+                SpawnExplosionVFX(explosionPosition);
+            }
 
             // Only process damage/knockback on the host/server
             if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)

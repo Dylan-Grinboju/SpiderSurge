@@ -13,7 +13,7 @@ namespace SpiderSurge
 
         public override string PerkName => "shieldAbility";
 
-        public override float BaseDuration => 1f;
+        public override float BaseDuration => 2f;
         public override float DurationPerPerkLevel => 1f;
 
         public override float BaseCooldown => 11f;
@@ -21,7 +21,7 @@ namespace SpiderSurge
 
         // Ultimate: Immunity
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Shield Immunity";
+        public override string UltimatePerkDisplayName => "Shield Ultimate";
         public override string UltimatePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
 
         // Cached reflection field for immunity

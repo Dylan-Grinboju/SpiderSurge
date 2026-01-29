@@ -21,7 +21,7 @@ namespace SpiderSurge
 
         // Ultimate: Weapon Arsenal
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Weapon Arsenal";
+        public override string UltimatePerkDisplayName => "Ammo Ultimate";
         public override string UltimatePerkDescription => "Spawns weapons at all weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
