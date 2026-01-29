@@ -1,9 +1,4 @@
 using HarmonyLib;
-using Silk;
-using Logger = Silk.Logger;
-using UnityEngine.SceneManagement;
-using System;
-using System.Reflection;
 
 namespace SpiderSurge
 {
@@ -13,9 +8,10 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalConfig __instance, ref float __result)
         {
-            if (ModConfig.enableSurgeMode)
+            if (ModConfig.enableSurgeMode || __instance.name.Contains("_Surge"))
             {
-                __result = GameSaveWrapper.Instance.Load<float>(__instance.name + "-SurgeHS", 0f);
+                string baseName = __instance.name.Replace("_Surge", "");
+                __result = GameSaveWrapper.Instance.Load(baseName + "-SurgeHS", 0f);
                 return false;
             }
             return true;
@@ -28,9 +24,10 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalConfig __instance, float score)
         {
-            if (ModConfig.enableSurgeMode)
+            if (ModConfig.enableSurgeMode || __instance.name.Contains("_Surge"))
             {
-                GameSaveWrapper.Instance.Save<float>(__instance.name + "-SurgeHS", score);
+                string baseName = __instance.name.Replace("_Surge", "");
+                GameSaveWrapper.Instance.Save(baseName + "-SurgeHS", score);
                 return false; // Prevent original save
             }
             return true;

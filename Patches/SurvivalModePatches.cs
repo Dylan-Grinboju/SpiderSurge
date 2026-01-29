@@ -66,12 +66,11 @@ namespace SpiderSurge
                 // At wave 30, set flag for special perk selection
                 if (value == 6)
                 {
-                    Logger.LogInfo("Setting Post-30 Wave Perk Selection Flag");
                     PerksManager.Instance.IsPost30WavePerkSelection = true;
                 }
 
                 // At wave 60, set flag for special perk selection
-                if (value == 10)
+                if (value == 9)
                 {
                     PerksManager.Instance.IsPost60WavePerkSelection = true;
                 }
