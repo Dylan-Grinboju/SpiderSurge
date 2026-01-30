@@ -47,7 +47,7 @@ namespace SpiderSurge
                 // Field name is _immuneTill (was incorrectly _immuneTime)
                 immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                     BindingFlags.NonPublic | BindingFlags.Instance);
-                    
+
                 if (immuneTimeField == null)
                 {
                     Logger.LogError("ShieldAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
@@ -73,23 +73,25 @@ namespace SpiderSurge
             }
         }
 
-        public override void Activate()
-        {         
-            if (spiderHealthSystem != null && spiderHealthSystem.HasShield())
-            {
-                return;
-            }
-
-            base.Activate();
-        }
-
         protected override void OnActivate()
         {
-            isUltSession = false; // Normal activation
-            
-            if (spiderHealthSystem == null) return;
+            // Synergy Check: If Synergy active and we have a shield -> Immunity (Ultimate-like behavior)
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 &&
+                spiderHealthSystem != null && spiderHealthSystem.HasShield())
+            {
+                isUltSession = true; // Use Ultimate session logic for immunity tracking
+                wasHitDuringUltimate = false;
+                hadShieldOnActivate = true;
 
-            spiderHealthSystem.EnableShield();
+                ApplyImmunity(true);
+                Logger.LogInfo($"Shield Synergy ACTIVATED for player {playerInput?.playerIndex}!");
+            }
+            else
+            {
+                // Normal Activation
+                isUltSession = false;
+                if (spiderHealthSystem != null) spiderHealthSystem.EnableShield();
+            }
         }
 
         protected override void OnDeactivate()
@@ -98,7 +100,7 @@ namespace SpiderSurge
             {
                 bool shouldKeepShield = false;
 
-                // if player had shield before Ult and didn't get hit, keep it
+                // if player had shield before Ult/Synergy and didn't get hit, keep it
                 if (isUltSession && hadShieldOnActivate && !wasHitDuringUltimate)
                 {
                     shouldKeepShield = true;
@@ -110,7 +112,12 @@ namespace SpiderSurge
                     spiderHealthSystem.DisableShield();
                 }
             }
-            
+
+            if (isUltSession)
+            {
+                ApplyImmunity(false);
+            }
+
             isUltSession = false;
             wasHitDuringUltimate = false;
         }
@@ -119,7 +126,7 @@ namespace SpiderSurge
         {
             isUltSession = true;
             wasHitDuringUltimate = false;
-            
+
             // Record state before applying anything
             hadShieldOnActivate = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
@@ -130,14 +137,14 @@ namespace SpiderSurge
             {
                 spiderHealthSystem.EnableShield();
             }
-            
+
             Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}. HadShield: {hadShieldOnActivate}");
         }
 
         protected override void OnDeactivateUltimate()
         {
             ApplyImmunity(false);
-            
+
             Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}. WasHit: {wasHitDuringUltimate}");
         }
 
@@ -155,17 +162,17 @@ namespace SpiderSurge
                     }
                     else
                     {
-                         // Try to get it one more time if cached is null (fallback)
-                         var field = typeof(SpiderHealthSystem).GetField("_immuneTill", BindingFlags.NonPublic | BindingFlags.Instance);
-                         if (field != null)
-                         {
-                             immuneTimeField = field;
-                             field.SetValue(spiderHealthSystem, float.MaxValue);
-                         }
-                         else
-                         {
-                             Logger.LogError("Could not find _immuneTill field in SpiderHealthSystem");
-                         }
+                        // Try to get it one more time if cached is null (fallback)
+                        var field = typeof(SpiderHealthSystem).GetField("_immuneTill", BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (field != null)
+                        {
+                            immuneTimeField = field;
+                            field.SetValue(spiderHealthSystem, float.MaxValue);
+                        }
+                        else
+                        {
+                            Logger.LogError("Could not find _immuneTill field in SpiderHealthSystem");
+                        }
                     }
                 }
                 catch (System.Exception ex)

@@ -16,6 +16,7 @@ namespace SpiderSurge
 
         // Instant ability - no duration
         public override float BaseCooldown => 11f;
+        public override float BaseDuration => 0f;
         public override float CooldownPerPerkLevel => 5f;
 
         // Ultimate: Deadly Explosion
@@ -30,6 +31,10 @@ namespace SpiderSurge
 
         // Explosion size scaling per duration perk level (25% increase per level)
         private const float SIZE_SCALE_PER_LEVEL = 0.25f;
+
+        // Synergy Modifiers (25% increase per level)
+        private const float SYNERGY_DEATH_ZONE_EXPANSION_PER_LEVEL = 0.25f;
+        private const float SYNERGY_KNOCKBACK_EXPANSION_PER_LEVEL = 0.25f;
 
         // Computed explosion parameters based on duration perk
         private float ExplosionSizeMultiplier => 1f + (PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * SIZE_SCALE_PER_LEVEL;
@@ -52,7 +57,7 @@ namespace SpiderSurge
             }
 
             // Layer names verified via Unity Explorer
-            explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy");
+            explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy","DynamicWorld");
 
             // If the layer mask is 0, try to include everything that's typically damageable
             if (explosionLayers == 0)
@@ -98,11 +103,38 @@ namespace SpiderSurge
             Vector3 explosionPosition = spiderHealthSystem.transform.position;
             int playerID = playerController.playerID.Value;
 
+            // Calculate Synergy Modifiers
+            float effectiveKnockBackStrength = KnockBackStrength;
+            float effectiveDeathRadius = DeathRadius;
+            float synergyScaleMultiplier = 1f;
+
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 && ModifierManager.instance != null)
+            {
+                // Synergy Check
+                int tooCool = ModifierManager.instance.GetModLevel("tooCool");
+                if (tooCool > 0 && deadly)
+                {
+                    Logger.LogInfo($"Too Cool Synergy ACTIVATED for player {playerInput?.playerIndex}!");
+                    float modifier = SYNERGY_DEATH_ZONE_EXPANSION_PER_LEVEL * (tooCool >= 2 ? 2f : 1f);
+                    effectiveDeathRadius *= 1f + modifier;
+                    synergyScaleMultiplier = 1f + modifier;
+                }
+
+                // Synergy Check
+                int biggerBoom = ModifierManager.instance.GetModLevel("biggerBoom");
+                if (biggerBoom > 0)
+                {
+                    Logger.LogInfo($"Bigger Boom Synergy ACTIVATED for player {playerInput?.playerIndex}!");
+                    float modifier = SYNERGY_KNOCKBACK_EXPANSION_PER_LEVEL * (biggerBoom >= 2 ? 2f : 1f);
+                    effectiveKnockBackStrength *= 1f + modifier;
+                }
+            }
+
             // Visual effects - screen shake and chromatic aberration
             try
             {
                 CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
-                
+
                 // Shake half as much for normal ability compared to ultimate
                 float shakeStrength = deadly ? (KnockBackRadius / 2f) : (KnockBackRadius / 4f);
                 CameraEffects.instance?.DoScreenShake(shakeStrength, 5f);
@@ -115,8 +147,16 @@ namespace SpiderSurge
             // Spawn explosion particle VFX
             if (deadly)
             {
-                SpawnExplosionVFX(explosionPosition);
+                SpawnExplosionVFX(explosionPosition, synergyScaleMultiplier);
             }
+
+            // Show visual circles for explosion radius
+            if (deadly)
+            {
+                // Red death zone for deadly explosion
+                CreateExplosionCircle(explosionPosition, effectiveDeathRadius, Color.red, 1.5f);
+            }
+            CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 1.5f); // Orange for knockback
 
             // Only process damage/knockback on the host/server
             if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
@@ -151,7 +191,7 @@ namespace SpiderSurge
                 // Avoid division by very small numbers
                 if (distance < 0.1f) distance = 0.1f;
 
-                float forceMultiplier = KnockBackStrength * Mathf.Clamp(KnockBackRadius / distance, 0f, 100f);
+                float forceMultiplier = effectiveKnockBackStrength * Mathf.Clamp(KnockBackRadius / distance, 0f, 100f);
                 Vector2 direction = (closestPoint - (Vector2)explosionPosition).normalized;
                 Vector2 force = direction * forceMultiplier;
 
@@ -166,7 +206,7 @@ namespace SpiderSurge
                     }
                 }
 
-                if (distance > DeathRadius)
+                if (distance > effectiveDeathRadius)
                 {
                     // Outside death radius - just knockback
                     damageable.Impact(force * 4f, closestPoint, true, true);
@@ -187,14 +227,6 @@ namespace SpiderSurge
                     }
                 }
             }
-
-            // Show visual circles for explosion radius
-            if (deadly)
-            {
-                // Red death zone for deadly explosion
-                CreateExplosionCircle(explosionPosition, DeathRadius, Color.red, 1.5f);
-            }
-            CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 1.5f); // Orange for knockback
         }
 
         private void CreateExplosionCircle(Vector3 center, float radius, Color color, float duration)
@@ -251,7 +283,7 @@ namespace SpiderSurge
             Destroy(circleObj);
         }
 
-        private void SpawnExplosionVFX(Vector3 position)
+        private void SpawnExplosionVFX(Vector3 position, float extraScale = 1f)
         {
             try
             {
@@ -266,7 +298,7 @@ namespace SpiderSurge
                 GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
 
                 // Scale the explosion based on our size multiplier
-                explosionVFX.transform.localScale *= ExplosionSizeMultiplier;
+                explosionVFX.transform.localScale *= ExplosionSizeMultiplier * extraScale;
 
                 // Try to set the explosion color to match the player's color
                 if (playerController != null)

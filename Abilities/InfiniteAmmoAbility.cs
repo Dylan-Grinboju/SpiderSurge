@@ -27,6 +27,7 @@ namespace SpiderSurge
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
         private static FieldInfo networkAmmoField;
+        private Weapon lastWeapon;
 
         protected override void Awake()
         {
@@ -78,9 +79,11 @@ namespace SpiderSurge
             {
                 var weapon = weaponManager.equippedWeapon;
 
-                if (storedMaxAmmo <= 0f || weapon.maxAmmo > storedMaxAmmo)
+                // Handle weapon switching
+                if (weapon != lastWeapon)
                 {
-                    storedMaxAmmo = weapon.maxAmmo;
+                    lastWeapon = weapon;
+                    storedMaxAmmo = GetTargetAmmoCount(weapon);
                 }
 
                 if (weapon.ammo < storedMaxAmmo)
@@ -88,6 +91,34 @@ namespace SpiderSurge
                     SetWeaponAmmo(weapon, storedMaxAmmo);
                 }
             }
+        }
+
+        private float GetTargetAmmoCount(Weapon weapon)
+        {
+            if (weapon == null) return 0f;
+
+            // Default: Lock at current ammo (no refill)
+            float floor = weapon.ammo;
+
+            // Synergy Logic
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 && ModifierManager.instance != null)
+            {
+                int efficiencyLevel = ModifierManager.instance.GetModLevel("efficiency");
+
+                if (efficiencyLevel == 1)
+                {
+                    // Level 1: Ensure at least 50% ammo
+                    float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
+                    if (halfMax > floor) floor = halfMax;
+                }
+                else if (efficiencyLevel >= 2)
+                {
+                    // Level 2: Fill to max
+                    floor = weapon.maxAmmo;
+                }
+            }
+
+            return floor;
         }
 
         private void SetWeaponAmmo(Weapon weapon, float value)
@@ -121,10 +152,9 @@ namespace SpiderSurge
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)
             {
-                storedMaxAmmo = weaponManager.equippedWeapon.maxAmmo;
-                float previousAmmo = weaponManager.equippedWeapon.ammo;
-
-                SetWeaponAmmo(weaponManager.equippedWeapon, storedMaxAmmo);
+                lastWeapon = weaponManager.equippedWeapon;
+                storedMaxAmmo = GetTargetAmmoCount(lastWeapon);
+                SetWeaponAmmo(lastWeapon, storedMaxAmmo);
             }
             else
             {

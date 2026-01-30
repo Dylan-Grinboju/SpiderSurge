@@ -82,7 +82,7 @@ namespace SpiderSurge
                 { "indicator.offset.y", 8f },
                 { "indicator.availableColor", "#00FF00" },
                 { "indicator.cooldownColor", "#FF0000" },
-                { "indicator.activeColor", "#0000FF" },
+                { "indicator.activeColor", "#87CEEB" },
                 { "indicator.showOnlyWhenReady", false },
                 // Upgrade activation
                 { "UseDpadForUltimate", false },

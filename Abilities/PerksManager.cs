@@ -21,7 +21,7 @@ namespace SpiderSurge
         private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility", "explosionAbility" };
 
         // Upgrade perks - shown in normal perk selection
-        private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration", "shortTermInvestment", "longTermInvestment", "perkLuck" };
+        private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration", "shortTermInvestment", "longTermInvestment", "perkLuck", "synergy" };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
         private HashSet<string> abilityUltimatePerks = new HashSet<string> { "shieldAbilityUltimate", "infiniteAmmoAbilityUltimate", "explosionAbilityUltimate" };
@@ -36,6 +36,7 @@ namespace SpiderSurge
             ["shortTermInvestment"] = "Short Term Investment",
             ["longTermInvestment"] = "Long Term Investment",
             ["perkLuck"] = "Perk Luck",
+            ["synergy"] = "Ability Synergy",
             // Ultimate perks - dynamic names based on which ability is active
             ["shieldAbilityUltimate"] = "Shield Ultimate",
             ["infiniteAmmoAbilityUltimate"] = "Weapon Arsenal Ultimate",
@@ -52,6 +53,7 @@ namespace SpiderSurge
             ["shortTermInvestment"] = "Increases ability duration by 2 levels, but increases cooldown by 1 level.",
             ["longTermInvestment"] = "Decreases cooldown by 2 levels, but decreases ability duration by 1 level.",
             ["perkLuck"] = "Chance to see level 2 perks even without level 1.",
+            ["synergy"] = "Unlocks ability synergy.",
             // Ultimate perks
             ["shieldAbilityUltimate"] = "Grants complete damage immunity (3x cooldown).",
             ["infiniteAmmoAbilityUltimate"] = "Spawns weapons at all spawn points (3x cooldown).",
@@ -68,6 +70,7 @@ namespace SpiderSurge
             ["shortTermInvestment"] = "",
             ["longTermInvestment"] = "",
             ["perkLuck"] = "Increases chance to see level 2 perks.",
+            ["synergy"] = "Unlocks ability synergy.",
             // Ultimate perks don't have upgrade descriptions (max level 1)
             ["shieldAbilityUltimate"] = "",
             ["infiniteAmmoAbilityUltimate"] = "",
@@ -77,6 +80,11 @@ namespace SpiderSurge
         // Descriptions when explosion ability is unlocked (duration also affects explosion size)
         private const string DURATION_DESC_WITH_EXPLOSION = "Increases explosion size.";
         private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Further increases explosion size.";
+        
+        // Synergy Descriptions
+        private const string SYNERGY_DESC_SHIELD = "Synergy with Shield: Grants immunity if you have a shield.";
+        private const string SYNERGY_DESC_AMMO = "Synergy with Efficiency: Restores ammo based on Efficiency level.";
+        private const string SYNERGY_DESC_EXPLOSION = "Synergy with Explosions: Buffs knockback and death zone based on explosion perks.";
 
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
@@ -88,6 +96,7 @@ namespace SpiderSurge
             ["shortTermInvestment"] = 1,
             ["longTermInvestment"] = 1,
             ["perkLuck"] = 2,
+            ["synergy"] = 1,
             // Ultimate perks are level 1 only
             ["shieldAbilityUltimate"] = 1,
             ["infiniteAmmoAbilityUltimate"] = 1,
@@ -104,6 +113,7 @@ namespace SpiderSurge
             ["shortTermInvestment"] = new List<string>(),
             ["longTermInvestment"] = new List<string>(),
             ["perkLuck"] = new List<string>(),
+            ["synergy"] = new List<string>(),
             // Ultimate perks require the base ability to be unlocked
             ["shieldAbilityUltimate"] = new List<string> { "shieldAbility" },
             ["infiniteAmmoAbilityUltimate"] = new List<string> { "infiniteAmmoAbility" },
@@ -329,6 +339,12 @@ namespace SpiderSurge
             if (name == "abilityDuration" && GetPerkLevel("explosionAbility") > 0)
             {
                 return DURATION_DESC_WITH_EXPLOSION;
+            }
+            if (name == "synergy")
+            {
+                if (GetPerkLevel("shieldAbility") > 0) return SYNERGY_DESC_SHIELD;
+                if (GetPerkLevel("infiniteAmmoAbility") > 0) return SYNERGY_DESC_AMMO;
+                if (GetPerkLevel("explosionAbility") > 0) return SYNERGY_DESC_EXPLOSION;
             }
             return descriptions.ContainsKey(name) ? descriptions[name] : "";
         }
