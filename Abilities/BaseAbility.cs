@@ -249,6 +249,16 @@ namespace SpiderSurge
                     CreateAbilityIndicator();
                 }
             }
+
+            // Retry registering input interceptor if missed in Start
+            if (inputInterceptor == null && playerController != null)
+            {
+                inputInterceptor = GetComponentInParent<InputInterceptor>();
+                if (inputInterceptor != null)
+                {
+                    RegisterWithInputInterceptor();
+                }
+            }
         }
 
         protected virtual void CreateAbilityIndicator()

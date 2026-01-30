@@ -43,15 +43,15 @@ namespace SpiderSurge
             _weaponManager = GetComponentInChildren<SpiderWeaponManager>();
             if (_weaponManager == null && playerController != null)
             {
-                 // Try from the player controller's health system
-                 _weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
+                // Try from the player controller's health system
+                _weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
             }
 
             if (_weaponManager == null)
             {
                 Logger.LogError($"InterdimensionalStorageAbility: SpiderWeaponManager not found on {name}");
             }
-            
+
             // Restore weapons on start (local only)
             RestoreWeapons();
         }
@@ -107,7 +107,7 @@ namespace SpiderSurge
             {
                 // Force position to player to prevent it from flying across the map
                 storedWeaponObj.transform.position = _weaponManager.transform.position;
-                
+
                 storedWeaponObj.SetActive(true);
                 storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
 
@@ -139,8 +139,9 @@ namespace SpiderSurge
             }
         }
 
-        private void OnCharacterDied()
+        public void OnCharacterDied()
         {
+            if (_playerDied) return;
             // Local check
             _playerDied = true;
             SaveWeapons(isDeath: true);
@@ -158,14 +159,8 @@ namespace SpiderSurge
 
         private bool _playerDied = false;
 
-        private struct SavedWeaponData
-        {
-            public SerializationWeaponName WeaponName;
-            public float Ammo;
-            public bool IsUltimateSlot;
-        }
+        // Local storage moved to PerksManager
 
-        private static Dictionary<int, List<SavedWeaponData>> _savedWeapons = new Dictionary<int, List<SavedWeaponData>>();
 
         private void SaveWeapons(bool isDeath)
         {
@@ -176,7 +171,7 @@ namespace SpiderSurge
             int playerId = playerInput != null ? playerInput.playerIndex : -1;
             if (playerId == -1) return;
 
-            List<SavedWeaponData> dataList = new List<SavedWeaponData>();
+            List<PerksManager.SavedWeaponData> dataList = new List<PerksManager.SavedWeaponData>();
 
             // Check Slot 1
             SaveSlot(_storedWeapon, false, isDeath, dataList);
@@ -187,24 +182,17 @@ namespace SpiderSurge
                 SaveSlot(_ultimateStoredWeapon, true, isDeath, dataList);
             }
 
-            if (dataList.Count > 0)
-            {
-                _savedWeapons[playerId] = dataList;
-                Logger.LogInfo($"[Storage] Saved {dataList.Count} weapons for player {playerId} (Death: {isDeath})");
-            }
-            else
-            {
-                _savedWeapons.Remove(playerId);
-            }
+            // Save to PerksManager (singleton)
+            PerksManager.Instance.SaveStoredWeapons(playerId, dataList);
         }
 
-        private void SaveSlot(Weapon weapon, bool isUltimateSlot, bool isDeath, List<SavedWeaponData> dataList)
+        private void SaveSlot(Weapon weapon, bool isUltimateSlot, bool isDeath, List<PerksManager.SavedWeaponData> dataList)
         {
             if (weapon == null) return;
 
             if (ShouldKeepWeapon(weapon, isDeath))
             {
-                dataList.Add(new SavedWeaponData
+                dataList.Add(new PerksManager.SavedWeaponData
                 {
                     WeaponName = weapon.serializationWeaponName,
                     Ammo = weapon.ammo,
@@ -236,16 +224,30 @@ namespace SpiderSurge
 
         private void RestoreWeapons()
         {
-            int playerId = playerInput != null ? playerInput.playerIndex : -1;
-            if (!_savedWeapons.ContainsKey(playerId)) return;
+            if (PerksManager.Instance == null) return;
 
-            List<SavedWeaponData> dataList = _savedWeapons[playerId];
+            int playerId = playerInput != null ? playerInput.playerIndex : -1;
+            List<PerksManager.SavedWeaponData> dataList = PerksManager.Instance.GetStoredWeapons(playerId);
+
+            if (dataList == null || dataList.Count == 0) return;
+
             Logger.LogInfo($"[Storage] Restoring {dataList.Count} weapons for player {playerId}");
 
             // Gather all spawnable weapons to find prefabs
             List<SpawnableWeapon> availableWeapons = new List<SpawnableWeapon>();
             if (VersusMode.instance != null) availableWeapons.AddRange(VersusMode.instance.weapons);
-            if (SurvivalMode.instance != null) availableWeapons.AddRange(SurvivalMode.instance._weapons);
+            if (SurvivalMode.instance != null)
+            {
+                var field = typeof(SurvivalMode).GetField("_weapons", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field != null)
+                {
+                    var survivalWeapons = (List<SpawnableWeapon>)field.GetValue(SurvivalMode.instance);
+                    if (survivalWeapons != null)
+                    {
+                        availableWeapons.AddRange(survivalWeapons);
+                    }
+                }
+            }
 
             foreach (var data in dataList)
             {
@@ -263,8 +265,8 @@ namespace SpiderSurge
 
                 if (prefab != null)
                 {
-                    GameObject newWeaponObj = Instantiate(prefab, Vector3.zero, Quaternion.identity); 
-                    
+                    GameObject newWeaponObj = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+
                     if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
                     {
                         var no = newWeaponObj.GetComponent<NetworkObject>();
@@ -294,7 +296,7 @@ namespace SpiderSurge
             }
 
             // Clear after restoring
-            _savedWeapons.Remove(playerId);
+            PerksManager.Instance.ClearStoredWeapons(playerId);
         }
 
         private float GetSwapDuration(bool useUltimate)
@@ -346,6 +348,11 @@ namespace SpiderSurge
 
             // If nothing stored, we are storing the held weapon
             return _weaponManager != null ? _weaponManager.equippedWeapon : null;
+        }
+        public static InterdimensionalStorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
+        {
+            if (healthSystem == null) return null;
+            return healthSystem.GetComponentInParent<InterdimensionalStorageAbility>();
         }
     }
 }

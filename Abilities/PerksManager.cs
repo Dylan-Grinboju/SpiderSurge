@@ -471,5 +471,73 @@ namespace SpiderSurge
             if (level == 2) return 1f;
             return 0f;
         }
+
+        // Interdimensional Storage Persistence
+
+        public struct SavedWeaponData
+        {
+            public SerializationWeaponName WeaponName;
+            public float Ammo;
+            public bool IsUltimateSlot;
+        }
+
+        private Dictionary<int, List<SavedWeaponData>> _storedWeapons = new Dictionary<int, List<SavedWeaponData>>();
+
+        public void SaveStoredWeapons(int playerId, List<SavedWeaponData> weapons)
+        {
+            if (weapons == null || weapons.Count == 0)
+            {
+                if (_storedWeapons.ContainsKey(playerId))
+                {
+                    _storedWeapons.Remove(playerId);
+                    Logger.LogInfo($"[PerksManager] Cleared stored weapons for player {playerId}");
+                }
+                return;
+            }
+
+            // Clone list to ensure safety
+            _storedWeapons[playerId] = new List<SavedWeaponData>(weapons);
+            Logger.LogInfo($"[PerksManager] Saved {weapons.Count} weapons for player {playerId}");
+
+            // Log ALL stored weapons across all players
+            LogAllStoredWeapons();
+        }
+
+        private void LogAllStoredWeapons()
+        {
+            Logger.LogInfo("=== [PerksManager] Global Weapon Storage State ===");
+            if (_storedWeapons.Count == 0)
+            {
+                Logger.LogInfo("   (Empty)");
+            }
+            else
+            {
+                foreach (var kvp in _storedWeapons)
+                {
+                    string wList = string.Join(", ", kvp.Value.Select(w => $"{w.WeaponName}(Ult:{w.IsUltimateSlot},Ammo:{w.Ammo})"));
+                    Logger.LogInfo($"   Player {kvp.Key}: [{wList}]");
+                }
+            }
+            Logger.LogInfo("==================================================");
+        }
+
+        public List<SavedWeaponData> GetStoredWeapons(int playerId)
+        {
+            if (_storedWeapons.TryGetValue(playerId, out var list))
+            {
+                return list;
+            }
+            return null;
+        }
+
+        public void ClearStoredWeapons(int playerId)
+        {
+            if (_storedWeapons.ContainsKey(playerId))
+            {
+                _storedWeapons.Remove(playerId);
+                Logger.LogInfo($"[PerksManager] Explicitly cleared stored weapons for player {playerId}");
+                LogAllStoredWeapons();
+            }
+        }
     }
 }

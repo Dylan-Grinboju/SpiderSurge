@@ -21,6 +21,17 @@ namespace SpiderSurge
             RecordHit(__instance);
         }
 
+        [HarmonyPatch("DisintegrateLegsAndDestroy")]
+        [HarmonyPrefix]
+        public static void DisintegrateLegsAndDestroy_Prefix(SpiderHealthSystem __instance)
+        {
+            var ability = InterdimensionalStorageAbility.GetByHealthSystem(__instance);
+            if (ability != null)
+            {
+                ability.OnCharacterDied();
+            }
+        }
+
         private static void RecordHit(SpiderHealthSystem healthSystem)
         {
             // Find the ShieldAbility associated with this spider

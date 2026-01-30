@@ -150,7 +150,18 @@ namespace SpiderSurge
             bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
             bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 
-            if (!isSurgePerk && !isLucky) return;
+            // Perform Synergy Checks
+            bool isSynergized = false;
+            // Shield Synergy: 'shield' perk (standard shield)
+            if (PerksManager.Instance.GetPerkLevel("shieldAbility") > 0 && key == "shield") isSynergized = true;
+            // Infinite Ammo Synergy: 'efficiency' perk
+            if (PerksManager.Instance.GetPerkLevel("infiniteAmmoAbility") > 0 && key == "efficiency") isSynergized = true;
+            // Explosion Synergy: 'tooCool' (Death Zone) and 'biggerBoom' (Knockback)
+            if (PerksManager.Instance.GetPerkLevel("explosionAbility") > 0 && (key == "tooCool" || key == "biggerBoom")) isSynergized = true;
+            // Storage Synergy: 'moreGuns', 'moreBoom' (shared), 'moreParticles'
+            if (PerksManager.Instance.GetPerkLevel("interdimensionalStorageAbility") > 0 && (key == "moreGuns" || key == "moreBoom" || key == "moreParticles")) isSynergized = true;
+
+            if (!isSurgePerk && !isLucky && !isSynergized) return;
 
             // Helper to find TMP_Text with multiple possible names and binding flags
             TMP_Text GetTextComponent(string[] names)
@@ -207,11 +218,19 @@ namespace SpiderSurge
                     perkDescriptionText.text = description;
                 }
             }
-            else if (isLucky) // Vanilla but Lucky
+            else
             {
+                // Vanilla Modifier Handling
                 if (perkDescriptionText != null)
                 {
-                    perkDescriptionText.text += "\n<color=#FFD700>Lucky Upgrade</color>";
+                    if (isLucky)
+                    {
+                        perkDescriptionText.text += "\n<color=#FFD700>Lucky Upgrade</color>";
+                    }
+                    if (isSynergized)
+                    {
+                        perkDescriptionText.text += "\n<color=#00FFFF>Synergized</color>";
+                    }
                 }
             }
         }
