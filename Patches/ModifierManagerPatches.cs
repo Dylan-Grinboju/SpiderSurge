@@ -199,6 +199,11 @@ namespace SpiderSurge
                         description += "\n<color=#FFD700>Lucky Upgrade</color>";
                     }
 
+                    if (PerksManager.Instance.GetAbilityUltimatePerkNames().Contains(key) && PerksManager.Instance.IsPost60WavePerkSelection)
+                    {
+                        description += "\n<color=#FFD700>Swap Ability!</color>";
+                    }
+
                     perkDescriptionText.text = description;
                 }
             }

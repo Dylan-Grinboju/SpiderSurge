@@ -18,13 +18,13 @@ namespace SpiderSurge
         public bool IsPost60WavePerkSelection { get; set; } = false;
 
         // Ability perks - shown in special ability selection screen
-        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility", "explosionAbility" };
+        private HashSet<string> abilityPerks = new HashSet<string> { "shieldAbility", "infiniteAmmoAbility", "explosionAbility", "interdimensionalStorageAbility" };
 
         // Upgrade perks - shown in normal perk selection
         private HashSet<string> upgradePerks = new HashSet<string> { "abilityCooldown", "abilityDuration", "shortTermInvestment", "longTermInvestment", "perkLuck", "synergy" };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
-        private HashSet<string> abilityUltimatePerks = new HashSet<string> { "shieldAbilityUltimate", "infiniteAmmoAbilityUltimate", "explosionAbilityUltimate" };
+        private HashSet<string> abilityUltimatePerks = new HashSet<string> { "shieldAbilityUltimate", "infiniteAmmoAbilityUltimate", "explosionAbilityUltimate", "interdimensionalStorageAbilityUltimate" };
 
         private Dictionary<string, string> displayNames = new Dictionary<string, string>
         {
@@ -40,7 +40,9 @@ namespace SpiderSurge
             // Ultimate perks - dynamic names based on which ability is active
             ["shieldAbilityUltimate"] = "Shield Ultimate",
             ["infiniteAmmoAbilityUltimate"] = "Weapon Arsenal Ultimate",
-            ["explosionAbilityUltimate"] = "Explosion Ultimate"
+            ["explosionAbilityUltimate"] = "Explosion Ultimate",
+            ["interdimensionalStorageAbility"] = "Interdimensional Storage",
+            ["interdimensionalStorageAbilityUltimate"] = "Storage Ultimate"
         };
 
         private Dictionary<string, string> descriptions = new Dictionary<string, string>
@@ -48,6 +50,7 @@ namespace SpiderSurge
             ["shieldAbility"] = "Unlocks the shield ability.",
             ["infiniteAmmoAbility"] = "Unlocks the infinite ammo ability.",
             ["explosionAbility"] = "Unlocks the explosion ability.",
+            ["interdimensionalStorageAbility"] = "Unlocks the interdimensional storage ability.",
             ["abilityCooldown"] = "Reduces ability cooldown.",
             ["abilityDuration"] = "Increases ability duration.",
             ["shortTermInvestment"] = "Increases ability duration by 2 levels, but increases cooldown by 1 level.",
@@ -57,7 +60,8 @@ namespace SpiderSurge
             // Ultimate perks
             ["shieldAbilityUltimate"] = "Grants complete damage immunity (3x cooldown).",
             ["infiniteAmmoAbilityUltimate"] = "Spawns weapons at all spawn points (3x cooldown).",
-            ["explosionAbilityUltimate"] = "Explosion deals lethal damage (3x cooldown)."
+            ["explosionAbilityUltimate"] = "Explosion deals lethal damage (3x cooldown).",
+            ["interdimensionalStorageAbilityUltimate"] = "Adds a second storage slot (3x cooldown)."
         };
 
         private Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -65,6 +69,7 @@ namespace SpiderSurge
             ["shieldAbility"] = "",
             ["infiniteAmmoAbility"] = "",
             ["explosionAbility"] = "",
+            ["interdimensionalStorageAbility"] = "",
             ["abilityCooldown"] = "Further reduces ability cooldown.",
             ["abilityDuration"] = "Further increases ability duration.",
             ["shortTermInvestment"] = "",
@@ -74,23 +79,26 @@ namespace SpiderSurge
             // Ultimate perks don't have upgrade descriptions (max level 1)
             ["shieldAbilityUltimate"] = "",
             ["infiniteAmmoAbilityUltimate"] = "",
-            ["explosionAbilityUltimate"] = ""
+            ["explosionAbilityUltimate"] = "",
+            ["interdimensionalStorageAbilityUltimate"] = ""
         };
 
         // Descriptions when explosion ability is unlocked (duration also affects explosion size)
         private const string DURATION_DESC_WITH_EXPLOSION = "Increases explosion size.";
         private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Further increases explosion size.";
-        
+
         // Synergy Descriptions
         private const string SYNERGY_DESC_SHIELD = "Synergy with Shield: Grants immunity if you have a shield.";
         private const string SYNERGY_DESC_AMMO = "Synergy with Efficiency: Restores ammo based on Efficiency level.";
         private const string SYNERGY_DESC_EXPLOSION = "Synergy with Explosions: Buffs knockback and death zone based on explosion perks.";
+        private const string SYNERGY_DESC_STORAGE = "Synergy with More Weapons: keep the weapon type after map change or even death";
 
         private Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
             ["shieldAbility"] = 1,
             ["infiniteAmmoAbility"] = 1,
             ["explosionAbility"] = 1,
+            ["interdimensionalStorageAbility"] = 1,
             ["abilityCooldown"] = 2,
             ["abilityDuration"] = 2,
             ["shortTermInvestment"] = 1,
@@ -100,7 +108,8 @@ namespace SpiderSurge
             // Ultimate perks are level 1 only
             ["shieldAbilityUltimate"] = 1,
             ["infiniteAmmoAbilityUltimate"] = 1,
-            ["explosionAbilityUltimate"] = 1
+            ["explosionAbilityUltimate"] = 1,
+            ["interdimensionalStorageAbilityUltimate"] = 1
         };
 
         private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
@@ -108,6 +117,7 @@ namespace SpiderSurge
             ["shieldAbility"] = new List<string>(),
             ["infiniteAmmoAbility"] = new List<string>(),
             ["explosionAbility"] = new List<string>(),
+            ["interdimensionalStorageAbility"] = new List<string>(),
             ["abilityCooldown"] = new List<string>(),
             ["abilityDuration"] = new List<string>(),
             ["shortTermInvestment"] = new List<string>(),
@@ -117,7 +127,8 @@ namespace SpiderSurge
             // Ultimate perks require the base ability to be unlocked
             ["shieldAbilityUltimate"] = new List<string> { "shieldAbility" },
             ["infiniteAmmoAbilityUltimate"] = new List<string> { "infiniteAmmoAbility" },
-            ["explosionAbilityUltimate"] = new List<string> { "explosionAbility" }
+            ["explosionAbilityUltimate"] = new List<string> { "explosionAbility" },
+            ["interdimensionalStorageAbilityUltimate"] = new List<string> { "interdimensionalStorageAbility" }
         };
 
         private Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -189,6 +200,11 @@ namespace SpiderSurge
                     spiderController.gameObject.AddComponent<ExplosionAbility>();
                 }
 
+                if (spiderController.GetComponent<InterdimensionalStorageAbility>() == null)
+                {
+                    spiderController.gameObject.AddComponent<InterdimensionalStorageAbility>();
+                }
+
 
             }
             catch (System.Exception ex)
@@ -212,6 +228,11 @@ namespace SpiderSurge
             EnableAbility<ExplosionAbility>("explosionAbility");
         }
 
+        public static void EnableStorageAbility()
+        {
+            EnableAbility<InterdimensionalStorageAbility>("interdimensionalStorageAbility");
+        }
+
         public static void EnableShieldUltimate()
         {
             EnableUltimate<ShieldAbility>("shieldAbilityUltimate");
@@ -225,6 +246,11 @@ namespace SpiderSurge
         public static void EnableExplosionUltimate()
         {
             EnableUltimate<ExplosionAbility>("explosionAbilityUltimate");
+        }
+
+        public static void EnableStorageUltimate()
+        {
+            EnableUltimate<InterdimensionalStorageAbility>("interdimensionalStorageAbilityUltimate");
         }
 
         private static void EnableAbility<T>(string perkName) where T : BaseAbility
@@ -320,7 +346,7 @@ namespace SpiderSurge
 
         public bool HasAnyAbilityUnlocked()
         {
-            return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0 || GetPerkLevel("explosionAbility") > 0;
+            return GetPerkLevel("shieldAbility") > 0 || GetPerkLevel("infiniteAmmoAbility") > 0 || GetPerkLevel("explosionAbility") > 0 || GetPerkLevel("interdimensionalStorageAbility") > 0;
         }
 
         public string GetChosenAbilityUltimate()
@@ -328,6 +354,7 @@ namespace SpiderSurge
             if (GetPerkLevel("shieldAbility") > 0) return "shieldAbilityUltimate";
             if (GetPerkLevel("infiniteAmmoAbility") > 0) return "infiniteAmmoAbilityUltimate";
             if (GetPerkLevel("explosionAbility") > 0) return "explosionAbilityUltimate";
+            if (GetPerkLevel("interdimensionalStorageAbility") > 0) return "interdimensionalStorageAbilityUltimate";
             return null;
         }
 
@@ -345,6 +372,7 @@ namespace SpiderSurge
                 if (GetPerkLevel("shieldAbility") > 0) return SYNERGY_DESC_SHIELD;
                 if (GetPerkLevel("infiniteAmmoAbility") > 0) return SYNERGY_DESC_AMMO;
                 if (GetPerkLevel("explosionAbility") > 0) return SYNERGY_DESC_EXPLOSION;
+                if (GetPerkLevel("interdimensionalStorageAbility") > 0) return SYNERGY_DESC_STORAGE;
             }
             return descriptions.ContainsKey(name) ? descriptions[name] : "";
         }
@@ -389,6 +417,14 @@ namespace SpiderSurge
             else if (name == "explosionAbilityUltimate")
             {
                 HandleUltimateSelection(name, EnableExplosionUltimate);
+            }
+            else if (name == "interdimensionalStorageAbility")
+            {
+                EnableStorageAbility();
+            }
+            else if (name == "interdimensionalStorageAbilityUltimate")
+            {
+                HandleUltimateSelection(name, EnableStorageUltimate);
             }
         }
 

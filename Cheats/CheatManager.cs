@@ -46,6 +46,7 @@ namespace SpiderSurge
             ("shieldAbility", "Shield Ability"),
             ("infiniteAmmoAbility", "Infinite Ammo Ability"),
             ("explosionAbility", "Explosion Ability"),
+            ("interdimensionalStorageAbility", "Interdimensional Storage"),
             ("abilityCooldown", "Ability Cooldown"),
             ("abilityDuration", "Ability Duration"),
             ("shortTermInvestment", "Short Term Investment"),
@@ -610,6 +611,7 @@ namespace SpiderSurge
                     if (key == "shieldAbility") PerksManager.EnableShieldAbility();
                     else if (key == "infiniteAmmoAbility") PerksManager.EnableInfiniteAmmoAbility();
                     else if (key == "explosionAbility") PerksManager.EnableExplosionAbility();
+                    else if (key == "interdimensionalStorageAbility") PerksManager.EnableStorageAbility();
                     else PerksManager.Instance.SetPerkLevel(key, 1);
                 }
                 else if (baseLevel == 1 && ultimateLevel == 0)
