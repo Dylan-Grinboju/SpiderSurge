@@ -14,7 +14,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (ModConfig.enableSurgeMode)
+            if (ModConfig.UnlimitedPerkChoosingTime)
             {
                 // Access private field perkChoiseTimer
                 var field = typeof(SurvivalModeHud).GetField("perkChoiseTimer", BindingFlags.NonPublic | BindingFlags.Instance);

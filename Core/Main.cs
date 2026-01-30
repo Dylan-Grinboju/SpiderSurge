@@ -86,6 +86,7 @@ namespace SpiderSurge
                 { "indicator.showOnlyWhenReady", false },
                 // Upgrade activation
                 { "UseDpadForUltimate", false },
+                { "UnlimitedPerkChoosingTime", false },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)

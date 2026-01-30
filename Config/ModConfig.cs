@@ -24,6 +24,8 @@ namespace SpiderSurge
         // Ultimate activation configuration
         public static bool UltimateUseDpadActivation => Config.GetModConfigValue(ModId, "UseDpadForUltimate", false);
 
+        public static bool UnlimitedPerkChoosingTime => Config.GetModConfigValue(ModId, "UnlimitedPerkChoosingTime", false);
+
         private static float ValidateIndicatorRadius(float value)
         {
             if (value < 0.5f)
