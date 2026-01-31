@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using Logger = Silk.Logger;
@@ -10,14 +9,16 @@ namespace SpiderSurge
     public class ShieldAbility : BaseAbility
     {
         public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
+        private static Dictionary<SpiderHealthSystem, ShieldAbility> shieldsByHealth = new Dictionary<SpiderHealthSystem, ShieldAbility>();
 
-        public override string PerkName => "shieldAbility";
+        public override string PerkName => Consts.PerkNames.ShieldAbility;
 
-        public override float BaseDuration => 2f;
-        public override float DurationPerPerkLevel => 1f;
+        public override float BaseDuration => Consts.Values.Shield.BaseDuration;
+        public override float DurationPerPerkLevel => Consts.Values.Shield.DurationIncreasePerLevel;
 
-        public override float BaseCooldown => 11f;
-        public override float CooldownPerPerkLevel => 5f;
+        public override float BaseCooldown => Consts.Values.Shield.BaseCooldown;
+        public override float CooldownPerPerkLevel => Consts.Values.Shield.CooldownReductionPerLevel;
+        public override float UltimateCooldownMultiplier => Consts.Values.Shield.UltimateCooldownMultiplier;
 
         // Ultimate: Immunity
         public override bool HasUltimate => true;
@@ -26,6 +27,7 @@ namespace SpiderSurge
 
         // Cached reflection field for immunity
         private static FieldInfo immuneTimeField;
+        private static MethodInfo _breakShieldMethod;
 
         private bool hadShieldOnActivate = false;
 
@@ -41,6 +43,11 @@ namespace SpiderSurge
                 playerShields[playerInput] = this;
             }
 
+            if (spiderHealthSystem != null)
+            {
+                shieldsByHealth[spiderHealthSystem] = this;
+            }
+
             // Cache reflection field for immunity
             if (immuneTimeField == null)
             {
@@ -53,16 +60,19 @@ namespace SpiderSurge
                     Logger.LogError("ShieldAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
                 }
             }
+
+            if (_breakShieldMethod == null)
+            {
+                _breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+            }
         }
 
         public static ShieldAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
-            foreach (var ability in playerShields.Values)
-            {
-                if (ability.spiderHealthSystem == healthSystem)
-                    return ability;
-            }
-            return null;
+            if (healthSystem == null) return null;
+            shieldsByHealth.TryGetValue(healthSystem, out var ability);
+            return ability;
         }
 
         public void RegisterHit()
@@ -76,7 +86,7 @@ namespace SpiderSurge
         protected override void OnActivate()
         {
             // Synergy Check: If Synergy active and we have a shield -> Immunity (Ultimate-like behavior)
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 &&
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 &&
                 spiderHealthSystem != null && spiderHealthSystem.HasShield())
             {
                 isUltSession = true; // Use Ultimate session logic for immunity tracking
@@ -162,17 +172,7 @@ namespace SpiderSurge
                     }
                     else
                     {
-                        // Try to get it one more time if cached is null (fallback)
-                        var field = typeof(SpiderHealthSystem).GetField("_immuneTill", BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (field != null)
-                        {
-                            immuneTimeField = field;
-                            field.SetValue(spiderHealthSystem, float.MaxValue);
-                        }
-                        else
-                        {
-                            Logger.LogError("Could not find _immuneTill field in SpiderHealthSystem");
-                        }
+                        Logger.LogError("ShieldAbility: Immune field not cached, cannot apply immunity.");
                     }
                 }
                 catch (System.Exception ex)
@@ -223,18 +223,20 @@ namespace SpiderSurge
             {
                 playerShields.Remove(playerInput);
             }
+
+            if (spiderHealthSystem != null && shieldsByHealth.ContainsKey(spiderHealthSystem))
+            {
+                shieldsByHealth.Remove(spiderHealthSystem);
+            }
         }
 
         private void DestroyShield()
         {
             try
             {
-                var breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (breakShieldMethod != null)
+                if (_breakShieldMethod != null)
                 {
-                    breakShieldMethod.Invoke(spiderHealthSystem, null);
+                    _breakShieldMethod.Invoke(spiderHealthSystem, null);
                 }
                 else
                 {

@@ -2,7 +2,6 @@
 using Logger = Silk.Logger;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Reflection;
@@ -11,9 +10,9 @@ namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
     [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
-    public class SpiderSurge : SilkMod
+    public class SpiderSurgeMod : SilkMod
     {
-        public static SpiderSurge Instance { get; private set; }
+        public static SpiderSurgeMod Instance { get; private set; }
         public const string ModId = "SpiderSurge";
 
         // Get version from assembly at runtime
@@ -39,7 +38,7 @@ namespace SpiderSurge
             // Initialize configuration with default values first
             SetupConfiguration();
 
-            new SurgeGameModeManager();
+            new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
             new GameObject("PerksManager").AddComponent<PerksManager>();
             // Initialize CheatManager

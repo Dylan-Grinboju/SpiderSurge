@@ -38,19 +38,19 @@ namespace SpiderSurge
         private bool rightStickPressed = false;
         private float lastLeftStickPressTime = 0f;
         private float lastRightStickPressTime = 0f;
-        private const float COMBO_WINDOW = 0.15f;
+        private const float COMBO_WINDOW = Consts.Values.Inputs.ComboWindow;
 
         // Override these in derived classes to enable Ultimate
         public virtual bool HasUltimate => false;
         public virtual string UltimatePerkName => $"{PerkName}Ultimate";
-        public virtual string UltimatePerkDisplayName => "Ultimate";
-        public virtual string UltimatePerkDescription => "Ultimate version of the ability.";
+        public virtual string UltimatePerkDisplayName => Consts.Values.UI.UltimateDisplayName;
+        public virtual string UltimatePerkDescription => Consts.Values.UI.UltimateDefaultDescription;
         public virtual float UltimateCooldownMultiplier => 3f;
 
-        public virtual string[] ActivationButtons => new string[] { "<keyboard>/q", "<Gamepad>/leftshoulder" };
+        public virtual string[] ActivationButtons => new string[] { Consts.Values.Inputs.KeyboardQ, Consts.Values.Inputs.GamepadLeftShoulder };
 
         // Ultimate activation: E key (dual stick combo handled separately)
-        public virtual string UltimateActivationButton => "<Keyboard>/e";
+        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardE;
 
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;
@@ -83,31 +83,54 @@ namespace SpiderSurge
                 Logger.LogError($"PlayerController not found for {GetType().Name} on player {playerInput?.playerIndex}");
             }
 
-            // Find and register with InputInterceptor only if the ability should be registered
-            inputInterceptor = GetComponentInParent<InputInterceptor>();
-            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
-            {
-                foreach (string button in ActivationButtons)
-                {
-                    if (!string.IsNullOrEmpty(button))
-                    {
-                        inputInterceptor.RegisterAbility(this, button);
-                    }
-                }
-            }
-            else
-            {
-                Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex}");
-            }
+            // Start initialization coroutine to wait for dependencies
+            StartCoroutine(WaitForInit());
 
             // Set up Ultimate activation inputs if this ability has Ultimate
             if (HasUltimate)
             {
                 SetupUltimateInputs();
             }
+        }
 
-            // Create ability indicator if enabled and ability is unlocked
-            CreateAbilityIndicator();
+        private IEnumerator WaitForInit()
+        {
+            // Wait for components to be available
+            while (spiderHealthSystem == null || inputInterceptor == null)
+            {
+                if (playerController != null && spiderHealthSystem == null)
+                {
+                    spiderHealthSystem = playerController.spiderHealthSystem;
+                }
+
+                if (inputInterceptor == null)
+                {
+                    inputInterceptor = GetComponentInParent<InputInterceptor>();
+                }
+
+                // If we have everything we need, we can stop waiting
+                if (spiderHealthSystem != null && inputInterceptor != null)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            // Perform delayed initialization
+            if (abilityIndicator == null && showIndicator && IsUnlocked())
+            {
+                CreateAbilityIndicator();
+            }
+
+            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+            {
+                RegisterWithInputInterceptor();
+            }
+            else if (inputInterceptor == null)
+            {
+                Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex} after waiting.");
+            }
         }
 
         private void SetupUltimateInputs()
@@ -124,10 +147,10 @@ namespace SpiderSurge
                         name: $"{GetType().Name}_DpadActivation",
                         type: InputActionType.Button
                     );
-                    dpadActivationAction.AddBinding("<Gamepad>/dpad/up");
-                    dpadActivationAction.AddBinding("<Gamepad>/dpad/down");
-                    dpadActivationAction.AddBinding("<Gamepad>/dpad/left");
-                    dpadActivationAction.AddBinding("<Gamepad>/dpad/right");
+                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadUp);
+                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadDown);
+                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadLeft);
+                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadRight);
                     dpadActivationAction.performed += OnDpadPressed;
                     dpadActivationAction.Enable();
                 }
@@ -137,7 +160,7 @@ namespace SpiderSurge
                     leftStickPressAction = new InputAction(
                         name: $"{GetType().Name}_LeftStickPress",
                         type: InputActionType.Button,
-                        binding: "<Gamepad>/leftStickPress"
+                        binding: Consts.Values.Inputs.GamepadLeftStickPress
                     );
                     leftStickPressAction.performed += OnLeftStickPressed;
                     leftStickPressAction.canceled += OnLeftStickReleased;
@@ -147,7 +170,7 @@ namespace SpiderSurge
                     rightStickPressAction = new InputAction(
                         name: $"{GetType().Name}_RightStickPress",
                         type: InputActionType.Button,
-                        binding: "<Gamepad>/rightStickPress"
+                        binding: Consts.Values.Inputs.GamepadRightStickPress
                     );
                     rightStickPressAction.performed += OnRightStickPressed;
                     rightStickPressAction.canceled += OnRightStickReleased;
@@ -235,30 +258,6 @@ namespace SpiderSurge
                 }
             }
             return false;
-        }
-
-        protected virtual void Update()
-        {
-            if (spiderHealthSystem == null && playerController != null)
-            {
-                spiderHealthSystem = playerController.spiderHealthSystem;
-
-                // Try to create indicator now that we have spiderHealthSystem
-                if (abilityIndicator == null && showIndicator && IsUnlocked())
-                {
-                    CreateAbilityIndicator();
-                }
-            }
-
-            // Retry registering input interceptor if missed in Start
-            if (inputInterceptor == null && playerController != null)
-            {
-                inputInterceptor = GetComponentInParent<InputInterceptor>();
-                if (inputInterceptor != null)
-                {
-                    RegisterWithInputInterceptor();
-                }
-            }
         }
 
         protected virtual void CreateAbilityIndicator()

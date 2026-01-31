@@ -1,15 +1,15 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Silk;
 using Logger = Silk.Logger;
+
 
 namespace SpiderSurge
 {
     public static class ModUpdater
     {
-        private const string ModId = SpiderSurge.ModId;
-        private static string CurrentVersion => SpiderSurge.Version;
+        private const string ModId = SpiderSurgeMod.ModId;
+        private static string CurrentVersion => SpiderSurgeMod.Version;
 
         private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
         private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";

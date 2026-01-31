@@ -5,19 +5,21 @@ using System.Reflection;
 using Unity.Netcode;
 using Logger = Silk.Logger;
 
+
 namespace SpiderSurge
 {
     public class InfiniteAmmoAbility : BaseAbility
     {
         public static Dictionary<PlayerInput, InfiniteAmmoAbility> playerInfiniteAmmo = new Dictionary<PlayerInput, InfiniteAmmoAbility>();
 
-        public override string PerkName => "infiniteAmmoAbility";
+        public override string PerkName => Consts.PerkNames.InfiniteAmmoAbility;
 
-        public override float BaseDuration => 5f;
-        public override float DurationPerPerkLevel => 5f;
+        public override float BaseDuration => Consts.Values.InfiniteAmmo.BaseDuration;
+        public override float DurationPerPerkLevel => Consts.Values.InfiniteAmmo.DurationIncreasePerLevel;
 
-        public override float BaseCooldown => 11f;
-        public override float CooldownPerPerkLevel => 5f;
+        public override float BaseCooldown => Consts.Values.InfiniteAmmo.BaseCooldown;
+        public override float CooldownPerPerkLevel => Consts.Values.InfiniteAmmo.CooldownReductionPerLevel;
+        public override float UltimateCooldownMultiplier => Consts.Values.InfiniteAmmo.UltimateCooldownMultiplier;
 
         // Ultimate: Weapon Arsenal
         public override bool HasUltimate => true;
@@ -26,8 +28,10 @@ namespace SpiderSurge
 
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
+        private float weaponCheckTimer = 0f;
         private static FieldInfo networkAmmoField;
         private Weapon lastWeapon;
+        private static WeaponSpawner[] cachedWeaponSpawners;
 
         protected override void Awake()
         {
@@ -62,16 +66,19 @@ namespace SpiderSurge
             }
         }
 
-        protected override void Update()
+        protected void Update()
         {
-            base.Update();
-
             if (weaponManager == null)
             {
-                weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-                if (weaponManager == null && playerController != null)
+                weaponCheckTimer -= Time.deltaTime;
+                if (weaponCheckTimer <= 0)
                 {
-                    weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
+                    weaponCheckTimer = Consts.Values.InfiniteAmmo.CheckInterval;
+                    weaponManager = GetComponentInChildren<SpiderWeaponManager>();
+                    if (weaponManager == null && playerController != null)
+                    {
+                        weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
+                    }
                 }
             }
 
@@ -101,9 +108,9 @@ namespace SpiderSurge
             float floor = weapon.ammo;
 
             // Synergy Logic
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 && ModifierManager.instance != null)
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 && ModifierManager.instance != null)
             {
-                int efficiencyLevel = ModifierManager.instance.GetModLevel("efficiency");
+                int efficiencyLevel = ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
 
                 if (efficiencyLevel == 1)
                 {
@@ -178,17 +185,15 @@ namespace SpiderSurge
 
         private void SpawnWeaponsAtAllSpawnPoints()
         {
-            // // Only spawn on host/server
-            // if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
-            // {
-            //     Logger.LogInfo("Weapon Arsenal: Client-side only, skipping weapon spawn");
-            //     return;
-            // }
 
             try
             {
                 // Find all weapon spawners in the scene
-                WeaponSpawner[] weaponSpawners = FindObjectsOfType<WeaponSpawner>();
+                if (cachedWeaponSpawners == null || cachedWeaponSpawners.Length == 0 || cachedWeaponSpawners[0] == null)
+                {
+                    cachedWeaponSpawners = FindObjectsOfType<WeaponSpawner>();
+                }
+                WeaponSpawner[] weaponSpawners = cachedWeaponSpawners;
 
                 if (weaponSpawners.Length == 0)
                 {

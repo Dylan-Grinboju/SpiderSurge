@@ -12,41 +12,33 @@ namespace SpiderSurge
     {
         public static Dictionary<PlayerInput, ExplosionAbility> playerExplosions = new Dictionary<PlayerInput, ExplosionAbility>();
 
-        public override string PerkName => "explosionAbility";
+        public override string PerkName => Consts.PerkNames.ExplosionAbility;
 
         // Instant ability - no duration
-        public override float BaseCooldown => 11f;
-        public override float BaseDuration => 0f;
-        public override float CooldownPerPerkLevel => 5f;
+        public override float BaseCooldown => Consts.Values.Explosion.BaseCooldown;
+        public override float BaseDuration => Consts.Values.Explosion.BaseDuration;
+        public override float CooldownPerPerkLevel => Consts.Values.Explosion.CooldownReductionPerLevel;
+        public override float UltimateCooldownMultiplier => Consts.Values.Explosion.UltimateCooldownMultiplier;
 
         // Ultimate: Deadly Explosion
         public override bool HasUltimate => true;
         public override string UltimatePerkDisplayName => "Explosion Ultimate";
         public override string UltimatePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
 
-        // Base explosion parameters - matching afterlife explosion from SpiderHealthSystem
-        private const float BASE_KNOCKBACK_RADIUS = 80f;
-        private const float BASE_KNOCKBACK_STRENGTH = 50f;
-        private const float BASE_DEATH_RADIUS = 42f;
-
-        // Explosion size scaling per duration perk level (25% increase per level)
-        private const float SIZE_SCALE_PER_LEVEL = 0.25f;
-
-        // Synergy Modifiers (25% increase per level)
-        private const float SYNERGY_DEATH_ZONE_EXPANSION_PER_LEVEL = 0.25f;
-        private const float SYNERGY_KNOCKBACK_EXPANSION_PER_LEVEL = 0.25f;
-
         // Computed explosion parameters based on duration perk
-        private float ExplosionSizeMultiplier => 1f + (PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * SIZE_SCALE_PER_LEVEL;
-        private float KnockBackRadius => BASE_KNOCKBACK_RADIUS * ExplosionSizeMultiplier;
-        private float KnockBackStrength => BASE_KNOCKBACK_STRENGTH * ExplosionSizeMultiplier;
-        private float DeathRadius => BASE_DEATH_RADIUS * ExplosionSizeMultiplier;
+        private float ExplosionSizeMultiplier => 1f + (PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0) * Consts.Values.Explosion.SizeScalePerLevel;
+        private float KnockBackRadius => Consts.Values.Explosion.BaseKnockbackRadius * ExplosionSizeMultiplier;
+        private float KnockBackStrength => Consts.Values.Explosion.BaseKnockbackStrength * ExplosionSizeMultiplier;
+        private float DeathRadius => Consts.Values.Explosion.BaseDeathRadius * ExplosionSizeMultiplier;
 
         // Layer mask for detecting damageable objects
         private LayerMask explosionLayers;
 
         // Cached explosion VFX prefab (obtained from SpiderHealthSystem at runtime)
         private static GameObject cachedExplosionPrefab;
+
+        // Pre-allocated buffer for physics queries to avoid GC allocation
+        private Collider2D[] _explosionResults = new Collider2D[64];
 
         protected override void Awake()
         {
@@ -57,7 +49,7 @@ namespace SpiderSurge
             }
 
             // Layer names verified via Unity Explorer
-            explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy","DynamicWorld");
+            explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy", "DynamicWorld");
 
             // If the layer mask is 0, try to include everything that's typically damageable
             if (explosionLayers == 0)
@@ -92,6 +84,15 @@ namespace SpiderSurge
             // Nothing to do - explosion is instant
         }
 
+        private struct ExplosionParams
+        {
+            public Vector3 Position;
+            public float KnockBackRadius;
+            public float DeathRadius;
+            public float KnockBackStrength;
+            public float SynergyScaleMultiplier;
+        }
+
         private void TriggerExplosion(bool deadly)
         {
             if (playerController == null || spiderHealthSystem == null)
@@ -100,105 +101,101 @@ namespace SpiderSurge
                 return;
             }
 
-            Vector3 explosionPosition = spiderHealthSystem.transform.position;
-            int playerID = playerController.playerID.Value;
+            ExplosionParams explosionParams = CalculateExplosionParameters(deadly);
 
-            // Calculate Synergy Modifiers
-            float effectiveKnockBackStrength = KnockBackStrength;
-            float effectiveDeathRadius = DeathRadius;
-            float synergyScaleMultiplier = 1f;
+            // Visual effects
+            ApplyCameraEffects(deadly, explosionParams.KnockBackRadius);
 
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel("synergy") > 0 && ModifierManager.instance != null)
+            if (deadly)
             {
-                // Synergy Check
-                int tooCool = ModifierManager.instance.GetModLevel("tooCool");
+                SpawnExplosionVFX(explosionParams.Position, explosionParams.SynergyScaleMultiplier);
+            }
+
+            // Physics (Host only)
+            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            {
+                ApplyExplosionPhysics(explosionParams, deadly);
+            }
+        }
+
+        private ExplosionParams CalculateExplosionParameters(bool deadly)
+        {
+            ExplosionParams p = new ExplosionParams
+            {
+                Position = spiderHealthSystem.transform.position,
+                KnockBackRadius = KnockBackRadius,
+                KnockBackStrength = KnockBackStrength,
+                DeathRadius = DeathRadius,
+                SynergyScaleMultiplier = 1f
+            };
+
+            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 && ModifierManager.instance != null)
+            {
+                int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
                 if (tooCool > 0 && deadly)
                 {
                     Logger.LogInfo($"Too Cool Synergy ACTIVATED for player {playerInput?.playerIndex}!");
-                    float modifier = SYNERGY_DEATH_ZONE_EXPANSION_PER_LEVEL * (tooCool >= 2 ? 2f : 1f);
-                    effectiveDeathRadius *= 1f + modifier;
-                    synergyScaleMultiplier = 1f + modifier;
+                    float modifier = Consts.Values.Explosion.SynergyDeathZonePerLevel * (tooCool >= 2 ? 2f : 1f);
+                    p.DeathRadius *= 1f + modifier;
+                    p.SynergyScaleMultiplier = 1f + modifier;
                 }
 
-                // Synergy Check
-                int biggerBoom = ModifierManager.instance.GetModLevel("biggerBoom");
+                int biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
                 if (biggerBoom > 0)
                 {
                     Logger.LogInfo($"Bigger Boom Synergy ACTIVATED for player {playerInput?.playerIndex}!");
-                    float modifier = SYNERGY_KNOCKBACK_EXPANSION_PER_LEVEL * (biggerBoom >= 2 ? 2f : 1f);
-                    effectiveKnockBackStrength *= 1f + modifier;
+                    float modifier = Consts.Values.Explosion.SynergyKnockbackPerLevel * (biggerBoom >= 2 ? 2f : 1f);
+                    p.KnockBackStrength *= 1f + modifier;
                 }
             }
+            return p;
+        }
 
-            // Visual effects - screen shake and chromatic aberration
+        private void ApplyCameraEffects(bool deadly, float radius)
+        {
             try
             {
                 CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
-
-                // Shake half as much for normal ability compared to ultimate
-                float shakeStrength = deadly ? (KnockBackRadius / 2f) : (KnockBackRadius / 4f);
-                CameraEffects.instance?.DoScreenShake(shakeStrength, 5f);
+                float shakeStrength = deadly ? (radius / 2f) : (radius / 4f);
+                CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Explosion.CameraShakeDuration);
             }
             catch (System.Exception ex)
             {
                 Logger.LogWarning($"ExplosionAbility: Could not trigger camera effects: {ex.Message}");
             }
+        }
 
-            // Spawn explosion particle VFX
-            if (deadly)
+        private void ApplyExplosionPhysics(ExplosionParams p, bool deadly)
+        {
+            int playerID = playerController.playerID.Value;
+
+            // Use NonAlloc to avoid allocating new array every time
+            int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _explosionResults, explosionLayers);
+
+            for (int i = 0; i < hitCount; i++)
             {
-                SpawnExplosionVFX(explosionPosition, synergyScaleMultiplier);
-            }
-
-            // Show visual circles for explosion radius
-            if (deadly)
-            {
-                // Red death zone for deadly explosion
-                CreateExplosionCircle(explosionPosition, effectiveDeathRadius, Color.red, 1.5f);
-            }
-            CreateExplosionCircle(explosionPosition, KnockBackRadius, new Color(1f, 0.5f, 0f, 1f), 1.5f); // Orange for knockback
-
-            // Only process damage/knockback on the host/server
-            if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
-            {
-                Logger.LogInfo($"ExplosionAbility: Client-side only, skipping damage processing");
-                return;
-            }
-
-            int hitCount = 0;
-            int damageCount = 0;
-
-            // Find all colliders in the explosion radius
-            Collider2D[] hitColliders = Physics2D.OverlapCircleAll(explosionPosition, KnockBackRadius, explosionLayers);
-
-            foreach (Collider2D collider in hitColliders)
-            {
+                Collider2D collider = _explosionResults[i];
                 if (collider == null) continue;
-
-                // Skip our own collider
                 if (collider.gameObject == gameObject) continue;
 
-                // Get the damageable component
-                IDamageable damageable = collider.GetComponentInParent<IDamageable>();
+                // Optimization: TryGetComponent on the object first (common case), fallback to Parent
+                if (!collider.TryGetComponent<IDamageable>(out var damageable))
+                {
+                    damageable = collider.GetComponentInParent<IDamageable>();
+                }
+
                 if (damageable == null) continue;
 
-                hitCount++;
-
-                // Calculate explosion force
-                Vector2 closestPoint = collider.ClosestPoint(explosionPosition);
-                float distance = Vector2.Distance(explosionPosition, closestPoint);
-
-                // Avoid division by very small numbers
+                Vector2 closestPoint = collider.ClosestPoint(p.Position);
+                float distance = Vector2.Distance(p.Position, closestPoint);
                 if (distance < 0.1f) distance = 0.1f;
 
-                float forceMultiplier = effectiveKnockBackStrength * Mathf.Clamp(KnockBackRadius / distance, 0f, 100f);
-                Vector2 direction = (closestPoint - (Vector2)explosionPosition).normalized;
+                float forceMultiplier = p.KnockBackStrength * Mathf.Clamp(p.KnockBackRadius / distance, 0f, 100f);
+                Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
                 Vector2 force = direction * forceMultiplier;
 
-                // Check if this is our own player - if so, skip damage entirely
                 if (collider.CompareTag("PlayerRigidbody"))
                 {
-                    // Check if this is the player who triggered the explosion
                     PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
                     if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
                     {
@@ -206,81 +203,22 @@ namespace SpiderSurge
                     }
                 }
 
-                if (distance > effectiveDeathRadius)
+                if (distance > p.DeathRadius)
                 {
-                    // Outside death radius - just knockback
-                    damageable.Impact(force * 4f, closestPoint, true, true);
+                    damageable.Impact(force * Consts.Values.Explosion.ForceMultiplierOutsideZone, closestPoint, true, true);
                 }
                 else
                 {
-                    // Inside death radius
                     if (deadly)
                     {
-                        // Ultimate: full damage
                         damageable.Damage(force, closestPoint, true);
-                        damageCount++;
                     }
                     else
                     {
-                        // Normal: stronger knockback but no damage
-                        damageable.Impact(force * 6f, closestPoint, true, true);
+                        damageable.Impact(force * Consts.Values.Explosion.ForceMultiplierInsideZone, closestPoint, true, true);
                     }
                 }
             }
-        }
-
-        private void CreateExplosionCircle(Vector3 center, float radius, Color color, float duration)
-        {
-            // Create a new GameObject for the circle
-            GameObject circleObj = new GameObject("ExplosionCircle");
-            circleObj.transform.position = center;
-
-            // Add a LineRenderer to draw the circle
-            LineRenderer lineRenderer = circleObj.AddComponent<LineRenderer>();
-
-            // Configure the line renderer
-            int segments = 64;
-            lineRenderer.positionCount = segments + 1;
-            lineRenderer.useWorldSpace = true;
-            lineRenderer.startWidth = 2f;
-            lineRenderer.endWidth = 2f;
-            lineRenderer.loop = true;
-
-            // Create a simple material
-            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            lineRenderer.startColor = color;
-            lineRenderer.endColor = color;
-
-            // Calculate circle points
-            float angle = 0f;
-            for (int i = 0; i <= segments; i++)
-            {
-                float x = Mathf.Sin(Mathf.Deg2Rad * angle) * radius;
-                float y = Mathf.Cos(Mathf.Deg2Rad * angle) * radius;
-                lineRenderer.SetPosition(i, new Vector3(center.x + x, center.y + y, center.z));
-                angle += 360f / segments;
-            }
-
-            // Start fade out coroutine
-            StartCoroutine(FadeOutCircle(circleObj, lineRenderer, duration));
-        }
-
-        private System.Collections.IEnumerator FadeOutCircle(GameObject circleObj, LineRenderer lineRenderer, float duration)
-        {
-            float elapsed = 0f;
-            Color startColor = lineRenderer.startColor;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float alpha = Mathf.Lerp(1f, 0f, elapsed / duration);
-                Color fadedColor = new Color(startColor.r, startColor.g, startColor.b, alpha);
-                lineRenderer.startColor = fadedColor;
-                lineRenderer.endColor = fadedColor;
-                yield return null;
-            }
-
-            Destroy(circleObj);
         }
 
         private void SpawnExplosionVFX(Vector3 position, float extraScale = 1f)
@@ -294,20 +232,14 @@ namespace SpiderSurge
                     return;
                 }
 
-                // Instantiate the explosion VFX
                 GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
-
-                // Scale the explosion based on our size multiplier
                 explosionVFX.transform.localScale *= ExplosionSizeMultiplier * extraScale;
 
-                // Try to set the explosion color to match the player's color
                 if (playerController != null)
                 {
                     try
                     {
                         Color playerColor = playerController.playerColor.Value;
-
-                        // Try ChangeExplosionColor component (used in BoomSpear)
                         var changeColor = explosionVFX.GetComponent<ChangeExplosionColor>();
                         if (changeColor != null)
                         {
@@ -326,25 +258,25 @@ namespace SpiderSurge
             }
         }
 
+        private static FieldInfo _deadExplosionPrefabField;
+
         private GameObject GetExplosionPrefab()
         {
-            // Return cached prefab if we have it
-            if (cachedExplosionPrefab != null)
-            {
-                return cachedExplosionPrefab;
-            }
+            if (cachedExplosionPrefab != null) return cachedExplosionPrefab;
 
-            // Try to get the DeadExplosionParticlePrefab from SpiderHealthSystem using reflection
             if (spiderHealthSystem != null)
             {
                 try
                 {
-                    FieldInfo prefabField = typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    if (prefabField != null)
+                    if (_deadExplosionPrefabField == null)
                     {
-                        cachedExplosionPrefab = prefabField.GetValue(spiderHealthSystem) as GameObject;
+                        _deadExplosionPrefabField = typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
+                            BindingFlags.NonPublic | BindingFlags.Instance);
+                    }
+
+                    if (_deadExplosionPrefabField != null)
+                    {
+                        cachedExplosionPrefab = _deadExplosionPrefabField.GetValue(spiderHealthSystem) as GameObject;
                         if (cachedExplosionPrefab != null)
                         {
                             return cachedExplosionPrefab;
@@ -356,7 +288,6 @@ namespace SpiderSurge
                     Logger.LogWarning($"ExplosionAbility: Failed to get DeadExplosionParticlePrefab via reflection: {ex.Message}");
                 }
             }
-
             return null;
         }
 

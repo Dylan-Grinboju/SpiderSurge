@@ -7,7 +7,7 @@ namespace SpiderSurge
 {
     public static class ModConfig
     {
-        private const string ModId = SpiderSurge.ModId;
+        private const string ModId = SpiderSurgeMod.ModId;
 
         // Surge mode settings
         public static bool enableSurgeMode => Config.GetModConfigValue(ModId, "EnableSurgeMode", true);

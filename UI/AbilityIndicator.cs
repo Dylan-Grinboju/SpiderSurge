@@ -63,8 +63,13 @@ namespace SpiderSurge
             UpdateIndicatorState();
         }
 
+        private static Sprite _cachedCircleSprite;
+        private static Sprite _cachedGlowSprite;
+
         private Sprite CreateCircleSprite()
         {
+            if (_cachedCircleSprite != null) return _cachedCircleSprite;
+
             // Create a small texture for the circle
             int textureSize = 64;
             Texture2D texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
@@ -96,11 +101,14 @@ namespace SpiderSurge
             texture.Apply();
 
             // Create sprite from texture (100 pixels per unit)
-            return Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
+            _cachedCircleSprite = Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
+            return _cachedCircleSprite;
         }
 
         private Sprite CreateGlowSprite()
         {
+            if (_cachedGlowSprite != null) return _cachedGlowSprite;
+
             // Create a larger texture for the glow
             int textureSize = 128;
             Texture2D texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
@@ -143,7 +151,8 @@ namespace SpiderSurge
             texture.Apply();
 
             // Create sprite from texture (100 pixels per unit)
-            return Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
+            _cachedGlowSprite = Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
+            return _cachedGlowSprite;
         }
 
         private void CreateIndicatorVisual()
@@ -213,7 +222,7 @@ namespace SpiderSurge
             transform.position = targetTransform.position + offset;
 
             UpdateIndicatorState();
-            UpdateIndicatorScale();
+
             UpdateGlowPulse();
         }
 

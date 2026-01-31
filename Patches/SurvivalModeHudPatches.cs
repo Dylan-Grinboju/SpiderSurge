@@ -1,26 +1,34 @@
 using HarmonyLib;
-using Silk;
 using System.Collections;
-using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
-using UnityEngine;
 
 namespace SpiderSurge
 {
     [HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
     public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
     {
+        private static FieldInfo _perkChoiseTimerField;
+
+        private static IEnumerator EmptyEnumerator()
+        {
+            yield break;
+        }
+
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
             if (ModConfig.UnlimitedPerkChoosingTime)
             {
                 // Access private field perkChoiseTimer
-                var field = typeof(SurvivalModeHud).GetField("perkChoiseTimer", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (field != null)
+                if (_perkChoiseTimerField == null)
                 {
-                    var networkVar = field.GetValue(__instance) as NetworkVariable<uint>;
+                    _perkChoiseTimerField = typeof(SurvivalModeHud).GetField("perkChoiseTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+                }
+
+                if (_perkChoiseTimerField != null)
+                {
+                    var networkVar = _perkChoiseTimerField.GetValue(__instance) as NetworkVariable<uint>;
                     if (networkVar != null)
                     {
                         // Use NetworkManager.Singleton.IsHost instead of __instance.IsHost to avoid access exception
@@ -39,7 +47,7 @@ namespace SpiderSurge
 
                 // Return an empty enumerator so the coroutine finishes immediately and does nothing
                 // (No countdown, no auto-pick)
-                __result = Enumerable.Empty<object>().GetEnumerator();
+                __result = EmptyEnumerator();
                 return false;
             }
             return true;

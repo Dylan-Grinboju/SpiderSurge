@@ -1,12 +1,6 @@
 using HarmonyLib;
-using Logger = Silk.Logger;
 using System;
 using System.Reflection;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using System.Collections;
-using Unity.Netcode;
 
 namespace SpiderSurge
 {
@@ -73,6 +67,13 @@ namespace SpiderSurge
                 if (value == 60)
                 {
                     PerksManager.Instance.IsPost60WavePerkSelection = true;
+                }
+
+                // Update InterdimensionalStorageAbility cache
+                var abilities = UnityEngine.Object.FindObjectsOfType<InterdimensionalStorageAbility>();
+                foreach (var ab in abilities)
+                {
+                    ab.UpdateCachedModifierLevels();
                 }
             }
         }

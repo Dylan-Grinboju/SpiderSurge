@@ -1,5 +1,4 @@
 using HarmonyLib;
-using Silk;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -12,7 +11,7 @@ namespace SpiderSurge
         {
             try
             {
-                PerksManager.InitializePlayerAbilities(__instance.gameObject);
+                PlayerAbilityHandler.InitializePlayerAbilities(__instance.gameObject);
             }
             catch (System.Exception ex)
             {

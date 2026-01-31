@@ -1,6 +1,4 @@
 using HarmonyLib;
-using SpiderSurge;
-using UnityEngine;
 
 namespace SpiderSurge
 {

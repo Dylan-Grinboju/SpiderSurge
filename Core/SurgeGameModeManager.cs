@@ -1,8 +1,4 @@
-using Silk;
-using Logger = Silk.Logger;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using System.Collections.Generic;
 
 namespace SpiderSurge
 {

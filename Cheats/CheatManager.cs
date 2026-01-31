@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
-using Silk;
 using HarmonyLib;
 using System.Linq;
 using System.Collections.Generic;

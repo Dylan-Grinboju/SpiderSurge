@@ -1,9 +1,5 @@
 using HarmonyLib;
-using Silk;
-using Logger = Silk.Logger;
-using UnityEngine.SceneManagement;
 using System;
-using System.Reflection;
 
 namespace SpiderSurge
 {
