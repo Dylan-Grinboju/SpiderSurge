@@ -230,7 +230,8 @@ namespace SpiderSurge
         private void OnDestroy()
         {
             // Clean up any registered abilities
-            foreach (var kvp in registeredAbilities)
+            var abilitiesSnapshot = registeredAbilities.ToList();
+            foreach (var kvp in abilitiesSnapshot)
             {
                 if (kvp.Value != null)
                 {

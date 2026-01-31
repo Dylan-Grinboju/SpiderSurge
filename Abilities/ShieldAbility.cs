@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Collections;
 using System.Reflection;
 using Logger = Silk.Logger;
 
@@ -43,11 +44,6 @@ namespace SpiderSurge
                 playerShields[playerInput] = this;
             }
 
-            if (spiderHealthSystem != null)
-            {
-                shieldsByHealth[spiderHealthSystem] = this;
-            }
-
             if (immuneTimeField == null)
             {
                 immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
@@ -64,6 +60,21 @@ namespace SpiderSurge
                 _breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
                     BindingFlags.NonPublic | BindingFlags.Instance);
             }
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            StartCoroutine(RegisterWithHealthSystem());
+        }
+
+        private IEnumerator RegisterWithHealthSystem()
+        {
+            while (spiderHealthSystem == null)
+            {
+                yield return null;
+            }
+            shieldsByHealth[spiderHealthSystem] = this;
         }
 
         public static ShieldAbility GetByHealthSystem(SpiderHealthSystem healthSystem)

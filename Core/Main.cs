@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan", "Description: Adds new abilities, synergies, and game modes to SpiderHeck." }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -96,6 +96,21 @@ namespace SpiderSurge
         public override void Unload()
         {
             Logger.LogInfo("Unloading SpiderSurge Mod...");
+
+            var harmony = new Harmony("com.SpiderSurge.Mod");
+            harmony.UnpatchSelf();
+
+            var surgeInfo = GameObject.Find("SurgeGameModeManager");
+            if (surgeInfo != null)
+                GameObject.Destroy(surgeInfo);
+
+            var perksInfo = GameObject.Find("PerksManager");
+            if (perksInfo != null)
+                GameObject.Destroy(perksInfo);
+
+            var cheatInfo = GameObject.Find("CheatsModCheatManager");
+            if (cheatInfo != null)
+                GameObject.Destroy(cheatInfo);
 
             Instance = null;
         }

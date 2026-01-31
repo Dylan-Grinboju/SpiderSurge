@@ -31,6 +31,7 @@ namespace SpiderSurge
         {
             if (__result && ModConfig.enableSurgeMode)
             {
+                if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
                 // Reset perk selection for new game
                 PerksManager.Instance.ResetPerks();
@@ -69,7 +70,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(int value)
         {
-            if (SurgeGameModeManager.Instance.IsActive && value > 0)
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
             {
                 // Reset shield cooldown for all players after each wave
                 foreach (var kvp in ShieldAbility.playerShields)

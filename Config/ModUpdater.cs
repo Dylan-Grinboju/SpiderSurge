@@ -71,7 +71,7 @@ namespace SpiderSurge
                         Logger.LogInfo("Opening SpiderSurge download page...");
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                         {
-                            FileName = $"https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{latestVersion}",
+                            FileName = downloadUrl,
                             UseShellExecute = true
                         });
 

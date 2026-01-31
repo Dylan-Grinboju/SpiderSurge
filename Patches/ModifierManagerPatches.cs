@@ -26,6 +26,15 @@ namespace SpiderSurge
         {
             if (mode == GameMode.Wave && value == 1 && modifier != null && modifier.data != null)
             {
+                var surgeManager = SurgeGameModeManager.Instance;
+                if (surgeManager == null || !surgeManager.IsActive)
+                {
+                    // If Surge is not active, clear any stale lucky perk keys preventing them from leaking into vanilla
+                    if (ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Count > 0)
+                        ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Clear();
+                    return;
+                }
+
                 string key = modifier.data.key;
                 bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 

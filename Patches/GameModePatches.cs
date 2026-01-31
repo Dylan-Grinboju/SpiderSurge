@@ -10,11 +10,15 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix()
         {
-            if (SurgeGameModeManager.Instance.IsActive)
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
             {
                 Logger.LogInfo("Surge mode ended");
                 SurgeGameModeManager.Instance.SetActive(false);
-                PerksManager.Instance.ResetPerks();
+
+                if (PerksManager.Instance != null)
+                {
+                    PerksManager.Instance.ResetPerks();
+                }
             }
         }
     }

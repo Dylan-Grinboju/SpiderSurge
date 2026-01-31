@@ -9,7 +9,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix()
         {
-            if (SurgeGameModeManager.Instance.IsActive)
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
             {
                 return false; // Skip leaderboard submission for Surge mode
             }

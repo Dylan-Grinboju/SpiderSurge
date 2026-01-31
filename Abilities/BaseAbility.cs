@@ -62,13 +62,13 @@ namespace SpiderSurge
 
         // Computed values based on perk levels
         public virtual float Duration => BaseDuration +
-            ((PerksManager.Instance?.GetPerkLevel("abilityDuration") ?? 0) * DurationPerPerkLevel) +
-            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 2 * DurationPerPerkLevel) -
-            ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 1 * DurationPerPerkLevel);
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0) * DurationPerPerkLevel) +
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0) * 2 * DurationPerPerkLevel) -
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0) * 1 * DurationPerPerkLevel);
         public virtual float CooldownTime => BaseCooldown -
-            ((PerksManager.Instance?.GetPerkLevel("abilityCooldown") ?? 0) * CooldownPerPerkLevel) +
-            ((PerksManager.Instance?.GetPerkLevel("shortTermInvestment") ?? 0) * 1 * CooldownPerPerkLevel) -
-            ((PerksManager.Instance?.GetPerkLevel("longTermInvestment") ?? 0) * 2 * CooldownPerPerkLevel);
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0) * CooldownPerPerkLevel) +
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0) * 1 * CooldownPerPerkLevel) -
+            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0) * 2 * CooldownPerPerkLevel);
 
         protected virtual void Awake()
         {

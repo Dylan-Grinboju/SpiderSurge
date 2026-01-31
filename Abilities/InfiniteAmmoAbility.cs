@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Unity.Netcode;
 using Logger = Silk.Logger;
+using UnityEngine.SceneManagement;
 
 
 namespace SpiderSurge
@@ -32,6 +33,7 @@ namespace SpiderSurge
         private static FieldInfo networkAmmoField;
         private Weapon lastWeapon;
         private static WeaponSpawner[] cachedWeaponSpawners;
+        private static string cachedSceneName;
 
         protected override void Awake()
         {
@@ -178,9 +180,11 @@ namespace SpiderSurge
         {
             try
             {
-                if (cachedWeaponSpawners == null || cachedWeaponSpawners.Length == 0 || cachedWeaponSpawners[0] == null)
+                string currentScene = SceneManager.GetActiveScene().name;
+                if (cachedWeaponSpawners == null || cachedSceneName != currentScene)
                 {
                     cachedWeaponSpawners = FindObjectsOfType<WeaponSpawner>();
+                    cachedSceneName = currentScene;
                 }
                 WeaponSpawner[] weaponSpawners = cachedWeaponSpawners;
 
