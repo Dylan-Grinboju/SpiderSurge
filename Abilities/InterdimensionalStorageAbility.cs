@@ -40,7 +40,7 @@ namespace SpiderSurge
         {
             get
             {
-                return GetSwapDuration(isUltimateActive);
+                return GetSwapDuration();
             }
         }
 
@@ -77,7 +77,7 @@ namespace SpiderSurge
 
         private IEnumerator SwapRoutine(bool useUltimateStorage)
         {
-            float duration = GetSwapDuration(useUltimateStorage);
+            float duration = GetSwapDuration();
 
             yield return new WaitForSeconds(duration);
 
@@ -226,17 +226,6 @@ namespace SpiderSurge
         private int _cachedMoreBoomLevel = 0;
         private int _cachedMoreParticlesLevel = 0;
 
-        private void Update()
-        {
-            // CRITICAL: We must keep these cached every frame.
-            // When a scene change happens, ModifierManager might be destroyed BEFORE this ability.
-            // If we rely on a stale cache (from Start), checking mod levels in OnDestroy will fail (return 0),
-            // and weapons won't be saved.
-            if (ModifierManager.instance != null)
-            {
-                UpdateCachedModifierLevels();
-            }
-        }
 
         public void UpdateCachedModifierLevels()
         {
@@ -250,28 +239,26 @@ namespace SpiderSurge
 
         private bool ShouldKeepWeapon(RuntimeStoredWeapon weapon, bool isDeath)
         {
-            if (weapon.Types == null || weapon.Types.Count == 0) return false;
+            List<Weapon.WeaponType> effectiveTypes = GetEffectiveWeaponTypes(weapon.Name, weapon.Types);
 
-            // If ModifierManager is alive, update cache one last time just in case, otherwise rely on cache
-            if (ModifierManager.instance != null)
+            if (effectiveTypes == null || effectiveTypes.Count == 0) return false;
+
+            int maxModLevel = 0;
+
+            foreach (var wType in effectiveTypes)
             {
-                UpdateCachedModifierLevels();
+                if (wType == Weapon.WeaponType.Gun)
+                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreGunsLevel);
+                else if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
+                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreBoomLevel);
+                else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
+                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreParticlesLevel);
             }
 
-            Weapon.WeaponType wType = weapon.Types[0];
-            int modLevel = 0;
-
-            if (wType == Weapon.WeaponType.Gun)
-                modLevel = _cachedMoreGunsLevel;
-            else if (wType == Weapon.WeaponType.Explosive)
-                modLevel = _cachedMoreBoomLevel;
-            else if (wType == Weapon.WeaponType.Particle)
-                modLevel = _cachedMoreParticlesLevel;
-
             if (isDeath)
-                return modLevel >= 2;
+                return maxModLevel >= 2;
             else
-                return modLevel >= 1;
+                return maxModLevel >= 1;
         }
 
         private void RestoreWeapons()
@@ -370,7 +357,7 @@ namespace SpiderSurge
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
-        private float GetSwapDuration(bool useUltimate)
+        private float GetSwapDuration()
         {
             float duration = BaseDuration;
 
@@ -381,49 +368,35 @@ namespace SpiderSurge
                 duration *= Mathf.Pow(Consts.Values.Storage.PerkDurationMultiplier, durationLevel);
             }
 
-            // Synergy Logic
-            Weapon interestingWeapon = GetRelevantWeaponForSynergy(useUltimate);
-
-            if (interestingWeapon != null && interestingWeapon.type.Count > 0)
-            {
-                Weapon.WeaponType wType = interestingWeapon.type[0];
-
-                if (wType == Weapon.WeaponType.Gun)
-                {
-                    int gunsLevel = ModifierManager.instance?.GetModLevel(Consts.ModifierNames.MoreGuns) ?? 0;
-                    if (gunsLevel > 0) duration *= Mathf.Pow(Consts.Values.Storage.SynergyDurationMultiplier, gunsLevel);
-                }
-                else if (wType == Weapon.WeaponType.Explosive)
-                {
-                    int boomLevel = ModifierManager.instance?.GetModLevel(Consts.ModifierNames.MoreBoom) ?? 0;
-                    if (boomLevel > 0) duration *= Mathf.Pow(Consts.Values.Storage.SynergyDurationMultiplier, boomLevel);
-                }
-                else if (wType == Weapon.WeaponType.Particle)
-                {
-                    int particleLevel = ModifierManager.instance?.GetModLevel(Consts.ModifierNames.MoreParticles) ?? 0;
-                    if (particleLevel > 0) duration *= Mathf.Pow(Consts.Values.Storage.SynergyDurationMultiplier, particleLevel);
-                }
-            }
             return Mathf.Max(0.1f, duration);
-        }
-
-        private Weapon GetRelevantWeaponForSynergy(bool ultimate)
-        {
-            // If we have a stored weapon, that's the one we are "retrieving", so its speed should benefit.
-            RuntimeStoredWeapon targetStorage = ultimate ? _ultimateStoredWeaponData : _storedWeaponData;
-
-            if (targetStorage != null && targetStorage.WeaponRef != null)
-            {
-                return targetStorage.WeaponRef;
-            }
-
-            // If nothing stored, we are storing the held weapon
-            return _weaponManager != null ? _weaponManager.equippedWeapon : null;
         }
         public static InterdimensionalStorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
             return healthSystem.GetComponentInParent<InterdimensionalStorageAbility>();
+        }
+
+        private List<Weapon.WeaponType> GetEffectiveWeaponTypes(SerializationWeaponName name, List<Weapon.WeaponType> existingTypes)
+        {
+            string nameStr = name.ToString();
+            List<Weapon.WeaponType> types = new List<Weapon.WeaponType>();
+
+            switch (nameStr)
+            {
+                case "HeckSaw":
+                case "ParticleBladeLauncher":
+                case "GravitySaw":
+                    types.Add(Weapon.WeaponType.Gun);
+                    types.Add(Weapon.WeaponType.Melee);
+                    return types;
+                case "LaserCannon":
+                case "DeathRay":
+                    types.Add(Weapon.WeaponType.Gun);
+                    return types;
+            }
+
+            if (existingTypes != null) return existingTypes;
+            return types;
         }
     }
 }
