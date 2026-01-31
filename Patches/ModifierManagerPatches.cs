@@ -338,7 +338,7 @@ namespace SpiderSurge
         {
             if (pm.IsPost60WavePerkSelection)
             {
-                Logger.LogInfo("Phase 1: Post 60 - Other Ults (Swap) -> Current Ult (if avail) -> Mods -> Vanilla");
+                // Phase 1: Post 60 - Other Ults (Swap) -> Current Ult (if avail) -> Mods -> Vanilla
                 AddUpTo(finalSelection, otherAbilityUlts, Math.Max(0, targetCount - 1));
                 AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
                 AddUpTo(finalSelection, modPerks, targetCount);
@@ -346,20 +346,19 @@ namespace SpiderSurge
             }
             else if (pm.IsPost30WavePerkSelection)
             {
-                Logger.LogInfo("Phase 2: Post 30 - Current Ult -> Mods -> Vanilla");
+                // Phase 2: Post 30 - Current Ult -> Mods -> Vanilla
                 AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
                 AddUpTo(finalSelection, modPerks, targetCount);
                 AddUpTo(finalSelection, vanillaPerks, targetCount);
             }
             else if (pm.IsFirstNormalPerkSelection)
             {
-                Logger.LogInfo("Phase 3: First Selection - Abilities Only");
+                // Phase 3: First Selection - Abilities Only
                 AddUpTo(finalSelection, abilities, targetCount);
-                Logger.LogInfo($"finalSelection: {string.Join(", ", finalSelection.Select(m => m.data.key))}");
             }
             else
             {
-                Logger.LogInfo("Phase 4: Standard - Mix");
+                // Phase 4: Standard - Mix
                 List<Modifier> mixedPerks = new List<Modifier>();
                 mixedPerks.AddRange(modPerks);
                 mixedPerks.AddRange(vanillaPerks);
@@ -407,7 +406,6 @@ namespace SpiderSurge
                 if (UnityEngine.Random.value < chance)
                 {
                     ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Add(mod.data.key);
-                    Logger.LogInfo($"[Perk Luck] Upgraded '{mod.data.key}' to level 2 choice");
                 }
             }
         }

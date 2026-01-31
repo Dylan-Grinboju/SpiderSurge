@@ -24,8 +24,17 @@ namespace SpiderSurge
         private SpiderWeaponManager _weaponManager;
 
         // Local storage - no network objects
-        private Weapon _storedWeapon;
-        private Weapon _ultimateStoredWeapon;
+        // Runtime storage data - safe from scene destruction race conditions
+        private class RuntimeStoredWeapon
+        {
+            public Weapon WeaponRef; // Live reference (can be null/destroyed)
+            public SerializationWeaponName Name;
+            public float Ammo;
+            public List<Weapon.WeaponType> Types;
+        }
+
+        private RuntimeStoredWeapon _storedWeaponData;
+        private RuntimeStoredWeapon _ultimateStoredWeaponData;
 
         public override float Duration
         {
@@ -70,8 +79,6 @@ namespace SpiderSurge
         {
             float duration = GetSwapDuration(useUltimateStorage);
 
-            Logger.LogInfo($"InterdimensionalStorageAbility: Swapping weapon (Ultimate: {useUltimateStorage}). Duration: {duration}s");
-
             yield return new WaitForSeconds(duration);
 
             PerformSwap(useUltimateStorage);
@@ -82,42 +89,46 @@ namespace SpiderSurge
             if (_weaponManager == null) return;
 
             // Determine which storage slot to use
-            ref Weapon targetStorage = ref _storedWeapon;
-            if (useUltimateStorage)
-            {
-                targetStorage = ref _ultimateStoredWeapon;
-            }
+            RuntimeStoredWeapon currentSlotData = useUltimateStorage ? _ultimateStoredWeaponData : _storedWeaponData;
 
             GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
-            GameObject storedWeaponObj = targetStorage ? targetStorage.gameObject : null;
+            GameObject storedWeaponObj = currentSlotData?.WeaponRef != null ? currentSlotData.WeaponRef.gameObject : null;
 
             // 1. Handle current weapon (Store it)
-            StoreWeapon(heldWeaponObj);
+            RuntimeStoredWeapon newStoredData = StoreWeapon(heldWeaponObj);
 
             // 2. Handle stored weapon (Retrieve it)
             RetrieveWeapon(storedWeaponObj);
 
             // 3. Update storage reference
-            // If we held something, it goes into storage. If not, storage becomes empty (or stays empty)
-            if (heldWeaponObj != null)
-            {
-                targetStorage = heldWeaponObj.GetComponent<Weapon>();
-            }
+            if (useUltimateStorage)
+                _ultimateStoredWeaponData = newStoredData;
             else
-            {
-                targetStorage = null; // We didn't store anything, so the slot is now empty (we retrieved what was there)
-            }
+                _storedWeaponData = newStoredData;
         }
 
-        private void StoreWeapon(GameObject heldWeaponObj)
+        private RuntimeStoredWeapon StoreWeapon(GameObject heldWeaponObj)
         {
-            if (heldWeaponObj == null) return;
+            if (heldWeaponObj == null) return null;
+
+            Weapon val = heldWeaponObj.GetComponent<Weapon>();
+            if (val == null) return null;
 
             _weaponManager.UnEquipWeapon();
+
             // Disable and parent to us
             heldWeaponObj.SetActive(false);
             heldWeaponObj.transform.SetParent(transform);
             heldWeaponObj.transform.localPosition = Vector3.zero;
+
+            // Create data object
+            return new RuntimeStoredWeapon
+            {
+                WeaponRef = val,
+                Name = val.serializationWeaponName,
+                Ammo = val.ammo,
+                Types = new List<Weapon.WeaponType>(val.type)
+            };
         }
 
         private void RetrieveWeapon(GameObject storedWeaponObj)
@@ -182,28 +193,28 @@ namespace SpiderSurge
             List<StoragePersistenceManager.SavedWeaponData> dataList = new List<StoragePersistenceManager.SavedWeaponData>();
 
             // Check Slot 1
-            SaveSlot(_storedWeapon, false, isDeath, dataList);
+            SaveSlot(_storedWeaponData, false, isDeath, dataList);
 
             // Check Slot 2
             if (HasUltimate)
             {
-                SaveSlot(_ultimateStoredWeapon, true, isDeath, dataList);
+                SaveSlot(_ultimateStoredWeaponData, true, isDeath, dataList);
             }
 
             // Save to StoragePersistenceManager
             StoragePersistenceManager.SaveStoredWeapons(playerId, dataList);
         }
 
-        private void SaveSlot(Weapon weapon, bool isUltimateSlot, bool isDeath, List<StoragePersistenceManager.SavedWeaponData> dataList)
+        private void SaveSlot(RuntimeStoredWeapon weaponData, bool isUltimateSlot, bool isDeath, List<StoragePersistenceManager.SavedWeaponData> dataList)
         {
-            if (weapon == null) return;
+            if (weaponData == null) return;
 
-            if (ShouldKeepWeapon(weapon, isDeath))
+            if (ShouldKeepWeapon(weaponData, isDeath))
             {
                 dataList.Add(new StoragePersistenceManager.SavedWeaponData
                 {
-                    WeaponName = weapon.serializationWeaponName,
-                    Ammo = weapon.ammo,
+                    WeaponName = weaponData.Name,
+                    Ammo = weaponData.Ammo,
                     IsUltimateSlot = isUltimateSlot
                 });
             }
@@ -215,6 +226,18 @@ namespace SpiderSurge
         private int _cachedMoreBoomLevel = 0;
         private int _cachedMoreParticlesLevel = 0;
 
+        private void Update()
+        {
+            // CRITICAL: We must keep these cached every frame.
+            // When a scene change happens, ModifierManager might be destroyed BEFORE this ability.
+            // If we rely on a stale cache (from Start), checking mod levels in OnDestroy will fail (return 0),
+            // and weapons won't be saved.
+            if (ModifierManager.instance != null)
+            {
+                UpdateCachedModifierLevels();
+            }
+        }
+
         public void UpdateCachedModifierLevels()
         {
             if (ModifierManager.instance != null)
@@ -225,9 +248,9 @@ namespace SpiderSurge
             }
         }
 
-        private bool ShouldKeepWeapon(Weapon weapon, bool isDeath)
+        private bool ShouldKeepWeapon(RuntimeStoredWeapon weapon, bool isDeath)
         {
-            if (weapon.type == null || weapon.type.Count == 0) return false;
+            if (weapon.Types == null || weapon.Types.Count == 0) return false;
 
             // If ModifierManager is alive, update cache one last time just in case, otherwise rely on cache
             if (ModifierManager.instance != null)
@@ -235,7 +258,7 @@ namespace SpiderSurge
                 UpdateCachedModifierLevels();
             }
 
-            Weapon.WeaponType wType = weapon.type[0];
+            Weapon.WeaponType wType = weapon.Types[0];
             int modLevel = 0;
 
             if (wType == Weapon.WeaponType.Gun)
@@ -259,8 +282,6 @@ namespace SpiderSurge
             List<StoragePersistenceManager.SavedWeaponData> dataList = StoragePersistenceManager.GetStoredWeapons(playerId);
 
             if (dataList == null || dataList.Count == 0) return;
-
-            Logger.LogInfo($"[Storage] Restoring {dataList.Count} weapons for player {playerId}");
 
             // Gather all spawnable weapons into a dictionary for O(1) lookup
             Dictionary<string, GameObject> weaponPrefabMap = new Dictionary<string, GameObject>();
@@ -323,9 +344,21 @@ namespace SpiderSurge
                     newWeaponObj.transform.localPosition = Vector3.zero;
 
                     if (data.IsUltimateSlot)
-                        _ultimateStoredWeapon = newWeapon;
+                        _ultimateStoredWeaponData = new RuntimeStoredWeapon
+                        {
+                            WeaponRef = newWeapon,
+                            Name = newWeapon.serializationWeaponName,
+                            Ammo = newWeapon.ammo,
+                            Types = newWeapon.type
+                        };
                     else
-                        _storedWeapon = newWeapon;
+                        _storedWeaponData = new RuntimeStoredWeapon
+                        {
+                            WeaponRef = newWeapon,
+                            Name = newWeapon.serializationWeaponName,
+                            Ammo = newWeapon.ammo,
+                            Types = newWeapon.type
+                        };
                 }
                 else
                 {
@@ -377,11 +410,11 @@ namespace SpiderSurge
         private Weapon GetRelevantWeaponForSynergy(bool ultimate)
         {
             // If we have a stored weapon, that's the one we are "retrieving", so its speed should benefit.
-            Weapon targetStorage = ultimate ? _ultimateStoredWeapon : _storedWeapon;
+            RuntimeStoredWeapon targetStorage = ultimate ? _ultimateStoredWeaponData : _storedWeaponData;
 
-            if (targetStorage != null)
+            if (targetStorage != null && targetStorage.WeaponRef != null)
             {
-                return targetStorage;
+                return targetStorage.WeaponRef;
             }
 
             // If nothing stored, we are storing the held weapon
