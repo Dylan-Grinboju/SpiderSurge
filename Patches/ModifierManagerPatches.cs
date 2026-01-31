@@ -276,10 +276,6 @@ namespace SpiderSurge
             // 4. Apply Perk Luck
             ApplyPerkLuck(perksManager, finalSelection);
 
-            string logMsg = $"[{perksManager.IsFirstNormalPerkSelection}/{perksManager.IsPost30WavePerkSelection}/{perksManager.IsPost60WavePerkSelection}] ";
-            logMsg += $"Target: {count}, Selected: {finalSelection.Count} ({string.Join(", ", finalSelection.Select(m => m.data.key))})";
-            Logger.LogInfo(logMsg);
-
             __result = finalSelection;
             return false;
         }

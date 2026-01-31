@@ -61,8 +61,6 @@ namespace SpiderSurge
 
                 ReflectionHelper.SetPrivateField(manager, "_modifiers", modifiersList);
                 ReflectionHelper.SetPrivateField(manager, "_currModsState", currModsState);
-
-                Logger.LogInfo($"Registered {allPerks.Length} surge perks with ModifierManager (abilities + upgrades)");
             }
             catch (Exception ex)
             {

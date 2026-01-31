@@ -221,8 +221,6 @@ namespace SpiderSurge
                         Logger.LogWarning($"Weapon Arsenal: Failed to spawn at {spawner.name}: {ex.Message}");
                     }
                 }
-
-                Logger.LogInfo($"Weapon Arsenal: Spawned {spawnedCount} weapons at {weaponSpawners.Length} spawn points");
             }
             catch (System.Exception ex)
             {

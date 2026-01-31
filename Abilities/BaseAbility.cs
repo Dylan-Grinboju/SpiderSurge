@@ -138,7 +138,6 @@ namespace SpiderSurge
             try
             {
                 bool useDpad = ModConfig.UltimateUseDpadActivation;
-                Logger.LogInfo($"Ability {GetType().Name} Ultimate Config: useDpad={useDpad}");
 
                 if (useDpad)
                 {

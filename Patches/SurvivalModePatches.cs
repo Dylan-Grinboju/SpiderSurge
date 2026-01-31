@@ -42,24 +42,6 @@ namespace SpiderSurge
                     var action = (Action<int>)eventField.GetValue(null);
                     action?.Invoke(SurvivalMode.instance.GetHighScore());
                 }
-
-                // Log all weapons for debugging
-                var weapons = ReflectionHelper.GetPrivateField<List<SpawnableWeapon>>(SurvivalMode.instance, "_weapons");
-                if (weapons != null)
-                {
-                    foreach (var sw in weapons)
-                    {
-                        if (sw != null && sw.weaponObject != null)
-                        {
-                            Weapon w = sw.weaponObject.GetComponent<Weapon>();
-                            if (w != null)
-                            {
-                                string types = w.type != null ? string.Join(", ", w.type) : "None";
-                                Silk.Logger.LogInfo($"Weapon: {w.serializationWeaponName}, Types: {types}");
-                            }
-                        }
-                    }
-                }
             }
         }
     }

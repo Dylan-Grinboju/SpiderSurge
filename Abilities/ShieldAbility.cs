@@ -89,11 +89,6 @@ namespace SpiderSurge
             if (isActive && isUltSession)
             {
                 wasHitDuringUltimate = true;
-                Logger.LogInfo($"[ShieldAbility] Registered Hit during Ultimate for player {playerInput?.playerIndex}!");
-            }
-            else
-            {
-                Logger.LogInfo($"[ShieldAbility] Registered Hit but not processed. Active: {isActive}, Ult: {isUltSession}");
             }
         }
 
@@ -108,7 +103,6 @@ namespace SpiderSurge
                 hadShieldOnActivate = true;
 
                 ApplyImmunity(true);
-                Logger.LogInfo($"Shield Synergy ACTIVATED for player {playerInput?.playerIndex}!");
             }
             else
             {
