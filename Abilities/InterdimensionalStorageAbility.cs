@@ -239,10 +239,10 @@ namespace SpiderSurge
 
         private bool ShouldKeepWeapon(RuntimeStoredWeapon weapon, bool isDeath)
         {
-            List<Weapon.WeaponType> effectiveTypes = GetEffectiveWeaponTypes(weapon.Name, weapon.Types);
+            UpdateCachedModifierLevels();
+            List<Weapon.WeaponType> effectiveTypes = weapon.Types.Count != 0 ? weapon.Types : GetEffectiveWeaponTypes(weapon.Name);
 
             if (effectiveTypes == null || effectiveTypes.Count == 0) return false;
-
             int maxModLevel = 0;
 
             foreach (var wType in effectiveTypes)
@@ -376,26 +376,17 @@ namespace SpiderSurge
             return healthSystem.GetComponentInParent<InterdimensionalStorageAbility>();
         }
 
-        private List<Weapon.WeaponType> GetEffectiveWeaponTypes(SerializationWeaponName name, List<Weapon.WeaponType> existingTypes)
+        private List<Weapon.WeaponType> GetEffectiveWeaponTypes(SerializationWeaponName name)
         {
             string nameStr = name.ToString();
             List<Weapon.WeaponType> types = new List<Weapon.WeaponType>();
 
-            switch (nameStr)
+            if (nameStr == "HeckSaw" || nameStr == "ParticleBladeLauncher" || nameStr == "GravitySaw")
             {
-                case "HeckSaw":
-                case "ParticleBladeLauncher":
-                case "GravitySaw":
-                    types.Add(Weapon.WeaponType.Gun);
-                    types.Add(Weapon.WeaponType.Melee);
-                    return types;
-                case "LaserCannon":
-                case "DeathRay":
-                    types.Add(Weapon.WeaponType.Gun);
-                    return types;
+                types.Add(Weapon.WeaponType.Melee);
+                return types;
             }
-
-            if (existingTypes != null) return existingTypes;
+            types.Add(Weapon.WeaponType.Gun);
             return types;
         }
     }
