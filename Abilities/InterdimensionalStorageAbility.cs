@@ -335,7 +335,7 @@ namespace SpiderSurge
             int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
             if (durationLevel > 0)
             {
-                duration *= Mathf.Pow(Consts.Values.Storage.PerkDurationMultiplier, durationLevel);
+                duration -= Consts.Values.Storage.DurationReductionPerLevel * durationLevel;
             }
 
             return Mathf.Max(0.1f, duration);

@@ -18,9 +18,9 @@ namespace SpiderSurge
                 surgeConfig.name = survivalConfig.name + "_Surge";
 
                 // Double the enemy budget to spawn twice as many enemies
-                surgeConfig.startingBudget *= 2f;
-                surgeConfig.budgetPerWave *= 2f;
-                surgeConfig.budgetPerPlayer *= 2f;
+                surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
+                surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
+                surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
 
                 survivalConfig = surgeConfig;
             }
