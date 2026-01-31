@@ -48,21 +48,17 @@ namespace SpiderSurge
                 playerExplosions[playerInput] = this;
             }
 
-            // Layer names verified via Unity Explorer
             explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy", "DynamicWorld");
 
-            // If the layer mask is 0, try to include everything that's typically damageable
             if (explosionLayers == 0)
             {
-                // Fallback: use all layers except Ignore Raycast
-                explosionLayers = ~0; // All layers
+                explosionLayers = ~0;// All layers
                 Logger.LogWarning("ExplosionAbility: Could not find expected layers, using all layers");
             }
         }
 
         protected override void OnActivate()
         {
-            // Normal activation - knockback only, no damage
             TriggerExplosion(deadly: false);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
@@ -71,7 +67,6 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            // Ultimate activation - deadly explosion with damage
             TriggerExplosion(deadly: true);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
@@ -134,7 +129,6 @@ namespace SpiderSurge
                 int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
                 if (tooCool > 0 && deadly)
                 {
-                    Logger.LogInfo($"Too Cool Synergy ACTIVATED for player {playerInput?.playerIndex}!");
                     float modifier = Consts.Values.Explosion.SynergyDeathZonePerLevel * (tooCool >= 2 ? 2f : 1f);
                     p.DeathRadius *= 1f + modifier;
                     p.SynergyScaleMultiplier = 1f + modifier;
@@ -143,7 +137,6 @@ namespace SpiderSurge
                 int biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
                 if (biggerBoom > 0)
                 {
-                    Logger.LogInfo($"Bigger Boom Synergy ACTIVATED for player {playerInput?.playerIndex}!");
                     float modifier = Consts.Values.Explosion.SynergyKnockbackPerLevel * (biggerBoom >= 2 ? 2f : 1f);
                     p.KnockBackStrength *= 1f + modifier;
                 }

@@ -54,6 +54,11 @@ namespace SpiderSurge
         private SpriteRenderer glowRenderer;
         private Transform targetTransform;
 
+        private void Awake()
+        {
+            _activeInstanceCount++;
+        }
+
         public void Initialize(BaseAbility ability, Transform followTarget)
         {
             trackedAbility = ability;
@@ -65,6 +70,7 @@ namespace SpiderSurge
 
         private static Sprite _cachedCircleSprite;
         private static Sprite _cachedGlowSprite;
+        private static int _activeInstanceCount;
 
         private Sprite CreateCircleSprite()
         {
@@ -304,6 +310,12 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
+            _activeInstanceCount--;
+            if (_activeInstanceCount <= 0)
+            {
+                CleanupStaticSprites();
+            }
+
             if (circleObject != null)
             {
                 Destroy(circleObject);
@@ -311,6 +323,29 @@ namespace SpiderSurge
             if (glowObject != null)
             {
                 Destroy(glowObject);
+            }
+        }
+
+        private static void CleanupStaticSprites()
+        {
+            if (_cachedCircleSprite != null)
+            {
+                if (_cachedCircleSprite.texture != null)
+                {
+                    Destroy(_cachedCircleSprite.texture);
+                }
+                Destroy(_cachedCircleSprite);
+                _cachedCircleSprite = null;
+            }
+
+            if (_cachedGlowSprite != null)
+            {
+                if (_cachedGlowSprite.texture != null)
+                {
+                    Destroy(_cachedGlowSprite.texture);
+                }
+                Destroy(_cachedGlowSprite);
+                _cachedGlowSprite = null;
             }
         }
     }

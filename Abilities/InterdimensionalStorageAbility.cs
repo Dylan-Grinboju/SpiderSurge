@@ -20,11 +20,11 @@ namespace SpiderSurge
         public override string UltimatePerkDisplayName => "Storage Ultimate";
         public override string UltimatePerkDescription => "Adds a second storage slot (3x cooldown).";
         public override float UltimateCooldownMultiplier => Consts.Values.Storage.UltimateCooldownMultiplier;
-
+        private int _cachedMoreGunsLevel = 0;
+        private int _cachedMoreBoomLevel = 0;
+        private int _cachedMoreParticlesLevel = 0;
         private SpiderWeaponManager _weaponManager;
 
-        // Local storage - no network objects
-        // Runtime storage data - safe from scene destruction race conditions
         private class RuntimeStoredWeapon
         {
             public Weapon WeaponRef; // Live reference (can be null/destroyed)
@@ -66,7 +66,6 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            // Direct execution since we are local
             StartCoroutine(SwapRoutine(false));
         }
 
@@ -88,19 +87,15 @@ namespace SpiderSurge
         {
             if (_weaponManager == null) return;
 
-            // Determine which storage slot to use
             RuntimeStoredWeapon currentSlotData = useUltimateStorage ? _ultimateStoredWeaponData : _storedWeaponData;
 
             GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
             GameObject storedWeaponObj = currentSlotData?.WeaponRef != null ? currentSlotData.WeaponRef.gameObject : null;
 
-            // 1. Handle current weapon (Store it)
             RuntimeStoredWeapon newStoredData = StoreWeapon(heldWeaponObj);
 
-            // 2. Handle stored weapon (Retrieve it)
             RetrieveWeapon(storedWeaponObj);
 
-            // 3. Update storage reference
             if (useUltimateStorage)
                 _ultimateStoredWeaponData = newStoredData;
             else
@@ -116,12 +111,10 @@ namespace SpiderSurge
 
             _weaponManager.UnEquipWeapon();
 
-            // Disable and parent to us
             heldWeaponObj.SetActive(false);
             heldWeaponObj.transform.SetParent(transform);
             heldWeaponObj.transform.localPosition = Vector3.zero;
 
-            // Create data object
             return new RuntimeStoredWeapon
             {
                 WeaponRef = val,
@@ -150,9 +143,7 @@ namespace SpiderSurge
                     weapon.rb2D.angularVelocity = 0f;
                 }
 
-                // Use Weapon.Equip to set owner/layer
                 weapon.Equip(_weaponManager);
-                // Manually call OnEquipWeapon to setup joints and manager state (since EquipWeapon is protected)
                 _weaponManager.OnEquipWeapon(weapon);
             }
         }
@@ -177,31 +168,21 @@ namespace SpiderSurge
 
         private bool _playerDied = false;
 
-        // Local storage moved to PerksManager
-
-
         private void SaveWeapons(bool isDeath)
         {
-            // Only save if we have the synergy perk
-            // We don't check ModifierManager.instance here because we might be relying on cached values during scene transition
             if (PerksManager.Instance == null || PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) <= 0) return;
 
-            // Use PlayerIndex or something local for ID
             int playerId = playerInput != null ? playerInput.playerIndex : -1;
             if (playerId == -1) return;
 
             List<StoragePersistenceManager.SavedWeaponData> dataList = new List<StoragePersistenceManager.SavedWeaponData>();
 
-            // Check Slot 1
             SaveSlot(_storedWeaponData, false, isDeath, dataList);
 
-            // Check Slot 2
             if (HasUltimate)
             {
                 SaveSlot(_ultimateStoredWeaponData, true, isDeath, dataList);
             }
-
-            // Save to StoragePersistenceManager
             StoragePersistenceManager.SaveStoredWeapons(playerId, dataList);
         }
 
@@ -219,13 +200,6 @@ namespace SpiderSurge
                 });
             }
         }
-
-
-        // Cached modifier levels for safety during destruction/scene load
-        private int _cachedMoreGunsLevel = 0;
-        private int _cachedMoreBoomLevel = 0;
-        private int _cachedMoreParticlesLevel = 0;
-
 
         public void UpdateCachedModifierLevels()
         {
@@ -270,10 +244,8 @@ namespace SpiderSurge
 
             if (dataList == null || dataList.Count == 0) return;
 
-            // Gather all spawnable weapons into a dictionary for O(1) lookup
             Dictionary<string, GameObject> weaponPrefabMap = new Dictionary<string, GameObject>();
 
-            // Helper to populate map
             void AddWeaponsToMap(List<SpawnableWeapon> weapons)
             {
                 if (weapons == null) return;
@@ -353,7 +325,6 @@ namespace SpiderSurge
                 }
             }
 
-            // Clear after restoring
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
@@ -361,7 +332,6 @@ namespace SpiderSurge
         {
             float duration = BaseDuration;
 
-            // Apply "Ability Duration" perk (reduction)
             int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
             if (durationLevel > 0)
             {
@@ -380,7 +350,7 @@ namespace SpiderSurge
         {
             string nameStr = name.ToString();
             List<Weapon.WeaponType> types = new List<Weapon.WeaponType>();
-
+            // These weapons are the only ones with no WeaponType, all the missing ones are also a Gun
             if (nameStr == "HeckSaw" || nameStr == "ParticleBladeLauncher" || nameStr == "GravitySaw")
             {
                 types.Add(Weapon.WeaponType.Melee);

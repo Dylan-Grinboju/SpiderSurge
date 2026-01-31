@@ -41,7 +41,6 @@ namespace SpiderSurge
                 playerInfiniteAmmo[playerInput] = this;
             }
 
-            // Cache reflection field for networkAmmo
             if (networkAmmoField == null)
             {
                 networkAmmoField = typeof(Weapon).GetField("networkAmmo",
@@ -57,11 +56,9 @@ namespace SpiderSurge
         protected override void Start()
         {
             base.Start();
-            // SpiderWeaponManager is a child component, not a parent
             weaponManager = GetComponentInChildren<SpiderWeaponManager>();
             if (weaponManager == null && playerController != null)
             {
-                // Try from the player controller's health system
                 weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
             }
         }
@@ -86,7 +83,6 @@ namespace SpiderSurge
             {
                 var weapon = weaponManager.equippedWeapon;
 
-                // Handle weapon switching
                 if (weapon != lastWeapon)
                 {
                     lastWeapon = weapon;
@@ -132,10 +128,8 @@ namespace SpiderSurge
         {
             if (weapon == null) return;
 
-            // First try using the normal setter (works if we're host)
             weapon.ammo = value;
 
-            // If that didn't work (we're not host), use reflection
             if (weapon.ammo < value && networkAmmoField != null)
             {
                 try
@@ -176,19 +170,14 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            // First, activate normal infinite ammo effect
             OnActivate();
-
-            // Then spawn weapons at all weapon spawn points
             SpawnWeaponsAtAllSpawnPoints();
         }
 
         private void SpawnWeaponsAtAllSpawnPoints()
         {
-
             try
             {
-                // Find all weapon spawners in the scene
                 if (cachedWeaponSpawners == null || cachedWeaponSpawners.Length == 0 || cachedWeaponSpawners[0] == null)
                 {
                     cachedWeaponSpawners = FindObjectsOfType<WeaponSpawner>();
@@ -209,7 +198,6 @@ namespace SpiderSurge
 
                     try
                     {
-                        // Get a random weapon and spawn it at this spawner's position
                         GameObject weaponPrefab = GetRandomWeaponPrefab();
                         if (weaponPrefab == null) continue;
 

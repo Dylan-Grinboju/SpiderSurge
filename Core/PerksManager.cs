@@ -274,29 +274,20 @@ namespace SpiderSurge
 
         private void HandleUltimateSelection(string newUltName, System.Action enableMethod)
         {
-            // Check if we are swapping (current "chosen" ult path differs from the new one)
             string currentUltPath = GetChosenAbilityUltimate();
 
             if (currentUltPath != null && currentUltPath != newUltName)
             {
-                // We are swapping!
-                // Identify old ability to disable
-                // The dependencies dictionary maps Ult -> List { BaseAbility }
                 if (dependencies.ContainsKey(currentUltPath) && dependencies[currentUltPath].Count > 0)
                 {
                     string oldAbilityName = dependencies[currentUltPath][0];
 
                     Logger.LogInfo($"[Perk Swap] Swapping from {oldAbilityName}/{currentUltPath} to {newUltName}");
 
-                    // Disable old perks
                     SetPerkLevel(currentUltPath, 0);
                     SetPerkLevel(oldAbilityName, 0);
-
-                    // Note: Setting level to 0 effectively disables the ability as components check PerkLevel > 0
                 }
             }
-
-            // Enable new one
             enableMethod?.Invoke();
         }
 

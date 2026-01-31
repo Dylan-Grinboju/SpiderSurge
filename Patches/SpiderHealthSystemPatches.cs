@@ -27,14 +27,10 @@ namespace SpiderSurge
             var ability = GetAbilitySafe(__instance);
             if (ability != null && ability.IsImmune)
             {
-                return false; // Skip execution
+                return false;
             }
             return true;
         }
-
-        // Removed DisintegrateLegsAndDestroy patch as it returns IEnumerator and is tricky to patch correctly with bool return.
-        // Blocking ExplodeInDirection covers the death path initiated by DisintegrateClientRpc -> DisintegrateSpiderAndDestroy.
-        // And Disintegrate checks _immuneTill internally (which we will restore in ShieldAbility).
 
         private static void TryRecordHit(SpiderHealthSystem healthSystem)
         {
@@ -49,16 +45,12 @@ namespace SpiderSurge
         {
             if (healthSystem == null) return null;
 
-            // Try dictionary lookup first
             var ability = ShieldAbility.GetByHealthSystem(healthSystem);
 
-            // Fallback: Component search
             if (ability == null)
             {
-                // Try on the health system's object
                 ability = healthSystem.GetComponent<ShieldAbility>();
 
-                // Try on root object
                 if (ability == null && healthSystem.rootObject != null)
                 {
                     ability = healthSystem.rootObject.GetComponentInChildren<ShieldAbility>();

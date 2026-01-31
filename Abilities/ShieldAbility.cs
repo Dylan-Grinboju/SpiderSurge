@@ -25,13 +25,11 @@ namespace SpiderSurge
         public override string UltimatePerkDisplayName => "Shield Ultimate";
         public override string UltimatePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
 
-        // Cached reflection field for immunity
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
 
         private bool hadShieldOnActivate = false;
 
-        // Track if the current activation is an Ultimate
         private bool isUltSession = false;
         private bool wasHitDuringUltimate = false;
 
@@ -50,10 +48,8 @@ namespace SpiderSurge
                 shieldsByHealth[spiderHealthSystem] = this;
             }
 
-            // Cache reflection field for immunity
             if (immuneTimeField == null)
             {
-                // Field name is _immuneTill (was incorrectly _immuneTime)
                 immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                     BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -143,26 +139,19 @@ namespace SpiderSurge
         {
             isUltSession = true;
             wasHitDuringUltimate = false;
-
-            // Record state before applying anything
             hadShieldOnActivate = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             ApplyImmunity(true);
 
-            // Also enable shield visual
             if (spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 spiderHealthSystem.EnableShield();
             }
-
-            Logger.LogInfo($"Shield Immunity ACTIVATED for player {playerInput?.playerIndex}. HadShield: {hadShieldOnActivate}");
         }
 
         protected override void OnDeactivateUltimate()
         {
             ApplyImmunity(false);
-
-            Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}. WasHit: {wasHitDuringUltimate}");
         }
 
 

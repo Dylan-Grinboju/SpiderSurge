@@ -14,7 +14,6 @@ namespace SpiderSurge
 
             try
             {
-                // Check if surge mode is active
                 if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive)
                 {
                     Logger.LogWarning("Surge mode not active - skipping ability initialization");
@@ -35,7 +34,6 @@ namespace SpiderSurge
                     return;
                 }
 
-                // Maintain active controller list
                 ActiveSpiderControllers.RemoveAll(sc => sc == null);
                 if (!ActiveSpiderControllers.Contains(spiderController))
                 {

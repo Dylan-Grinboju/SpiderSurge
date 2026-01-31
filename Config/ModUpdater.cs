@@ -8,7 +8,6 @@ namespace SpiderSurge
 {
     public static class ModUpdater
     {
-        private const string ModId = SpiderSurgeMod.ModId;
         private static string CurrentVersion => SpiderSurgeMod.Version;
 
         private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";

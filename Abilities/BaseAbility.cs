@@ -262,27 +262,15 @@ namespace SpiderSurge
 
         protected virtual void CreateAbilityIndicator()
         {
-            if (!showIndicator || !IsUnlocked() || abilityIndicator != null)
+            if (!showIndicator || !IsUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
             {
                 return;
             }
 
-            // Need spiderHealthSystem for the target transform
-            if (spiderHealthSystem == null)
-            {
-                // Will try again in Update when spiderHealthSystem is available
-                return;
-            }
-
-            // Create a new GameObject for the indicator
             GameObject indicatorObj = new GameObject($"{GetType().Name}_Indicator");
             abilityIndicator = indicatorObj.AddComponent<AbilityIndicator>();
-
-            // Initialize with this ability and the spider's transform
-            // Radius and offset can be adjusted via Unity Inspector on the AbilityIndicator component
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
 
-            // Apply configuration values from ModConfig
             try
             {
                 abilityIndicator.SetRadius(ModConfig.IndicatorRadius);
