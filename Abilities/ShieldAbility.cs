@@ -35,6 +35,8 @@ namespace SpiderSurge
         private bool isUltSession = false;
         private bool wasHitDuringUltimate = false;
 
+        public bool IsImmune { get; private set; }
+
         protected override void Awake()
         {
             base.Awake();
@@ -80,6 +82,11 @@ namespace SpiderSurge
             if (isActive && isUltSession)
             {
                 wasHitDuringUltimate = true;
+                Logger.LogInfo($"[ShieldAbility] Registered Hit during Ultimate for player {playerInput?.playerIndex}!");
+            }
+            else
+            {
+                Logger.LogInfo($"[ShieldAbility] Registered Hit but not processed. Active: {isActive}, Ult: {isUltSession}");
             }
         }
 
@@ -158,9 +165,11 @@ namespace SpiderSurge
             Logger.LogInfo($"Shield Immunity DEACTIVATED for player {playerInput?.playerIndex}. WasHit: {wasHitDuringUltimate}");
         }
 
+
         private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
+            IsImmune = enable;
 
             if (enable)
             {
@@ -169,10 +178,6 @@ namespace SpiderSurge
                     if (immuneTimeField != null)
                     {
                         immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
-                    }
-                    else
-                    {
-                        Logger.LogError("ShieldAbility: Immune field not cached, cannot apply immunity.");
                     }
                 }
                 catch (System.Exception ex)
@@ -199,8 +204,6 @@ namespace SpiderSurge
 
         private void LateUpdate()
         {
-            // Only check for shield break in non-Ultimate mode
-            // In Ultimate mode we maintain immunity
             if (isActive && !isUltimateActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 isActive = false;
