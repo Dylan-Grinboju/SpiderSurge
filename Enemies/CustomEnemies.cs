@@ -8,8 +8,29 @@ namespace SpiderSurge.Enemies
     {
         public static GameObject TwinBladeMeleeWhispPrefab;
         public static GameObject TwinBladePowerMeleeWhispPrefab;
+        public static GameObject TwinWhispPrefab;
         public static GameObject MissileWhispPrefab;
         public static GameObject ShieldedMissileWhispPrefab;
+
+        public static void CreateTwinWhisp(GameObject original)
+        {
+            if (TwinWhispPrefab != null) return;
+
+            GameObject newEnemyObj = Object.Instantiate(original);
+            newEnemyObj.name = "TwinWhisp";
+            Object.DontDestroyOnLoad(newEnemyObj);
+            newEnemyObj.SetActive(false);
+            TwinWhispPrefab = newEnemyObj;
+
+            // Change Color
+            var renderers = newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var renderer in renderers)
+            {
+                renderer.color = Consts.Values.Colors.TwinWhispColor;
+            }
+
+            RegisterEnemyForCheats(newEnemyObj);
+        }
 
         public static void CreateTwinBladeMeleeWhisp(GameObject original)
         {
@@ -338,6 +359,11 @@ namespace SpiderSurge.Enemies
             else
             {
                 Logger.LogWarning($"[SpiderSurge] Missing prefabs for MissileWhisp. Whisp: {whispPrefab != null}, RocketProjectile: {rocketProjectile != null}");
+            }
+
+            if (whispPrefab != null)
+            {
+                CreateTwinWhisp(whispPrefab);
             }
 
             if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
