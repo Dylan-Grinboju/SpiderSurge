@@ -149,15 +149,16 @@ namespace SpiderSurge
                     { "PowerRoller Variant", new EnemySpawnConfig(4f, 18, 0) },
                     { "PowerKhepri Variant", new EnemySpawnConfig(4f, 20, 0) },
                     { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 22, 0) },
-                    { "TwinWhisp", new EnemySpawnConfig(4f, 24, 0) },
+                    { "TwinWhisp", new EnemySpawnConfig(4f, 24, 44) },
                     { "Wasp Shielded", new EnemySpawnConfig(4f, 26, 0) },
                     { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 28, 0) },
                     { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 30, 0) },
                     { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 32, 0) },
-                    { "Hornet Variant", new EnemySpawnConfig(6f, 34, 0) },
-                    { "MissileWhisp", new EnemySpawnConfig(7f, 36, 0) },
-                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 38, 0) },
-                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 40, 0) },
+                    { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 34, 0) },
+                    { "Hornet Variant", new EnemySpawnConfig(6f, 36, 0) },
+                    { "MissileWhisp", new EnemySpawnConfig(7f, 38, 0) },
+                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 40, 0) },
+                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 42, 0) },
                 };
 
             public struct EnemySpawnConfig

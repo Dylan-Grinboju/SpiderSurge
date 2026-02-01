@@ -116,9 +116,14 @@ namespace SpiderSurge
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedMissileWhispPrefab, shieldedStats.Cost, shieldedStats.MinWave, shieldedStats.MaxWave));
                 }
 
+                if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
+                }
+
                 if (CustomEnemies.TwinWhispPrefab == null && whispPrefab != null)
                 {
-                    CustomEnemies.CreateTwinWhisp(whispPrefab);
+                    CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
                 }
 
                 if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))

@@ -11,8 +11,9 @@ namespace SpiderSurge.Enemies
         public static GameObject TwinWhispPrefab;
         public static GameObject MissileWhispPrefab;
         public static GameObject ShieldedMissileWhispPrefab;
+        public static GameObject ShieldedTwinWhispPrefab;
 
-        public static void CreateTwinWhisp(GameObject original)
+        public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
         {
             if (TwinWhispPrefab != null) return;
 
@@ -30,6 +31,12 @@ namespace SpiderSurge.Enemies
             }
 
             RegisterEnemyForCheats(newEnemyObj);
+
+            // Create Shielded Variant if source is provided
+            if (shieldSourceEnemy != null && ShieldedTwinWhispPrefab == null)
+            {
+                CreateShieldedTwinWhispVariant(newEnemyObj, shieldSourceEnemy);
+            }
         }
 
         public static void CreateTwinBladeMeleeWhisp(GameObject original)
@@ -262,6 +269,48 @@ namespace SpiderSurge.Enemies
             RegisterEnemyForCheats(newEnemyObj);
         }
 
+        private static void CreateShieldedTwinWhispVariant(GameObject baseEnemy, GameObject shieldSourceEnemy)
+        {
+            if (baseEnemy == null || shieldSourceEnemy == null) return;
+
+            GameObject newEnemyObj = Object.Instantiate(baseEnemy);
+            newEnemyObj.name = "ShieldedTwinWhisp";
+            Object.DontDestroyOnLoad(newEnemyObj);
+            newEnemyObj.SetActive(false);
+            ShieldedTwinWhispPrefab = newEnemyObj;
+
+            var healthSystem = newEnemyObj.GetComponent<EnemyHealthSystem>();
+            var sourceHealth = shieldSourceEnemy.GetComponent<EnemyHealthSystem>();
+
+            if (sourceHealth != null && sourceHealth.shield != null)
+            {
+                // Clone Shield
+                GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
+                newShield.name = sourceHealth.shield.name;
+                newShield.transform.localPosition = sourceHealth.shield.transform.localPosition;
+                newShield.transform.localRotation = sourceHealth.shield.transform.localRotation;
+                newShield.transform.localScale = sourceHealth.shield.transform.localScale;
+
+                healthSystem.shield = newShield;
+                newShield.SetActive(true);
+
+                // Clone Shatter Effect if available
+                if (sourceHealth.shieldShatterEffect != null)
+                {
+                    GameObject newShatter = Object.Instantiate(sourceHealth.shieldShatterEffect, newEnemyObj.transform);
+                    newShatter.name = sourceHealth.shieldShatterEffect.name;
+                    newShatter.transform.localPosition = sourceHealth.shieldShatterEffect.transform.localPosition;
+                    newShatter.transform.localRotation = sourceHealth.shieldShatterEffect.transform.localRotation;
+                    newShatter.transform.localScale = sourceHealth.shieldShatterEffect.transform.localScale;
+
+                    healthSystem.shieldShatterEffect = newShatter;
+                    newShatter.SetActive(false);
+                }
+            }
+
+            RegisterEnemyForCheats(newEnemyObj);
+        }
+
 
 
         private static void RegisterEnemyForCheats(GameObject enemyObj)
@@ -363,7 +412,7 @@ namespace SpiderSurge.Enemies
 
             if (whispPrefab != null)
             {
-                CreateTwinWhisp(whispPrefab);
+                CreateTwinWhisp(whispPrefab, shieldSource);
             }
 
             if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
