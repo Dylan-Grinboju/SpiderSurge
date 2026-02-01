@@ -78,28 +78,22 @@ namespace SpiderSurge
         {
             float duration = GetSwapDuration();
 
-            yield return new WaitForSeconds(duration);
-
-            PerformSwap(useUltimateStorage);
-        }
-
-        private void PerformSwap(bool useUltimateStorage)
-        {
-            if (_weaponManager == null) return;
+            if (_weaponManager == null) yield break;
 
             RuntimeStoredWeapon currentSlotData = useUltimateStorage ? _ultimateStoredWeaponData : _storedWeaponData;
-
-            GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
             GameObject storedWeaponObj = currentSlotData?.WeaponRef != null ? currentSlotData.WeaponRef.gameObject : null;
+            GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
 
             RuntimeStoredWeapon newStoredData = StoreWeapon(heldWeaponObj);
-
-            RetrieveWeapon(storedWeaponObj);
 
             if (useUltimateStorage)
                 _ultimateStoredWeaponData = newStoredData;
             else
                 _storedWeaponData = newStoredData;
+
+            yield return new WaitForSeconds(duration);
+
+            RetrieveWeapon(storedWeaponObj);
         }
 
         private RuntimeStoredWeapon StoreWeapon(GameObject heldWeaponObj)
@@ -170,7 +164,7 @@ namespace SpiderSurge
 
         private void SaveWeapons(bool isDeath)
         {
-            if (PerksManager.Instance == null || PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) <= 0) return;
+            if (PerksManager.Instance == null) return;
 
             int playerId = playerInput != null ? playerInput.playerIndex : -1;
             if (playerId == -1) return;
@@ -335,7 +329,7 @@ namespace SpiderSurge
             int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
             if (durationLevel > 0)
             {
-                duration *= Mathf.Pow(Consts.Values.Storage.PerkDurationMultiplier, durationLevel);
+                duration -= Consts.Values.Storage.DurationReductionPerLevel * durationLevel;
             }
 
             return Mathf.Max(0.1f, duration);

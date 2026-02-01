@@ -1,0 +1,20 @@
+using System;
+using System.Collections.Generic;
+
+namespace SpiderSurge.Logging
+{
+    public class SpiderSurgeStatsSnapshot
+    {
+        public TimeSpan MatchDuration { get; set; }
+        public int PlayerCount { get; set; }
+        public int WavesSurvived { get; set; }
+        public List<PlayerStats> PlayerStats { get; set; } = new List<PlayerStats>();
+        public List<string> GlobalPerks { get; set; } = new List<string>();
+    }
+
+    public class PlayerStats
+    {
+        public int PlayerIndex { get; set; }
+        public int ActivationCount { get; set; }
+    }
+}

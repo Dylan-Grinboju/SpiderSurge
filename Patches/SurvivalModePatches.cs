@@ -1,8 +1,8 @@
 using HarmonyLib;
 using System;
 using System.Reflection;
-using System.Collections.Generic;
 using UnityEngine;
+using SpiderSurge.Enemies;
 
 namespace SpiderSurge
 {
@@ -14,13 +14,122 @@ namespace SpiderSurge
         {
             if (ModConfig.enableSurgeMode && survivalConfig != null)
             {
+                // Find templates
+                GameObject meleeWhispPrefab = null;
+                GameObject powerMeleeWhispPrefab = null;
+                GameObject whispPrefab = null;
+                GameObject shieldSource = null;
+
+                foreach (var enemy in survivalConfig.enemies)
+                {
+                    if (enemy.enemyObject != null)
+                    {
+                        if (enemy.enemyObject.name.Contains("MeleeWhisp") && !enemy.enemyObject.name.Contains("Power"))
+                        {
+                            meleeWhispPrefab = enemy.enemyObject;
+                        }
+                        else if (enemy.enemyObject.name.Contains("MeleeWhisp") && enemy.enemyObject.name.Contains("Power"))
+                        {
+                            powerMeleeWhispPrefab = enemy.enemyObject;
+                        }
+                        else if (enemy.enemyObject.name.Contains("Whisp") && !enemy.enemyObject.name.Contains("Melee") && !enemy.enemyObject.name.Contains("Power"))
+                        {
+                            whispPrefab = enemy.enemyObject;
+                        }
+
+                        if (shieldSource == null)
+                        {
+                            var ehs = enemy.enemyObject.GetComponent<EnemyHealthSystem>();
+                            if (ehs != null && ehs.shield != null)
+                            {
+                                shieldSource = enemy.enemyObject;
+                            }
+                        }
+                    }
+                }
+
+                GameObject rocketProjectile = null;
+                if (CustomEnemies.MissileWhispPrefab == null)
+                {
+                    var projectiles = Resources.FindObjectsOfTypeAll<BasicProjectile>();
+                    foreach (var p in projectiles)
+                    {
+                        if (p.name == "Rocket")
+                        {
+                            rocketProjectile = p.gameObject;
+                            break;
+                        }
+                    }
+                }
+
+                // Initialize Custom Enemies if missing
+                if (CustomEnemies.TwinBladeMeleeWhispPrefab == null && meleeWhispPrefab != null)
+                {
+                    CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
+                }
+                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab == null && powerMeleeWhispPrefab != null)
+                {
+                    CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
+                }
+                if (CustomEnemies.MissileWhispPrefab == null && whispPrefab != null && rocketProjectile != null)
+                {
+                    CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+                }
+
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
 
-                // Double the enemy budget to spawn twice as many enemies
-                surgeConfig.startingBudget *= 2f;
-                surgeConfig.budgetPerWave *= 2f;
-                surgeConfig.budgetPerPlayer *= 2f;
+                // Alter the enemy budget
+                surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
+                surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
+                surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
+
+                // Update enemy stats from config
+                foreach (var enemy in surgeConfig.enemies)
+                {
+                    if (enemy.enemyObject != null && Consts.Values.CustomEnemyStats.TryGetValue(enemy.enemyObject.name, out var stats))
+                    {
+                        enemy.cost = stats.Cost;
+                        enemy.minWave = stats.MinWave;
+                        enemy.maxWave = stats.MaxWave;
+                    }
+                }
+
+                // Add custom enemies to the surge config
+                if (CustomEnemies.TwinBladeMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladeMeleeWhisp", out var doubleStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladeMeleeWhispPrefab, doubleStats.Cost, doubleStats.MinWave, doubleStats.MaxWave));
+                }
+
+                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladePowerMeleeWhisp", out var twinStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
+                }
+
+                if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
+                }
+
+                if (CustomEnemies.ShieldedMissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedMissileWhisp", out var shieldedStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedMissileWhispPrefab, shieldedStats.Cost, shieldedStats.MinWave, shieldedStats.MaxWave));
+                }
+
+                if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
+                }
+
+                if (CustomEnemies.TwinWhispPrefab == null && whispPrefab != null)
+                {
+                    CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
+                }
+
+                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
+                }
 
                 survivalConfig = surgeConfig;
             }
@@ -54,10 +163,24 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
             {
-                // Reset shield cooldown for all players after each wave
-                foreach (var kvp in ShieldAbility.playerShields)
+                // Reset cooldowns for all abilities for all active players
+                if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                 {
-                    kvp.Value.SetCooldownToZero();
+                    for (int i = PlayerAbilityHandler.ActiveSpiderControllers.Count - 1; i >= 0; i--)
+                    {
+                        var controller = PlayerAbilityHandler.ActiveSpiderControllers[i];
+                        if (controller == null)
+                        {
+                            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAt(i);
+                            continue;
+                        }
+
+                        var playerAbilities = controller.GetComponents<BaseAbility>();
+                        foreach (var ability in playerAbilities)
+                        {
+                            ability.SetCooldownToZero();
+                        }
+                    }
                 }
 
                 // At wave 30, set flag for special perk selection

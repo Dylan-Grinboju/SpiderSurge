@@ -5,6 +5,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
+    using SpiderSurge.Logging;
     public abstract class BaseAbility : MonoBehaviour
     {
         public abstract string PerkName { get; }
@@ -15,6 +16,7 @@ namespace SpiderSurge
 
         protected bool isActive = false;
         protected bool onCooldown = false;
+        protected bool skipNextCooldown = false;
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
@@ -49,8 +51,8 @@ namespace SpiderSurge
 
         public virtual string[] ActivationButtons => new string[] { Consts.Values.Inputs.KeyboardQ, Consts.Values.Inputs.GamepadLeftShoulder };
 
-        // Ultimate activation: E key (dual stick combo handled separately)
-        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardE;
+        // Ultimate activation: F key (dual stick combo handled separately)
+        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardF;
 
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;
@@ -306,6 +308,11 @@ namespace SpiderSurge
             isActive = true;
             OnActivate();
 
+            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            {
+                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+            }
+
             if (Duration > 0)
             {
                 if (durationCoroutine != null)
@@ -357,6 +364,11 @@ namespace SpiderSurge
             lastUltimateCooldownMultiplier = UltimateCooldownMultiplier;
             OnActivateUltimate();
 
+            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            {
+                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+            }
+
             if (Duration > 0)
             {
                 if (durationCoroutine != null)
@@ -379,6 +391,12 @@ namespace SpiderSurge
 
         public void SetCooldownToZero()
         {
+            if (isActive)
+            {
+                skipNextCooldown = true;
+                lastUltimateCooldownMultiplier = 1f;
+            }
+
             if (cooldownCoroutine != null)
             {
                 StopCoroutine(cooldownCoroutine);
@@ -435,6 +453,14 @@ namespace SpiderSurge
 
         protected void StartCooldown()
         {
+            if (skipNextCooldown)
+            {
+                skipNextCooldown = false;
+                onCooldown = false;
+                lastUltimateCooldownMultiplier = 1f;
+                return;
+            }
+
             if (CooldownTime <= 0) return;
 
             if (cooldownCoroutine != null)
