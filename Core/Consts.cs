@@ -108,6 +108,58 @@ namespace SpiderSurge
                 public const float SpawnCountMultiplier = 2f;
             }
 
+            // Wasp, Cost: 1.5, MinWave: 0, MaxWave: 22
+            // Roller, Cost: 1.5, MinWave: 2, MaxWave: 26
+            // Whisp, Cost: 2, MinWave: 4, MaxWave: 30
+            // MeleeWhisp, Cost: 2, MinWave: 6, MaxWave: 34
+            // Khepri, Cost: 2.5, MinWave: 8, MaxWave: 36
+            // ExplodingRoller, Cost: 3, MinWave: 10, MaxWave: 0
+            // PowerWhisp Variant, Cost: 3, MinWave: 12, MaxWave: 0
+            // PowerWasp Variant, Cost: 3, MinWave: 14, MaxWave: 0
+            // PowerRoller Variant, Cost: 4, MinWave: 16, MaxWave: 0
+            // PowerKhepri Variant, Cost: 4, MinWave: 18, MaxWave: 0
+            // PowerMeleeWhisp Variant, Cost: 4, MinWave: 20, MaxWave: 0
+            // Wasp Shielded, Cost: 4, MinWave: 22, MaxWave: 0
+            // Hornet_Shaman Variant, Cost: 6, MinWave: 24, MaxWave: 0
+            // PowerWasp Variant Shield, Cost: 6, MinWave: 26, MaxWave: 0
+            // Hornet Variant, Cost: 6, MinWave: 28, MaxWave: 0
+            // Shielded Hornet Variant, Cost: 8, MinWave: 32, MaxWave: 0
+            public static readonly Dictionary<string, EnemySpawnConfig> CustomEnemyStats = new Dictionary<string, EnemySpawnConfig>
+                {
+                    { "Wasp", new EnemySpawnConfig(1.5f, 0, 22) },
+                    { "Roller", new EnemySpawnConfig(1.5f, 2, 26) },
+                    { "Whisp", new EnemySpawnConfig(2f, 4, 30) },
+                    { "MeleeWhisp", new EnemySpawnConfig(2f, 6, 20) },
+                    { "Khepri", new EnemySpawnConfig(2.5f, 8, 36) },
+                    { "ExplodingRoller", new EnemySpawnConfig(3f, 10, 0) },
+                    { "PowerWhisp Variant", new EnemySpawnConfig(3f, 12, 0) },
+                    { "PowerWasp Variant", new EnemySpawnConfig(3f, 14, 0) },
+                    { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 16, 30) },
+                    { "PowerRoller Variant", new EnemySpawnConfig(4f, 18, 0) },
+                    { "PowerKhepri Variant", new EnemySpawnConfig(4f, 20, 0) },
+                    { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 22, 0) },
+                    { "Wasp Shielded", new EnemySpawnConfig(4f, 24, 0) },
+                    { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 26, 0) },
+                    { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 28, 0) },
+                    { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 30, 0) },
+                    { "Hornet Variant", new EnemySpawnConfig(6f, 32, 0) },
+                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 34, 0) },
+                };
+
+            public struct EnemySpawnConfig
+            {
+                public float Cost;
+                public int MinWave;
+                public int MaxWave;
+
+                public EnemySpawnConfig(float cost, int minWave, int maxWave)
+                {
+                    Cost = cost;
+                    MinWave = minWave;
+                    MaxWave = maxWave;
+                }
+            }
+
             public static class Inputs
             {
                 public const string KeyboardQ = "<keyboard>/q";

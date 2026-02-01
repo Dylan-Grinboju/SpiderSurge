@@ -1,8 +1,8 @@
 using HarmonyLib;
 using System;
 using System.Reflection;
-using System.Collections.Generic;
 using UnityEngine;
+using SpiderSurge.Enemies;
 
 namespace SpiderSurge
 {
@@ -14,13 +14,64 @@ namespace SpiderSurge
         {
             if (ModConfig.enableSurgeMode && survivalConfig != null)
             {
+                // Find templates
+                GameObject meleeWhispPrefab = null;
+                GameObject powerMeleeWhispPrefab = null;
+
+                foreach (var enemy in survivalConfig.enemies)
+                {
+                    if (enemy.enemyObject != null)
+                    {
+                        if (enemy.enemyObject.name.Contains("MeleeWhisp") && !enemy.enemyObject.name.Contains("Power"))
+                        {
+                            meleeWhispPrefab = enemy.enemyObject;
+                        }
+                        else if (enemy.enemyObject.name.Contains("MeleeWhisp") && enemy.enemyObject.name.Contains("Power"))
+                        {
+                            powerMeleeWhispPrefab = enemy.enemyObject;
+                        }
+                    }
+                }
+
+                // Initialize Custom Enemies if missing
+                if (CustomEnemies.TwinBladeMeleeWhispPrefab == null && meleeWhispPrefab != null)
+                {
+                    CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
+                }
+                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab == null && powerMeleeWhispPrefab != null)
+                {
+                    CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
+                }
+
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
 
-                // Double the enemy budget to spawn twice as many enemies
+                // Alter the enemy budget
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
+
+                // Update enemy stats from config
+                foreach (var enemy in surgeConfig.enemies)
+                {
+                    if (enemy.enemyObject != null && Consts.Values.CustomEnemyStats.TryGetValue(enemy.enemyObject.name, out var stats))
+                    {
+                        enemy.cost = stats.Cost;
+                        enemy.minWave = stats.MinWave;
+                        enemy.maxWave = stats.MaxWave;
+                    }
+                }
+
+                // Add custom enemies to the surge config
+                if (CustomEnemies.TwinBladeMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladeMeleeWhisp", out var doubleStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladeMeleeWhispPrefab, doubleStats.Cost, doubleStats.MinWave, doubleStats.MaxWave));
+                }
+
+                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladePowerMeleeWhisp", out var twinStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
+                }
 
                 survivalConfig = surgeConfig;
             }

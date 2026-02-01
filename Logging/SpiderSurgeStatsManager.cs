@@ -43,7 +43,6 @@ namespace SpiderSurge.Logging
 
         public void StartTracking()
         {
-            Logger.LogInfo("SpiderSurge stats tracking started1");
             if (!ModConfig.EnableStatsLogging) return;
 
             _matchStartTime = DateTime.Now;
