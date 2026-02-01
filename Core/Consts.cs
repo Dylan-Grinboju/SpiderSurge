@@ -112,7 +112,7 @@ namespace SpiderSurge
             {
                 public const string KeyboardQ = "<keyboard>/q";
                 public const string GamepadLeftShoulder = "<Gamepad>/leftshoulder";
-                public const string KeyboardE = "<Keyboard>/e";
+                public const string KeyboardF = "<Keyboard>/f";
                 public const string GamepadDpadUp = "<Gamepad>/dpad/up";
                 public const string GamepadDpadDown = "<Gamepad>/dpad/down";
                 public const string GamepadDpadLeft = "<Gamepad>/dpad/left";

@@ -15,17 +15,17 @@ namespace SpiderSurge
         public bool IsPost60WavePerkSelection { get; set; } = false;
 
         // Ability perks - shown in special ability selection screen
-        private HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
+        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
 
         // Upgrade perks - shown in normal perk selection
-        private HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
+        private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
-        private HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ShieldAbilityUltimate, Consts.PerkNames.InfiniteAmmoAbilityUltimate, Consts.PerkNames.ExplosionAbilityUltimate, Consts.PerkNames.InterdimensionalStorageAbilityUltimate };
+        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ShieldAbilityUltimate, Consts.PerkNames.InfiniteAmmoAbilityUltimate, Consts.PerkNames.ExplosionAbilityUltimate, Consts.PerkNames.InterdimensionalStorageAbilityUltimate };
 
 
 
-        private Dictionary<string, int> maxLevels = new Dictionary<string, int>
+        private readonly Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
             [Consts.PerkNames.ShieldAbility] = 1,
             [Consts.PerkNames.InfiniteAmmoAbility] = 1,
@@ -43,7 +43,7 @@ namespace SpiderSurge
             [Consts.PerkNames.InterdimensionalStorageAbilityUltimate] = 1
         };
 
-        private Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
+        private readonly Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
         {
             [Consts.PerkNames.ShieldAbility] = new List<string>(),
             [Consts.PerkNames.InfiniteAmmoAbility] = new List<string>(),
@@ -61,7 +61,7 @@ namespace SpiderSurge
             [Consts.PerkNames.InterdimensionalStorageAbilityUltimate] = new List<string> { Consts.PerkNames.InterdimensionalStorageAbility }
         };
 
-        private Dictionary<string, int> perkLevels = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> perkLevels = new Dictionary<string, int>();
 
         private void Awake()
         {
