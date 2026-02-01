@@ -50,18 +50,18 @@ namespace SpiderSurge
         {
             public static class Shield
             {
-                public const float BaseCooldown = 30f;
-                public const float CooldownReductionPerLevel = 5f;
+                public const float BaseCooldown = 20f;
                 public const float BaseDuration = 2f;
+                public const float CooldownReductionPerLevel = 4f;
                 public const float DurationIncreasePerLevel = 1f;
-                public const float UltimateCooldownMultiplier = 3f;
+                public const float UltimateCooldownMultiplier = 2f;
             }
 
             public static class InfiniteAmmo
             {
-                public const float BaseCooldown = 45f;
-                public const float CooldownReductionPerLevel = 7.5f;
+                public const float BaseCooldown = 35f;
                 public const float BaseDuration = 7.5f;
+                public const float CooldownReductionPerLevel = 5f;
                 public const float DurationIncreasePerLevel = 2.5f;
                 public const float CheckInterval = 0.5f;
                 public const float UltimateCooldownMultiplier = 2f;
@@ -69,9 +69,9 @@ namespace SpiderSurge
 
             public static class Explosion
             {
-                public const float BaseCooldown = 30f;
-                public const float CooldownReductionPerLevel = 5f;
+                public const float BaseCooldown = 20f;
                 public const float BaseDuration = 0f;
+                public const float CooldownReductionPerLevel = 4f;
                 public const float UltimateCooldownMultiplier = 2f;
 
                 public const float BaseKnockbackRadius = 80f;
@@ -89,23 +89,23 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float BaseCooldown = 25f;
-                public const float CooldownReductionPerLevel = 5f;
-                public const float BaseDuration = 2.5f;
+                public const float BaseCooldown = 20f;
+                public const float CooldownReductionPerLevel = 4f;
+                public const float BaseDuration = 3f;
                 public const float DurationReductionPerLevel = 0.5f;
                 public const float UltimateCooldownMultiplier = 1.5f;
             }
 
             public static class Luck
             {
-                public const float Level1Chance = 0.1f;
-                public const float Level2Chance = 0.2f;
+                public const float Level1Chance = 0.15f;
+                public const float Level2Chance = 0.3f;
             }
 
             public static class Enemies
             {
                 public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 1.0f;
+                public const float SpawnCountMultiplier = 2f;
             }
 
             public static class Inputs

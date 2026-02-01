@@ -15,6 +15,7 @@ namespace SpiderSurge
 
         protected bool isActive = false;
         protected bool onCooldown = false;
+        protected bool skipNextCooldown = false;
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
@@ -379,6 +380,11 @@ namespace SpiderSurge
 
         public void SetCooldownToZero()
         {
+            if (isActive)
+            {
+                skipNextCooldown = true;
+            }
+
             if (cooldownCoroutine != null)
             {
                 StopCoroutine(cooldownCoroutine);
@@ -435,6 +441,13 @@ namespace SpiderSurge
 
         protected void StartCooldown()
         {
+            if (skipNextCooldown)
+            {
+                skipNextCooldown = false;
+                onCooldown = false;
+                return;
+            }
+
             if (CooldownTime <= 0) return;
 
             if (cooldownCoroutine != null)
