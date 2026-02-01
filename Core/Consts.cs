@@ -106,8 +106,15 @@ namespace SpiderSurge
             {
                 public const float SpeedMultiplier = 1.1f;
                 public const float SpawnCountMultiplier = 2f;
+                public const float MissileWhispShotForce = 40f;
             }
 
+            public static class Colors
+            {
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(1f, 0f, 0f, 1f); // Red
+            }
+
+            //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
             // Wasp, Cost: 1.5, MinWave: 0, MaxWave: 22
             // Roller, Cost: 1.5, MinWave: 2, MaxWave: 26
             // Whisp, Cost: 2, MinWave: 4, MaxWave: 30
@@ -124,6 +131,8 @@ namespace SpiderSurge
             // PowerWasp Variant Shield, Cost: 6, MinWave: 26, MaxWave: 0
             // Hornet Variant, Cost: 6, MinWave: 28, MaxWave: 0
             // Shielded Hornet Variant, Cost: 8, MinWave: 32, MaxWave: 0
+
+
             public static readonly Dictionary<string, EnemySpawnConfig> CustomEnemyStats = new Dictionary<string, EnemySpawnConfig>
                 {
                     { "Wasp", new EnemySpawnConfig(1.5f, 0, 22) },
@@ -143,7 +152,8 @@ namespace SpiderSurge
                     { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 28, 0) },
                     { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 30, 0) },
                     { "Hornet Variant", new EnemySpawnConfig(6f, 32, 0) },
-                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 34, 0) },
+                    { "MissileWhisp", new EnemySpawnConfig(7f, 34, 0) },
+                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 36, 0) },
                 };
 
             public struct EnemySpawnConfig

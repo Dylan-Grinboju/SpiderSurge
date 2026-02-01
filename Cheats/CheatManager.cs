@@ -676,6 +676,18 @@ namespace SpiderSurge
             }
         }
 
+        public void RegisterCheatEnemy(EnemyHealthSystem enemy)
+        {
+            if (_elements != null && _elements.allEnemies != null)
+            {
+                if (!_elements.allEnemies.Any(e => e.name == enemy.name))
+                {
+                    _elements.allEnemies.Add(enemy);
+                    Logger.LogInfo($"[CheatManager] Added {enemy.name} to cheat list.");
+                }
+            }
+        }
+
         public static void SetElementLists(ElementLists elements)
         {
             _elements = elements;
@@ -690,6 +702,7 @@ namespace SpiderSurge
             if (__instance.allElements != null)
             {
                 CheatManager.SetElementLists(__instance.allElements);
+                Enemies.CustomEnemies.InitializeFromLists(__instance.allElements);
             }
         }
     }
