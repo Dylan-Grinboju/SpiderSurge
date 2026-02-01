@@ -124,7 +124,7 @@ namespace SpiderSurge
                 SynergyScaleMultiplier = 1f
             };
 
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 && ModifierManager.instance != null)
+            if (ModifierManager.instance != null)
             {
                 int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
                 if (tooCool > 0 && deadly)

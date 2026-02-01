@@ -94,9 +94,8 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            // Synergy Check: If Synergy active and we have a shield -> Immunity (Ultimate-like behavior)
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 &&
-                spiderHealthSystem != null && spiderHealthSystem.HasShield())
+            // Synergy Check: If we have a shield -> Immunity (Ultimate-like behavior)
+            if (spiderHealthSystem != null && spiderHealthSystem.HasShield())
             {
                 isUltSession = true; // Use Ultimate session logic for immunity tracking
                 wasHitDuringUltimate = false;

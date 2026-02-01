@@ -21,7 +21,6 @@ namespace SpiderSurge
             public const string ShortTermInvestment = "shortTermInvestment";
             public const string LongTermInvestment = "longTermInvestment";
             public const string PerkLuck = "perkLuck";
-            public const string Synergy = "synergy";
         }
 
         public static class ModifierNames
@@ -32,8 +31,9 @@ namespace SpiderSurge
             public const string MoreGuns = "moreGuns";
             public const string MoreParticles = "moreParticles";
             public const string Efficiency = "efficiency";
-            public const string Shield = "shield";
-            public const string HeatingUp = "heatingUp";
+            public const string StartShields = "startShields";
+            public const string PositiveEncouragement = "positiveencouragement";
+            public const string SafetyNet = "safetynet";
         }
 
         public static class Formatting
@@ -131,7 +131,7 @@ namespace SpiderSurge
 
         public static class Descriptions
         {
-            private static Dictionary<string, string> displayNames = new Dictionary<string, string>
+            private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
                 [PerkNames.ShieldAbility] = "Shield Ability",
                 [PerkNames.InfiniteAmmoAbility] = "Infinite Ammo",
@@ -141,7 +141,6 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
                 [PerkNames.LongTermInvestment] = "Long Term Investment",
                 [PerkNames.PerkLuck] = "Perk Luck",
-                [PerkNames.Synergy] = "Ability Synergy",
                 // Ultimate perks - dynamic names based on which ability is active
                 [PerkNames.ShieldAbilityUltimate] = "Shield Ultimate",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "Weapon Arsenal Ultimate",
@@ -150,7 +149,7 @@ namespace SpiderSurge
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "Storage Ultimate"
             };
 
-            private static Dictionary<string, string> descriptions = new Dictionary<string, string>
+            private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
                 [PerkNames.ShieldAbility] = "Unlocks the shield ability.",
                 [PerkNames.InfiniteAmmoAbility] = "Unlocks the infinite ammo ability.",
@@ -161,7 +160,6 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "Increases ability duration by 2 levels, but increases cooldown by 1 level.",
                 [PerkNames.LongTermInvestment] = "Decreases cooldown by 2 levels, but decreases ability duration by 1 level.",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1.",
-                [PerkNames.Synergy] = "Unlocks ability synergy.",
                 // Ultimate perks
                 [PerkNames.ShieldAbilityUltimate] = "Grants complete damage immunity (3x cooldown).",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "Spawns weapons at all spawn points (3x cooldown).",
@@ -169,7 +167,7 @@ namespace SpiderSurge
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "Adds a second storage slot (3x cooldown)."
             };
 
-            private static Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
+            private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
             {
                 [PerkNames.ShieldAbility] = "",
                 [PerkNames.InfiniteAmmoAbility] = "",
@@ -180,7 +178,6 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "",
                 [PerkNames.LongTermInvestment] = "",
                 [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
-                [PerkNames.Synergy] = "Unlocks ability synergy.",
                 // Ultimate perks don't have upgrade descriptions (max level 1)
                 [PerkNames.ShieldAbilityUltimate] = "",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "",
@@ -192,12 +189,6 @@ namespace SpiderSurge
             private const string DURATION_DESC_WITH_EXPLOSION = "Increases explosion size.";
             private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Further increases explosion size.";
 
-            // Synergy Descriptions
-            private const string SYNERGY_DESC_SHIELD = "Synergy with Shield: Grants immunity if you have a shield.";
-            private const string SYNERGY_DESC_AMMO = "Synergy with Efficiency: Restores ammo based on Efficiency level.";
-            private const string SYNERGY_DESC_EXPLOSION = "Synergy with Explosions: Buffs knockback and death zone based on explosion perks.";
-            private const string SYNERGY_DESC_STORAGE = "Synergy with More Weapons: keep the weapon type after map change or even death";
-
             public static string GetDisplayName(string name) => displayNames.ContainsKey(name) ? displayNames[name] : name;
 
             public static string GetDescription(string name, PerksManager perksManager)
@@ -207,13 +198,6 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
                 {
                     return DURATION_DESC_WITH_EXPLOSION;
-                }
-                if (name == PerkNames.Synergy)
-                {
-                    if (perksManager.GetPerkLevel(PerkNames.ShieldAbility) > 0) return SYNERGY_DESC_SHIELD;
-                    if (perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0) return SYNERGY_DESC_AMMO;
-                    if (perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0) return SYNERGY_DESC_EXPLOSION;
-                    if (perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0) return SYNERGY_DESC_STORAGE;
                 }
                 return descriptions.ContainsKey(name) ? descriptions[name] : "";
             }

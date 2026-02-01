@@ -116,7 +116,7 @@ namespace SpiderSurge
 
             // Perform Synergy Checks
             bool isSynergized = false;
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ShieldAbility) > 0 && key == Consts.ModifierNames.Shield) isSynergized = true;
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ShieldAbility) > 0 && (key == Consts.ModifierNames.StartShields || key == Consts.ModifierNames.PositiveEncouragement || key == Consts.ModifierNames.SafetyNet)) isSynergized = true;
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbility) > 0 && key == Consts.ModifierNames.Efficiency) isSynergized = true;
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0 && (key == Consts.ModifierNames.TooCool || key == Consts.ModifierNames.BiggerBoom)) isSynergized = true;
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbility) > 0 && (key == Consts.ModifierNames.MoreGuns || key == Consts.ModifierNames.MoreBoom || key == Consts.ModifierNames.MoreParticles)) isSynergized = true;

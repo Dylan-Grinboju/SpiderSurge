@@ -106,7 +106,7 @@ namespace SpiderSurge
             float floor = weapon.ammo;
 
             // Synergy Logic
-            if (PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) > 0 && ModifierManager.instance != null)
+            if (ModifierManager.instance != null)
             {
                 int efficiencyLevel = ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
 

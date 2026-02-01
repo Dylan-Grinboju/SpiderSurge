@@ -170,7 +170,7 @@ namespace SpiderSurge
 
         private void SaveWeapons(bool isDeath)
         {
-            if (PerksManager.Instance == null || PerksManager.Instance.GetPerkLevel(Consts.PerkNames.Synergy) <= 0) return;
+            if (PerksManager.Instance == null) return;
 
             int playerId = playerInput != null ? playerInput.playerIndex : -1;
             if (playerId == -1) return;

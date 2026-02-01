@@ -18,7 +18,7 @@ namespace SpiderSurge
         private HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
 
         // Upgrade perks - shown in normal perk selection
-        private HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck, Consts.PerkNames.Synergy };
+        private HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
         private HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ShieldAbilityUltimate, Consts.PerkNames.InfiniteAmmoAbilityUltimate, Consts.PerkNames.ExplosionAbilityUltimate, Consts.PerkNames.InterdimensionalStorageAbilityUltimate };
@@ -36,7 +36,6 @@ namespace SpiderSurge
             [Consts.PerkNames.ShortTermInvestment] = 1,
             [Consts.PerkNames.LongTermInvestment] = 1,
             [Consts.PerkNames.PerkLuck] = 2,
-            [Consts.PerkNames.Synergy] = 1,
             // Ultimate perks are level 1 only
             [Consts.PerkNames.ShieldAbilityUltimate] = 1,
             [Consts.PerkNames.InfiniteAmmoAbilityUltimate] = 1,
@@ -55,7 +54,6 @@ namespace SpiderSurge
             [Consts.PerkNames.ShortTermInvestment] = new List<string>(),
             [Consts.PerkNames.LongTermInvestment] = new List<string>(),
             [Consts.PerkNames.PerkLuck] = new List<string>(),
-            [Consts.PerkNames.Synergy] = new List<string>(),
             // Ultimate perks require the base ability to be unlocked
             [Consts.PerkNames.ShieldAbilityUltimate] = new List<string> { Consts.PerkNames.ShieldAbility },
             [Consts.PerkNames.InfiniteAmmoAbilityUltimate] = new List<string> { Consts.PerkNames.InfiniteAmmoAbility },
