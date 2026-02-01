@@ -9,6 +9,7 @@ namespace SpiderSurge.Enemies
         public static GameObject TwinBladeMeleeWhispPrefab;
         public static GameObject TwinBladePowerMeleeWhispPrefab;
         public static GameObject MissileWhispPrefab;
+        public static GameObject ShieldedMissileWhispPrefab;
 
         public static void CreateTwinBladeMeleeWhisp(GameObject original)
         {
@@ -94,9 +95,9 @@ namespace SpiderSurge.Enemies
             RegisterEnemyForCheats(newEnemyObj);
         }
 
-        public static void CreateMissileWhisp(GameObject original, GameObject rocketProjectilePrefab)
+        public static void CreateMissileWhisp(GameObject original, GameObject rocketProjectilePrefab, GameObject shieldSourceEnemy = null)
         {
-            if (MissileWhispPrefab != null) return;
+            if (MissileWhispPrefab != null && ShieldedMissileWhispPrefab != null) return;
 
             GameObject newEnemyObj = Object.Instantiate(original);
             newEnemyObj.name = "MissileWhisp";
@@ -190,7 +191,57 @@ namespace SpiderSurge.Enemies
 
             // Register for Cheats
             RegisterEnemyForCheats(newEnemyObj);
+
+            // Create Shielded Variant if source is provided
+            if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null)
+            {
+                CreateShieldedVariant(newEnemyObj, shieldSourceEnemy);
+            }
         }
+
+        private static void CreateShieldedVariant(GameObject baseEnemy, GameObject shieldSourceEnemy)
+        {
+            if (baseEnemy == null || shieldSourceEnemy == null) return;
+
+            GameObject newEnemyObj = Object.Instantiate(baseEnemy);
+            newEnemyObj.name = "ShieldedMissileWhisp";
+            Object.DontDestroyOnLoad(newEnemyObj);
+            newEnemyObj.SetActive(false);
+            ShieldedMissileWhispPrefab = newEnemyObj;
+
+            var healthSystem = newEnemyObj.GetComponent<EnemyHealthSystem>();
+            var sourceHealth = shieldSourceEnemy.GetComponent<EnemyHealthSystem>();
+
+            if (sourceHealth != null && sourceHealth.shield != null)
+            {
+                // Clone Shield
+                GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
+                newShield.name = sourceHealth.shield.name;
+                newShield.transform.localPosition = sourceHealth.shield.transform.localPosition;
+                newShield.transform.localRotation = sourceHealth.shield.transform.localRotation;
+                newShield.transform.localScale = sourceHealth.shield.transform.localScale;
+
+                healthSystem.shield = newShield;
+                newShield.SetActive(true);
+
+                // Clone Shatter Effect if available
+                if (sourceHealth.shieldShatterEffect != null)
+                {
+                    GameObject newShatter = Object.Instantiate(sourceHealth.shieldShatterEffect, newEnemyObj.transform);
+                    newShatter.name = sourceHealth.shieldShatterEffect.name;
+                    newShatter.transform.localPosition = sourceHealth.shieldShatterEffect.transform.localPosition;
+                    newShatter.transform.localRotation = sourceHealth.shieldShatterEffect.transform.localRotation;
+                    newShatter.transform.localScale = sourceHealth.shieldShatterEffect.transform.localScale;
+
+                    healthSystem.shieldShatterEffect = newShatter;
+                    newShatter.SetActive(false);
+                }
+            }
+
+            RegisterEnemyForCheats(newEnemyObj);
+        }
+
+
 
         private static void RegisterEnemyForCheats(GameObject enemyObj)
         {
@@ -244,6 +295,8 @@ namespace SpiderSurge.Enemies
             GameObject powerMeleeWhispPrefab = null;
             GameObject rocketProjectile = null;
 
+            GameObject shieldSource = null;
+
             if (elements.allEnemies != null)
             {
                 foreach (var enemy in elements.allEnemies)
@@ -252,6 +305,12 @@ namespace SpiderSurge.Enemies
                     if (enemy.name.Contains("MeleeWhisp") && !enemy.name.Contains("Power")) meleeWhispPrefab = enemy.gameObject;
                     else if (enemy.name.Contains("MeleeWhisp") && enemy.name.Contains("Power")) powerMeleeWhispPrefab = enemy.gameObject;
                     else if (enemy.name.Contains("Whisp") && !enemy.name.Contains("Melee") && !enemy.name.Contains("Power") && !enemy.name.Contains("Missile")) whispPrefab = enemy.gameObject;
+
+                    // Look for a shield source
+                    if (enemy.shield != null && shieldSource == null)
+                    {
+                        shieldSource = enemy.gameObject;
+                    }
                 }
             }
 
@@ -271,9 +330,10 @@ namespace SpiderSurge.Enemies
                 Logger.LogWarning("[SpiderSurge] 'Rocket' projectile not found explicitly.");
             }
 
+            // Invoke Missile Whisp creation (and shielded variant if possible)
             if (whispPrefab != null && rocketProjectile != null)
             {
-                CreateMissileWhisp(whispPrefab, rocketProjectile);
+                CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
             }
             else
             {

@@ -18,6 +18,7 @@ namespace SpiderSurge
                 GameObject meleeWhispPrefab = null;
                 GameObject powerMeleeWhispPrefab = null;
                 GameObject whispPrefab = null;
+                GameObject shieldSource = null;
 
                 foreach (var enemy in survivalConfig.enemies)
                 {
@@ -34,6 +35,15 @@ namespace SpiderSurge
                         else if (enemy.enemyObject.name.Contains("Whisp") && !enemy.enemyObject.name.Contains("Melee") && !enemy.enemyObject.name.Contains("Power"))
                         {
                             whispPrefab = enemy.enemyObject;
+                        }
+
+                        if (shieldSource == null)
+                        {
+                            var ehs = enemy.enemyObject.GetComponent<EnemyHealthSystem>();
+                            if (ehs != null && ehs.shield != null)
+                            {
+                                shieldSource = enemy.enemyObject;
+                            }
                         }
                     }
                 }
@@ -63,7 +73,7 @@ namespace SpiderSurge
                 }
                 if (CustomEnemies.MissileWhispPrefab == null && whispPrefab != null && rocketProjectile != null)
                 {
-                    CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile);
+                    CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
                 }
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
@@ -99,6 +109,11 @@ namespace SpiderSurge
                 if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
+                }
+
+                if (CustomEnemies.ShieldedMissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedMissileWhisp", out var shieldedStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedMissileWhispPrefab, shieldedStats.Cost, shieldedStats.MinWave, shieldedStats.MaxWave));
                 }
 
                 survivalConfig = surgeConfig;

@@ -111,7 +111,7 @@ namespace SpiderSurge
 
             public static class Colors
             {
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(1f, 0f, 0f, 1f); // Red
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.1f, 0f, 0f, 1f); // Red
             }
 
             //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
@@ -154,6 +154,7 @@ namespace SpiderSurge
                     { "Hornet Variant", new EnemySpawnConfig(6f, 32, 0) },
                     { "MissileWhisp", new EnemySpawnConfig(7f, 34, 0) },
                     { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 36, 0) },
+                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 38, 0) },
                 };
 
             public struct EnemySpawnConfig
