@@ -60,12 +60,6 @@ namespace SpiderSurge
             Harmony harmony = new Harmony("com.SpiderSurge.Mod");
             harmony.PatchAll();
 
-            Logger.LogInfo("Applied patches:");
-            foreach (var method in harmony.GetPatchedMethods())
-            {
-                Logger.LogInfo($"Patched: {method.DeclaringType?.Name}.{method.Name}");
-            }
-
             Logger.LogInfo("Harmony patches applied.");
         }
 
@@ -86,6 +80,7 @@ namespace SpiderSurge
                 // Upgrade activation
                 { "UseDpadForUltimate", false },
                 { "UnlimitedPerkChoosingTime", false },
+                { "EnableStatsLogging", true },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)

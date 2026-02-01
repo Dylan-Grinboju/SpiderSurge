@@ -5,6 +5,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
+    using SpiderSurge.Logging;
     public abstract class BaseAbility : MonoBehaviour
     {
         public abstract string PerkName { get; }
@@ -307,6 +308,11 @@ namespace SpiderSurge
             isActive = true;
             OnActivate();
 
+            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            {
+                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+            }
+
             if (Duration > 0)
             {
                 if (durationCoroutine != null)
@@ -357,6 +363,11 @@ namespace SpiderSurge
             isUltimateActive = true;
             lastUltimateCooldownMultiplier = UltimateCooldownMultiplier;
             OnActivateUltimate();
+
+            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            {
+                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+            }
 
             if (Duration > 0)
             {

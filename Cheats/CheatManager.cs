@@ -51,7 +51,6 @@ namespace SpiderSurge
             ("shortTermInvestment", "Short Term Investment"),
             ("longTermInvestment", "Long Term Investment"),
             ("perkLuck", "Perk Luck"),
-            ("synergy", "Synergy")
         };
 
         public bool SpawningFrozen => _spawningFrozen;
