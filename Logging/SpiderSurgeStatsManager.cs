@@ -28,8 +28,7 @@ namespace SpiderSurge.Logging
         private readonly Dictionary<int, int> _activationsPerPlayer = new Dictionary<int, int>();
         private DateTime _matchStartTime;
         private bool _isTracking = false;
-        public int _currentWave = 0;
-
+        private int _currentWave = 0;
         private void Awake()
         {
             if (_instance != null && _instance != this)

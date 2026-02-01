@@ -17,25 +17,12 @@ namespace SpiderSurge.Enemies
         {
             if (TwinWhispPrefab != null) return;
 
-            GameObject newEnemyObj = Object.Instantiate(original);
-            newEnemyObj.name = "TwinWhisp";
-            Object.DontDestroyOnLoad(newEnemyObj);
-            newEnemyObj.SetActive(false);
-            TwinWhispPrefab = newEnemyObj;
-
-            // Change Color
-            var renderers = newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true);
-            foreach (var renderer in renderers)
-            {
-                renderer.color = Consts.Values.Colors.TwinWhispColor;
-            }
-
-            RegisterEnemyForCheats(newEnemyObj);
+            TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
 
             // Create Shielded Variant if source is provided
             if (shieldSourceEnemy != null && ShieldedTwinWhispPrefab == null)
             {
-                CreateShieldedTwinWhispVariant(newEnemyObj, shieldSourceEnemy);
+                ShieldedTwinWhispPrefab = CreateShieldedEnemy(TwinWhispPrefab, shieldSourceEnemy, "ShieldedTwinWhisp");
             }
         }
 
@@ -43,57 +30,61 @@ namespace SpiderSurge.Enemies
         {
             if (TwinBladeMeleeWhispPrefab != null) return;
 
-            GameObject newEnemyObj = Object.Instantiate(original);
-            newEnemyObj.name = "TwinBladeMeleeWhisp";
-            Object.DontDestroyOnLoad(newEnemyObj);
-            newEnemyObj.SetActive(false);
-            TwinBladeMeleeWhispPrefab = newEnemyObj;
-
-            var brain = newEnemyObj.GetComponent<WhispBrain>();
-            Transform meleeWeaponTr = null;
-            Transform[] allChildren = newEnemyObj.GetComponentsInChildren<Transform>(true);
-            meleeWeaponTr = Enumerable.FirstOrDefault(allChildren, t => t.name == "MeleeWeapon");
-
-            if (meleeWeaponTr == null && brain != null) meleeWeaponTr = brain.rotatingBase;
-
-            if (meleeWeaponTr != null)
-            {
-                Transform bladehandle = null;
-                foreach (Transform child in meleeWeaponTr)
-                {
-                    if (child.name.ToLower().Contains("handle") || child.name.ToLower().Contains("blade"))
-                    {
-                        bladehandle = child;
-                        break;
-                    }
-                }
-
-                if (bladehandle != null)
-                {
-                    Transform blade2 = Object.Instantiate(bladehandle, meleeWeaponTr);
-                    blade2.name = "SecondBladeHandle";
-                    blade2.localPosition = -bladehandle.localPosition;
-                    blade2.localRotation = bladehandle.localRotation * Quaternion.Euler(0, 0, 180);
-                }
-            }
-
-            // Register for Cheats
-            RegisterEnemyForCheats(newEnemyObj);
+            TwinBladeMeleeWhispPrefab = CreateBaseEnemy(original, "TwinBladeMeleeWhisp");
+            AddTwinBlade(TwinBladeMeleeWhispPrefab);
         }
 
         public static void CreateTwinBladePowerMeleeWhisp(GameObject original)
         {
             if (TwinBladePowerMeleeWhispPrefab != null) return;
 
+            TwinBladePowerMeleeWhispPrefab = CreateBaseEnemy(original, "TwinBladePowerMeleeWhisp");
+            AddTwinBlade(TwinBladePowerMeleeWhispPrefab);
+        }
+
+        public static void CreateMissileWhisp(GameObject original, GameObject rocketProjectilePrefab, GameObject shieldSourceEnemy = null)
+        {
+            if (MissileWhispPrefab != null && ShieldedMissileWhispPrefab != null) return;
+
+            if (MissileWhispPrefab == null)
+            {
+                MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp", Consts.Values.Colors.MissileWhispColor);
+                SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
+                SetupOffScreenIndicator(MissileWhispPrefab);
+            }
+
+            // Create Shielded Variant if source is provided
+            if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null && MissileWhispPrefab != null)
+            {
+                ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp");
+            }
+        }
+
+        private static GameObject CreateBaseEnemy(GameObject original, string name, Color? color = null)
+        {
             GameObject newEnemyObj = Object.Instantiate(original);
-            newEnemyObj.name = "TwinBladePowerMeleeWhisp";
+            newEnemyObj.name = name;
             Object.DontDestroyOnLoad(newEnemyObj);
             newEnemyObj.SetActive(false);
-            TwinBladePowerMeleeWhispPrefab = newEnemyObj;
 
-            var brain = newEnemyObj.GetComponent<WhispBrain>();
+            if (color.HasValue)
+            {
+                var renderers = newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true);
+                foreach (var renderer in renderers)
+                {
+                    renderer.color = color.Value;
+                }
+            }
+
+            RegisterEnemyForCheats(newEnemyObj);
+            return newEnemyObj;
+        }
+
+        private static void AddTwinBlade(GameObject enemyObj)
+        {
+            var brain = enemyObj.GetComponent<WhispBrain>();
             Transform meleeWeaponTr = null;
-            Transform[] allChildren = newEnemyObj.GetComponentsInChildren<Transform>(true);
+            Transform[] allChildren = enemyObj.GetComponentsInChildren<Transform>(true);
             meleeWeaponTr = Enumerable.FirstOrDefault(allChildren, t => t.name == "MeleeWeapon");
 
             if (meleeWeaponTr == null && brain != null) meleeWeaponTr = brain.rotatingBase;
@@ -118,30 +109,11 @@ namespace SpiderSurge.Enemies
                     blade2.localRotation = bladehandle.localRotation * Quaternion.Euler(0, 0, 180);
                 }
             }
-
-            // Register for Cheats
-            RegisterEnemyForCheats(newEnemyObj);
         }
 
-        public static void CreateMissileWhisp(GameObject original, GameObject rocketProjectilePrefab, GameObject shieldSourceEnemy = null)
+        private static void SetupMissileProjectile(GameObject enemyObj, GameObject rocketProjectilePrefab)
         {
-            if (MissileWhispPrefab != null && ShieldedMissileWhispPrefab != null) return;
-
-            GameObject newEnemyObj = Object.Instantiate(original);
-            newEnemyObj.name = "MissileWhisp";
-            Object.DontDestroyOnLoad(newEnemyObj);
-            newEnemyObj.SetActive(false);
-            MissileWhispPrefab = newEnemyObj;
-
-            // Change color
-            var renderers = newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true);
-            foreach (var renderer in renderers)
-            {
-                renderer.color = Consts.Values.Colors.MissileWhispColor;
-            }
-
-            // Assign Projectile
-            var brain = newEnemyObj.GetComponent<WhispBrain>();
+            var brain = enemyObj.GetComponent<WhispBrain>();
             if (brain != null && rocketProjectilePrefab != null)
             {
                 // Configure Rocket Logic
@@ -168,9 +140,11 @@ namespace SpiderSurge.Enemies
             {
                 Logger.LogWarning($"[SpiderSurge] Failed to setup MissileWhisp weapon. Missing Brain or Projectile.");
             }
+        }
 
-            // Handle Offscreen Indicator
-            var offScreen = newEnemyObj.GetComponentInChildren<OffScreenIndicator>(true);
+        private static void SetupOffScreenIndicator(GameObject enemyObj)
+        {
+            var offScreen = enemyObj.GetComponentInChildren<OffScreenIndicator>(true);
             var type = typeof(OffScreenIndicator);
 
             if (offScreen == null)
@@ -193,7 +167,7 @@ namespace SpiderSurge.Enemies
 
                 if (indicatorPrefab != null)
                 {
-                    offScreen = newEnemyObj.AddComponent<OffScreenIndicator>();
+                    offScreen = enemyObj.AddComponent<OffScreenIndicator>();
 
                     // Set fields via reflection
                     type.GetField("indicator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, indicatorPrefab);
@@ -213,29 +187,16 @@ namespace SpiderSurge.Enemies
                 type.GetField("_mainCamera", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, Camera.main); // Initialize camera
 
                 // Tracked target is the sprite renderer
-                var sr = newEnemyObj.GetComponentInChildren<SpriteRenderer>();
+                var sr = enemyObj.GetComponentInChildren<SpriteRenderer>();
                 type.GetField("trackedTarget", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, sr);
             }
-
-            // Register for Cheats
-            RegisterEnemyForCheats(newEnemyObj);
-
-            // Create Shielded Variant if source is provided
-            if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null)
-            {
-                CreateShieldedVariant(newEnemyObj, shieldSourceEnemy);
-            }
         }
 
-        private static void CreateShieldedVariant(GameObject baseEnemy, GameObject shieldSourceEnemy)
+        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name)
         {
-            if (baseEnemy == null || shieldSourceEnemy == null) return;
+            if (baseEnemy == null || shieldSourceEnemy == null) return null;
 
-            GameObject newEnemyObj = Object.Instantiate(baseEnemy);
-            newEnemyObj.name = "ShieldedMissileWhisp";
-            Object.DontDestroyOnLoad(newEnemyObj);
-            newEnemyObj.SetActive(false);
-            ShieldedMissileWhispPrefab = newEnemyObj;
+            GameObject newEnemyObj = CreateBaseEnemy(baseEnemy, name);
 
             var healthSystem = newEnemyObj.GetComponent<EnemyHealthSystem>();
             var sourceHealth = shieldSourceEnemy.GetComponent<EnemyHealthSystem>();
@@ -265,53 +226,8 @@ namespace SpiderSurge.Enemies
                     newShatter.SetActive(false);
                 }
             }
-
-            RegisterEnemyForCheats(newEnemyObj);
+            return newEnemyObj;
         }
-
-        private static void CreateShieldedTwinWhispVariant(GameObject baseEnemy, GameObject shieldSourceEnemy)
-        {
-            if (baseEnemy == null || shieldSourceEnemy == null) return;
-
-            GameObject newEnemyObj = Object.Instantiate(baseEnemy);
-            newEnemyObj.name = "ShieldedTwinWhisp";
-            Object.DontDestroyOnLoad(newEnemyObj);
-            newEnemyObj.SetActive(false);
-            ShieldedTwinWhispPrefab = newEnemyObj;
-
-            var healthSystem = newEnemyObj.GetComponent<EnemyHealthSystem>();
-            var sourceHealth = shieldSourceEnemy.GetComponent<EnemyHealthSystem>();
-
-            if (sourceHealth != null && sourceHealth.shield != null)
-            {
-                // Clone Shield
-                GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
-                newShield.name = sourceHealth.shield.name;
-                newShield.transform.localPosition = sourceHealth.shield.transform.localPosition;
-                newShield.transform.localRotation = sourceHealth.shield.transform.localRotation;
-                newShield.transform.localScale = sourceHealth.shield.transform.localScale;
-
-                healthSystem.shield = newShield;
-                newShield.SetActive(true);
-
-                // Clone Shatter Effect if available
-                if (sourceHealth.shieldShatterEffect != null)
-                {
-                    GameObject newShatter = Object.Instantiate(sourceHealth.shieldShatterEffect, newEnemyObj.transform);
-                    newShatter.name = sourceHealth.shieldShatterEffect.name;
-                    newShatter.transform.localPosition = sourceHealth.shieldShatterEffect.transform.localPosition;
-                    newShatter.transform.localRotation = sourceHealth.shieldShatterEffect.transform.localRotation;
-                    newShatter.transform.localScale = sourceHealth.shieldShatterEffect.transform.localScale;
-
-                    healthSystem.shieldShatterEffect = newShatter;
-                    newShatter.SetActive(false);
-                }
-            }
-
-            RegisterEnemyForCheats(newEnemyObj);
-        }
-
-
 
         private static void RegisterEnemyForCheats(GameObject enemyObj)
         {

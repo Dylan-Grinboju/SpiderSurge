@@ -38,6 +38,11 @@ namespace SpiderSurge.Logging
 
         public void LogMatchStats(SpiderSurgeStatsSnapshot stats)
         {
+            if (stats == null)
+            {
+                Logger.LogError("SpiderSurge match stats are null");
+                return;
+            }
             try
             {
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");

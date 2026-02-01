@@ -37,7 +37,7 @@ namespace SpiderSurge.Patches
                 LayerMask obstacleLayer = (LayerMask)_obstacleLayerField.GetValue(__instance);
 
                 RaycastHit2D hit = Physics2D.Raycast(__instance.transform.position, target.position - __instance.transform.position, maxEngagementRange * 2f, obstacleLayer);
-                if (!hit || hit.transform.gameObject.transform != target)
+                if (!hit || hit.transform != target)
                 {
                     return false;
                 }
@@ -74,7 +74,14 @@ namespace SpiderSurge.Patches
                 _playAttackCosmeticsRpc.Invoke(__instance, null);
 
                 // Apply Recoil
-                __instance.GetComponent<Rigidbody2D>().AddForce(-gunPoint.up * __instance.movementForce, ForceMode2D.Impulse);
+                if (__instance.TryGetComponent<Rigidbody2D>(out var rb))
+                {
+                    rb.AddForce(-gunPoint.up * __instance.movementForce, ForceMode2D.Impulse);
+                }
+                else
+                {
+                    Debug.LogWarning($"[WhispBrainPatch] WhispBrain '{__instance.name}' (ID: {__instance.NetworkObjectId}) missing Rigidbody2D. Cannot apply recoil.");
+                }
 
                 // Set Cooldown
                 _shotCooldownTillField.SetValue(__instance, Time.time + __instance.shotCooldown);

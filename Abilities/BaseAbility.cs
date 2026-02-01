@@ -394,6 +394,7 @@ namespace SpiderSurge
             if (isActive)
             {
                 skipNextCooldown = true;
+                lastUltimateCooldownMultiplier = 1f;
             }
 
             if (cooldownCoroutine != null)
@@ -456,6 +457,7 @@ namespace SpiderSurge
             {
                 skipNextCooldown = false;
                 onCooldown = false;
+                lastUltimateCooldownMultiplier = 1f;
                 return;
             }
 
