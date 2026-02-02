@@ -80,7 +80,6 @@ namespace SpiderSurge
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
 
-                // Alter the enemy budget
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
@@ -143,9 +142,7 @@ namespace SpiderSurge
             {
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
-                // Reset perk selection for new game
                 PerksManager.Instance.ResetPerks();
-                // Refresh high score display to show Surge scores
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
                 if (eventField != null)
                 {
@@ -164,7 +161,6 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
             {
-                Logger.LogInfo($"[Surge] Survival Mode Wave Set: {value}");
                 // Reset cooldowns for all abilities for all active players
                 if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                 {
@@ -188,14 +184,12 @@ namespace SpiderSurge
                 // At wave 30 (Ult Upgrade), set flag for special perk selection
                 if (value == Consts.Values.Waves.UltUpgradeWave)
                 {
-                    Logger.LogInfo($"[Surge] Reached Wave {value}. Triggering Ult Upgrade Selection.");
                     PerksManager.Instance.IsUltUpgradePerkSelection = true;
                 }
 
                 // At wave 60 (Ult Switch), set flag for special perk selection
                 if (value == Consts.Values.Waves.UltSwapWave)
                 {
-                    Logger.LogInfo($"[Surge] Reached Wave {value}. Triggering Ult Switch Selection.");
                     PerksManager.Instance.IsUltSwapPerkSelection = true;
                 }
 

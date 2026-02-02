@@ -51,8 +51,8 @@ namespace SpiderSurge
 
         public virtual string[] ActivationButtons => new string[] { Consts.Values.Inputs.KeyboardQ, Consts.Values.Inputs.GamepadLeftShoulder };
 
-        // Ultimate activation: F key (dual stick combo handled separately)
-        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardF;
+        // Ultimate activation: C key (dual stick combo handled separately)
+        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardC;
 
         // Base values that abilities should override
         public virtual float BaseDuration => 5f;

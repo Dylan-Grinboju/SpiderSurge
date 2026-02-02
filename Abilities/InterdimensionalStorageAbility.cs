@@ -105,9 +105,9 @@ namespace SpiderSurge
 
             _weaponManager.UnEquipWeapon();
 
-            heldWeaponObj.SetActive(false);
             heldWeaponObj.transform.SetParent(transform);
             heldWeaponObj.transform.localPosition = Vector3.zero;
+            heldWeaponObj.SetActive(false);
 
             return new RuntimeStoredWeapon
             {
@@ -293,10 +293,9 @@ namespace SpiderSurge
                         newWeapon.ammo = data.Ammo;
                     }
 
-                    // Put into storage
-                    newWeaponObj.SetActive(false);
                     newWeaponObj.transform.SetParent(transform);
                     newWeaponObj.transform.localPosition = Vector3.zero;
+                    newWeaponObj.SetActive(false);
 
                     if (data.IsUltimateSlot)
                         _ultimateStoredWeaponData = new RuntimeStoredWeapon
