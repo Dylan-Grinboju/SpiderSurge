@@ -199,14 +199,6 @@ namespace SpiderSurge
                 "• <b>To Disable:</b> Delete the SpiderSurge.dll or set 'EnableSurgeMode' to false in the config."
             });
 
-
-            DrawSection("PERKS & NEW ENEMIES", new string[] {
-                "• <b>Abilities:</b> Gain powerful abilities like Shield, Explosion, Storage, and Infinite Ammo.",
-                "• <b>Mod Perks:</b> Improve Cooldown and Duration of the abilities, and more.",
-                "• <b>Enemies:</b> Watch out for Shielded variants and dual-wielding Twin Whisps!",
-                "• <b>Custom Waves:</b> Waves are rebalanced for a more intense challenge."
-            });
-
             DrawSection("ABILITIES", new string[] {
                 "• Special Abilities perks appear at the first perk choice.",
                 "• Special Ultimate upgrades appear at wave 30.",
@@ -220,6 +212,8 @@ namespace SpiderSurge
             }, true);
 
             DrawIndicatorSection();
+
+            DrawSynergySection();
 
             GUILayout.EndVertical();
             GUILayout.EndScrollView();
@@ -266,6 +260,41 @@ namespace SpiderSurge
 
             GUILayout.Space(10);
             GUILayout.Label("• You can customize indicator <b>radius, offset, and colors</b> in the config YAML.", labelStyle);
+
+            GUILayout.EndVertical();
+        }
+
+        private void DrawSynergySection()
+        {
+            GUILayout.BeginVertical(cardStyle);
+            GUILayout.Label("SYNERGY PERKS", headerStyle);
+            GUILayout.Label("Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color=#00FFFF>Synergized</color> in the perk selection.", labelStyle);
+            GUILayout.Space(10);
+
+            // Parry (Shield) Synergies
+            GUILayout.Label("<b><color=#FFD700>Parry</color></b> + Shield Perks:", labelStyle);
+            GUILayout.Label("• <b>Start Shields</b>, <b>Positive Encouragement</b>, or <b>Safety Net</b>:", labelStyle);
+            GUILayout.Label("  → If you have a shield when activating Parry, gain <b>full immunity</b> instead of a breakable shield.", labelStyle);
+            GUILayout.Space(8);
+
+            // Keep Shooting (Infinite Ammo) Synergies
+            GUILayout.Label("<b><color=#FFD700>Keep Shooting</color></b> + Efficiency:", labelStyle);
+            GUILayout.Label("• <b>Efficiency Lv1</b>: Ability refills ammo to at least <b>50%</b> of max.", labelStyle);
+            GUILayout.Label("• <b>Efficiency Lv2</b>: Ability refills ammo to <b>100%</b> of max.", labelStyle);
+            GUILayout.Space(8);
+
+            // The Force (Explosion) Synergies
+            GUILayout.Label("<b><color=#FFD700>The Force</color></b> + Explosion Perks:", labelStyle);
+            GUILayout.Label("• <b>Bigger Boom</b>: Increases <b>knockback strength</b>.", labelStyle);
+            GUILayout.Label("• <b>Too Cool</b>: Increases <b>death radius</b> of the ultimate.", labelStyle);
+            GUILayout.Space(8);
+
+            // Interdimensional Storage Synergies
+            GUILayout.Label("<b><color=#FFD700>Interdimensional Storage</color></b> + Weapon Perks:", labelStyle);
+            GUILayout.Label("• <b>More Guns</b>, <b>More Boom</b>, or <b>More Particles</b>:", labelStyle);
+            GUILayout.Label("  → <b>Level 1</b>: Keep matching stored weapons between rounds.", labelStyle);
+            GUILayout.Label("  → <b>Level 2</b>: Keep matching stored weapons even after <b>death</b>.", labelStyle);
+            GUILayout.Label("  (More Guns = Guns, More Boom = Explosives/Throwables/Mines, More Particles = Particle/Melee)", labelStyle);
 
             GUILayout.EndVertical();
         }
