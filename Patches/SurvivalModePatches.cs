@@ -72,9 +72,16 @@ namespace SpiderSurge
                 {
                     CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
                 }
-                if (CustomEnemies.MissileWhispPrefab == null && whispPrefab != null && rocketProjectile != null)
+                if (whispPrefab != null)
                 {
-                    CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+                    if (CustomEnemies.MissileWhispPrefab == null && rocketProjectile != null)
+                    {
+                        CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+                    }
+                    if (CustomEnemies.TwinWhispPrefab == null)
+                    {
+                        CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
+                    }
                 }
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
@@ -106,6 +113,11 @@ namespace SpiderSurge
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
                 }
 
+                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
+                }
+
                 if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
@@ -119,16 +131,6 @@ namespace SpiderSurge
                 if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
-                }
-
-                if (CustomEnemies.TwinWhispPrefab == null && whispPrefab != null)
-                {
-                    CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
-                }
-
-                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
                 }
 
                 survivalConfig = surgeConfig;

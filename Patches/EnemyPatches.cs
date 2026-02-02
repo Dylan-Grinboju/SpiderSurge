@@ -1,5 +1,6 @@
 using HarmonyLib;
-using UnityEngine;
+using Unity.Netcode;
+using System;
 
 namespace SpiderSurge
 {
@@ -57,6 +58,27 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive) return;
             __instance.movementForce *= Consts.Values.Enemies.SpeedMultiplier;
+        }
+    }
+    [HarmonyPatch(typeof(NetworkObject), "Spawn", new Type[] { typeof(bool) })]
+    public class NetworkObject_Spawn_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(NetworkObject __instance)
+        {
+            if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive) return;
+
+            // Ensure custom enemies (and any other modded objects) are active when spawned.
+            // Many modded prefabs are kept inactive to avoid interference, but many spawners
+            // in the game do not explicitly call SetActive(true) on the instantiated instances.
+            if (__instance.gameObject != null && !__instance.gameObject.activeSelf)
+            {
+                // We only activate objects that have an EnemyHealthSystem to avoid side effects on other networked objects.
+                if (__instance.TryGetComponent<EnemyHealthSystem>(out _))
+                {
+                    __instance.gameObject.SetActive(true);
+                }
+            }
         }
     }
 }
