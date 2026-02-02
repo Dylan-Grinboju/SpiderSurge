@@ -41,6 +41,9 @@ namespace SpiderSurge
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
             new GameObject("PerksManager").AddComponent<PerksManager>();
+            // Initialize Tutorial UI
+            TutorialUI.Initialize();
+
             // Initialize CheatManager
             CheatManager.Initialize();
             // Check for updates asynchronously
@@ -81,6 +84,7 @@ namespace SpiderSurge
                 { "UseDpadForUltimate", false },
                 { "UnlimitedPerkChoosingTime", false },
                 { "EnableStatsLogging", true },
+                { "display.showTutorial", true },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)

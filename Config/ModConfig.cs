@@ -27,6 +27,12 @@ namespace SpiderSurge
         public static bool UnlimitedPerkChoosingTime => Config.GetModConfigValue(ModId, "UnlimitedPerkChoosingTime", false);
 
         public static bool EnableStatsLogging => Config.GetModConfigValue(ModId, "EnableStatsLogging", true);
+        public static bool ShowTutorial => Config.GetModConfigValue(ModId, "display.showTutorial", true);
+
+        public static void SetShowTutorial(bool value)
+        {
+            Config.SetModConfigValue(ModId, "display.showTutorial", value);
+        }
 
         private static float ValidateIndicatorRadius(float value)
         {
