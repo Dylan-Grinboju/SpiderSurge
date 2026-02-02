@@ -159,10 +159,113 @@ namespace SpiderSurge
         }
 
 
+        private Dictionary<SpriteRenderer, Color> _originalColors = new Dictionary<SpriteRenderer, Color>();
+        private Color? _originalLightColor;
+        private float? _originalLightIntensity;
+
+        private void ApplyRadiance(bool enable)
+        {
+            if (spiderHealthSystem == null) return;
+
+            if (enable)
+            {
+                // -- 1. Apply to Sprites --
+                if (spiderHealthSystem.spritesRoot != null)
+                {
+                    var renderers = spiderHealthSystem.spritesRoot.GetComponentsInChildren<SpriteRenderer>(true);
+                    foreach (var sr in renderers)
+                    {
+                        if (sr == null) continue;
+                        if (!_originalColors.ContainsKey(sr))
+                        {
+                            _originalColors[sr] = sr.color;
+                        }
+                        sr.color = new Color(1f, 0.84f, 0.0f, 1f); // Gold
+                    }
+                }
+
+                // Also the head
+                if (spiderHealthSystem.head != null)
+                {
+                    if (!_originalColors.ContainsKey(spiderHealthSystem.head))
+                    {
+                        _originalColors[spiderHealthSystem.head] = spiderHealthSystem.head.color;
+                    }
+                    spiderHealthSystem.head.color = new Color(1f, 0.84f, 0.0f, 1f);
+                }
+
+                // -- 2. Apply to Light (Via Reflection) --
+                ApplyLightRadiance(true);
+            }
+            else
+            {
+                // -- Restore Sprites --
+                foreach (var kvp in _originalColors)
+                {
+                    if (kvp.Key != null)
+                    {
+                        kvp.Key.color = kvp.Value;
+                    }
+                }
+                _originalColors.Clear();
+
+                // -- Restore Light --
+                ApplyLightRadiance(false);
+            }
+        }
+
+        private void ApplyLightRadiance(bool enable)
+        {
+            try
+            {
+                var lightField = typeof(SpiderHealthSystem).GetField("spiderLight");
+                if (lightField == null) return;
+
+                var lightObj = lightField.GetValue(spiderHealthSystem);
+                if (lightObj == null) return;
+
+                var lightType = lightObj.GetType();
+                var colorProp = lightType.GetProperty("color");
+                var intensityProp = lightType.GetProperty("intensity");
+
+                if (enable)
+                {
+                    if (colorProp != null && _originalLightColor == null)
+                        _originalLightColor = (Color)colorProp.GetValue(lightObj, null);
+
+                    if (intensityProp != null && _originalLightIntensity == null)
+                        _originalLightIntensity = (float)intensityProp.GetValue(lightObj, null);
+
+                    if (colorProp != null) colorProp.SetValue(lightObj, new Color(1f, 0.6f, 0.0f), null);
+                    if (intensityProp != null) intensityProp.SetValue(lightObj, 4.0f, null);
+                }
+                else
+                {
+                    if (colorProp != null && _originalLightColor != null)
+                    {
+                        colorProp.SetValue(lightObj, _originalLightColor.Value, null);
+                        _originalLightColor = null;
+                    }
+
+                    if (intensityProp != null && _originalLightIntensity != null)
+                    {
+                        intensityProp.SetValue(lightObj, _originalLightIntensity.Value, null);
+                        _originalLightIntensity = null;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"[SpiderSurge] Failed to apply light radiance: {ex.Message}");
+            }
+        }
+
         private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
             IsImmune = enable;
+
+            ApplyRadiance(enable);
 
             if (enable)
             {
