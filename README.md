@@ -68,3 +68,9 @@ Changes to this file require a game restart to take effect. If invalid values ar
 - More abilities and ults
 - More enemies
 - Even harder mode?
+
+## Other Mods
+
+If you enjoy SpiderSurge, check out my other mod:
+
+- **SpiderStats**: A statistics tracking mod for Spiderheck that monitors player performance, game events, and awards fun titles at the end of each game. You can find it here: https://github.com/Dylan-Grinboju/spiderheck_stats_mod
