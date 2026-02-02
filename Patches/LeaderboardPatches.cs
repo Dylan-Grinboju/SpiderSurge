@@ -16,4 +16,34 @@ namespace SpiderSurge
             return true;
         }
     }
+
+    [HarmonyPatch(typeof(EOSLeaderboards), "GetRecordsText")]
+    public class EOSLeaderboards_GetRecordsText_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref string __result)
+        {
+            if (ModConfig.enableSurgeMode)
+            {
+                __result = "";
+                return false;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(SonyLeaderboards), "GetRecordsText")]
+    public class SonyLeaderboards_GetRecordsText_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref string __result)
+        {
+            if (ModConfig.enableSurgeMode)
+            {
+                __result = "";
+                return false;
+            }
+            return true;
+        }
+    }
 }
