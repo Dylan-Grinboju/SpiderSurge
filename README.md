@@ -1,6 +1,7 @@
 # SpiderSurge
 
 A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
 ## Features
 
@@ -19,6 +20,9 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 - **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Automation**: Includes an integrated mod updater to notify you when a new version is available.
+
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/9e97d581-90f0-4251-808d-97e84e78c82e" />
+
 
 ## Installation
 
