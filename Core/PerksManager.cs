@@ -251,7 +251,7 @@ namespace SpiderSurge
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
 
-        public string GetDisplayName(string name) => Consts.Descriptions.GetDisplayName(name);
+        public string GetDisplayName(string name) => Consts.Descriptions.GetDisplayName(name, this);
         public string GetDescription(string name) => Consts.Descriptions.GetDescription(name, this);
 
         public string GetUpgradeDescription(string name) => Consts.Descriptions.GetUpgradeDescription(name, this);

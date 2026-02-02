@@ -77,9 +77,9 @@ namespace SpiderSurge
 
             public static class Explosion
             {
-                public const float AbilityBaseCooldown = 1f;
+                public const float AbilityBaseCooldown = 20f;
                 public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 1f;
+                public const float UltimateBaseCooldown = 30f;
                 public const float UltimateBaseDuration = 0f;
                 public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float UltimateCooldownReductionPerLevel = 8f;
@@ -274,12 +274,31 @@ namespace SpiderSurge
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = ""
             };
 
-            private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
-            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size. (Requires ultimate unlocked)";
-            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void. (Requires ultimate unlocked)";
+            // Custom display names for Duration perk based on active ability
+            private const string DURATION_NAME_WITH_EXPLOSION = "Bigger Explosion";
+            private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
 
-            public static string GetDisplayName(string name) => displayNames.ContainsKey(name) ? displayNames[name] : name;
+            // Custom descriptions for Duration perk based on active ability
+            private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
+            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size.";
+            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void.";
+
+            public static string GetDisplayName(string name, PerksManager perksManager = null)
+            {
+                if (perksManager != null && name == PerkNames.AbilityDuration)
+                {
+                    if (perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_EXPLOSION;
+                    }
+                    if (perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_STORAGE;
+                    }
+                }
+                return displayNames.ContainsKey(name) ? displayNames[name] : name;
+            }
 
             public static string GetDescription(string name, PerksManager perksManager)
             {
