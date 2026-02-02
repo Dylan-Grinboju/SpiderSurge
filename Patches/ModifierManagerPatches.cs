@@ -77,14 +77,14 @@ namespace SpiderSurge
                         }
                     }
 
-                    if (PerksManager.Instance.IsPost30WavePerkSelection)
+                    if (PerksManager.Instance.IsUltUpgradePerkSelection)
                     {
-                        PerksManager.Instance.IsPost30WavePerkSelection = false;
+                        PerksManager.Instance.IsUltUpgradePerkSelection = false;
                     }
 
-                    if (PerksManager.Instance.IsPost60WavePerkSelection)
+                    if (PerksManager.Instance.IsUltSwapPerkSelection)
                     {
-                        PerksManager.Instance.IsPost60WavePerkSelection = false;
+                        PerksManager.Instance.IsUltSwapPerkSelection = false;
                     }
                 }
             }
@@ -156,7 +156,7 @@ namespace SpiderSurge
                         description += "\n" + Consts.Formatting.TextLuckyUpgrade;
                     }
 
-                    if (PerksManager.Instance.GetAbilityUltimatePerkNames().Contains(key) && PerksManager.Instance.IsPost60WavePerkSelection)
+                    if (PerksManager.Instance.GetAbilityUltimatePerkNames().Contains(key) && PerksManager.Instance.IsUltSwapPerkSelection)
                     {
                         description += "\n" + Consts.Formatting.TextSwapAbility;
                     }
@@ -214,9 +214,9 @@ namespace SpiderSurge
                     // even if their base ability is not unlocked (to allow swapping).
                     // We knowingly bypass IsAvailable's dependency check here.
                     bool isUlt = perksManager.GetAbilityUltimatePerkNames().Contains(key);
-                    bool isPost60 = perksManager.IsPost60WavePerkSelection;
+                    bool isSwapPhase = perksManager.IsUltSwapPerkSelection;
 
-                    if (isPost60 && isUlt)
+                    if (isSwapPhase && isUlt)
                     {
                         // Specifically check max level, since we are bypassing IsAvailable
                         if (perksManager.GetPerkLevel(key) >= perksManager.GetMaxLevel(key)) continue;
@@ -341,7 +341,7 @@ namespace SpiderSurge
 
         private static void SelectPhasePerks(PerksManager pm, int targetCount, List<Modifier> finalSelection, List<Modifier> selectedAbilityUlt, List<Modifier> otherAbilityUlts, List<Modifier> abilities, List<Modifier> modPerks, List<Modifier> vanillaPerks)
         {
-            if (pm.IsPost60WavePerkSelection)
+            if (pm.IsUltSwapPerkSelection)
             {
                 // Phase 1: Post 60 - Other Ults (Swap) -> Current Ult (if avail) -> Mods -> Vanilla
                 AddUpTo(finalSelection, otherAbilityUlts, Math.Max(0, targetCount - 1));
@@ -349,7 +349,7 @@ namespace SpiderSurge
                 AddUpTo(finalSelection, modPerks, targetCount);
                 AddUpTo(finalSelection, vanillaPerks, targetCount);
             }
-            else if (pm.IsPost30WavePerkSelection)
+            else if (pm.IsUltUpgradePerkSelection)
             {
                 // Phase 2: Post 30 - Current Ult -> Mods -> Vanilla
                 AddUpTo(finalSelection, selectedAbilityUlt, targetCount);

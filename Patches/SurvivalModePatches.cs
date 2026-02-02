@@ -3,6 +3,7 @@ using System;
 using System.Reflection;
 using UnityEngine;
 using SpiderSurge.Enemies;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
@@ -163,6 +164,7 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
             {
+                Logger.LogInfo($"[Surge] Survival Mode Wave Set: {value}");
                 // Reset cooldowns for all abilities for all active players
                 if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                 {
@@ -183,16 +185,18 @@ namespace SpiderSurge
                     }
                 }
 
-                // At wave 30, set flag for special perk selection
-                if (value == 30)
+                // At wave 30 (Ult Upgrade), set flag for special perk selection
+                if (value == Consts.Values.Waves.UltUpgradeWave)
                 {
-                    PerksManager.Instance.IsPost30WavePerkSelection = true;
+                    Logger.LogInfo($"[Surge] Reached Wave {value}. Triggering Ult Upgrade Selection.");
+                    PerksManager.Instance.IsUltUpgradePerkSelection = true;
                 }
 
-                // At wave 60, set flag for special perk selection
-                if (value == 60)
+                // At wave 60 (Ult Switch), set flag for special perk selection
+                if (value == Consts.Values.Waves.UltSwapWave)
                 {
-                    PerksManager.Instance.IsPost60WavePerkSelection = true;
+                    Logger.LogInfo($"[Surge] Reached Wave {value}. Triggering Ult Switch Selection.");
+                    PerksManager.Instance.IsUltSwapPerkSelection = true;
                 }
 
                 // Update InterdimensionalStorageAbility cache

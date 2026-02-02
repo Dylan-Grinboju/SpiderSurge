@@ -10,9 +10,9 @@ namespace SpiderSurge
 
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
-        public bool IsPost30WavePerkSelection { get; set; } = false;
+        public bool IsUltUpgradePerkSelection { get; set; } = false;
 
-        public bool IsPost60WavePerkSelection { get; set; } = false;
+        public bool IsUltSwapPerkSelection { get; set; } = false;
 
         // Ability perks - shown in special ability selection screen
         private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
@@ -293,8 +293,8 @@ namespace SpiderSurge
         {
             perkLevels.Clear();
             IsFirstNormalPerkSelection = true;
-            IsPost30WavePerkSelection = false;
-            IsPost60WavePerkSelection = false;
+            IsUltUpgradePerkSelection = false;
+            IsUltSwapPerkSelection = false;
         }
 
         public float GetPerkLuckChance()
