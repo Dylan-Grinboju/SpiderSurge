@@ -14,24 +14,81 @@ namespace SpiderSurge
 
         public override string PerkName => Consts.PerkNames.ExplosionAbility;
 
-        // Instant ability - no duration
-        public override float BaseCooldown => Consts.Values.Explosion.BaseCooldown;
-        public override float BaseDuration => Consts.Values.Explosion.BaseDuration;
-        public override float CooldownPerPerkLevel => Consts.Values.Explosion.CooldownReductionPerLevel;
-        public override float UltimateCooldownMultiplier => Consts.Values.Explosion.UltimateCooldownMultiplier;
+        public override float AbilityBaseCooldown => Consts.Values.Explosion.AbilityBaseCooldown;
+        public override float AbilityBaseDuration => Consts.Values.Explosion.AbilityBaseDuration;
+        public override float UltimateBaseDuration => Consts.Values.Explosion.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Explosion.UltimateBaseCooldown;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Explosion.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Explosion.UltimateCooldownReductionPerLevel;
 
-        // Ultimate: Deadly Explosion
         public override bool HasUltimate => true;
         public override string UltimatePerkDisplayName => "Explosion Ultimate";
         public override string UltimatePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
 
-        // Computed explosion parameters based on duration perk
-        private float ExplosionSizeMultiplier => 1f + (PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0) * Consts.Values.Explosion.SizeScalePerLevel;
-        private float KnockBackRadius => Consts.Values.Explosion.BaseKnockbackRadius * ExplosionSizeMultiplier;
-        private float KnockBackStrength => Consts.Values.Explosion.BaseKnockbackStrength * ExplosionSizeMultiplier;
-        private float DeathRadius => Consts.Values.Explosion.BaseDeathRadius * ExplosionSizeMultiplier;
+        private float GetKnockBackRadius(bool isUlt)
+        {
+            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+            float radius;
+            int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+            int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+            if (isUlt)
+            {
+                radius = Consts.Values.Explosion.UltimateBaseKnockbackRadius;
+                if (durationLevel >= 2) radius += Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius -= Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius += Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
+            }
+            else
+            {
+                radius = Consts.Values.Explosion.AbilityBaseKnockbackRadius;
+                if (durationLevel >= 1) radius += Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius += Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius -= Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
+            }
+            return radius;
+        }
 
-        // Layer mask for detecting damageable objects
+        private float GetKnockBackStrength(bool isUlt)
+        {
+            float strength;
+            int biggerBoom = 0;
+            if (ModifierManager.instance != null)
+            {
+                biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
+            }
+
+            if (isUlt)
+            {
+                strength = Consts.Values.Explosion.UltimateBaseKnockbackStrength;
+                if (biggerBoom > 1) strength += Consts.Values.Explosion.UltimateKnockbackStrengthIncreasePerLevel;
+            }
+            else
+            {
+                strength = Consts.Values.Explosion.AbilityBaseKnockbackStrength;
+                if (biggerBoom > 0) strength += Consts.Values.Explosion.AbilityKnockbackStrengthIncreasePerLevel;
+            }
+
+            return strength;
+        }
+
+        private float GetDeathRadius(bool isUlt)
+        {
+            if (!isUlt)
+            {
+                return 0f;
+            }
+
+            float deathRadius = Consts.Values.Explosion.UltimateBaseDeathRadius;
+
+            if (ModifierManager.instance != null)
+            {
+                int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
+                deathRadius += Consts.Values.Explosion.UltimateDeathRadiusIncreasePerLevel * tooCool;
+            }
+
+            return deathRadius;
+        }
+
         private LayerMask explosionLayers;
 
         // Cached explosion VFX prefab (obtained from SpiderHealthSystem at runtime)
@@ -85,7 +142,6 @@ namespace SpiderSurge
             public float KnockBackRadius;
             public float DeathRadius;
             public float KnockBackStrength;
-            public float SynergyScaleMultiplier;
         }
 
         private void TriggerExplosion(bool deadly)
@@ -103,7 +159,7 @@ namespace SpiderSurge
 
             if (deadly)
             {
-                SpawnExplosionVFX(explosionParams.Position, explosionParams.SynergyScaleMultiplier);
+                SpawnExplosionVFX(explosionParams.Position, GetDeathRadius(deadly));
             }
 
             // Physics (Host only)
@@ -115,33 +171,13 @@ namespace SpiderSurge
 
         private ExplosionParams CalculateExplosionParameters(bool deadly)
         {
-            ExplosionParams p = new ExplosionParams
+            return new ExplosionParams
             {
                 Position = spiderHealthSystem.transform.position,
-                KnockBackRadius = KnockBackRadius,
-                KnockBackStrength = KnockBackStrength,
-                DeathRadius = DeathRadius,
-                SynergyScaleMultiplier = 1f
+                KnockBackRadius = GetKnockBackRadius(deadly),
+                KnockBackStrength = GetKnockBackStrength(deadly),
+                DeathRadius = GetDeathRadius(deadly),
             };
-
-            if (ModifierManager.instance != null)
-            {
-                int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
-                if (tooCool > 0 && deadly)
-                {
-                    float modifier = Consts.Values.Explosion.SynergyDeathZonePerLevel * (tooCool >= 2 ? 2f : 1f);
-                    p.DeathRadius *= 1f + modifier;
-                    p.SynergyScaleMultiplier = 1f + modifier;
-                }
-
-                int biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
-                if (biggerBoom > 0)
-                {
-                    float modifier = Consts.Values.Explosion.SynergyKnockbackPerLevel * (biggerBoom >= 2 ? 2f : 1f);
-                    p.KnockBackStrength *= 1f + modifier;
-                }
-            }
-            return p;
         }
 
         private void ApplyCameraEffects(bool deadly, float radius)
@@ -214,7 +250,7 @@ namespace SpiderSurge
             }
         }
 
-        private void SpawnExplosionVFX(Vector3 position, float extraScale = 1f)
+        private void SpawnExplosionVFX(Vector3 position, float radius = 1f)
         {
             try
             {
@@ -226,7 +262,8 @@ namespace SpiderSurge
                 }
 
                 GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
-                explosionVFX.transform.localScale *= ExplosionSizeMultiplier * extraScale;
+                float vfxScale = Mathf.Clamp(radius / Consts.Values.Explosion.UltimateBaseDeathRadius, 0.5f, 2f);
+                explosionVFX.transform.localScale *= vfxScale;
 
                 if (playerController != null)
                 {

@@ -14,12 +14,14 @@ namespace SpiderSurge
 
         public override string PerkName => Consts.PerkNames.ShieldAbility;
 
-        public override float BaseDuration => Consts.Values.Shield.BaseDuration;
-        public override float DurationPerPerkLevel => Consts.Values.Shield.DurationIncreasePerLevel;
-
-        public override float BaseCooldown => Consts.Values.Shield.BaseCooldown;
-        public override float CooldownPerPerkLevel => Consts.Values.Shield.CooldownReductionPerLevel;
-        public override float UltimateCooldownMultiplier => Consts.Values.Shield.UltimateCooldownMultiplier;
+        public override float AbilityBaseDuration => Consts.Values.Shield.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.Shield.AbilityBaseCooldown;
+        public override float UltimateBaseDuration => Consts.Values.Shield.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Shield.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Shield.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Shield.AbilityCooldownReductionPerLevel;
+        public override float UltimateDurationPerPerkLevel => Consts.Values.Shield.UltimateDurationIncreasePerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Shield.UltimateCooldownReductionPerLevel;
 
         // Ultimate: Immunity
         public override bool HasUltimate => true;

@@ -213,6 +213,25 @@ namespace SpiderSurge
             {
                 if (GetPerkLevel(dep) == 0) return false;
             }
+
+            if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
+            {
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                if (!hasAnyUltimate) return false;
+            }
+
+            if (perkName == Consts.PerkNames.ShortTermInvestment || perkName == Consts.PerkNames.LongTermInvestment)
+            {
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                if (!hasAnyUltimate) return false;
+            }
+
             return true;
         }
 

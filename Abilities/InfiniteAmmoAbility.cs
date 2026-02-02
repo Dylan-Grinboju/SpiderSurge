@@ -15,12 +15,14 @@ namespace SpiderSurge
 
         public override string PerkName => Consts.PerkNames.InfiniteAmmoAbility;
 
-        public override float BaseDuration => Consts.Values.InfiniteAmmo.BaseDuration;
-        public override float DurationPerPerkLevel => Consts.Values.InfiniteAmmo.DurationIncreasePerLevel;
-
-        public override float BaseCooldown => Consts.Values.InfiniteAmmo.BaseCooldown;
-        public override float CooldownPerPerkLevel => Consts.Values.InfiniteAmmo.CooldownReductionPerLevel;
-        public override float UltimateCooldownMultiplier => Consts.Values.InfiniteAmmo.UltimateCooldownMultiplier;
+        public override float AbilityBaseDuration => Consts.Values.InfiniteAmmo.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.InfiniteAmmo.AbilityBaseCooldown;
+        public override float UltimateBaseDuration => Consts.Values.InfiniteAmmo.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.InfiniteAmmo.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityCooldownReductionPerLevel;
+        public override float UltimateDurationPerPerkLevel => Consts.Values.InfiniteAmmo.UltimateDurationIncreasePerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.UltimateCooldownReductionPerLevel;
 
         // Ultimate: Weapon Arsenal
         public override bool HasUltimate => true;

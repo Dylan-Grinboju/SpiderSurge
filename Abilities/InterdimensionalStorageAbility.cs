@@ -10,16 +10,51 @@ namespace SpiderSurge
     {
         public override string PerkName => Consts.PerkNames.InterdimensionalStorageAbility;
 
-        public override float BaseDuration => Consts.Values.Storage.BaseDuration;
-        public override float BaseCooldown => Consts.Values.Storage.BaseCooldown;
-        public override float DurationPerPerkLevel => 0f; // Handled custom logic in GetSwapDuration
-        public override float CooldownPerPerkLevel => Consts.Values.Storage.CooldownReductionPerLevel;
+        public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
+        public override float UltimateBaseDuration => Consts.Values.Storage.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Storage.UltimateBaseCooldown;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Storage.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Storage.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.InterdimensionalStorageAbilityUltimate;
         public override string UltimatePerkDisplayName => "Storage Ultimate";
         public override string UltimatePerkDescription => "Adds a second storage slot (3x cooldown).";
-        public override float UltimateCooldownMultiplier => Consts.Values.Storage.UltimateCooldownMultiplier;
+
+        public override float AbilityDuration
+        {
+            get
+            {
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float duration = AbilityBaseDuration;
+                if (durationLevel >= 1) duration -= Consts.Values.Storage.AbilityDurationReductionPerLevel;
+                if (shortTermLevel > 0) duration -= Consts.Values.Storage.AbilityDurationReductionPerLevel;
+                if (longTermLevel > 0) duration += Consts.Values.Storage.AbilityDurationReductionPerLevel;
+
+                return duration;
+            }
+        }
+
+        public override float UltimateDuration
+        {
+            get
+            {
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float duration = UltimateBaseDuration;
+                if (durationLevel == 2) duration -= Consts.Values.Storage.UltimateDurationReductionPerLevel;
+                if (shortTermLevel > 0) duration += Consts.Values.Storage.UltimateDurationReductionPerLevel;
+                if (longTermLevel > 0) duration -= Consts.Values.Storage.UltimateDurationReductionPerLevel;
+
+                return duration;
+            }
+        }
         private int _cachedMoreGunsLevel = 0;
         private int _cachedMoreBoomLevel = 0;
         private int _cachedMoreParticlesLevel = 0;
@@ -35,14 +70,6 @@ namespace SpiderSurge
 
         private RuntimeStoredWeapon _storedWeaponData;
         private RuntimeStoredWeapon _ultimateStoredWeaponData;
-
-        public override float Duration
-        {
-            get
-            {
-                return GetSwapDuration();
-            }
-        }
 
         protected override void Start()
         {
@@ -76,7 +103,7 @@ namespace SpiderSurge
 
         private IEnumerator SwapRoutine(bool useUltimateStorage)
         {
-            float duration = GetSwapDuration();
+            float duration = useUltimateStorage ? UltimateDuration : AbilityDuration;
 
             if (_weaponManager == null) yield break;
 
@@ -323,18 +350,6 @@ namespace SpiderSurge
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
-        private float GetSwapDuration()
-        {
-            float duration = BaseDuration;
-
-            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-            if (durationLevel > 0)
-            {
-                duration -= Consts.Values.Storage.DurationReductionPerLevel * durationLevel;
-            }
-
-            return Mathf.Max(0.1f, duration);
-        }
         public static InterdimensionalStorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
