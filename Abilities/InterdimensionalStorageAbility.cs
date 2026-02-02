@@ -122,8 +122,10 @@ namespace SpiderSurge
         {
             if (storedWeaponObj == null) return;
 
-            // Force position to player to prevent it from flying across the map
-            storedWeaponObj.transform.position = _weaponManager.transform.position;
+            // Spawn at a random position around the player for cool effect
+            float angle = Random.Range(0f, Mathf.PI * 2);
+            Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * Consts.Values.Storage.SpawnDistance;
+            storedWeaponObj.transform.position = _weaponManager.transform.position + offset;
 
             storedWeaponObj.SetActive(true);
             storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely

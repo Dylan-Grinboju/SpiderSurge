@@ -94,6 +94,7 @@ namespace SpiderSurge
                 public const float BaseDuration = 3f;
                 public const float DurationReductionPerLevel = 0.5f;
                 public const float UltimateCooldownMultiplier = 1.5f;
+                public const float SpawnDistance = 50f;
             }
 
             public static class Luck
