@@ -248,13 +248,13 @@ namespace SpiderSurge
                 [PerkNames.InterdimensionalStorageAbility] = "Unlocks the storage ability",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
-                [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown. (Requires ultimate unlocked)",
-                [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown. (Requires ultimate unlocked)",
-                [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1.",
-                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity.</color>",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at all spawn points.</color>",
-                [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage.</color>",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot.</color>"
+                [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
+                [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
+                [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
+                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity</color>",
+                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at all spawn points</color>",
+                [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
+                [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
