@@ -219,9 +219,8 @@ namespace SpiderSurge
                 float distance = Vector2.Distance(p.Position, closestPoint);
                 if (distance < 0.1f) distance = 0.1f;
 
-                float forceMultiplier = p.KnockBackStrength * Mathf.Clamp(p.KnockBackRadius / distance, 0f, 100f);
                 Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
-                Vector2 force = direction * forceMultiplier;
+                Vector2 force = direction * p.KnockBackStrength;
 
                 if (collider.CompareTag("PlayerRigidbody"))
                 {
@@ -234,7 +233,7 @@ namespace SpiderSurge
 
                 if (distance > p.DeathRadius)
                 {
-                    damageable.Impact(force * Consts.Values.Explosion.ForceMultiplierOutsideZone, closestPoint, true, true);
+                    damageable.Impact(force, closestPoint, true, true);
                 }
                 else
                 {
@@ -244,7 +243,7 @@ namespace SpiderSurge
                     }
                     else
                     {
-                        damageable.Impact(force * Consts.Values.Explosion.ForceMultiplierInsideZone, closestPoint, true, true);
+                        damageable.Impact(force, closestPoint, true, true);
                     }
                 }
             }

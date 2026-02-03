@@ -53,24 +53,24 @@ namespace SpiderSurge
             public static class Shield
             {
                 public const float AbilityBaseCooldown = 20f;
-                public const float AbilityBaseDuration = 2f;
-                public const float UltimateBaseCooldown = 40f;
-                public const float UltimateBaseDuration = 3f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1f;
-                public const float UltimateCooldownReductionPerLevel = 8f;
-                public const float UltimateDurationIncreasePerLevel = 1.5f;
+                public const float UltimateBaseCooldown = 40f;
+                public const float UltimateCooldownReductionPerLevel = 10f;
+                public const float UltimateBaseDuration = 3f;
+                public const float UltimateDurationIncreasePerLevel = 1f;
             }
 
             public static class InfiniteAmmo
             {
-                public const float AbilityBaseCooldown = 35f;
+                public const float AbilityBaseCooldown = 30f;
+                public const float AbilityCooldownReductionPerLevel = 7.5f;
                 public const float AbilityBaseDuration = 7.5f;
-                public const float UltimateBaseCooldown = 70f;
-                public const float UltimateBaseDuration = 10f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
-                public const float UltimateCooldownReductionPerLevel = 10f;
+                public const float UltimateBaseCooldown = 60f;
+                public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseDuration = 10f;
                 public const float UltimateDurationIncreasePerLevel = 3f;
                 public const float CheckInterval = 0.5f;
             }
@@ -79,38 +79,39 @@ namespace SpiderSurge
             {
                 public const float AbilityBaseCooldown = 20f;
                 public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 30f;
+                public const float UltimateBaseCooldown = 40f;
                 public const float UltimateBaseDuration = 0f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float UltimateCooldownReductionPerLevel = 8f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float UltimateCooldownReductionPerLevel = 10f;
 
-                public const float AbilityBaseKnockbackRadius = 80f;
-                public const float AbilityKnockbackRadiusIncreasePerLevel = 26.4f;
-                public const float UltimateBaseKnockbackRadius = 100f;
-                public const float UltimateKnockbackRadiusIncreasePerLevel = 33f;
+                //duration perk
+                public const float AbilityBaseKnockbackRadius = 90f;
+                public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
+                public const float UltimateBaseKnockbackRadius = 120f;
+                public const float UltimateKnockbackRadiusIncreasePerLevel = 400f;
 
-                public const float AbilityBaseKnockbackStrength = 50f;
-                public const float AbilityKnockbackStrengthIncreasePerLevel = 16.5f;
-                public const float UltimateBaseKnockbackStrength = 70f;
-                public const float UltimateKnockbackStrengthIncreasePerLevel = 23.1f;
+                //Bigger boom perk
+                public const float AbilityBaseKnockbackStrength = 900f;
+                public const float AbilityKnockbackStrengthIncreasePerLevel = 200f;
+                public const float UltimateBaseKnockbackStrength = 1200f;
+                public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
 
-                public const float UltimateBaseDeathRadius = 55f;
-                public const float UltimateDeathRadiusIncreasePerLevel = 18.15f;
+                //too cool perk
+                public const float UltimateBaseDeathRadius = 70f;
+                public const float UltimateDeathRadiusIncreasePerLevel = 20f;
                 public const float CameraShakeDuration = 5f;
-                public const float ForceMultiplierOutsideZone = 4f;
-                public const float ForceMultiplierInsideZone = 6f;
             }
 
             public static class Storage
             {
                 public const float AbilityBaseCooldown = 20f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 3f;
-                public const float UltimateBaseCooldown = 30f;
-                public const float UltimateBaseDuration = 2.5f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityDurationReductionPerLevel = 0.5f;
-                public const float UltimateCooldownReductionPerLevel = 6f;
-                public const float UltimateDurationReductionPerLevel = 0.5f;
+                public const float AbilityDurationReductionPerLevel = 1f;
+                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateCooldownReductionPerLevel = 5f;
+                public const float UltimateBaseDuration = 4f;
+                public const float UltimateDurationReductionPerLevel = 0.75f;
                 public const float SpawnDistance = 50f;
             }
 
@@ -280,9 +281,9 @@ namespace SpiderSurge
 
             // Custom descriptions for Duration perk based on active ability
             private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
-            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size.";
+            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void.";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
             {
