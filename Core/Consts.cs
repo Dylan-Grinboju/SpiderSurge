@@ -136,7 +136,7 @@ namespace SpiderSurge
             {
                 public const float AbilityBaseCooldown = 20f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
-                public const float AbilityBaseDuration = 3f;
+                public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
                 public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
@@ -147,7 +147,7 @@ namespace SpiderSurge
 
             public static class Luck
             {
-                public const float Level1Chance = 1f;
+                public const float Level1Chance = 0.15f;
                 public const float Level2Chance = 0.3f;
             }
 
