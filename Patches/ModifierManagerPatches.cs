@@ -15,12 +15,17 @@ namespace SpiderSurge
         public static void Postfix(ModifierManager __instance)
         {
             PerkRegistrar.RegisterPerks(__instance);
+            // Reset the power up sound flag when modifier manager initializes
+            ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection = false;
         }
     }
 
     [HarmonyPatch(typeof(ModifierManager), "SetModLevel")]
     public class ModifierManager_SetModLevel_Patch
     {
+        // Flag to track if PowerUp sound was played this selection round
+        public static bool PowerUpSoundPlayedThisSelection = false;
+
         [HarmonyPrefix]
         public static void Prefix(Modifier modifier, GameMode mode, ref int value)
         {
@@ -87,6 +92,21 @@ namespace SpiderSurge
                         PerksManager.Instance.IsUltSwapPerkSelection = false;
                     }
                 }
+            }
+
+            // Reset the PowerUp sound flag after selection is complete
+            PowerUpSoundPlayedThisSelection = false;
+        }
+
+        public static void PlayPowerUpSound()
+        {
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.PowerUp,
+                    Consts.SoundVolumes.PowerUp * Consts.SoundVolumes.MasterVolume
+                );
+                PowerUpSoundPlayedThisSelection = true;
             }
         }
     }
@@ -344,6 +364,7 @@ namespace SpiderSurge
             if (pm.IsUltSwapPerkSelection)
             {
                 // Phase 1: Post 60 - Other Ults (Swap) -> Current Ult (if avail) -> Mods -> Vanilla
+                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
                 AddUpTo(finalSelection, otherAbilityUlts, Math.Max(0, targetCount - 1));
                 AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
                 AddUpTo(finalSelection, modPerks, targetCount);
@@ -352,6 +373,7 @@ namespace SpiderSurge
             else if (pm.IsUltUpgradePerkSelection)
             {
                 // Phase 2: Post 30 - Current Ult -> Mods -> Vanilla
+                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
                 AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
                 AddUpTo(finalSelection, modPerks, targetCount);
                 AddUpTo(finalSelection, vanillaPerks, targetCount);
@@ -359,6 +381,7 @@ namespace SpiderSurge
             else if (pm.IsFirstNormalPerkSelection)
             {
                 // Phase 3: First Selection - Abilities Only
+                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
                 AddUpTo(finalSelection, abilities, targetCount);
             }
             else
@@ -399,6 +422,7 @@ namespace SpiderSurge
             if (luckLevel <= 0) return;
 
             float chance = perksManager.GetPerkLuckChance();
+            bool anyLuckyPerk = false;
 
             foreach (var mod in perks)
             {
@@ -411,7 +435,16 @@ namespace SpiderSurge
                 if (UnityEngine.Random.value < chance)
                 {
                     ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Add(mod.data.key);
+                    anyLuckyPerk = true;
                 }
+            }
+
+            if (anyLuckyPerk && !ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.LuckyUpgrade,
+                    Consts.SoundVolumes.LuckyUpgrade * Consts.SoundVolumes.MasterVolume
+                );
             }
         }
     }

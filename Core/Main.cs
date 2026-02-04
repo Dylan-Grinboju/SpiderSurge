@@ -41,11 +41,15 @@ namespace SpiderSurge
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
             new GameObject("PerksManager").AddComponent<PerksManager>();
+            // Create SoundManager singleton
+            new GameObject("SoundManager").AddComponent<SoundManager>();
             // Initialize Tutorial UI
             TutorialUI.Initialize();
 
             // Initialize CheatManager
             CheatManager.Initialize();
+            // Initialize SoundTester for testing sounds without playing the game
+            SoundTester.Initialize();
             // Check for updates asynchronously
             try
             {
@@ -110,6 +114,14 @@ namespace SpiderSurge
             var cheatInfo = GameObject.Find("CheatsModCheatManager");
             if (cheatInfo != null)
                 GameObject.Destroy(cheatInfo);
+
+            var soundInfo = GameObject.Find("SoundManager");
+            if (soundInfo != null)
+                GameObject.Destroy(soundInfo);
+
+            var soundTesterInfo = GameObject.Find("SoundTester");
+            if (soundTesterInfo != null)
+                GameObject.Destroy(soundTesterInfo);
 
             Instance = null;
         }

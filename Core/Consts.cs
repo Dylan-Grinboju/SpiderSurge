@@ -36,6 +36,28 @@ namespace SpiderSurge
             public const string SafetyNet = "safetynet";
         }
 
+        // Sound file names (without extension) - must match embedded .wav filenames
+        public static class SoundNames
+        {
+            public const string LuckyUpgrade = "lucky_upgrade";
+            public const string AbilityNotReady = "ability_not_ready";
+            public const string AmmoAbility = "ammo_ability";
+            public const string ExplosionAbility = "explosion_ability";
+            public const string PowerUp = "power_up";
+        }
+
+        public static class SoundVolumes
+        {
+            public static float LuckyUpgrade = 0.5f;
+            public static float AbilityNotReady = 0.5f;
+            public static float AmmoAbility = 0.5f;
+            public static float ExplosionAbility = 0.5f;
+            public static float PowerUp = 0.5f;
+
+            // Master volume multiplier
+            public static float MasterVolume = 0.5f;
+        }
+
         public static class Formatting
         {
             public const string ColorGold = "#FFD700";
@@ -117,7 +139,7 @@ namespace SpiderSurge
 
             public static class Luck
             {
-                public const float Level1Chance = 0.15f;
+                public const float Level1Chance = 1f;
                 public const float Level2Chance = 0.3f;
             }
 

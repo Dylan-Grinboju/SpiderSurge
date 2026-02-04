@@ -20,6 +20,10 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
+        // Rate limit for ability not ready sound (once per second)
+        private static float lastAbilityNotReadySoundTime = 0f;
+        private const float ABILITY_NOT_READY_SOUND_COOLDOWN = 1f;
+
         // Ability indicator settings
         [Header("Ability Indicator")]
         [SerializeField]
@@ -353,6 +357,7 @@ namespace SpiderSurge
 
             if (onCooldown)
             {
+                PlayAbilityNotReadySound();
                 return;
             }
 
@@ -407,6 +412,7 @@ namespace SpiderSurge
 
             if (onCooldown)
             {
+                PlayAbilityNotReadySound();
                 return;
             }
 
@@ -492,6 +498,21 @@ namespace SpiderSurge
         protected virtual void OnDeactivate() { }
         protected virtual void OnActivateUltimate() { OnActivate(); }
         protected virtual void OnDeactivateUltimate() { }
+
+        private void PlayAbilityNotReadySound()
+        {
+            if (Time.time - lastAbilityNotReadySoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
+            {
+                lastAbilityNotReadySoundTime = Time.time;
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlaySound(
+                        Consts.SoundNames.AbilityNotReady,
+                        Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume
+                    );
+                }
+            }
+        }
 
         private IEnumerator AbilityDurationCoroutine()
         {

@@ -153,6 +153,15 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
+            // Play ammo ability sound
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.AmmoAbility,
+                    Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
+                );
+            }
+
             storedMaxAmmo = 0f;
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)

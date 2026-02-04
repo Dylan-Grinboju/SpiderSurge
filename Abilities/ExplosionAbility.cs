@@ -116,6 +116,15 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
+            // Play explosion ability sound (only for regular ability, not ultimate)
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.ExplosionAbility,
+                    Consts.SoundVolumes.ExplosionAbility * Consts.SoundVolumes.MasterVolume
+                );
+            }
+
             TriggerExplosion(deadly: false);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
