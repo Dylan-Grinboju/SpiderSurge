@@ -44,6 +44,10 @@ namespace SpiderSurge
             public const string AmmoAbility = "ammo_ability";
             public const string ExplosionAbility = "explosion_ability";
             public const string PowerUp = "power_up";
+            public const string ShieldAbility = "shield_ability";
+            public const string ShieldUlt = "shield_ult";
+            public const string StorageSend = "storage_send";
+            public const string StorageRetrieve = "storage_retrieve";
         }
 
         public static class SoundVolumes
@@ -53,6 +57,10 @@ namespace SpiderSurge
             public static float AmmoAbility = 0.5f;
             public static float ExplosionAbility = 0.5f;
             public static float PowerUp = 0.5f;
+            public static float ShieldAbility = 0.7f;
+            public static float ShieldUlt = 0.7f;
+            public static float StorageSend = 0.7f;
+            public static float StorageRetrieve = 0.7f;
 
             // Master volume multiplier
             public static float MasterVolume = 0.5f;

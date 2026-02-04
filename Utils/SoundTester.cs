@@ -78,6 +78,34 @@ namespace SpiderSurge
                     DisplayName = "Power Up",
                     GetVolume = () => Consts.SoundVolumes.PowerUp,
                     SetVolume = (v) => Consts.SoundVolumes.PowerUp = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.ShieldAbility,
+                    DisplayName = "Shield Ability",
+                    GetVolume = () => Consts.SoundVolumes.ShieldAbility,
+                    SetVolume = (v) => Consts.SoundVolumes.ShieldAbility = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.ShieldUlt,
+                    DisplayName = "Shield Ultimate",
+                    GetVolume = () => Consts.SoundVolumes.ShieldUlt,
+                    SetVolume = (v) => Consts.SoundVolumes.ShieldUlt = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.StorageSend,
+                    DisplayName = "Storage Send",
+                    GetVolume = () => Consts.SoundVolumes.StorageSend,
+                    SetVolume = (v) => Consts.SoundVolumes.StorageSend = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.StorageRetrieve,
+                    DisplayName = "Storage Retrieve",
+                    GetVolume = () => Consts.SoundVolumes.StorageRetrieve,
+                    SetVolume = (v) => Consts.SoundVolumes.StorageRetrieve = v
                 }
             };
         }

@@ -136,6 +136,14 @@ namespace SpiderSurge
             heldWeaponObj.transform.localPosition = Vector3.zero;
             heldWeaponObj.SetActive(false);
 
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.StorageSend,
+                    Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
+                );
+            }
+
             return new RuntimeStoredWeapon
             {
                 WeaponRef = val,
@@ -168,6 +176,14 @@ namespace SpiderSurge
 
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
+            }
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.StorageRetrieve,
+                    Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
+                );
             }
         }
 

@@ -104,12 +104,28 @@ namespace SpiderSurge
                 hadShieldOnActivate = true;
 
                 ApplyImmunity(true);
+
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlaySound(
+                        Consts.SoundNames.ShieldUlt,
+                        Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
+                    );
+                }
             }
             else
             {
                 // Normal Activation
                 isUltSession = false;
                 if (spiderHealthSystem != null) spiderHealthSystem.EnableShield();
+
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlaySound(
+                        Consts.SoundNames.ShieldAbility,
+                        Consts.SoundVolumes.ShieldAbility * Consts.SoundVolumes.MasterVolume
+                    );
+                }
             }
         }
 
@@ -152,6 +168,14 @@ namespace SpiderSurge
             if (spiderHealthSystem != null && !spiderHealthSystem.HasShield())
             {
                 spiderHealthSystem.EnableShield();
+            }
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.ShieldUlt,
+                    Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
+                );
             }
         }
 
