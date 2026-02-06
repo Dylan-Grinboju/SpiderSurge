@@ -65,7 +65,7 @@ namespace SpiderSurge
             public static float StorageRetrieve = 0.7f;
 
             // Master volume multiplier
-            public static float MasterVolume = 0.5f;
+            public static float MasterVolume = 1f;
         }
 
         public static class Formatting

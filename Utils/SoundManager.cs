@@ -35,8 +35,6 @@ namespace SpiderSurge
             Assembly assembly = Assembly.GetExecutingAssembly();
             string[] resourceNames = assembly.GetManifestResourceNames();
 
-            Logger.LogInfo($"[SoundManager] Found {resourceNames.Length} embedded resources");
-
             foreach (string resourceName in resourceNames)
             {
                 if (resourceName.EndsWith(".wav", System.StringComparison.OrdinalIgnoreCase))
@@ -56,7 +54,6 @@ namespace SpiderSurge
                                 if (clip != null)
                                 {
                                     _loadedClips[soundName] = clip;
-                                    Logger.LogInfo($"[SoundManager] Loaded embedded sound: {soundName}");
                                 }
                             }
                             else
@@ -186,23 +183,23 @@ namespace SpiderSurge
         {
             if (_loadedClips.TryGetValue(soundName, out AudioClip clip))
             {
-                _audioSource.PlayOneShot(clip, volume);
+                float sfxVolume = 1f;
+                try
+                {
+                    sfxVolume = GameSettings.GetFloat("SFX VOL", 1f);
+                }
+                catch
+                {
+                    // Fallback if GameSettings is not ready
+                }
+
+                if (sfxVolume <= 0f) return;
+
+                _audioSource.PlayOneShot(clip, volume * sfxVolume);
             }
             else
             {
                 Logger.LogWarning($"[SoundManager] Sound not found: {soundName}. Available sounds: {string.Join(", ", _loadedClips.Keys)}");
-            }
-        }
-
-        public void PlaySoundAtPosition(string soundName, Vector3 position, float volume = 1f)
-        {
-            if (_loadedClips.TryGetValue(soundName, out AudioClip clip))
-            {
-                AudioSource.PlayClipAtPoint(clip, position, volume);
-            }
-            else
-            {
-                Logger.LogWarning($"[SoundManager] Sound not found: {soundName}");
             }
         }
 

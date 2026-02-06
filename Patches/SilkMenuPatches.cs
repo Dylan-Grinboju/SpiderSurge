@@ -26,14 +26,17 @@ namespace SpiderSurge.Patches
             // Custom thin divider with more space
             menu.CreateParagraph("<size=100%>\n </size>");
 
-            menu.CreateParagraph("<size=140%><b>Core Features:</b>\n</size>");
-            menu.CreateParagraph("<size=120%> • Ultimate Upgrades at Waves 30 & 60\n");
-            menu.CreateParagraph(" • Custom Synergies between abilities\n");
-            menu.CreateParagraph(" • New custom enemy variants\n</size>");
-
-            menu.CreateParagraph("<size=100%>\n </size>");
-
             menu.CreateParagraph("<size=110%><color=#AAAAAA>Check the config file for detailed settings!</color></size>");
+            menu.CreateParagraph("<size=100%>\n </size>");
+            menu.CreateParagraph("<size=140%><b>Credits:</b>\n</size>");
+            menu.CreateParagraph("<size=120%>Icons by these artists from game-icons.net:\n");
+            menu.CreateParagraph(" • delapouite\n");
+            menu.CreateParagraph(" • lorc\n");
+            menu.CreateParagraph(" • pierre-leducq\n");
+            menu.CreateParagraph("Licence CC BY 3.0 can be found here: https://creativecommons.org/licenses/by/3.0/");
+
+
+
         }
     }
 }
