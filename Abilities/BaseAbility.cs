@@ -530,13 +530,10 @@ namespace SpiderSurge
             if (Time.time - lastSoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
             {
                 lastAbilityNotReadySoundTimeByPlayer[playerId] = Time.time;
-                if (SoundManager.Instance != null)
-                {
-                    SoundManager.Instance.PlaySound(
+                SoundManager.Instance?.PlaySound(
                         Consts.SoundNames.AbilityNotReady,
                         Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume
                     );
-                }
             }
         }
 
@@ -544,27 +541,31 @@ namespace SpiderSurge
         {
             yield return new WaitForSeconds(AbilityDuration);
 
+            bool wasUltimate = isUltimateActive;
+
             if (isActive)
             {
                 Deactivate();
             }
 
-            StartCooldown();
+            StartCooldown(wasUltimate);
         }
 
         private IEnumerator UltimateDurationCoroutine()
         {
             yield return new WaitForSeconds(UltimateDuration);
 
+            bool wasUltimate = isUltimateActive;
+
             if (isActive)
             {
                 Deactivate();
             }
 
-            StartCooldown();
+            StartCooldown(wasUltimate);
         }
 
-        protected void StartCooldown()
+        protected void StartCooldown(bool wasUltimate = false)
         {
             if (skipNextCooldown)
             {
@@ -573,7 +574,7 @@ namespace SpiderSurge
                 return;
             }
 
-            float cooldown = isUltimateActive ? UltimateCooldownTime : AbilityCooldownTime;
+            float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
             if (cooldown <= 0) return;
 
             if (cooldownCoroutine != null)
