@@ -41,6 +41,7 @@ namespace SpiderSurge
         {
             public const string LuckyUpgrade = "lucky_upgrade";
             public const string AbilityNotReady = "ability_not_ready";
+            public const string AbilityReady = "ability_ready";
             public const string AmmoAbility = "ammo_ability";
             public const string ExplosionAbility = "explosion_ability";
             public const string PowerUp = "power_up";
@@ -54,6 +55,7 @@ namespace SpiderSurge
         {
             public static float LuckyUpgrade = 0.5f;
             public static float AbilityNotReady = 0.5f;
+            public static float AbilityReady = 0.8f;
             public static float AmmoAbility = 0.5f;
             public static float ExplosionAbility = 0.5f;
             public static float PowerUp = 0.5f;
@@ -130,6 +132,11 @@ namespace SpiderSurge
                 public const float UltimateBaseDeathRadius = 70f;
                 public const float UltimateDeathRadiusIncreasePerLevel = 20f;
                 public const float CameraShakeDuration = 5f;
+
+                // Visuals
+                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
+                public const float RingWidth = 0.3f;
+                public const float RingSpeed = 500f;
             }
 
             public static class Storage
@@ -161,8 +168,8 @@ namespace SpiderSurge
 
             public static class Colors
             {
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f); // Red
-                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(1f, 0.75f, 0f, 1f); // Orange
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f); // black red
+                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(1f, 0.9f, 0f, 1f); // Yellow
             }
 
             public static class Waves

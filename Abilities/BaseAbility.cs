@@ -580,6 +580,14 @@ namespace SpiderSurge
             yield return new WaitForSeconds(cooldownTime);
 
             onCooldown = false;
+
+            if (SoundManager.Instance != null && IsUnlocked())
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.AbilityReady,
+                    Consts.SoundVolumes.AbilityReady * Consts.SoundVolumes.MasterVolume
+                );
+            }
         }
 
         protected virtual void OnDestroy()

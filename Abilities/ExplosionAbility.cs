@@ -165,6 +165,7 @@ namespace SpiderSurge
 
             // Visual effects
             ApplyCameraEffects(deadly, explosionParams.KnockBackRadius);
+            SpawnRingVisual(explosionParams.Position, explosionParams.KnockBackRadius);
 
             if (deadly)
             {
@@ -255,6 +256,22 @@ namespace SpiderSurge
                         damageable.Impact(force, closestPoint, true, true);
                     }
                 }
+            }
+        }
+
+        private void SpawnRingVisual(Vector3 position, float radius)
+        {
+            try
+            {
+                GameObject ringObj = new GameObject("ExplosionRing");
+                ringObj.transform.position = position;
+                var ringEffect = ringObj.AddComponent<ExplosionRingEffect>();
+                // Match the visual expansion to the actual physics radius
+                ringEffect.Setup(radius);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"ExplosionAbility: Failed to spawn ring visual: {ex.Message}");
             }
         }
 
