@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System.Collections.Generic;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -20,8 +21,8 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
-        // Rate limit for ability not ready sound (once per second)
-        private static float lastAbilityNotReadySoundTime = 0f;
+        // Rate limit for ability not ready sound (once per second, per player)
+        private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
         private const float ABILITY_NOT_READY_SOUND_COOLDOWN = 1f;
 
         // Ability indicator settings
@@ -517,9 +518,18 @@ namespace SpiderSurge
 
         private void PlayAbilityNotReadySound()
         {
-            if (Time.time - lastAbilityNotReadySoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
+            int playerId = playerInput?.playerIndex ?? -1;
+
+            // Get last sound time for this player (default to 0 if not found)
+            float lastSoundTime = 0f;
+            if (lastAbilityNotReadySoundTimeByPlayer.TryGetValue(playerId, out float storedTime))
             {
-                lastAbilityNotReadySoundTime = Time.time;
+                lastSoundTime = storedTime;
+            }
+
+            if (Time.time - lastSoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
+            {
+                lastAbilityNotReadySoundTimeByPlayer[playerId] = Time.time;
                 if (SoundManager.Instance != null)
                 {
                     SoundManager.Instance.PlaySound(

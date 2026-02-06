@@ -48,7 +48,17 @@ namespace SpiderSurge
                             if (stream != null)
                             {
                                 byte[] wavData = new byte[stream.Length];
-                                stream.Read(wavData, 0, wavData.Length);
+                                int totalRead = 0;
+                                while (totalRead < wavData.Length)
+                                {
+                                    int bytesRead = stream.Read(wavData, totalRead, wavData.Length - totalRead);
+                                    if (bytesRead == 0)
+                                    {
+                                        Logger.LogWarning($"[SoundManager] Unexpected EOF while reading resource: {resourceName}. Expected {wavData.Length} bytes, got {totalRead}.");
+                                        break;
+                                    }
+                                    totalRead += bytesRead;
+                                }
 
                                 AudioClip clip = ParseWavFile(wavData, soundName);
                                 if (clip != null)
@@ -102,6 +112,13 @@ namespace SpiderSurge
             {
                 string chunkId = System.Text.Encoding.ASCII.GetString(wavData, pos, 4);
                 int chunkSize = System.BitConverter.ToInt32(wavData, pos + 4);
+
+                // Validate chunkSize to prevent infinite loops or out-of-bounds access
+                if (chunkSize < 0 || chunkSize > wavData.Length - (pos + 8))
+                {
+                    Logger.LogWarning($"[SoundManager] Invalid chunk size {chunkSize} at position {pos} in file: {clipName}");
+                    return null;
+                }
 
                 if (chunkId == "fmt ")
                 {

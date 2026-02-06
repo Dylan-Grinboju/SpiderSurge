@@ -35,7 +35,8 @@ namespace SpiderSurge
                 if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
                 {
                     SurgeGameModeManager.Instance.SetActive(false);
-                    PerksManager.Instance.ResetPerks();
+
+                    PerksManager.Instance?.ResetPerks();
                 }
 
                 GameModePatches.UpdateSurgeSurvivalText();

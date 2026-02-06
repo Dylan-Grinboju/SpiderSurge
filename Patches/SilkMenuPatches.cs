@@ -21,7 +21,7 @@ namespace SpiderSurge.Patches
             menu.CreateParagraph(" • <b>Shield:</b> Block incoming damage and push enemies back.\n");
             menu.CreateParagraph(" • <b>Explosion:</b> Release a devastating blast around you.\n");
             menu.CreateParagraph(" • <b>Storage:</b> Store and recall weapons at will.\n");
-            menu.CreateParagraph(" • <b>Infinite Ammo:</b> Keep firing without depletion for a duration.\n</size>");
+            menu.CreateParagraph(" • <b>Infinite Ammo:</b> Keep firing without depletion for a duration.\n");
 
             // Custom thin divider with more space
             menu.CreateParagraph("<size=100%>\n </size>");
@@ -29,7 +29,7 @@ namespace SpiderSurge.Patches
             menu.CreateParagraph("<size=110%><color=#AAAAAA>Check the config file for detailed settings!</color></size>");
             menu.CreateParagraph("<size=100%>\n </size>");
             menu.CreateParagraph("<size=140%><b>Credits:</b>\n</size>");
-            menu.CreateParagraph("<size=120%>Icons by these artists from game-icons.net:\n");
+            menu.CreateParagraph("<size=120%>Icons by these artists from game-icons.net:\n</size>");
             menu.CreateParagraph(" • delapouite\n");
             menu.CreateParagraph(" • lorc\n");
             menu.CreateParagraph(" • pierre-leducq\n");

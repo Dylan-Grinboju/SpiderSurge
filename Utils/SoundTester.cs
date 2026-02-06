@@ -60,6 +60,13 @@ namespace SpiderSurge
                 },
                 new SoundInfo
                 {
+                    Name = Consts.SoundNames.AbilityReady,
+                    DisplayName = "Ability Ready",
+                    GetVolume = () => Consts.SoundVolumes.AbilityReady,
+                    SetVolume = (v) => Consts.SoundVolumes.AbilityReady = v
+                },
+                new SoundInfo
+                {
                     Name = Consts.SoundNames.AmmoAbility,
                     DisplayName = "Ammo Ability",
                     GetVolume = () => Consts.SoundVolumes.AmmoAbility,

@@ -55,11 +55,11 @@ namespace SpiderSurge
         {
             public static float LuckyUpgrade = 0.5f;
             public static float AbilityNotReady = 0.5f;
-            public static float AbilityReady = 0.8f;
+            public static float AbilityReady = 1f;
             public static float AmmoAbility = 0.5f;
             public static float ExplosionAbility = 0.5f;
             public static float PowerUp = 0.5f;
-            public static float ShieldAbility = 0.7f;
+            public static float ShieldAbility = 0.9f;
             public static float ShieldUlt = 0.7f;
             public static float StorageSend = 0.7f;
             public static float StorageRetrieve = 0.7f;

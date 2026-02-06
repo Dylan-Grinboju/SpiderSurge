@@ -350,6 +350,7 @@ namespace SpiderSurge
         {
             if (darkTexture != null) Destroy(darkTexture);
             if (mediumTexture != null) Destroy(mediumTexture);
+            _instance = null;
         }
     }
 }
