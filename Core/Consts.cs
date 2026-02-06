@@ -111,16 +111,16 @@ namespace SpiderSurge
             {
                 public const float AbilityBaseCooldown = 15f;
                 public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 40f;
+                public const float UltimateBaseCooldown = 30f;
                 public const float UltimateBaseDuration = 0f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
-                public const float UltimateCooldownReductionPerLevel = 10f;
+                public const float UltimateCooldownReductionPerLevel = 7.5f;
 
                 //duration perk
                 public const float AbilityBaseKnockbackRadius = 100f;
                 public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
-                public const float UltimateBaseKnockbackRadius = 120f;
-                public const float UltimateKnockbackRadiusIncreasePerLevel = 400f;
+                public const float UltimateBaseKnockbackRadius = 150f;
+                public const float UltimateKnockbackRadiusIncreasePerLevel = 50f;
 
                 //Bigger boom perk
                 public const float AbilityBaseKnockbackStrength = 900f;
@@ -129,8 +129,8 @@ namespace SpiderSurge
                 public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
 
                 //too cool perk
-                public const float UltimateBaseDeathRadius = 70f;
-                public const float UltimateDeathRadiusIncreasePerLevel = 20f;
+                public const float UltimateBaseDeathRadius = 100f;
+                public const float UltimateDeathRadiusIncreasePerLevel = 30f;
                 public const float CameraShakeDuration = 5f;
 
                 // Visuals

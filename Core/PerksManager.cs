@@ -141,6 +141,7 @@ namespace SpiderSurge
                         ability.RegisterWithInputInterceptor();
                     }
                 }
+                Instance.UpdatePerkIcons();
             }
             catch (System.Exception ex)
             {
@@ -167,6 +168,7 @@ namespace SpiderSurge
                         ability.RegisterWithInputInterceptor();
                     }
                 }
+                Instance.UpdatePerkIcons();
             }
             catch (System.Exception ex)
             {
@@ -314,6 +316,7 @@ namespace SpiderSurge
             IsFirstNormalPerkSelection = true;
             IsUltUpgradePerkSelection = false;
             IsUltSwapPerkSelection = false;
+            UpdatePerkIcons();
         }
 
         public float GetPerkLuckChance()
@@ -322,6 +325,32 @@ namespace SpiderSurge
             if (level == 1) return Consts.Values.Luck.Level1Chance;
             if (level == 2) return Consts.Values.Luck.Level2Chance;
             return 0f;
+        }
+
+        private void UpdatePerkIcons()
+        {
+            if (ModifierManager.instance == null) return;
+
+            int durationId = ModifierManager.instance.GetModId(Consts.PerkNames.AbilityDuration);
+            if (durationId == -1) return;
+
+            Modifier durationMod = ModifierManager.instance.GetModById(durationId);
+            if (durationMod == null || durationMod.data == null) return;
+
+            Sprite newIcon;
+            if (GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0)
+            {
+                newIcon = IconLoader.GetIcon("explosion_duration_perk");
+            }
+            else
+            {
+                newIcon = IconLoader.GetIcon("duration_perk");
+            }
+
+            if (newIcon != null)
+            {
+                durationMod.data.icon = newIcon;
+            }
         }
 
 
