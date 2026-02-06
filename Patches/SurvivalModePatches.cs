@@ -133,6 +133,16 @@ namespace SpiderSurge
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
                 }
 
+                // If Pain Level is 2 or higher, set min wave to 0 for all enemies
+                if (SurvivalModeHud.instance != null && SurvivalModeHud.instance.currentPainLevel.Value >= 2)
+                {
+
+                    foreach (var enemy in surgeConfig.enemies)
+                    {
+                        enemy.minWave = 0;
+                    }
+                }
+
                 survivalConfig = surgeConfig;
             }
         }

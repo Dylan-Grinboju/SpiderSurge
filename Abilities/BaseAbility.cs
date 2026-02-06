@@ -355,6 +355,11 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!IsPlayerAlive())
+            {
+                return;
+            }
+
             if (onCooldown)
             {
                 PlayAbilityNotReadySound();
@@ -405,6 +410,11 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!IsPlayerAlive())
+            {
+                return;
+            }
+
             if (!IsUltimateUnlocked())
             {
                 return;
@@ -438,6 +448,12 @@ namespace SpiderSurge
                 }
                 durationCoroutine = StartCoroutine(UltimateDurationCoroutine());
             }
+        }
+
+        public virtual bool IsPlayerAlive()
+        {
+            if (spiderHealthSystem == null) return false;
+            return !spiderHealthSystem.dead && !spiderHealthSystem.astralDead;
         }
 
         public virtual bool IsActive()

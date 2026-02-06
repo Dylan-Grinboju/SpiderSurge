@@ -82,12 +82,12 @@ namespace SpiderSurge
         {
             public static class Shield
             {
-                public const float AbilityBaseCooldown = 20f;
+                public const float AbilityBaseCooldown = 15f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1f;
-                public const float UltimateBaseCooldown = 40f;
-                public const float UltimateCooldownReductionPerLevel = 10f;
+                public const float UltimateBaseCooldown = 25f;
+                public const float UltimateCooldownReductionPerLevel = 7.5f;
                 public const float UltimateBaseDuration = 3f;
                 public const float UltimateDurationIncreasePerLevel = 1f;
             }
@@ -107,7 +107,7 @@ namespace SpiderSurge
 
             public static class Explosion
             {
-                public const float AbilityBaseCooldown = 20f;
+                public const float AbilityBaseCooldown = 15f;
                 public const float AbilityBaseDuration = 0f;
                 public const float UltimateBaseCooldown = 40f;
                 public const float UltimateBaseDuration = 0f;
@@ -115,7 +115,7 @@ namespace SpiderSurge
                 public const float UltimateCooldownReductionPerLevel = 10f;
 
                 //duration perk
-                public const float AbilityBaseKnockbackRadius = 90f;
+                public const float AbilityBaseKnockbackRadius = 100f;
                 public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
                 public const float UltimateBaseKnockbackRadius = 120f;
                 public const float UltimateKnockbackRadiusIncreasePerLevel = 400f;
@@ -154,7 +154,7 @@ namespace SpiderSurge
             public static class Enemies
             {
                 public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 2f;
+                public const float SpawnCountMultiplier = 1.75f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
             }
