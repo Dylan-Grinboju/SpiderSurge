@@ -539,9 +539,8 @@ namespace SpiderSurge
 
         private IEnumerator AbilityDurationCoroutine()
         {
-            yield return new WaitForSeconds(AbilityDuration);
-
             bool wasUltimate = isUltimateActive;
+            yield return new WaitForSeconds(AbilityDuration);
 
             if (isActive)
             {
@@ -553,9 +552,8 @@ namespace SpiderSurge
 
         private IEnumerator UltimateDurationCoroutine()
         {
-            yield return new WaitForSeconds(UltimateDuration);
-
             bool wasUltimate = isUltimateActive;
+            yield return new WaitForSeconds(UltimateDuration);
 
             if (isActive)
             {

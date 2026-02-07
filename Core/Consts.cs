@@ -98,12 +98,10 @@ namespace SpiderSurge
             {
                 public const float AbilityBaseCooldown = 30f;
                 public const float AbilityCooldownReductionPerLevel = 7.5f;
-                public const float AbilityBaseDuration = 7.5f;
+                public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
-                public const float UltimateBaseCooldown = 60f;
+                public const float UltimateBaseCooldown = 45f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
-                public const float UltimateBaseDuration = 10f;
-                public const float UltimateDurationIncreasePerLevel = 3f;
                 public const float CheckInterval = 0.5f;
             }
 
@@ -290,7 +288,7 @@ namespace SpiderSurge
                 [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
                 [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity</color>",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at all spawn points</color>",
+                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at half the spawn points</color>",
                 [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
             };
@@ -315,12 +313,15 @@ namespace SpiderSurge
             // Custom display names for Duration perk based on active ability
             private const string DURATION_NAME_WITH_EXPLOSION = "Bigger Explosion";
             private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+            private const string DURATION_NAME_WITH_AMMO = "More Spawns";
 
             // Custom descriptions for Duration perk based on active ability
             private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
             private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void";
+            private const string DURATION_DESC_WITH_AMMO = "Increases ammo ability duration";
+            private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at ALL spawn points";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
             {
@@ -333,6 +334,10 @@ namespace SpiderSurge
                     if (perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
                     {
                         return DURATION_NAME_WITH_STORAGE;
+                    }
+                    if (perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_AMMO;
                     }
                 }
                 return displayNames.ContainsKey(name) ? displayNames[name] : name;
@@ -350,6 +355,10 @@ namespace SpiderSurge
                 {
                     return DURATION_DESC_WITH_STORAGE;
                 }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                {
+                    return DURATION_DESC_WITH_AMMO;
+                }
                 return descriptions.ContainsKey(name) ? descriptions[name] : "";
             }
 
@@ -364,6 +373,10 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_STORAGE;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                {
+                    return DURATION_UPGRADE_DESC_WITH_AMMO;
                 }
                 return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
             }

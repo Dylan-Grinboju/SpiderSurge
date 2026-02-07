@@ -86,7 +86,7 @@ namespace SpiderSurge
                 { "indicator.showOnlyWhenReady", false },
                 // Upgrade activation
                 { "UseDpadForUltimate", false },
-                { "UnlimitedPerkChoosingTime", false },
+                { "UnlimitedPerkChoosingTime", true },
                 { "EnableStatsLogging", true },
                 { "display.showTutorial", true },
             };
