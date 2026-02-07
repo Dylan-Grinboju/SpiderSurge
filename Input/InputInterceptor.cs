@@ -23,6 +23,7 @@ namespace SpiderSurge
             public string OriginalPath;
         }
         private readonly Dictionary<string, List<BindingRestoreInfo>> restoredBindings = new Dictionary<string, List<BindingRestoreInfo>>();
+        private InputActionAsset _originalActions;
 
         private InputActionAsset _instantiatedActions;
 
@@ -43,6 +44,9 @@ namespace SpiderSurge
                 // Capture current state before swapping
                 var currentScheme = playerInput.currentControlScheme;
                 var currentDevices = playerInput.devices.ToArray();
+
+                // Store original actions to restore later
+                _originalActions = playerInput.actions;
 
                 // Create a clean instance of the actions for this player
                 _instantiatedActions = Instantiate(playerInput.actions);
@@ -352,6 +356,23 @@ namespace SpiderSurge
             if (playerInput != null && playerInterceptors.ContainsKey(playerInput))
             {
                 playerInterceptors.Remove(playerInput);
+            }
+
+            if (playerInput != null && _originalActions != null)
+            {
+                var currentScheme = playerInput.currentControlScheme;
+                var currentDevices = playerInput.devices.ToArray();
+
+                playerInput.actions = _originalActions;
+
+                if (!string.IsNullOrEmpty(currentScheme) && currentDevices.Length > 0)
+                {
+                    try
+                    {
+                        playerInput.SwitchCurrentControlScheme(currentScheme, currentDevices);
+                    }
+                    catch { }
+                }
             }
 
             if (_instantiatedActions != null)
