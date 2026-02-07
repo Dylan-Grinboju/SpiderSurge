@@ -21,7 +21,7 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Automation**: Includes an integrated mod updater to notify you when a new version is available.
 
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/9e97d581-90f0-4251-808d-97e84e78c82e" />
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/ed6c46f2-cbbf-4757-9b25-dc08508028f7" />
 
 
 ## Installation
