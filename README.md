@@ -20,7 +20,7 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 - **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
-    - **Per-Player Remapping**: Hold **Start/Menu** + **Double-Tap** any button to set it as your ability key.
+    - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key.
     - **Reset**: Hold **Start/Menu** for 3 seconds to reset to default (L1).
 - **Automation**: Includes an integrated mod updater to notify you when a new version is available.
 
