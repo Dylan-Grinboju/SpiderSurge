@@ -12,9 +12,26 @@ namespace SpiderSurge
         {
             try
             {
-                // Use an existing modifier's icon as placeholder
+                // Load icons from the Icons folder
+                IconLoader.LoadAllIcons();
+
+                // Map perk keys to icon filenames (without extension)
+                Dictionary<string, string> iconMapping = new Dictionary<string, string>
+                {
+                    { Consts.PerkNames.ShieldAbility, "shield_ability" },
+                    { Consts.PerkNames.InfiniteAmmoAbility, "ammo_ability" },
+                    { Consts.PerkNames.InterdimensionalStorageAbility, "storage_ability" },
+                    { Consts.PerkNames.AbilityCooldown, "cooldown_perk" },
+                    { Consts.PerkNames.AbilityDuration, "duration_perk" },
+                    { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },
+                    { Consts.PerkNames.LongTermInvestment, "long_term_perk" },
+                    { Consts.PerkNames.PerkLuck, "luck_perk" },
+                    { Consts.PerkNames.ExplosionAbility, "explosion_ability" }
+                };
+
+                // Use an existing modifier's icon as fallback/placeholder
                 var existingMods = manager.GetNonMaxedSurvivalMods();
-                Sprite icon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
+                Sprite defaultIcon = existingMods.Count > 0 ? existingMods[0].data.icon : null;
 
                 // Register ALL perks (abilities + upgrades) with ModifierManager so they have valid IDs
                 var allPerks = PerksManager.Instance.GetAllPerkNames()
@@ -53,7 +70,17 @@ namespace SpiderSurge
                     data.versus = false;
                     data.customTiers = false;
                     data.mapEditor = false;
-                    data.icon = icon;
+
+                    // Try to finding specific icon, otherwise use default
+                    if (iconMapping.TryGetValue(key, out string iconName))
+                    {
+                        Sprite specificIcon = IconLoader.GetIcon(iconName);
+                        data.icon = specificIcon ?? defaultIcon;
+                    }
+                    else
+                    {
+                        data.icon = defaultIcon;
+                    }
 
                     Modifier modifier = new Modifier(data);
                     modifiersList.Add(modifier);

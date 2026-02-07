@@ -14,12 +14,14 @@ namespace SpiderSurge
 
         public override string PerkName => Consts.PerkNames.ShieldAbility;
 
-        public override float BaseDuration => Consts.Values.Shield.BaseDuration;
-        public override float DurationPerPerkLevel => Consts.Values.Shield.DurationIncreasePerLevel;
-
-        public override float BaseCooldown => Consts.Values.Shield.BaseCooldown;
-        public override float CooldownPerPerkLevel => Consts.Values.Shield.CooldownReductionPerLevel;
-        public override float UltimateCooldownMultiplier => Consts.Values.Shield.UltimateCooldownMultiplier;
+        public override float AbilityBaseDuration => Consts.Values.Shield.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.Shield.AbilityBaseCooldown;
+        public override float UltimateBaseDuration => Consts.Values.Shield.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Shield.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Shield.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Shield.AbilityCooldownReductionPerLevel;
+        public override float UltimateDurationPerPerkLevel => Consts.Values.Shield.UltimateDurationIncreasePerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Shield.UltimateCooldownReductionPerLevel;
 
         // Ultimate: Immunity
         public override bool HasUltimate => true;
@@ -102,12 +104,28 @@ namespace SpiderSurge
                 hadShieldOnActivate = true;
 
                 ApplyImmunity(true);
+
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlaySound(
+                        Consts.SoundNames.ShieldUlt,
+                        Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
+                    );
+                }
             }
             else
             {
                 // Normal Activation
                 isUltSession = false;
                 if (spiderHealthSystem != null) spiderHealthSystem.EnableShield();
+
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlaySound(
+                        Consts.SoundNames.ShieldAbility,
+                        Consts.SoundVolumes.ShieldAbility * Consts.SoundVolumes.MasterVolume
+                    );
+                }
             }
         }
 
@@ -151,6 +169,14 @@ namespace SpiderSurge
             {
                 spiderHealthSystem.EnableShield();
             }
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.ShieldUlt,
+                    Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
+                );
+            }
         }
 
         protected override void OnDeactivateUltimate()
@@ -159,10 +185,113 @@ namespace SpiderSurge
         }
 
 
+        private Dictionary<SpriteRenderer, Color> _originalColors = new Dictionary<SpriteRenderer, Color>();
+        private Color? _originalLightColor;
+        private float? _originalLightIntensity;
+
+        private void ApplyRadiance(bool enable)
+        {
+            if (spiderHealthSystem == null) return;
+
+            if (enable)
+            {
+                // -- 1. Apply to Sprites --
+                if (spiderHealthSystem.spritesRoot != null)
+                {
+                    var renderers = spiderHealthSystem.spritesRoot.GetComponentsInChildren<SpriteRenderer>(true);
+                    foreach (var sr in renderers)
+                    {
+                        if (sr == null) continue;
+                        if (!_originalColors.ContainsKey(sr))
+                        {
+                            _originalColors[sr] = sr.color;
+                        }
+                        sr.color = new Color(1f, 0.84f, 0.0f, 1f); // Gold
+                    }
+                }
+
+                // Also the head
+                if (spiderHealthSystem.head != null)
+                {
+                    if (!_originalColors.ContainsKey(spiderHealthSystem.head))
+                    {
+                        _originalColors[spiderHealthSystem.head] = spiderHealthSystem.head.color;
+                    }
+                    spiderHealthSystem.head.color = new Color(1f, 0.84f, 0.0f, 1f);
+                }
+
+                // -- 2. Apply to Light (Via Reflection) --
+                ApplyLightRadiance(true);
+            }
+            else
+            {
+                // -- Restore Sprites --
+                foreach (var kvp in _originalColors)
+                {
+                    if (kvp.Key != null)
+                    {
+                        kvp.Key.color = kvp.Value;
+                    }
+                }
+                _originalColors.Clear();
+
+                // -- Restore Light --
+                ApplyLightRadiance(false);
+            }
+        }
+
+        private void ApplyLightRadiance(bool enable)
+        {
+            try
+            {
+                var lightField = typeof(SpiderHealthSystem).GetField("spiderLight");
+                if (lightField == null) return;
+
+                var lightObj = lightField.GetValue(spiderHealthSystem);
+                if (lightObj == null) return;
+
+                var lightType = lightObj.GetType();
+                var colorProp = lightType.GetProperty("color");
+                var intensityProp = lightType.GetProperty("intensity");
+
+                if (enable)
+                {
+                    if (colorProp != null && _originalLightColor == null)
+                        _originalLightColor = (Color)colorProp.GetValue(lightObj, null);
+
+                    if (intensityProp != null && _originalLightIntensity == null)
+                        _originalLightIntensity = (float)intensityProp.GetValue(lightObj, null);
+
+                    if (colorProp != null) colorProp.SetValue(lightObj, new Color(1f, 0.6f, 0.0f), null);
+                    if (intensityProp != null) intensityProp.SetValue(lightObj, 4.0f, null);
+                }
+                else
+                {
+                    if (colorProp != null && _originalLightColor != null)
+                    {
+                        colorProp.SetValue(lightObj, _originalLightColor.Value, null);
+                        _originalLightColor = null;
+                    }
+
+                    if (intensityProp != null && _originalLightIntensity != null)
+                    {
+                        intensityProp.SetValue(lightObj, _originalLightIntensity.Value, null);
+                        _originalLightIntensity = null;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"[SpiderSurge] Failed to apply light radiance: {ex.Message}");
+            }
+        }
+
         private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
             IsImmune = enable;
+
+            ApplyRadiance(enable);
 
             if (enable)
             {

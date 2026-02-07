@@ -3,6 +3,7 @@ using System;
 using System.Reflection;
 using UnityEngine;
 using SpiderSurge.Enemies;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
@@ -71,15 +72,21 @@ namespace SpiderSurge
                 {
                     CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
                 }
-                if (CustomEnemies.MissileWhispPrefab == null && whispPrefab != null && rocketProjectile != null)
+                if (whispPrefab != null)
                 {
-                    CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+                    if (CustomEnemies.MissileWhispPrefab == null && rocketProjectile != null)
+                    {
+                        CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+                    }
+                    if (CustomEnemies.TwinWhispPrefab == null)
+                    {
+                        CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
+                    }
                 }
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
 
-                // Alter the enemy budget
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
@@ -106,6 +113,11 @@ namespace SpiderSurge
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
                 }
 
+                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
+                }
+
                 if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
@@ -121,14 +133,14 @@ namespace SpiderSurge
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
                 }
 
-                if (CustomEnemies.TwinWhispPrefab == null && whispPrefab != null)
+                // If Pain Level is 2 or higher, set min wave to 0 for all enemies
+                if (SurvivalModeHud.instance != null && SurvivalModeHud.instance.currentPainLevel.Value >= 2)
                 {
-                    CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
-                }
 
-                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
+                    foreach (var enemy in surgeConfig.enemies)
+                    {
+                        enemy.minWave = 0;
+                    }
                 }
 
                 survivalConfig = surgeConfig;
@@ -142,9 +154,7 @@ namespace SpiderSurge
             {
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
-                // Reset perk selection for new game
                 PerksManager.Instance.ResetPerks();
-                // Refresh high score display to show Surge scores
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
                 if (eventField != null)
                 {
@@ -183,16 +193,16 @@ namespace SpiderSurge
                     }
                 }
 
-                // At wave 30, set flag for special perk selection
-                if (value == 30)
+                // At wave 30 (Ult Upgrade), set flag for special perk selection
+                if (value == Consts.Values.Waves.UltUpgradeWave)
                 {
-                    PerksManager.Instance.IsPost30WavePerkSelection = true;
+                    PerksManager.Instance.IsUltUpgradePerkSelection = true;
                 }
 
-                // At wave 60, set flag for special perk selection
-                if (value == 60)
+                // At wave 60 (Ult Switch), set flag for special perk selection
+                if (value == Consts.Values.Waves.UltSwapWave)
                 {
-                    PerksManager.Instance.IsPost60WavePerkSelection = true;
+                    PerksManager.Instance.IsUltSwapPerkSelection = true;
                 }
 
                 // Update InterdimensionalStorageAbility cache

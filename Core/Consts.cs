@@ -36,13 +36,49 @@ namespace SpiderSurge
             public const string SafetyNet = "safetynet";
         }
 
+        // Sound file names (without extension) - must match embedded .wav filenames
+        public static class SoundNames
+        {
+            public const string LuckyUpgrade = "lucky_upgrade";
+            public const string AbilityNotReady = "ability_not_ready";
+            public const string AbilityReady = "ability_ready";
+            public const string AmmoAbility = "ammo_ability";
+            public const string ExplosionAbility = "explosion_ability";
+            public const string PowerUp = "power_up";
+            public const string ShieldAbility = "shield_ability";
+            public const string ShieldUlt = "shield_ult";
+            public const string StorageSend = "storage_send";
+            public const string StorageRetrieve = "storage_retrieve";
+            public const string AbilityEnded = "ability_ended";
+        }
+
+        public static class SoundVolumes
+        {
+            public static float LuckyUpgrade = 0.5f;
+            public static float AbilityNotReady = 0.5f;
+            public static float AbilityReady = 1f;
+            public static float AmmoAbility = 0.5f;
+            public static float ExplosionAbility = 0.5f;
+            public static float PowerUp = 0.5f;
+            public static float ShieldAbility = 0.9f;
+            public static float ShieldUlt = 0.7f;
+            public static float StorageSend = 0.7f;
+            public static float StorageRetrieve = 0.7f;
+            public static float AbilityEnded = 0.7f;
+
+            // Master volume multiplier
+            public static float MasterVolume = 1f;
+        }
+
         public static class Formatting
         {
             public const string ColorGold = "#FFD700";
             public const string ColorCyan = "#00FFFF";
+            public const string ColorGreen = "#00FF00";
+            public const string ColorRed = "#FF0000";
 
             public const string TextLuckyUpgrade = "<color=" + ColorGold + ">Lucky Upgrade</color>";
-            public const string TextSwapAbility = "<color=" + ColorGold + ">Swap Ability!</color>";
+            public const string TextSwapAbility = "<color=" + ColorGreen + ">Swap Ability!</color>";
             public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
         }
 
@@ -50,50 +86,71 @@ namespace SpiderSurge
         {
             public static class Shield
             {
-                public const float BaseCooldown = 20f;
-                public const float BaseDuration = 2f;
-                public const float CooldownReductionPerLevel = 4f;
-                public const float DurationIncreasePerLevel = 1f;
-                public const float UltimateCooldownMultiplier = 2f;
+                public const float AbilityBaseCooldown = 15f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseDuration = 3f;
+                public const float AbilityDurationIncreasePerLevel = 1f;
+                public const float UltimateBaseCooldown = 25f;
+                public const float UltimateCooldownReductionPerLevel = 7.5f;
+                public const float UltimateBaseDuration = 3f;
+                public const float UltimateDurationIncreasePerLevel = 1f;
             }
 
             public static class InfiniteAmmo
             {
-                public const float BaseCooldown = 35f;
-                public const float BaseDuration = 7.5f;
-                public const float CooldownReductionPerLevel = 5f;
-                public const float DurationIncreasePerLevel = 2.5f;
+                public const float AbilityBaseCooldown = 30f;
+                public const float AbilityCooldownReductionPerLevel = 7.5f;
+                public const float AbilityBaseDuration = 5f;
+                public const float AbilityDurationIncreasePerLevel = 2.5f;
+                public const float UltimateBaseCooldown = 45f;
+                public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
                 public const float CheckInterval = 0.5f;
-                public const float UltimateCooldownMultiplier = 2f;
             }
 
             public static class Explosion
             {
-                public const float BaseCooldown = 20f;
-                public const float BaseDuration = 0f;
-                public const float CooldownReductionPerLevel = 4f;
-                public const float UltimateCooldownMultiplier = 2f;
+                public const float AbilityBaseCooldown = 15f;
+                public const float AbilityBaseDuration = 0f;
+                public const float UltimateBaseCooldown = 30f;
+                public const float UltimateBaseDuration = 0f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float UltimateCooldownReductionPerLevel = 7.5f;
 
-                public const float BaseKnockbackRadius = 80f;
-                public const float BaseKnockbackStrength = 50f;
-                public const float BaseDeathRadius = 42f;
-                public const float SizeScalePerLevel = 0.33f;
-                public const float SynergyDeathZonePerLevel = 0.33f;
-                public const float SynergyKnockbackPerLevel = 0.33f;
+                //duration perk
+                public const float AbilityBaseKnockbackRadius = 100f;
+                public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
+                public const float UltimateBaseKnockbackRadius = 150f;
+                public const float UltimateKnockbackRadiusIncreasePerLevel = 50f;
 
+                //Bigger boom perk
+                public const float AbilityBaseKnockbackStrength = 900f;
+                public const float AbilityKnockbackStrengthIncreasePerLevel = 200f;
+                public const float UltimateBaseKnockbackStrength = 1200f;
+                public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
+
+                //too cool perk
+                public const float UltimateBaseDeathRadius = 100f;
+                public const float UltimateDeathRadiusIncreasePerLevel = 30f;
                 public const float CameraShakeDuration = 5f;
 
-                public const float ForceMultiplierOutsideZone = 4f;
-                public const float ForceMultiplierInsideZone = 6f;
+                // Visuals
+                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
+                public const float RingWidth = 0.3f;
+                public const float RingSpeed = 500f;
             }
 
             public static class Storage
             {
-                public const float BaseCooldown = 20f;
-                public const float CooldownReductionPerLevel = 4f;
-                public const float BaseDuration = 3f;
-                public const float DurationReductionPerLevel = 0.5f;
-                public const float UltimateCooldownMultiplier = 1.5f;
+                public const float AbilityBaseCooldown = 20;
+                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseDuration = 2.5f;
+                public const float AbilityDurationReductionPerLevel = 1f;
+                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateCooldownReductionPerLevel = 5f;
+                public const float UltimateBaseDuration = 4f;
+                public const float UltimateDurationReductionPerLevel = 0.75f;
+                public const float SpawnDistance = 50f;
             }
 
             public static class Luck
@@ -105,15 +162,21 @@ namespace SpiderSurge
             public static class Enemies
             {
                 public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 2f;
+                public const float SpawnCountMultiplier = 1.75f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
             }
 
             public static class Colors
             {
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f); // Red
-                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(1f, 0.75f, 0f, 1f); // Orange
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f); // black red
+                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(1f, 0.9f, 0f, 1f); // Yellow
+            }
+
+            public static class Waves
+            {
+                public const int UltUpgradeWave = 30;
+                public const int UltSwapWave = 60;
             }
 
             //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
@@ -179,7 +242,7 @@ namespace SpiderSurge
             {
                 public const string KeyboardQ = "<keyboard>/q";
                 public const string GamepadLeftShoulder = "<Gamepad>/leftshoulder";
-                public const string KeyboardF = "<Keyboard>/f";
+                public const string KeyboardC = "<Keyboard>/c";
                 public const string GamepadDpadUp = "<Gamepad>/dpad/up";
                 public const string GamepadDpadDown = "<Gamepad>/dpad/down";
                 public const string GamepadDpadLeft = "<Gamepad>/dpad/left";
@@ -191,8 +254,8 @@ namespace SpiderSurge
 
             public static class UI
             {
-                public const string UltimateDisplayName = "Ultimate";
-                public const string UltimateDefaultDescription = "Ultimate version of the ability.";
+                public const string UltimateDisplayName = "<color=" + Formatting.ColorRed + ">Ultimate</color>";
+                public const string UltimateDefaultDescription = "<color=" + Formatting.ColorRed + ">Ultimate version of the ability.</color>";
             }
         }
 
@@ -200,38 +263,37 @@ namespace SpiderSurge
         {
             private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Shield Ability",
-                [PerkNames.InfiniteAmmoAbility] = "Infinite Ammo",
-                [PerkNames.ExplosionAbility] = "Explosion Ability",
+                [PerkNames.ShieldAbility] = "Parry",
+                [PerkNames.InfiniteAmmoAbility] = "Keep Shooting",
+                [PerkNames.ExplosionAbility] = "The Force",
+                [PerkNames.InterdimensionalStorageAbility] = "Interdimensional Storage",
                 [PerkNames.AbilityCooldown] = "Ability Cooldown",
                 [PerkNames.AbilityDuration] = "Ability Duration",
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
                 [PerkNames.LongTermInvestment] = "Long Term Investment",
-                [PerkNames.PerkLuck] = "Perk Luck",
+                [PerkNames.PerkLuck] = "Lucky",
                 // Ultimate perks - dynamic names based on which ability is active
-                [PerkNames.ShieldAbilityUltimate] = "Shield Ultimate",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "Weapon Arsenal Ultimate",
-                [PerkNames.ExplosionAbilityUltimate] = "Explosion Ultimate",
-                [PerkNames.InterdimensionalStorageAbility] = "Interdimensional Storage",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = "Storage Ultimate"
+                [PerkNames.ShieldAbilityUltimate] = "God Mode",
+                [PerkNames.InfiniteAmmoAbilityUltimate] = "Care Package",
+                [PerkNames.ExplosionAbilityUltimate] = "Unstoppable Force",
+                [PerkNames.InterdimensionalStorageAbilityUltimate] = "More Dimensions"
             };
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Unlocks the shield ability.",
-                [PerkNames.InfiniteAmmoAbility] = "Unlocks the infinite ammo ability.",
-                [PerkNames.ExplosionAbility] = "Unlocks the explosion ability.",
-                [PerkNames.InterdimensionalStorageAbility] = "Unlocks the interdimensional storage ability.",
-                [PerkNames.AbilityCooldown] = "Reduces ability cooldown.",
-                [PerkNames.AbilityDuration] = "Increases ability duration.",
-                [PerkNames.ShortTermInvestment] = "Increases ability duration by 2 levels, but increases cooldown by 1 level.",
-                [PerkNames.LongTermInvestment] = "Decreases cooldown by 2 levels, but decreases ability duration by 1 level.",
-                [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1.",
-                // Ultimate perks
-                [PerkNames.ShieldAbilityUltimate] = "Grants complete damage immunity (3x cooldown).",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "Spawns weapons at all spawn points (3x cooldown).",
-                [PerkNames.ExplosionAbilityUltimate] = "Explosion deals lethal damage (3x cooldown).",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = "Adds a second storage slot (3x cooldown)."
+                [PerkNames.ShieldAbility] = "Unlocks the shield ability",
+                [PerkNames.InfiniteAmmoAbility] = "Unlocks the infinite ammo ability",
+                [PerkNames.ExplosionAbility] = "Unlocks the knockback ability",
+                [PerkNames.InterdimensionalStorageAbility] = "Unlocks the storage ability",
+                [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
+                [PerkNames.AbilityDuration] = "Increases ability duration",
+                [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
+                [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
+                [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
+                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity</color>",
+                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at half the spawn points</color>",
+                [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
+                [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -240,23 +302,49 @@ namespace SpiderSurge
                 [PerkNames.InfiniteAmmoAbility] = "",
                 [PerkNames.ExplosionAbility] = "",
                 [PerkNames.InterdimensionalStorageAbility] = "",
-                [PerkNames.AbilityCooldown] = "Further reduces ability cooldown.",
-                [PerkNames.AbilityDuration] = "Further increases ability duration.",
+                [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown. (Requires ultimate unlocked)",
+                [PerkNames.AbilityDuration] = "Increases ultimate duration. (Requires ultimate unlocked)",
                 [PerkNames.ShortTermInvestment] = "",
                 [PerkNames.LongTermInvestment] = "",
                 [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
-                // Ultimate perks don't have upgrade descriptions (max level 1)
                 [PerkNames.ShieldAbilityUltimate] = "",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "",
                 [PerkNames.ExplosionAbilityUltimate] = "",
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = ""
             };
 
-            // Descriptions when explosion ability is unlocked (duration also affects explosion size)
-            private const string DURATION_DESC_WITH_EXPLOSION = "Increases explosion size.";
-            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Further increases explosion size.";
+            // Custom display names for Duration perk based on active ability
+            private const string DURATION_NAME_WITH_EXPLOSION = "Bigger Explosion";
+            private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+            private const string DURATION_NAME_WITH_AMMO = "More Spawns";
 
-            public static string GetDisplayName(string name) => displayNames.ContainsKey(name) ? displayNames[name] : name;
+            // Custom descriptions for Duration perk based on active ability
+            private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
+            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size";
+            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void";
+            private const string DURATION_DESC_WITH_AMMO = "Increases ammo ability duration";
+            private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at ALL spawn points";
+
+            public static string GetDisplayName(string name, PerksManager perksManager = null)
+            {
+                if (perksManager != null && name == PerkNames.AbilityDuration)
+                {
+                    if (perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_EXPLOSION;
+                    }
+                    if (perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_STORAGE;
+                    }
+                    if (perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_AMMO;
+                    }
+                }
+                return displayNames.ContainsKey(name) ? displayNames[name] : name;
+            }
 
             public static string GetDescription(string name, PerksManager perksManager)
             {
@@ -265,6 +353,14 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
                 {
                     return DURATION_DESC_WITH_EXPLOSION;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                {
+                    return DURATION_DESC_WITH_STORAGE;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                {
+                    return DURATION_DESC_WITH_AMMO;
                 }
                 return descriptions.ContainsKey(name) ? descriptions[name] : "";
             }
@@ -276,6 +372,14 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_EXPLOSION;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                {
+                    return DURATION_UPGRADE_DESC_WITH_STORAGE;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                {
+                    return DURATION_UPGRADE_DESC_WITH_AMMO;
                 }
                 return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
             }

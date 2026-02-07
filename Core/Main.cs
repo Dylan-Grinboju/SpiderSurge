@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan", "Description: Adds new abilities, synergies, and game modes to SpiderHeck." }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -41,8 +41,15 @@ namespace SpiderSurge
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
             new GameObject("PerksManager").AddComponent<PerksManager>();
+            // Create SoundManager singleton
+            new GameObject("SoundManager").AddComponent<SoundManager>();
+            // Initialize Tutorial UI
+            TutorialUI.Initialize();
+
             // Initialize CheatManager
             CheatManager.Initialize();
+            // Initialize SoundTester for testing sounds without playing the game
+            SoundTester.Initialize();
             // Check for updates asynchronously
             try
             {
@@ -79,8 +86,9 @@ namespace SpiderSurge
                 { "indicator.showOnlyWhenReady", false },
                 // Upgrade activation
                 { "UseDpadForUltimate", false },
-                { "UnlimitedPerkChoosingTime", false },
+                { "UnlimitedPerkChoosingTime", true },
                 { "EnableStatsLogging", true },
+                { "display.showTutorial", true },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)
@@ -106,6 +114,14 @@ namespace SpiderSurge
             var cheatInfo = GameObject.Find("CheatsModCheatManager");
             if (cheatInfo != null)
                 GameObject.Destroy(cheatInfo);
+
+            var soundInfo = GameObject.Find("SoundManager");
+            if (soundInfo != null)
+                GameObject.Destroy(soundInfo);
+
+            var soundTesterInfo = GameObject.Find("SoundTester");
+            if (soundTesterInfo != null)
+                GameObject.Destroy(soundTesterInfo);
 
             Instance = null;
         }

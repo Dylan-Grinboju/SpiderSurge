@@ -239,6 +239,13 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!trackedAbility.IsPlayerAlive())
+            {
+                spriteRenderer.enabled = false;
+                glowRenderer.enabled = false;
+                return;
+            }
+
             bool isActive = trackedAbility.IsActive();
             bool canUse = trackedAbility.IsUnlocked() && !trackedAbility.IsOnCooldown() && !isActive;
 

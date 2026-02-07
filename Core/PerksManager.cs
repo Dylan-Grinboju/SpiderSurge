@@ -10,9 +10,9 @@ namespace SpiderSurge
 
         public bool IsFirstNormalPerkSelection { get; set; } = true;
 
-        public bool IsPost30WavePerkSelection { get; set; } = false;
+        public bool IsUltUpgradePerkSelection { get; set; } = false;
 
-        public bool IsPost60WavePerkSelection { get; set; } = false;
+        public bool IsUltSwapPerkSelection { get; set; } = false;
 
         // Ability perks - shown in special ability selection screen
         private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
@@ -141,6 +141,7 @@ namespace SpiderSurge
                         ability.RegisterWithInputInterceptor();
                     }
                 }
+                Instance.UpdatePerkIcons();
             }
             catch (System.Exception ex)
             {
@@ -167,6 +168,7 @@ namespace SpiderSurge
                         ability.RegisterWithInputInterceptor();
                     }
                 }
+                Instance.UpdatePerkIcons();
             }
             catch (System.Exception ex)
             {
@@ -213,6 +215,25 @@ namespace SpiderSurge
             {
                 if (GetPerkLevel(dep) == 0) return false;
             }
+
+            if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
+            {
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                if (!hasAnyUltimate) return false;
+            }
+
+            if (perkName == Consts.PerkNames.ShortTermInvestment || perkName == Consts.PerkNames.LongTermInvestment)
+            {
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                if (!hasAnyUltimate) return false;
+            }
+
             return true;
         }
 
@@ -232,7 +253,7 @@ namespace SpiderSurge
 
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
 
-        public string GetDisplayName(string name) => Consts.Descriptions.GetDisplayName(name);
+        public string GetDisplayName(string name) => Consts.Descriptions.GetDisplayName(name, this);
         public string GetDescription(string name) => Consts.Descriptions.GetDescription(name, this);
 
         public string GetUpgradeDescription(string name) => Consts.Descriptions.GetUpgradeDescription(name, this);
@@ -293,8 +314,9 @@ namespace SpiderSurge
         {
             perkLevels.Clear();
             IsFirstNormalPerkSelection = true;
-            IsPost30WavePerkSelection = false;
-            IsPost60WavePerkSelection = false;
+            IsUltUpgradePerkSelection = false;
+            IsUltSwapPerkSelection = false;
+            UpdatePerkIcons();
         }
 
         public float GetPerkLuckChance()
@@ -303,6 +325,32 @@ namespace SpiderSurge
             if (level == 1) return Consts.Values.Luck.Level1Chance;
             if (level == 2) return Consts.Values.Luck.Level2Chance;
             return 0f;
+        }
+
+        private void UpdatePerkIcons()
+        {
+            if (ModifierManager.instance == null) return;
+
+            int durationId = ModifierManager.instance.GetModId(Consts.PerkNames.AbilityDuration);
+            if (durationId == -1) return;
+
+            Modifier durationMod = ModifierManager.instance.GetModById(durationId);
+            if (durationMod == null || durationMod.data == null) return;
+
+            Sprite newIcon;
+            if (GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0)
+            {
+                newIcon = IconLoader.GetIcon("explosion_duration_perk");
+            }
+            else
+            {
+                newIcon = IconLoader.GetIcon("duration_perk");
+            }
+
+            if (newIcon != null)
+            {
+                durationMod.data.icon = newIcon;
+            }
         }
 
 

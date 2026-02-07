@@ -53,6 +53,12 @@
     <Compile Remove="OtherMods\**\*.cs" />
   </ItemGroup>
 
+  <!-- Embed sound files as resources in the DLL -->
+  <ItemGroup>
+    <EmbeddedResource Include="Sounds\*.wav" />
+    <EmbeddedResource Include="Icons\*.png" />
+  </ItemGroup>
+
   <!-- Assembly References -->
   <ItemGroup>
     <Reference Include="GdkUtilities">
@@ -177,6 +183,10 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>./lib/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>./lib/UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System.Collections.Generic;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -20,6 +21,10 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
 
+        // Rate limit for ability not ready sound (once per second, per player)
+        private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
+        private const float ABILITY_NOT_READY_SOUND_COOLDOWN = 1f;
+
         // Ability indicator settings
         [Header("Ability Indicator")]
         [SerializeField]
@@ -27,11 +32,8 @@ namespace SpiderSurge
 
         protected AbilityIndicator abilityIndicator;
 
-        // Resulting Ultimate activation settings
         protected bool isUltimateActive = false;
-        protected float lastUltimateCooldownMultiplier = 1f;
 
-        // Ultimate input tracking
         private InputAction leftStickPressAction;
         private InputAction rightStickPressAction;
         private InputAction ultimateButtonAction;
@@ -47,30 +49,89 @@ namespace SpiderSurge
         public virtual string UltimatePerkName => $"{PerkName}Ultimate";
         public virtual string UltimatePerkDisplayName => Consts.Values.UI.UltimateDisplayName;
         public virtual string UltimatePerkDescription => Consts.Values.UI.UltimateDefaultDescription;
-        public virtual float UltimateCooldownMultiplier => 3f;
 
         public virtual string[] ActivationButtons => new string[] { Consts.Values.Inputs.KeyboardQ, Consts.Values.Inputs.GamepadLeftShoulder };
 
-        // Ultimate activation: F key (dual stick combo handled separately)
-        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardF;
+        // Ultimate activation: C key (dual stick combo handled separately)
+        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardC;
 
-        // Base values that abilities should override
-        public virtual float BaseDuration => 5f;
-        public virtual float BaseCooldown => 30f;
+        public virtual float AbilityBaseDuration => 5f;
+        public virtual float AbilityBaseCooldown => 30f;
+        public virtual float UltimateBaseDuration => 10f;
+        public virtual float UltimateBaseCooldown => 60f;
 
-        // How much each perk level affects the values
-        public virtual float DurationPerPerkLevel => 0f;
-        public virtual float CooldownPerPerkLevel => 0f;
+        public virtual float AbilityDurationPerPerkLevel => 0f;
+        public virtual float AbilityCooldownPerPerkLevel => 0f;
+        public virtual float UltimateDurationPerPerkLevel => 0f;
+        public virtual float UltimateCooldownPerPerkLevel => 0f;
 
-        // Computed values based on perk levels
-        public virtual float Duration => BaseDuration +
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0) * DurationPerPerkLevel) +
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0) * 2 * DurationPerPerkLevel) -
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0) * 1 * DurationPerPerkLevel);
-        public virtual float CooldownTime => BaseCooldown -
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0) * CooldownPerPerkLevel) +
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0) * 1 * CooldownPerPerkLevel) -
-            ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0) * 2 * CooldownPerPerkLevel);
+        public virtual float AbilityDuration
+        {
+            get
+            {
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float duration = AbilityBaseDuration;
+                if (durationLevel >= 1) duration += AbilityDurationPerPerkLevel;
+                if (shortTermLevel > 0) duration += AbilityDurationPerPerkLevel;
+                if (longTermLevel > 0) duration -= AbilityDurationPerPerkLevel;
+
+                return duration;
+            }
+        }
+
+        public virtual float AbilityCooldownTime
+        {
+            get
+            {
+                int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float cooldown = AbilityBaseCooldown;
+                if (cooldownLevel >= 1) cooldown -= AbilityCooldownPerPerkLevel;
+                if (shortTermLevel > 0) cooldown -= AbilityCooldownPerPerkLevel;
+                if (longTermLevel > 0) cooldown += AbilityCooldownPerPerkLevel;
+
+                return cooldown;
+            }
+        }
+
+        public virtual float UltimateDuration
+        {
+            get
+            {
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float duration = UltimateBaseDuration;
+                if (durationLevel == 2) duration += UltimateDurationPerPerkLevel;
+                if (shortTermLevel > 0) duration -= UltimateDurationPerPerkLevel;
+                if (longTermLevel > 0) duration += UltimateDurationPerPerkLevel;
+
+                return duration;
+            }
+        }
+
+        public virtual float UltimateCooldownTime
+        {
+            get
+            {
+                int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float cooldown = UltimateBaseCooldown;
+                if (cooldownLevel == 2) cooldown -= UltimateCooldownPerPerkLevel;
+                if (shortTermLevel > 0) cooldown += UltimateCooldownPerPerkLevel;
+                if (longTermLevel > 0) cooldown -= UltimateCooldownPerPerkLevel;
+
+                return cooldown;
+            }
+        }
 
         protected virtual void Awake()
         {
@@ -295,8 +356,14 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!IsPlayerAlive())
+            {
+                return;
+            }
+
             if (onCooldown)
             {
+                PlayAbilityNotReadySound();
                 return;
             }
 
@@ -313,13 +380,13 @@ namespace SpiderSurge
                 SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
             }
 
-            if (Duration > 0)
+            if (AbilityDuration > 0)
             {
                 if (durationCoroutine != null)
                 {
                     StopCoroutine(durationCoroutine);
                 }
-                durationCoroutine = StartCoroutine(DurationCoroutine());
+                durationCoroutine = StartCoroutine(AbilityDurationCoroutine());
             }
         }
 
@@ -344,6 +411,11 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!IsPlayerAlive())
+            {
+                return;
+            }
+
             if (!IsUltimateUnlocked())
             {
                 return;
@@ -351,6 +423,7 @@ namespace SpiderSurge
 
             if (onCooldown)
             {
+                PlayAbilityNotReadySound();
                 return;
             }
 
@@ -361,7 +434,6 @@ namespace SpiderSurge
 
             isActive = true;
             isUltimateActive = true;
-            lastUltimateCooldownMultiplier = UltimateCooldownMultiplier;
             OnActivateUltimate();
 
             if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
@@ -369,14 +441,20 @@ namespace SpiderSurge
                 SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
             }
 
-            if (Duration > 0)
+            if (UltimateDuration > 0)
             {
                 if (durationCoroutine != null)
                 {
                     StopCoroutine(durationCoroutine);
                 }
-                durationCoroutine = StartCoroutine(DurationCoroutine());
+                durationCoroutine = StartCoroutine(UltimateDurationCoroutine());
             }
+        }
+
+        public virtual bool IsPlayerAlive()
+        {
+            if (spiderHealthSystem == null) return false;
+            return !spiderHealthSystem.dead && !spiderHealthSystem.astralDead;
         }
 
         public virtual bool IsActive()
@@ -394,7 +472,6 @@ namespace SpiderSurge
             if (isActive)
             {
                 skipNextCooldown = true;
-                lastUltimateCooldownMultiplier = 1f;
             }
 
             if (cooldownCoroutine != null)
@@ -439,47 +516,97 @@ namespace SpiderSurge
         protected virtual void OnActivateUltimate() { OnActivate(); }
         protected virtual void OnDeactivateUltimate() { }
 
-        private IEnumerator DurationCoroutine()
+        private void PlayAbilityNotReadySound()
         {
-            yield return new WaitForSeconds(Duration);
+            int playerId = playerInput?.playerIndex ?? -1;
+
+            // Get last sound time for this player (default to 0 if not found)
+            float lastSoundTime = 0f;
+            if (lastAbilityNotReadySoundTimeByPlayer.TryGetValue(playerId, out float storedTime))
+            {
+                lastSoundTime = storedTime;
+            }
+
+            if (Time.time - lastSoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
+            {
+                lastAbilityNotReadySoundTimeByPlayer[playerId] = Time.time;
+                SoundManager.Instance?.PlaySound(
+                        Consts.SoundNames.AbilityNotReady,
+                        Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume
+                    );
+            }
+        }
+
+        private void PlayAbilityEndedSound()
+        {
+            SoundManager.Instance?.PlaySound(
+                Consts.SoundNames.AbilityEnded,
+                Consts.SoundVolumes.AbilityEnded * Consts.SoundVolumes.MasterVolume
+            );
+        }
+
+        private IEnumerator AbilityDurationCoroutine()
+        {
+            bool wasUltimate = isUltimateActive;
+            yield return new WaitForSeconds(AbilityDuration);
 
             if (isActive)
             {
                 Deactivate();
+                PlayAbilityEndedSound();
             }
 
-            StartCooldown();
+            StartCooldown(wasUltimate);
         }
 
-        protected void StartCooldown()
+        private IEnumerator UltimateDurationCoroutine()
+        {
+            bool wasUltimate = isUltimateActive;
+            yield return new WaitForSeconds(UltimateDuration);
+
+            if (isActive)
+            {
+                Deactivate();
+                PlayAbilityEndedSound();
+            }
+
+            StartCooldown(wasUltimate);
+        }
+
+        protected void StartCooldown(bool wasUltimate = false)
         {
             if (skipNextCooldown)
             {
                 skipNextCooldown = false;
                 onCooldown = false;
-                lastUltimateCooldownMultiplier = 1f;
                 return;
             }
 
-            if (CooldownTime <= 0) return;
+            float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
+            if (cooldown <= 0) return;
 
             if (cooldownCoroutine != null)
             {
                 StopCoroutine(cooldownCoroutine);
             }
-            cooldownCoroutine = StartCoroutine(CooldownCoroutine());
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
         }
 
-        private IEnumerator CooldownCoroutine()
+        private IEnumerator CooldownCoroutine(float cooldownTime)
         {
             onCooldown = true;
 
-            float cooldown = CooldownTime * lastUltimateCooldownMultiplier;
-            lastUltimateCooldownMultiplier = 1f; // Reset for next activation
-
-            yield return new WaitForSeconds(cooldown);
+            yield return new WaitForSeconds(cooldownTime);
 
             onCooldown = false;
+
+            if (SoundManager.Instance != null && IsUnlocked())
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.AbilityReady,
+                    Consts.SoundVolumes.AbilityReady * Consts.SoundVolumes.MasterVolume
+                );
+            }
         }
 
         protected virtual void OnDestroy()

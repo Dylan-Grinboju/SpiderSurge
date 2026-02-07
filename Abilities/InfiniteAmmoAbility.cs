@@ -15,17 +15,18 @@ namespace SpiderSurge
 
         public override string PerkName => Consts.PerkNames.InfiniteAmmoAbility;
 
-        public override float BaseDuration => Consts.Values.InfiniteAmmo.BaseDuration;
-        public override float DurationPerPerkLevel => Consts.Values.InfiniteAmmo.DurationIncreasePerLevel;
+        public override float AbilityBaseDuration => Consts.Values.InfiniteAmmo.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.InfiniteAmmo.AbilityBaseCooldown;
+        public override float UltimateBaseCooldown => Consts.Values.InfiniteAmmo.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.UltimateCooldownReductionPerLevel;
+        public override float UltimateBaseDuration => Consts.Values.InfiniteAmmo.UltimateBaseDuration;
 
-        public override float BaseCooldown => Consts.Values.InfiniteAmmo.BaseCooldown;
-        public override float CooldownPerPerkLevel => Consts.Values.InfiniteAmmo.CooldownReductionPerLevel;
-        public override float UltimateCooldownMultiplier => Consts.Values.InfiniteAmmo.UltimateCooldownMultiplier;
-
-        // Ultimate: Weapon Arsenal
+        // Ultimate: Care Package
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Ammo Ultimate";
-        public override string UltimatePerkDescription => "Spawns weapons at all weapon spawn points on the map.";
+        public override string UltimatePerkDisplayName => "Care Package";
+        public override string UltimatePerkDescription => "Spawns weapons at half the weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
         private float storedMaxAmmo = 0f;
@@ -136,8 +137,7 @@ namespace SpiderSurge
             {
                 try
                 {
-                    var networkAmmo = networkAmmoField.GetValue(weapon) as NetworkVariable<float>;
-                    if (networkAmmo != null)
+                    if (networkAmmoField.GetValue(weapon) is NetworkVariable<float> networkAmmo)
                     {
                         networkAmmo.Value = value;
                     }
@@ -151,6 +151,15 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
+            // Play ammo ability sound
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.AmmoAbility,
+                    Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
+                );
+            }
+
             storedMaxAmmo = 0f;
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)
@@ -172,11 +181,21 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            OnActivate();
-            SpawnWeaponsAtAllSpawnPoints();
+            // Ultimate does NOT grant infinite ammo - it only spawns weapons
+            SoundManager.Instance?.PlaySound(
+                    Consts.SoundNames.AmmoAbility,
+                    Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
+                );
+
+            SpawnWeaponsAtSpawnPoints();
+
+            // Ultimate is instant (no duration), start cooldown immediately
+            isActive = false;
+            isUltimateActive = false;
+            StartCooldown(wasUltimate: true);
         }
 
-        private void SpawnWeaponsAtAllSpawnPoints()
+        private void SpawnWeaponsAtSpawnPoints()
         {
             try
             {
@@ -190,16 +209,42 @@ namespace SpiderSurge
 
                 if (weaponSpawners.Length == 0)
                 {
-                    Logger.LogWarning("Weapon Arsenal: No weapon spawners found");
+                    Logger.LogWarning("Care Package: No weapon spawners found");
                     return;
                 }
 
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                bool spawnAtAll = durationLevel >= 2;
+
                 int spawnedCount = 0;
+                List<WeaponSpawner> validSpawners = new List<WeaponSpawner>();
 
                 foreach (WeaponSpawner spawner in weaponSpawners)
                 {
-                    if (spawner == null) continue;
+                    if (spawner != null) validSpawners.Add(spawner);
+                }
 
+                // If not spawning all, shuffle and take half
+                if (!spawnAtAll && validSpawners.Count > 1)
+                {
+                    // Fisher-Yates shuffle
+                    System.Random rng = new System.Random();
+                    int n = validSpawners.Count;
+                    while (n > 1)
+                    {
+                        n--;
+                        int k = rng.Next(n + 1);
+                        var temp = validSpawners[k];
+                        validSpawners[k] = validSpawners[n];
+                        validSpawners[n] = temp;
+                    }
+                    // Take only half (rounded up)
+                    int halfCount = (validSpawners.Count + 1) / 2;
+                    validSpawners = validSpawners.GetRange(0, halfCount);
+                }
+
+                foreach (WeaponSpawner spawner in validSpawners)
+                {
                     try
                     {
                         GameObject weaponPrefab = GetRandomWeaponPrefab();
@@ -218,13 +263,15 @@ namespace SpiderSurge
                     }
                     catch (System.Exception ex)
                     {
-                        Logger.LogWarning($"Weapon Arsenal: Failed to spawn at {spawner.name}: {ex.Message}");
+                        Logger.LogWarning($"Care Package: Failed to spawn at {spawner.name}: {ex.Message}");
                     }
                 }
+
+                Logger.LogInfo($"Care Package: Spawned weapons at {spawnedCount}/{weaponSpawners.Length} spawn points");
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Weapon Arsenal: Error spawning weapons: {ex.Message}");
+                Logger.LogError($"Care Package: Error spawning weapons: {ex.Message}");
             }
         }
 
