@@ -537,6 +537,14 @@ namespace SpiderSurge
             }
         }
 
+        private void PlayAbilityEndedSound()
+        {
+            SoundManager.Instance?.PlaySound(
+                Consts.SoundNames.AbilityEnded,
+                Consts.SoundVolumes.AbilityEnded * Consts.SoundVolumes.MasterVolume
+            );
+        }
+
         private IEnumerator AbilityDurationCoroutine()
         {
             bool wasUltimate = isUltimateActive;
@@ -545,6 +553,7 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
+                PlayAbilityEndedSound();
             }
 
             StartCooldown(wasUltimate);
@@ -558,6 +567,7 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
+                PlayAbilityEndedSound();
             }
 
             StartCooldown(wasUltimate);

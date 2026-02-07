@@ -113,6 +113,13 @@ namespace SpiderSurge
                     DisplayName = "Storage Retrieve",
                     GetVolume = () => Consts.SoundVolumes.StorageRetrieve,
                     SetVolume = (v) => Consts.SoundVolumes.StorageRetrieve = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.AbilityEnded,
+                    DisplayName = "Ability Ended",
+                    GetVolume = () => Consts.SoundVolumes.AbilityEnded,
+                    SetVolume = (v) => Consts.SoundVolumes.AbilityEnded = v
                 }
             };
         }
