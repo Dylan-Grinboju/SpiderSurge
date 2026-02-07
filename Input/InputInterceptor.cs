@@ -15,6 +15,17 @@ namespace SpiderSurge
         private readonly Dictionary<string, InputAction> customActions = new Dictionary<string, InputAction>();
         private readonly Dictionary<string, BaseAbility> registeredAbilities = new Dictionary<string, BaseAbility>();
 
+        // Store original bindings to restore them later
+        private struct BindingRestoreInfo
+        {
+            public InputAction Action;
+            public int BindingIndex;
+            public string OriginalPath;
+        }
+        private readonly Dictionary<string, List<BindingRestoreInfo>> restoredBindings = new Dictionary<string, List<BindingRestoreInfo>>();
+
+        private InputActionAsset _instantiatedActions;
+
         private void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
@@ -22,6 +33,34 @@ namespace SpiderSurge
             if (playerInput != null)
             {
                 playerInterceptors[playerInput] = this;
+            }
+        }
+
+        private void Start()
+        {
+            if (playerInput != null && playerInput.actions != null && _instantiatedActions == null)
+            {
+                // Capture current state before swapping
+                var currentScheme = playerInput.currentControlScheme;
+                var currentDevices = playerInput.devices.ToArray();
+
+                // Create a clean instance of the actions for this player
+                _instantiatedActions = Instantiate(playerInput.actions);
+                playerInput.actions = _instantiatedActions;
+
+                // Restoring the scheme re-binds the devices to the new action asset
+                // This is critical because swapping the asset clears the device pairing
+                if (!string.IsNullOrEmpty(currentScheme) && currentDevices.Length > 0)
+                {
+                    try
+                    {
+                        playerInput.SwitchCurrentControlScheme(currentScheme, currentDevices);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.LogError($"[InputInterceptor] Failed to restore control scheme '{currentScheme}': {ex.Message}");
+                    }
+                }
             }
         }
 
@@ -56,7 +95,7 @@ namespace SpiderSurge
                 }
 
                 // Override the input binding for this button
-                OverrideInputBinding(actionName, bindingPath, (context) => OnAbilityButtonPressed(context, ability, bindingPath));
+                OverrideInputBinding(actionName, bindingPath, (context) => OnAbilityButtonPressed(context, ability));
             }
             catch (System.Exception ex)
             {
@@ -65,35 +104,38 @@ namespace SpiderSurge
         }
 
         /// <summary>
-        /// Maps a button binding path to the correct action name based on the game's input mapping
+        /// Maps a button binding path to the correct action name based on the game's input mapping.
+        /// Any button used for ability activation is treated as CustomAbility.
         /// </summary>
         /// <param name="bindingPath">The input binding path (e.g., "<Gamepad>/buttonSouth")</param>
         /// <returns>The corresponding action name, or null if no mapping found</returns>
         private string GetActionNameFromBindingPath(string bindingPath)
         {
-            // Based on the game's SpiderInput.cs mapping
+            string lowerPath = bindingPath.ToLower();
 
-            switch (bindingPath.ToLower())
+            // All buttons that can be used as ability buttons are treated as CustomAbility
+            // This allows players to remap their ability to any button
+            switch (lowerPath)
             {
-                case "<gamepad>/buttonsouth":
-                case "<keyboard>/space":
-                case "<gamepad>/lefttrigger":
-                case "<keyboard>/ctrl":
-                    return "Jump";
-
-                case "<gamepad>/buttonwest":
-                case "<gamepad>/righttrigger":
-                case "<mouse>/leftbutton":
-                case "<keyboard>/f":
-                    return "Fire";
-
-                case "<gamepad>/buttoneast":
-                case "<gamepad>/rightshoulder":
-                case "<mouse>/rightbutton":
-                    return "Equip";
-
-                case "<gamepad>/leftshoulder":
+                // Keyboard ability buttons
                 case "<keyboard>/q":
+                    return "CustomAbility";
+
+                // All gamepad buttons that can be used for abilities
+                case "<gamepad>/leftshoulder":    // L1 (default ability)
+                case "<gamepad>/lefttrigger":     // L2
+                case "<gamepad>/rightshoulder":   // R1
+                case "<gamepad>/righttrigger":    // R2
+                case "<gamepad>/buttonnorth":     // Y/Triangle
+                case "<gamepad>/buttonsouth":     // A/Cross
+                case "<gamepad>/buttoneast":      // B/Circle
+                case "<gamepad>/buttonwest":      // X/Square
+                case "<gamepad>/dpad/up":
+                case "<gamepad>/dpad/down":
+                case "<gamepad>/dpad/left":
+                case "<gamepad>/dpad/right":
+                case "<gamepad>/leftstickpress":  // L3
+                case "<gamepad>/rightstickpress": // R3
                     return "CustomAbility";
 
                 default:
@@ -118,6 +160,25 @@ namespace SpiderSurge
                 if (registeredAbilities.ContainsKey(bindingPath))
                 {
                     registeredAbilities.Remove(bindingPath);
+
+                    // Restore original bindings if any were overridden
+                    if (restoredBindings.ContainsKey(bindingPath))
+                    {
+                        var backups = restoredBindings[bindingPath];
+                        foreach (var backup in backups)
+                        {
+                            try
+                            {
+                                // Restore the original path
+                                backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                            }
+                            catch (System.Exception restoreEx)
+                            {
+                                Logger.LogError($"Failed to restore binding for {backup.Action.name}: {restoreEx.Message}");
+                            }
+                        }
+                        restoredBindings.Remove(bindingPath);
+                    }
 
                     // Get the correct action name for this binding
                     string actionName = GetActionNameFromBindingPath(bindingPath);
@@ -147,7 +208,7 @@ namespace SpiderSurge
             }
         }
 
-        private void OnAbilityButtonPressed(InputAction.CallbackContext context, BaseAbility ability, string bindingPath)
+        private void OnAbilityButtonPressed(InputAction.CallbackContext context, BaseAbility ability)
         {
             try
             {
@@ -167,10 +228,7 @@ namespace SpiderSurge
                     return;
                 }
 
-                if (ability != null)
-                {
-                    ability.Activate();
-                }
+                ability?.Activate();
             }
             catch (System.Exception ex)
             {
@@ -190,16 +248,36 @@ namespace SpiderSurge
                 var allActions = playerInput.actions;
                 if (allActions != null)
                 {
+                    // Prepare list to store restore info for this binding path
+                    if (!restoredBindings.ContainsKey(bindingPath))
+                    {
+                        restoredBindings[bindingPath] = new List<BindingRestoreInfo>();
+                    }
+
                     foreach (var action in allActions)
                     {
-                        var bindings = action.bindings.ToList();
+                        var bindings = action.bindings;
                         for (int i = 0; i < bindings.Count; i++)
                         {
                             var binding = bindings[i];
-                            if (binding.effectivePath.ToLower().Contains(bindingPath.ToLower()) || binding.path.ToLower().Contains(bindingPath.ToLower()))
+                            string effectivePath = binding.effectivePath ?? "";
+                            string path = binding.path ?? "";
+
+                            // Check if this binding matches the key we are overriding
+                            if (effectivePath.ToLower().Contains(bindingPath.ToLower()) || path.ToLower().Contains(bindingPath.ToLower()))
                             {
-                                action.ChangeBinding(i).WithPath("");
-                                break;
+                                // Only backup if we haven't already backed it up (avoid backing up empty string if called twice)
+                                if (!string.IsNullOrEmpty(path))
+                                {
+                                    restoredBindings[bindingPath].Add(new BindingRestoreInfo
+                                    {
+                                        Action = action,
+                                        BindingIndex = i,
+                                        OriginalPath = path
+                                    });
+
+                                    action.ChangeBinding(i).WithPath("");
+                                }
                             }
                         }
                     }
@@ -254,12 +332,32 @@ namespace SpiderSurge
                 }
             }
 
+            // Restore any remaining bindings
+            foreach (var kvp in restoredBindings)
+            {
+                foreach (var backup in kvp.Value)
+                {
+                    try
+                    {
+                        backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                    }
+                    catch { }
+                }
+            }
+            restoredBindings.Clear();
+
             overriddenActions.Clear();
             customActions.Clear();
 
             if (playerInput != null && playerInterceptors.ContainsKey(playerInput))
             {
                 playerInterceptors.Remove(playerInput);
+            }
+
+            if (_instantiatedActions != null)
+            {
+                Destroy(_instantiatedActions);
+                _instantiatedActions = null;
             }
         }
 

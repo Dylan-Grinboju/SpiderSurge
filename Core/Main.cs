@@ -50,6 +50,8 @@ namespace SpiderSurge
             CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
             SoundTester.Initialize();
+            // Initialize per-player control settings
+            PlayerControlSettings.Initialize();
             // Check for updates asynchronously
             try
             {
@@ -122,6 +124,10 @@ namespace SpiderSurge
             var soundTesterInfo = GameObject.Find("SoundTester");
             if (soundTesterInfo != null)
                 GameObject.Destroy(soundTesterInfo);
+
+            var playerControlSettings = GameObject.Find("PlayerControlSettings");
+            if (playerControlSettings != null)
+                GameObject.Destroy(playerControlSettings);
 
             Instance = null;
         }

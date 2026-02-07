@@ -50,7 +50,22 @@ namespace SpiderSurge
         public virtual string UltimatePerkDisplayName => Consts.Values.UI.UltimateDisplayName;
         public virtual string UltimatePerkDescription => Consts.Values.UI.UltimateDefaultDescription;
 
-        public virtual string[] ActivationButtons => new string[] { Consts.Values.Inputs.KeyboardQ, Consts.Values.Inputs.GamepadLeftShoulder };
+        // Cached buttons for unregistering when they change
+        private string[] _cachedActivationButtons;
+
+        public virtual string[] ActivationButtons
+        {
+            get
+            {
+                // Get the player-specific gamepad button, fallback to default L1
+                string gamepadButton = Consts.Values.Inputs.GamepadLeftShoulder;
+                if (playerInput != null)
+                {
+                    gamepadButton = PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex);
+                }
+                return new string[] { Consts.Values.Inputs.KeyboardQ, gamepadButton };
+            }
+        }
 
         // Ultimate activation: C key (dual stick combo handled separately)
         public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardC;
@@ -501,13 +516,52 @@ namespace SpiderSurge
         {
             if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
             {
-                foreach (string button in ActivationButtons)
+                _cachedActivationButtons = ActivationButtons;
+                Logger.LogDebug($"[{GetType().Name}] Registering buttons: {string.Join(", ", _cachedActivationButtons)}");
+                foreach (string button in _cachedActivationButtons)
                 {
                     if (!string.IsNullOrEmpty(button))
                     {
                         inputInterceptor.RegisterAbility(this, button);
                     }
                 }
+            }
+            else
+            {
+                if (inputInterceptor == null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
+            }
+        }
+
+        // Refreshes input bindings when a player changes their control scheme.
+        public void RefreshInputBindings()
+        {
+            Logger.LogDebug($"[{GetType().Name}] Refreshing input bindings...");
+            if (inputInterceptor == null)
+            {
+                Logger.LogWarning($"[{this.GetType().Name}] RefreshInputBindings aborted: InputInterceptor is null");
+                return;
+            }
+
+            // Unregister old bindings using cached buttons
+            if (_cachedActivationButtons != null)
+            {
+                foreach (string button in _cachedActivationButtons)
+                {
+                    if (!string.IsNullOrEmpty(button))
+                    {
+                        inputInterceptor.UnregisterAbility(this, button);
+                    }
+                }
+            }
+
+            // Re-register with new bindings if ability is still unlocked
+            if (ShouldRegister())
+            {
+                RegisterWithInputInterceptor();
+            }
+            else
+            {
+                Logger.LogInfo($"[{GetType().Name}] ShouldRegister returned false - skipping registration");
             }
         }
 
