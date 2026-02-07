@@ -1,6 +1,8 @@
 # SpiderSurge
 
 A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
+
+
 <img width="2559" height="1438" alt="image" src="https://github.com/user-attachments/assets/42689fc2-a9fb-4232-98b8-e759512b3f29" />
 
 ## Features
