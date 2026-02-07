@@ -216,6 +216,12 @@ namespace SpiderSurge
                 "Config:", "Set 'UseDpadForUltimate' to <b>true</b> to use D-pad."
             }, true);
 
+            DrawSection("CUSTOMIZE CONTROLS", new string[] {
+                "<b>Set New Button:</b> Hold <b>Menu/Start</b> + <b>Double-Tap</b> any button.",
+                "<b>Reset to Default:</b> Hold <b>Menu/Start</b> for <b>3 seconds</b>.",
+                "• Customizable Per-Player. Settings persist until you leave or reset."
+            });
+
             DrawIndicatorSection();
 
             DrawSynergySection();
