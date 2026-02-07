@@ -1,28 +1,27 @@
 # SpiderSurge
 
 A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
+<img width="2559" height="1438" alt="image" src="https://github.com/user-attachments/assets/42689fc2-a9fb-4232-98b8-e759512b3f29" />
 
 ## Features
 
 - **Surge Mode**: A high-intensity survival mode overhaul that increases enemy spawn rates and introduces unique wave-based progression.
-- **Custom Enemies**:
-    - **Twin Whisp**: Fires dual projectiles simultaneously. Includes a shielded variant.
-    - **Missile Whisp**: Launches homing rockets that deal devastating damage. Includes a shielded variant.
-    - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
 - **New Abilities**:
     - **Explosion Ability**: Release a kinetic pulse that destroys projectiles and repels enemies.
     - **Infinite Ammo**: Grants a brief period of unlimited ammunition for equipped weapons.
     - **Interdimensional Storage**: Store and recall weapons at will, enabling advanced inventory tactics.
     - **Shield Ability**: Deploys a temporary protective energy barrier.
+- **Custom Enemies**:
+    - **Twin Whisp**: Fires dual projectiles simultaneously.
+    - **Missile Whisp**: Launches rockets that deal devastating damage.
+    - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Infinite Ammo + Efficiency).
 - **Ultimate Upgrades**: Special perk selection phases at waves 30 and 60 for powerful "Ultimate" variants and ability swaps.
 - **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Automation**: Includes an integrated mod updater to notify you when a new version is available.
 
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/ed6c46f2-cbbf-4757-9b25-dc08508028f7" />
-
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
 ## Installation
 
