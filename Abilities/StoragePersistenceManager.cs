@@ -11,7 +11,7 @@ namespace SpiderSurge
             public bool IsUltimateSlot;
         }
 
-        private static Dictionary<int, List<SavedWeaponData>> _storedWeapons = new Dictionary<int, List<SavedWeaponData>>();
+        private static readonly Dictionary<int, List<SavedWeaponData>> _storedWeapons = new Dictionary<int, List<SavedWeaponData>>();
 
         public static void SaveStoredWeapons(int playerId, List<SavedWeaponData> weapons)
         {
@@ -44,6 +44,11 @@ namespace SpiderSurge
             {
                 _storedWeapons.Remove(playerId);
             }
+        }
+
+        public static void ClearAllStoredWeapons()
+        {
+            _storedWeapons.Clear();
         }
     }
 }

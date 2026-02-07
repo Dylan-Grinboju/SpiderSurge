@@ -21,6 +21,7 @@ namespace SpiderSurge
         public override float AbilityDurationPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityDurationIncreasePerLevel;
         public override float AbilityCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityCooldownReductionPerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.UltimateCooldownReductionPerLevel;
+        public override float UltimateBaseDuration => Consts.Values.InfiniteAmmo.UltimateBaseDuration;
 
         // Ultimate: Care Package
         public override bool HasUltimate => true;
@@ -181,13 +182,10 @@ namespace SpiderSurge
         protected override void OnActivateUltimate()
         {
             // Ultimate does NOT grant infinite ammo - it only spawns weapons
-            if (SoundManager.Instance != null)
-            {
-                SoundManager.Instance.PlaySound(
+            SoundManager.Instance?.PlaySound(
                     Consts.SoundNames.AmmoAbility,
                     Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
                 );
-            }
 
             SpawnWeaponsAtSpawnPoints();
 

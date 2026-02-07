@@ -102,6 +102,7 @@ namespace SpiderSurge
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
                 public const float UltimateBaseCooldown = 45f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
                 public const float CheckInterval = 0.5f;
             }
 
@@ -139,11 +140,11 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float AbilityBaseCooldown = 20f;
+                public const float AbilityBaseCooldown = 1f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
-                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateBaseCooldown = 1f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
                 public const float UltimateBaseDuration = 4f;
                 public const float UltimateDurationReductionPerLevel = 0.75f;

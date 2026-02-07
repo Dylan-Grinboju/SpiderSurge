@@ -29,7 +29,22 @@ namespace SpiderSurge
             {
                 return false;
             }
+
+            NotifyStorageAbilityOfDeath(__instance);
             return true;
+        }
+
+        private static void NotifyStorageAbilityOfDeath(SpiderHealthSystem healthSystem)
+        {
+            if (healthSystem == null) return;
+
+            var storageAbility = InterdimensionalStorageAbility.GetByHealthSystem(healthSystem);
+            if (storageAbility == null && healthSystem.rootObject != null)
+            {
+                storageAbility = healthSystem.rootObject.GetComponent<InterdimensionalStorageAbility>();
+            }
+
+            storageAbility?.OnCharacterDied();
         }
 
         private static void TryRecordHit(SpiderHealthSystem healthSystem)

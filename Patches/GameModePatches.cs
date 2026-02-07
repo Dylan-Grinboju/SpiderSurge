@@ -21,6 +21,8 @@ namespace SpiderSurge
                     PerksManager.Instance.ResetPerks();
                 }
             }
+
+            StoragePersistenceManager.ClearAllStoredWeapons();
         }
     }
 
@@ -38,6 +40,8 @@ namespace SpiderSurge
 
                     PerksManager.Instance?.ResetPerks();
                 }
+
+                StoragePersistenceManager.ClearAllStoredWeapons();
 
                 GameModePatches.UpdateSurgeSurvivalText();
             }
