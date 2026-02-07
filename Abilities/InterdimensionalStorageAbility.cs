@@ -157,6 +157,12 @@ namespace SpiderSurge
         {
             if (storedWeaponObj == null) return;
 
+            // Drop any weapon the player picked up during the delay
+            if (_weaponManager != null && _weaponManager.equippedWeapon != null)
+            {
+                _weaponManager.UnEquipWeapon();
+            }
+
             // Spawn at a random position around the player for cool effect
             float angle = Random.Range(0f, Mathf.PI * 2);
             Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * Consts.Values.Storage.SpawnDistance;

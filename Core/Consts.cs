@@ -140,11 +140,11 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float AbilityBaseCooldown = 1f;
+                public const float AbilityBaseCooldown = 20;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
-                public const float UltimateBaseCooldown = 1f;
+                public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
                 public const float UltimateBaseDuration = 4f;
                 public const float UltimateDurationReductionPerLevel = 0.75f;
