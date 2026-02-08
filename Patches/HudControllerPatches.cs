@@ -15,12 +15,12 @@ namespace SpiderSurge
                 return true;
             }
 
-            if (__instance.restart == null)
+            UIButton component = null;
+            if (__instance.restart != null && __instance.restart.gameObject.activeInHierarchy)
             {
-                return true;
+                component = __instance.restart.GetComponent<UIButton>();
             }
 
-            UIButton component = __instance.restart.GetComponent<UIButton>();
             Announcer.ConfirmationPopup("Are you sure?", component, delegate
             {
                 __instance.Resume();

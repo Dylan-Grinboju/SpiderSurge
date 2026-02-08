@@ -337,19 +337,7 @@ namespace SpiderSurge
                 }
             }
 
-            // Restore any remaining bindings
-            foreach (var kvp in restoredBindings)
-            {
-                foreach (var backup in kvp.Value)
-                {
-                    try
-                    {
-                        backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
-                    }
-                    catch { }
-                }
-            }
-            restoredBindings.Clear();
+           restoredBindings.Clear();
 
             overriddenActions.Clear();
             customActions.Clear();
