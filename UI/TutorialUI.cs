@@ -217,7 +217,7 @@ namespace SpiderSurge
             }, true);
 
             DrawSection("CUSTOMIZE CONTROLS", new string[] {
-                "<b>Set New Button:</b> Hold <b>Menu/Start</b> + <b>Double-Tap</b> any button.",
+                "<b>Set New Ability Button on a Gamepad: While holding Menu/Start, Double-Tap any button.",
                 "<b>Reset to Default:</b> Hold <b>Menu/Start</b> for <b>3 seconds</b>.",
                 "• Customizable Per-Player. Settings persist until you leave or reset."
             });
