@@ -14,6 +14,7 @@ namespace SpiderSurge
         private readonly Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = new Dictionary<string, System.Action<InputAction.CallbackContext>>();
         private readonly Dictionary<string, InputAction> customActions = new Dictionary<string, InputAction>();
         private readonly Dictionary<string, BaseAbility> registeredAbilities = new Dictionary<string, BaseAbility>();
+        public static IEnumerable<PlayerInput> ActivePlayerInputs => playerInterceptors.Keys.Where(p => p != null);
 
         // Store original bindings to restore them later
         private struct BindingRestoreInfo

@@ -665,10 +665,9 @@ namespace SpiderSurge
 
         protected virtual void OnDestroy()
         {
-            // Unregister from InputInterceptor
-            if (inputInterceptor != null && ActivationButtons != null)
+            if (inputInterceptor != null && _cachedActivationButtons != null)
             {
-                foreach (string button in ActivationButtons)
+                foreach (string button in _cachedActivationButtons)
                 {
                     if (!string.IsNullOrEmpty(button))
                     {

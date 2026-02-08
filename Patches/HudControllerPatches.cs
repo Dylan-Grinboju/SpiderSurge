@@ -15,6 +15,11 @@ namespace SpiderSurge
                 return true;
             }
 
+            if (__instance.restart == null)
+            {
+                return true;
+            }
+
             UIButton component = __instance.restart.GetComponent<UIButton>();
             Announcer.ConfirmationPopup("Are you sure?", component, delegate
             {

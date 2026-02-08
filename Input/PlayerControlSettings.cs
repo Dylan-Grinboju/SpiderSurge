@@ -50,10 +50,6 @@ namespace SpiderSurge
             "<Gamepad>/buttonSouth",
             "<Gamepad>/buttonEast",
             "<Gamepad>/buttonWest",
-            "<Gamepad>/dpad/up",
-            "<Gamepad>/dpad/down",
-            "<Gamepad>/dpad/left",
-            "<Gamepad>/dpad/right",
             "<Gamepad>/leftStickPress",
             "<Gamepad>/rightStickPress"
         };
@@ -220,7 +216,7 @@ namespace SpiderSurge
         {
             // Find all abilities for this player and re-register them
             // Use PlayerInput to be consistent with detection logic
-            var playerInputs = FindObjectsOfType<PlayerInput>();
+            var playerInputs = InputInterceptor.ActivePlayerInputs;
             bool matchedPlayer = false;
 
             foreach (var input in playerInputs)
@@ -259,7 +255,7 @@ namespace SpiderSurge
         {
             // Find which player this device belongs to by searching PlayerInput directly
             // This is safer than searching for PlayerController as PlayerInput exists in Lobby too
-            var playerInputs = FindObjectsOfType<PlayerInput>();
+            var playerInputs = InputInterceptor.ActivePlayerInputs;
 
             foreach (var playerInput in playerInputs)
             {
@@ -346,6 +342,7 @@ namespace SpiderSurge
                 action?.Dispose();
             }
             buttonActions.Clear();
+            playerAbilityButtons.Clear();
 
             if (Instance == this)
             {
