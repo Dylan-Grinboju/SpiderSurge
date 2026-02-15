@@ -49,7 +49,7 @@ namespace SpiderSurge
             // Initialize CheatManager
             // CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
-            SoundTester.Initialize();
+            // SoundTester.Initialize();
             // Initialize per-player control settings
             PlayerControlSettings.Initialize();
             // Check for updates asynchronously

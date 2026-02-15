@@ -142,14 +142,14 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float AbilityBaseCooldown = 20;
+                public const float AbilityBaseCooldown = 15;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
-                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateBaseCooldown = 15f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
                 public const float UltimateBaseDuration = 4f;
-                public const float UltimateDurationReductionPerLevel = 0.75f;
+                public const float UltimateDurationReductionPerLevel = 1f;
                 public const float SpawnDistance = 50f;
             }
 
@@ -162,7 +162,7 @@ namespace SpiderSurge
             public static class Enemies
             {
                 public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 1.75f;
+                public const float SpawnCountMultiplier = 1.5f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
             }
@@ -291,7 +291,7 @@ namespace SpiderSurge
                 [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
                 [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity</color>",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons at half the spawn points</color>",
+                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
             };
@@ -319,12 +319,12 @@ namespace SpiderSurge
             private const string DURATION_NAME_WITH_AMMO = "More Spawns";
 
             // Custom descriptions for Duration perk based on active ability
-            private const string DURATION_DESC_WITH_EXPLOSION = "Increases ability explosion size";
-            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion size";
-            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the void";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the void";
+            private const string DURATION_DESC_WITH_EXPLOSION = "Increases knockback ability area of effect";
+            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion area of effect";
+            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
             private const string DURATION_DESC_WITH_AMMO = "Increases ammo ability duration";
-            private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at ALL spawn points";
+            private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
             {

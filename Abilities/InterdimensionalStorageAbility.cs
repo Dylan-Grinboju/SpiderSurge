@@ -262,22 +262,34 @@ namespace SpiderSurge
             List<Weapon.WeaponType> effectiveTypes = weapon.Types.Count != 0 ? weapon.Types : GetEffectiveWeaponTypes(weapon.Name);
 
             if (effectiveTypes == null || effectiveTypes.Count == 0) return false;
-            int maxModLevel = 0;
-
-            foreach (var wType in effectiveTypes)
-            {
-                if (wType == Weapon.WeaponType.Gun)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreGunsLevel);
-                else if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreBoomLevel);
-                else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreParticlesLevel);
-            }
+            int requiredModLevel = GetRequiredModLevel(effectiveTypes);
 
             if (isDeath)
-                return maxModLevel >= 2;
+                return requiredModLevel >= 2;
             else
-                return maxModLevel >= 1;
+                return requiredModLevel >= 1;
+        }
+
+        private int GetRequiredModLevel(List<Weapon.WeaponType> types)
+        {
+            bool isBoom = false;
+            bool isParticles = false;
+            bool isGuns = false;
+
+            foreach (var wType in types)
+            {
+                if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
+                    isBoom = true;
+                else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
+                    isParticles = true;
+                else if (wType == Weapon.WeaponType.Gun)
+                    isGuns = true;
+            }
+
+            if (isBoom) return _cachedMoreBoomLevel;
+            if (isParticles) return _cachedMoreParticlesLevel;
+            if (isGuns) return _cachedMoreGunsLevel;
+            return 0;
         }
 
         private void RestoreWeapons()
