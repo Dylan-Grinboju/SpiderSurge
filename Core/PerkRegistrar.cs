@@ -19,14 +19,18 @@ namespace SpiderSurge
                 Dictionary<string, string> iconMapping = new Dictionary<string, string>
                 {
                     { Consts.PerkNames.ShieldAbility, "shield_ability" },
+                    { Consts.PerkNames.ShieldAbilityUltimate, "shield_ability" },
                     { Consts.PerkNames.InfiniteAmmoAbility, "ammo_ability" },
+                    { Consts.PerkNames.InfiniteAmmoAbilityUltimate, "ammo_ability" },
                     { Consts.PerkNames.InterdimensionalStorageAbility, "storage_ability" },
+                    { Consts.PerkNames.InterdimensionalStorageAbilityUltimate, "storage_ability" },
                     { Consts.PerkNames.AbilityCooldown, "cooldown_perk" },
                     { Consts.PerkNames.AbilityDuration, "duration_perk" },
                     { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },
                     { Consts.PerkNames.LongTermInvestment, "long_term_perk" },
                     { Consts.PerkNames.PerkLuck, "luck_perk" },
-                    { Consts.PerkNames.ExplosionAbility, "explosion_ability" }
+                    { Consts.PerkNames.ExplosionAbility, "explosion_ability" },
+                    { Consts.PerkNames.ExplosionAbilityUltimate, "explosion_ability" }
                 };
 
                 // Use an existing modifier's icon as fallback/placeholder

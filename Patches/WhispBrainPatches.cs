@@ -18,6 +18,7 @@ namespace SpiderSurge.Patches
         [HarmonyPrefix]
         public static bool Prefix(WhispBrain __instance)
         {
+            if (!SurgeGameModeManager.IsSurgeRunActive) return true;
             if (!__instance.gameObject.activeSelf) return false;
 
             // Initialize reflection cache

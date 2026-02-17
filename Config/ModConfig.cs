@@ -29,6 +29,11 @@ namespace SpiderSurge
         public static bool EnableStatsLogging => Config.GetModConfigValue(ModId, "EnableStatsLogging", true);
         public static bool ShowTutorial => Config.GetModConfigValue(ModId, "display.showTutorial", true);
 
+        public static void SetEnableSurgeMode(bool value)
+        {
+            Config.SetModConfigValue(ModId, "EnableSurgeMode", value);
+        }
+
         public static void SetShowTutorial(bool value)
         {
             Config.SetModConfigValue(ModId, "display.showTutorial", value);

@@ -14,6 +14,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(SurvivalModeHud __instance)
         {
+            if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
 
             // Access perkChoiceView using reflection since it might be private
@@ -93,7 +94,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (ModConfig.UnlimitedPerkChoosingTime)
+            if (SurgeGameModeManager.IsSurgeRunActive && ModConfig.UnlimitedPerkChoosingTime)
             {
                 __result = EmptyEnumerator();
                 return false;

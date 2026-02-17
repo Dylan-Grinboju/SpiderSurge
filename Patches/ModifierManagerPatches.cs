@@ -31,10 +31,8 @@ namespace SpiderSurge
         {
             if (mode == GameMode.Wave && value == 1 && modifier != null && modifier.data != null)
             {
-                var surgeManager = SurgeGameModeManager.Instance;
-                if (surgeManager == null || !surgeManager.IsActive)
+                if (!SurgeGameModeManager.IsSurgeRunActive)
                 {
-                    // If Surge is not active, clear any stale lucky perk keys preventing them from leaking into vanilla
                     if (ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Count > 0)
                         ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Clear();
                     return;
@@ -60,13 +58,17 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(Modifier modifier, GameMode mode, int value)
         {
+            if (!SurgeGameModeManager.IsSurgeRunActive)
+            {
+                PowerUpSoundPlayedThisSelection = false;
+                return;
+            }
+
             if (mode == GameMode.Wave && value > 0)
             {
                 string key = modifier.data.key;
-                // Handle all surge perks (abilities and upgrades)
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
-                    // If selecting level 2 when level was 0, also set level 1
                     if (value == 2 && PerksManager.Instance.GetPerkLevel(key) == 0)
                     {
                         PerksManager.Instance.SetPerkLevel(key, 1);
@@ -127,8 +129,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
-            var surgeManager = SurgeGameModeManager.Instance;
-            if (surgeManager == null || !surgeManager.IsActive) return;
+            if (!SurgeGameModeManager.IsSurgeRunActive) return;
 
             string key = m.data.key;
             bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
@@ -210,10 +211,20 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(ModifierManager __instance, ref List<Modifier> __result)
         {
-            var surgeManager = SurgeGameModeManager.Instance;
-            if (surgeManager == null || !surgeManager.IsActive) return;
-
             var perksManager = PerksManager.Instance;
+            if (perksManager == null)
+            {
+                return;
+            }
+
+            if (!SurgeGameModeManager.IsSurgeRunActive)
+            {
+                LuckyPerkKeys.Clear();
+                __result = __result
+                    .Where(mod => mod?.data != null && !perksManager.GetAllPerkNames().Contains(mod.data.key))
+                    .ToList();
+                return;
+            }
             var filteredList = new List<Modifier>();
             var processedKeys = new HashSet<string>();
 
@@ -268,13 +279,7 @@ namespace SpiderSurge
                 return false;
             }
 
-            var surgeManager = SurgeGameModeManager.Instance;
-            // If not surge mode, treat as standard robust shuffle (fix duplicates bug)
-            if (surgeManager == null || !surgeManager.IsActive)
-            {
-                __result = ShuffleStandard(availableModifiers, count);
-                return false;
-            }
+            if (!SurgeGameModeManager.IsSurgeRunActive) return true;
 
             // --- SURGE MODE SELECTION LOGIC ---
             var perksManager = PerksManager.Instance;
@@ -298,24 +303,6 @@ namespace SpiderSurge
 
             __result = finalSelection;
             return false;
-        }
-
-        private static List<Modifier> ShuffleStandard(List<Modifier> source, int count)
-        {
-            var selected = new List<Modifier>();
-            var seenKeys = new HashSet<string>();
-            var shuffled = source.OrderBy(x => UnityEngine.Random.value);
-
-            foreach (var mod in shuffled)
-            {
-                if (selected.Count >= count) break;
-                if (mod != null && mod.data != null && !seenKeys.Contains(mod.data.key))
-                {
-                    selected.Add(mod);
-                    seenKeys.Add(mod.data.key);
-                }
-            }
-            return selected;
         }
 
         private static void ClassifyModifiers(

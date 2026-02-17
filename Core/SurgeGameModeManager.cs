@@ -8,6 +8,10 @@ namespace SpiderSurge
 
         public bool IsActive { get; private set; }
 
+        public static bool IsModeEnabled => ModConfig.enableSurgeMode;
+
+        public static bool IsSurgeRunActive => IsModeEnabled && Instance != null && Instance.IsActive;
+
         private void Awake()
         {
             if (Instance == null)
@@ -23,7 +27,7 @@ namespace SpiderSurge
 
         public void SetActive(bool active)
         {
-            IsActive = active;
+            IsActive = IsModeEnabled && active;
         }
 
     }
