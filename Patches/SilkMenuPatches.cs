@@ -18,7 +18,7 @@ namespace SpiderSurge.Patches
             menu.CreateParagraph("<size=200%>\n<b><color=#FFD700>Welcome to SpiderSurge!</color></b></size>");
             menu.CreateParagraph("<size=130%>\nThis mod expands your toolkit with powerful new abilities and mechanics:\n</size>");
 
-            menu.CreateParagraph(" • <b>Shield:</b> Block incoming damage and push enemies back.\n");
+            menu.CreateParagraph(" • <b>Aegis:</b> Gain temporary immunity with a golden radiance.\n");
             menu.CreateParagraph(" • <b>Explosion:</b> Release a devastating blast around you.\n");
             menu.CreateParagraph(" • <b>Storage:</b> Store and recall weapons at will.\n");
             menu.CreateParagraph(" • <b>Infinite Ammo:</b> Keep firing without depletion for a duration.\n");

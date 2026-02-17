@@ -1,12 +1,19 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
+using System.Collections.Generic;
 
 namespace SpiderSurge
 {
     public static class PlayerAbilityHandler
     {
-        public static System.Collections.Generic.List<SpiderController> ActiveSpiderControllers = new System.Collections.Generic.List<SpiderController>();
+        public static List<SpiderController> ActiveSpiderControllers = new List<SpiderController>();
+        private static readonly HashSet<int> SeenPlayerSpawns = new HashSet<int>();
+
+        public static void ResetSpawnTracking()
+        {
+            SeenPlayerSpawns.Clear();
+        }
 
         public static void InitializePlayerAbilities(GameObject playerObject)
         {
@@ -26,6 +33,10 @@ namespace SpiderSurge
                     Logger.LogWarning("Could not find PlayerInput component on player object");
                     return;
                 }
+
+                int playerIndex = playerInput.playerIndex;
+                bool isRespawn = SeenPlayerSpawns.Contains(playerIndex);
+                SeenPlayerSpawns.Add(playerIndex);
 
                 SpiderController spiderController = playerObject.GetComponent<SpiderController>();
                 if (spiderController == null)
@@ -48,6 +59,12 @@ namespace SpiderSurge
                 if (spiderController.GetComponent<ShieldAbility>() == null)
                 {
                     spiderController.gameObject.AddComponent<ShieldAbility>();
+                }
+
+                var shieldAbility = spiderController.GetComponent<ShieldAbility>();
+                if (isRespawn && shieldAbility != null && shieldAbility.IsUnlocked())
+                {
+                    shieldAbility.ForceStartCooldown();
                 }
 
                 if (spiderController.GetComponent<InfiniteAmmoAbility>() == null)

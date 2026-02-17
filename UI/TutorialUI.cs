@@ -282,10 +282,10 @@ namespace SpiderSurge
             GUILayout.Label("Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color=#00FFFF>Synergized</color> in the perk selection.", labelStyle);
             GUILayout.Space(10);
 
-            // Parry (Shield) Synergies
-            GUILayout.Label("<b><color=#FFD700>Parry</color></b> + Shield Perks:", labelStyle);
+            // Aegis (Shield) Synergies
+            GUILayout.Label("<b><color=#FFD700>Aegis</color></b> + Shield Perks:", labelStyle);
             GUILayout.Label("• <b>Start Shields</b>, <b>Positive Encouragement</b>, or <b>Safety Net</b>:", labelStyle);
-            GUILayout.Label("  → If you have a shield when activating Parry, gain <b>full immunity</b> instead of a breakable shield.", labelStyle);
+            GUILayout.Label("  → If you have a shield when activating Aegis and avoid getting hit, you keep the shield after immunity ends.", labelStyle);
             GUILayout.Space(8);
 
             // Keep Shooting (Infinite Ammo) Synergies

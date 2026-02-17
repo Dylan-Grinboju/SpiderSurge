@@ -497,6 +497,27 @@ namespace SpiderSurge
             onCooldown = false;
         }
 
+        public void ForceStartCooldown(bool wasUltimate = false)
+        {
+            skipNextCooldown = false;
+
+            if (cooldownCoroutine != null)
+            {
+                StopCoroutine(cooldownCoroutine);
+                cooldownCoroutine = null;
+            }
+
+            float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
+            if (cooldown <= 0f)
+            {
+                onCooldown = false;
+                return;
+            }
+
+            onCooldown = true;
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
+        }
+
         public bool IsUnlocked()
         {
             return PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;

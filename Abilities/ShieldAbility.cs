@@ -1,15 +1,15 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
+using System.Linq;
+using Unity.Netcode;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
     public class ShieldAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, ShieldAbility> playerShields = new Dictionary<PlayerInput, ShieldAbility>();
         private static Dictionary<SpiderHealthSystem, ShieldAbility> shieldsByHealth = new Dictionary<SpiderHealthSystem, ShieldAbility>();
 
         public override string PerkName => Consts.PerkNames.ShieldAbility;
@@ -23,28 +23,40 @@ namespace SpiderSurge
         public override float UltimateDurationPerPerkLevel => Consts.Values.Shield.UltimateDurationIncreasePerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Shield.UltimateCooldownReductionPerLevel;
 
-        // Ultimate: Immunity
+        public override float UltimateDuration
+        {
+            get
+            {
+                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+
+                float duration = UltimateBaseDuration;
+                if (durationLevel == 2) duration -= UltimateDurationPerPerkLevel;
+                if (shortTermLevel > 0) duration += UltimateDurationPerPerkLevel;
+                if (longTermLevel > 0) duration -= UltimateDurationPerPerkLevel;
+
+                return Mathf.Max(0.1f, duration);
+            }
+        }
+
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Shield Ultimate";
-        public override string UltimatePerkDescription => "Grants complete damage immunity instead of a breakable shield.";
+        public override string UltimatePerkDisplayName => "Resurgence";
+        public override string UltimatePerkDescription => "After a cast time, revive one dead player or summon 3 friendly wasps if nobody is dead.";
 
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
 
-        private bool hadShieldOnActivate = false;
-
-        private bool isUltSession = false;
-        private bool wasHitDuringUltimate = false;
+        private bool hadShieldOnSessionStart = false;
+        private bool wasHitDuringSession = false;
+        private bool isUltimateCastPending = false;
+        private bool hadShieldOnUltimateCastStart = false;
 
         public bool IsImmune { get; private set; }
 
         protected override void Awake()
         {
             base.Awake();
-            if (playerInput != null)
-            {
-                playerShields[playerInput] = this;
-            }
 
             if (immuneTimeField == null)
             {
@@ -88,44 +100,25 @@ namespace SpiderSurge
 
         public void RegisterHit()
         {
-            if (isActive && isUltSession)
+            if (isActive && IsImmune)
             {
-                wasHitDuringUltimate = true;
+                wasHitDuringSession = true;
             }
         }
 
         protected override void OnActivate()
         {
-            // Synergy Check: If we have a shield -> Immunity (Ultimate-like behavior)
-            if (spiderHealthSystem != null && spiderHealthSystem.HasShield())
+            wasHitDuringSession = false;
+            hadShieldOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+
+            ApplyImmunity(true);
+
+            if (SoundManager.Instance != null)
             {
-                isUltSession = true; // Use Ultimate session logic for immunity tracking
-                wasHitDuringUltimate = false;
-                hadShieldOnActivate = true;
-
-                ApplyImmunity(true);
-
-                if (SoundManager.Instance != null)
-                {
-                    SoundManager.Instance.PlaySound(
-                        Consts.SoundNames.ShieldUlt,
-                        Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
-                    );
-                }
-            }
-            else
-            {
-                // Normal Activation
-                isUltSession = false;
-                if (spiderHealthSystem != null) spiderHealthSystem.EnableShield();
-
-                if (SoundManager.Instance != null)
-                {
-                    SoundManager.Instance.PlaySound(
-                        Consts.SoundNames.ShieldAbility,
-                        Consts.SoundVolumes.ShieldAbility * Consts.SoundVolumes.MasterVolume
-                    );
-                }
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.ShieldAbility,
+                    Consts.SoundVolumes.ShieldAbility * Consts.SoundVolumes.MasterVolume
+                );
             }
         }
 
@@ -133,42 +126,27 @@ namespace SpiderSurge
         {
             if (spiderHealthSystem != null)
             {
-                bool shouldKeepShield = false;
-
-                // if player had shield before Ult/Synergy and didn't get hit, keep it
-                if (isUltSession && hadShieldOnActivate && !wasHitDuringUltimate)
-                {
-                    shouldKeepShield = true;
-                }
-
-                if (!shouldKeepShield)
+                bool shouldKeepShield = hadShieldOnSessionStart && !wasHitDuringSession;
+                if (hadShieldOnSessionStart && !shouldKeepShield)
                 {
                     DestroyShield();
                     spiderHealthSystem.DisableShield();
                 }
             }
 
-            if (isUltSession)
+            if (IsImmune)
             {
                 ApplyImmunity(false);
             }
 
-            isUltSession = false;
-            wasHitDuringUltimate = false;
+            wasHitDuringSession = false;
+            hadShieldOnSessionStart = false;
         }
 
         protected override void OnActivateUltimate()
         {
-            isUltSession = true;
-            wasHitDuringUltimate = false;
-            hadShieldOnActivate = spiderHealthSystem != null && spiderHealthSystem.HasShield();
-
-            ApplyImmunity(true);
-
-            if (spiderHealthSystem != null && !spiderHealthSystem.HasShield())
-            {
-                spiderHealthSystem.EnableShield();
-            }
+            isUltimateCastPending = true;
+            hadShieldOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             if (SoundManager.Instance != null)
             {
@@ -181,7 +159,14 @@ namespace SpiderSurge
 
         protected override void OnDeactivateUltimate()
         {
-            ApplyImmunity(false);
+            if (!isUltimateCastPending)
+            {
+                return;
+            }
+
+            isUltimateCastPending = false;
+            ExecuteUltimateEffect();
+            hadShieldOnUltimateCastStart = false;
         }
 
 
@@ -324,35 +309,194 @@ namespace SpiderSurge
             }
         }
 
-        private void LateUpdate()
+        private void ExecuteUltimateEffect()
         {
-            if (isActive && !isUltimateActive && spiderHealthSystem != null && !spiderHealthSystem.HasShield())
+            if (!IsServerAuthority())
             {
-                isActive = false;
+                return;
+            }
 
-                if (durationCoroutine != null)
+            if (TryRespawnDeadPlayer(out var revivedPlayer))
+            {
+                if (hadShieldOnUltimateCastStart && Random.value <= 0.5f)
                 {
-                    StopCoroutine(durationCoroutine);
-                    durationCoroutine = null;
+                    StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
+                }
+                return;
+            }
+
+            SpawnFriendlyWasps();
+        }
+
+        private bool TryRespawnDeadPlayer(out PlayerController revivedPlayer)
+        {
+            revivedPlayer = null;
+
+            if (LobbyController.instance == null)
+            {
+                return false;
+            }
+
+            var playerControllers = LobbyController.instance.GetPlayerControllers();
+            if (playerControllers == null || !playerControllers.Any())
+            {
+                return false;
+            }
+
+            var spawnPoints = LobbyController.instance.GetSpawnPoints();
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                return false;
+            }
+
+            var deadPlayers = playerControllers.Where(pc => pc != null && !pc.isAlive).ToList();
+            if (deadPlayers.Count == 0)
+            {
+                return false;
+            }
+
+            revivedPlayer = deadPlayers[Random.Range(0, deadPlayers.Count)];
+            var spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+            revivedPlayer.SpawnCharacter(spawnPoint.position, spawnPoint.rotation);
+            return true;
+        }
+
+        private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)
+        {
+            float elapsed = 0f;
+            const float timeout = 2f;
+
+            while (elapsed < timeout)
+            {
+                if (revivedPlayer == null)
+                {
+                    yield break;
                 }
 
-                StartCooldown();
+                var revivedHealth = revivedPlayer.spiderHealthSystem;
+                if (revivedHealth != null)
+                {
+                    revivedHealth.EnableShield();
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
             }
+        }
+
+        private void SpawnFriendlyWasps()
+        {
+            var friendlyWaspPrefab = SurvivalMode.instance != null ? SurvivalMode.instance.friendlyWasp : null;
+            if (friendlyWaspPrefab == null)
+            {
+                return;
+            }
+
+            var spawnPoints = LobbyController.instance != null ? LobbyController.instance.GetSpawnPoints() : null;
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                spawnPoints = GameObject.FindGameObjectsWithTag("EnemySpawn").Select(go => go.transform).ToArray();
+            }
+
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                return;
+            }
+
+            var selectedSpawns = GetDistinctSpawnPoints(spawnPoints, 3);
+            foreach (var spawn in selectedSpawns)
+            {
+                if (spawn == null)
+                {
+                    continue;
+                }
+
+                var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
+                spawnedObj.SetActive(true);
+
+                var netObj = spawnedObj.GetComponent<NetworkObject>();
+                if (netObj != null)
+                {
+                    netObj.Spawn(true);
+                    netObj.DestroyWithScene = true;
+                }
+
+                if (EnemySpawner.instance != null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
+                {
+                    EnemySpawner.instance.spawnedEnemies.Add(spawnedObj);
+                }
+
+                if (Random.value <= 0.5f)
+                {
+                    TryGiveEnemyShield(spawnedObj);
+                }
+            }
+        }
+
+        private List<Transform> GetDistinctSpawnPoints(Transform[] spawnPoints, int count)
+        {
+            var selectedSpawns = new List<Transform>();
+            var availableIndices = Enumerable.Range(0, spawnPoints.Length).ToList();
+
+            int spawnCount = Mathf.Min(count, spawnPoints.Length);
+            for (int i = 0; i < spawnCount; i++)
+            {
+                int randomListIndex = Random.Range(0, availableIndices.Count);
+                int spawnIndex = availableIndices[randomListIndex];
+                availableIndices.RemoveAt(randomListIndex);
+                selectedSpawns.Add(spawnPoints[spawnIndex]);
+            }
+
+            return selectedSpawns;
+        }
+
+        private void TryGiveEnemyShield(GameObject enemyObject)
+        {
+            if (enemyObject == null)
+            {
+                return;
+            }
+
+            var enemyHealth = enemyObject.GetComponent<EnemyHealthSystem>();
+            if (enemyHealth == null || enemyHealth.shield == null)
+            {
+                return;
+            }
+
+            enemyHealth.shield.SetActive(true);
+
+            try
+            {
+                var enableShieldMethod = typeof(EnemyHealthSystem).GetMethod("EnableShield", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                enableShieldMethod?.Invoke(enemyHealth, null);
+            }
+            catch
+            {
+            }
+        }
+
+        private bool IsServerAuthority()
+        {
+            if (NetworkManager.Singleton == null)
+            {
+                return true;
+            }
+
+            return NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost;
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
 
-            if (playerInput != null && playerShields.ContainsKey(playerInput))
-            {
-                playerShields.Remove(playerInput);
-            }
-
             if (spiderHealthSystem != null && shieldsByHealth.ContainsKey(spiderHealthSystem))
             {
                 shieldsByHealth.Remove(spiderHealthSystem);
             }
+
+            isUltimateCastPending = false;
+            hadShieldOnUltimateCastStart = false;
         }
 
         private void DestroyShield()

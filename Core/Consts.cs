@@ -90,10 +90,10 @@ namespace SpiderSurge
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1f;
-                public const float UltimateBaseCooldown = 25f;
-                public const float UltimateCooldownReductionPerLevel = 7.5f;
-                public const float UltimateBaseDuration = 3f;
-                public const float UltimateDurationIncreasePerLevel = 1f;
+                public const float UltimateBaseCooldown = 75f;
+                public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseDuration = 10f;
+                public const float UltimateDurationIncreasePerLevel = 2.5f;
             }
 
             public static class InfiniteAmmo
@@ -263,7 +263,7 @@ namespace SpiderSurge
         {
             private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Parry",
+                [PerkNames.ShieldAbility] = "Aegis",
                 [PerkNames.InfiniteAmmoAbility] = "Keep Shooting",
                 [PerkNames.ExplosionAbility] = "The Force",
                 [PerkNames.InterdimensionalStorageAbility] = "Interdimensional Storage",
@@ -273,7 +273,7 @@ namespace SpiderSurge
                 [PerkNames.LongTermInvestment] = "Long Term Investment",
                 [PerkNames.PerkLuck] = "Lucky",
                 // Ultimate perks - dynamic names based on which ability is active
-                [PerkNames.ShieldAbilityUltimate] = "God Mode",
+                [PerkNames.ShieldAbilityUltimate] = "Resurgence",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "Care Package",
                 [PerkNames.ExplosionAbilityUltimate] = "Unstoppable Force",
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "More Dimensions"
@@ -281,7 +281,7 @@ namespace SpiderSurge
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Unlocks the shield ability",
+                [PerkNames.ShieldAbility] = "Unlocks an immunity ability with gold radiance",
                 [PerkNames.InfiniteAmmoAbility] = "Unlocks the infinite ammo ability",
                 [PerkNames.ExplosionAbility] = "Unlocks the knockback ability",
                 [PerkNames.InterdimensionalStorageAbility] = "Unlocks the storage ability",
@@ -290,7 +290,7 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
                 [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
-                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Grants complete damage immunity</color>",
+                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
                 [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"

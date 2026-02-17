@@ -155,6 +155,7 @@ namespace SpiderSurge
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
                 PerksManager.Instance.ResetPerks();
+                PlayerAbilityHandler.ResetSpawnTracking();
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
                 if (eventField != null)
                 {
@@ -188,6 +189,10 @@ namespace SpiderSurge
                         var playerAbilities = controller.GetComponents<BaseAbility>();
                         foreach (var ability in playerAbilities)
                         {
+                            if (ability is ShieldAbility)
+                            {
+                                continue;
+                            }
                             ability.SetCooldownToZero();
                         }
                     }
