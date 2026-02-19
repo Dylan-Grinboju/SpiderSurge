@@ -153,8 +153,19 @@ namespace SpiderSurge
         {
             try
             {
-                // Also enable the base ability
-                string baseAbility = perkName.Replace("Ultimate", "");
+                if (!Instance.dependencies.TryGetValue(perkName, out List<string> perkDependencies) || perkDependencies == null || perkDependencies.Count == 0)
+                {
+                    Logger.LogError($"Cannot enable ultimate {perkName}: missing base ability dependency");
+                    return;
+                }
+
+                string baseAbility = perkDependencies[0];
+                if (string.IsNullOrEmpty(baseAbility))
+                {
+                    Logger.LogError($"Cannot enable ultimate {perkName}: invalid base ability dependency");
+                    return;
+                }
+
                 Instance.SetPerkLevel(baseAbility, 1);
                 Instance.SetPerkLevel(perkName, 1);
 
@@ -218,20 +229,12 @@ namespace SpiderSurge
 
             if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
             {
-                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
-                if (!hasAnyUltimate) return false;
+                if (!HasAnyUltimate()) return false;
             }
 
             if (perkName == Consts.PerkNames.ShortTermInvestment || perkName == Consts.PerkNames.LongTermInvestment)
             {
-                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
-                if (!hasAnyUltimate) return false;
+                if (!HasAnyUltimate()) return false;
             }
 
             return true;
@@ -240,6 +243,14 @@ namespace SpiderSurge
         public bool HasAnyAbilityUnlocked()
         {
             return GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0 || GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.PulseAbility) > 0 || GetPerkLevel(Consts.PerkNames.StorageAbility) > 0;
+        }
+
+        private bool HasAnyUltimate()
+        {
+            return GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
+                   GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
+                   GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
+                   GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
         }
 
         public string GetChosenAbilityUltimate()

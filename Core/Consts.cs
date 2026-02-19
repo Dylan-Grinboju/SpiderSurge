@@ -145,7 +145,7 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float AbilityBaseCooldown = 15;
+                public const float AbilityBaseCooldown = 15f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
@@ -277,7 +277,7 @@ namespace SpiderSurge
                 [PerkNames.PerkLuck] = "Lucky",
                 // Ultimate perks - dynamic names based on which ability is active
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
-                [PerkNames.AmmoAbilityUltimate] = "care package",
+                [PerkNames.AmmoAbilityUltimate] = "Care Package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
                 [PerkNames.StorageAbilityUltimate] = "Pocket Dimension^2"
             };

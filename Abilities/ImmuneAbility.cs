@@ -46,6 +46,7 @@ namespace SpiderSurge
 
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
+        private static FieldInfo _spiderLightField;
 
         private bool hadBarrierOnSessionStart = false;
         private bool wasHitDuringSession = false;
@@ -73,6 +74,11 @@ namespace SpiderSurge
             {
                 _breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
                     BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+
+            if (_spiderLightField == null)
+            {
+                _spiderLightField = typeof(SpiderHealthSystem).GetField("spiderLight");
             }
         }
 
@@ -126,8 +132,7 @@ namespace SpiderSurge
         {
             if (spiderHealthSystem != null)
             {
-                bool shouldKeepBarrier = hadBarrierOnSessionStart && !wasHitDuringSession;
-                if (hadBarrierOnSessionStart && !shouldKeepBarrier)
+                if (hadBarrierOnSessionStart && wasHitDuringSession)
                 {
                     DestroyBarrier();
                     spiderHealthSystem.DisableShield();
@@ -234,10 +239,9 @@ namespace SpiderSurge
         {
             try
             {
-                var lightField = typeof(SpiderHealthSystem).GetField("spiderLight");
-                if (lightField == null) return;
+                if (_spiderLightField == null) return;
 
-                var lightObj = lightField.GetValue(spiderHealthSystem);
+                var lightObj = _spiderLightField.GetValue(spiderHealthSystem);
                 if (lightObj == null) return;
 
                 var lightType = lightObj.GetType();

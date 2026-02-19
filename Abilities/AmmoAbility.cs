@@ -25,7 +25,7 @@ namespace SpiderSurge
 
         // Ultimate: Care Package
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "care package";
+        public override string UltimatePerkDisplayName => "Care Package";
         public override string UltimatePerkDescription => "Spawns weapons at half the weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;

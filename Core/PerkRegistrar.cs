@@ -24,13 +24,13 @@ namespace SpiderSurge
                     { Consts.PerkNames.AmmoAbilityUltimate, "ammo_ability" },
                     { Consts.PerkNames.StorageAbility, "storage_ability" },
                     { Consts.PerkNames.StorageAbilityUltimate, "storage_ability" },
+                    { Consts.PerkNames.PulseAbility, "pulse_ability" },
+                    { Consts.PerkNames.PulseAbilityUltimate, "pulse_ability" },
                     { Consts.PerkNames.AbilityCooldown, "cooldown_perk" },
                     { Consts.PerkNames.AbilityDuration, "duration_perk" },
                     { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },
                     { Consts.PerkNames.LongTermInvestment, "long_term_perk" },
-                    { Consts.PerkNames.PerkLuck, "luck_perk" },
-                    { Consts.PerkNames.PulseAbility, "pulse_ability" },
-                    { Consts.PerkNames.PulseAbilityUltimate, "pulse_ability" }
+                    { Consts.PerkNames.PerkLuck, "luck_perk" }
                 };
 
                 // Use an existing modifier's icon as fallback/placeholder
