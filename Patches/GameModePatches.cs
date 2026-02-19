@@ -62,8 +62,6 @@ namespace SpiderSurge
     {
         public static void UpdateSurgeSurvivalText()
         {
-            if (!ModConfig.enableSurgeMode) return;
-
             const string path = "Level/SurvivalStartPlatform/Text/Survival Mode Text/ModeText";
             var modeTextObj = GameObject.Find(path) ?? GameObject.Find("ModeText");
             if (modeTextObj != null)
@@ -71,7 +69,7 @@ namespace SpiderSurge
                 var tmp = modeTextObj.GetComponent<TMP_Text>();
                 if (tmp != null)
                 {
-                    tmp.text = "Surge Survival";
+                    tmp.text = ModConfig.enableSurgeMode ? "Surge Survival" : "Waves Survival";
                 }
             }
         }

@@ -49,7 +49,7 @@ namespace SpiderSurge
             // Initialize CheatManager
             // CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
-            SoundTester.Initialize();
+            // SoundTester.Initialize();
             // Initialize per-player control settings
             PlayerControlSettings.Initialize();
             // Check for updates asynchronously
@@ -107,27 +107,27 @@ namespace SpiderSurge
 
             var surgeInfo = GameObject.Find("SurgeGameModeManager");
             if (surgeInfo != null)
-                GameObject.Destroy(surgeInfo);
+                Destroy(surgeInfo);
 
             var perksInfo = GameObject.Find("PerksManager");
             if (perksInfo != null)
-                GameObject.Destroy(perksInfo);
+                Destroy(perksInfo);
 
             var cheatInfo = GameObject.Find("CheatsModCheatManager");
             if (cheatInfo != null)
-                GameObject.Destroy(cheatInfo);
+                Destroy(cheatInfo);
 
             var soundInfo = GameObject.Find("SoundManager");
             if (soundInfo != null)
-                GameObject.Destroy(soundInfo);
+                Destroy(soundInfo);
 
             var soundTesterInfo = GameObject.Find("SoundTester");
             if (soundTesterInfo != null)
-                GameObject.Destroy(soundTesterInfo);
+                Destroy(soundTesterInfo);
 
             var playerControlSettings = GameObject.Find("PlayerControlSettings");
             if (playerControlSettings != null)
-                GameObject.Destroy(playerControlSettings);
+                Destroy(playerControlSettings);
 
             Instance = null;
         }

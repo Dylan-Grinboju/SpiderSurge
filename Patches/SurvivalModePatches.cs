@@ -10,10 +10,17 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
     public class SurvivalMode_StartGame_Patch
     {
+        private static bool ShouldApplySurge(SurvivalConfig survivalConfig)
+        {
+            return ModConfig.enableSurgeMode
+                && survivalConfig != null
+                && survivalConfig.type == SurvivalConfig.Type.EndlessSurvival;
+        }
+
         [HarmonyPrefix]
         public static void Prefix(ref SurvivalConfig survivalConfig)
         {
-            if (ModConfig.enableSurgeMode && survivalConfig != null)
+            if (ShouldApplySurge(survivalConfig))
             {
                 // Find templates
                 GameObject meleeWhispPrefab = null;
@@ -150,11 +157,12 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(bool __result, SurvivalConfig survivalConfig)
         {
-            if (__result && ModConfig.enableSurgeMode)
+            if (__result && ShouldApplySurge(survivalConfig))
             {
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
                 PerksManager.Instance.ResetPerks();
+                PlayerAbilityHandler.ResetSpawnTracking();
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
                 if (eventField != null)
                 {
@@ -188,6 +196,11 @@ namespace SpiderSurge
                         var playerAbilities = controller.GetComponents<BaseAbility>();
                         foreach (var ability in playerAbilities)
                         {
+                            if (ability is ImmuneAbility)
+                            {
+                                ability.ReduceCooldown(Consts.Values.Immune.AbilityBaseCooldown);
+                                continue;
+                            }
                             ability.SetCooldownToZero();
                         }
                     }
@@ -205,8 +218,8 @@ namespace SpiderSurge
                     PerksManager.Instance.IsUltSwapPerkSelection = true;
                 }
 
-                // Update InterdimensionalStorageAbility cache
-                var abilities = UnityEngine.Object.FindObjectsOfType<InterdimensionalStorageAbility>();
+                // Update StorageAbility cache
+                var abilities = UnityEngine.Object.FindObjectsOfType<StorageAbility>();
                 foreach (var ab in abilities)
                 {
                     ab.UpdateCachedModifierLevels();

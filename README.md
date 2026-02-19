@@ -9,15 +9,15 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 
 - **Surge Mode**: A high-intensity survival mode overhaul that increases enemy spawn rates and introduces unique wave-based progression.
 - **New Abilities**:
-    - **Explosion Ability**: Release a kinetic pulse that destroys projectiles and repels enemies.
-    - **Infinite Ammo**: Grants a brief period of unlimited ammunition for equipped weapons.
-    - **Interdimensional Storage**: Store and recall weapons at will, enabling advanced inventory tactics.
-    - **Shield Ability**: Deploys a temporary protective energy barrier.
+    - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
+    - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
+    - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
+    - **Null Field**: Deploys a temporary protective energy barrier.
 - **Custom Enemies**:
     - **Twin Whisp**: Fires dual projectiles simultaneously.
     - **Missile Whisp**: Launches rockets that deal devastating damage.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
-- **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Infinite Ammo + Efficiency).
+- **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Special perk selection phases at waves 30 and 60 for powerful "Ultimate" variants and ability swaps.
 - **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.

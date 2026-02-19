@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,8 @@ namespace SpiderSurge
     public class SoundManager : MonoBehaviour
     {
         public static SoundManager Instance { get; private set; }
+        private static readonly Guid PcmSubFormatGuid = new Guid("00000001-0000-0010-8000-00AA00389B71");
+        private static readonly Guid IeeeFloatSubFormatGuid = new Guid("00000003-0000-0010-8000-00AA00389B71");
 
         private readonly Dictionary<string, AudioClip> _loadedClips = new Dictionary<string, AudioClip>();
         private AudioSource _audioSource;
@@ -106,6 +109,9 @@ namespace SpiderSurge
             int channels = 0;
             int sampleRate = 0;
             int bitsPerSample = 0;
+            bool decodeAsFloat = false;
+            bool formatValidated = false;
+            int bytesPerSample = 0;
             float[] samples = null;
 
             while (pos < wavData.Length - 8)
@@ -123,23 +129,74 @@ namespace SpiderSurge
                 if (chunkId == "fmt ")
                 {
                     // Format chunk
-                    int audioFormat = System.BitConverter.ToInt16(wavData, pos + 8);
+                    ushort audioFormat = System.BitConverter.ToUInt16(wavData, pos + 8);
                     channels = System.BitConverter.ToInt16(wavData, pos + 10);
                     sampleRate = System.BitConverter.ToInt32(wavData, pos + 12);
                     bitsPerSample = System.BitConverter.ToInt16(wavData, pos + 22);
+                    bytesPerSample = bitsPerSample / 8;
 
-                    if (audioFormat != 1)
+                    if (bitsPerSample <= 0 || bitsPerSample % 8 != 0)
                     {
-                        Logger.LogWarning($"[SoundManager] Only PCM WAV format is supported. File: {clipName}");
+                        Logger.LogWarning($"[SoundManager] Invalid bit depth: {bitsPerSample}. File: {clipName}");
+                        return null;
+                    }
+
+                    if (audioFormat == 1)
+                    {
+                        formatValidated = true;
+                        decodeAsFloat = false;
+                    }
+                    else if (audioFormat == 3)
+                    {
+                        formatValidated = true;
+                        decodeAsFloat = true;
+                    }
+                    else if (audioFormat == 65534)
+                    {
+                        if (chunkSize < 40)
+                        {
+                            Logger.LogWarning($"[SoundManager] Invalid extensible fmt chunk size {chunkSize}. File: {clipName}");
+                            return null;
+                        }
+
+                        byte[] subFormatBytes = new byte[16];
+                        System.Buffer.BlockCopy(wavData, pos + 32, subFormatBytes, 0, 16);
+                        Guid subFormatGuid = new Guid(subFormatBytes);
+
+                        if (subFormatGuid == PcmSubFormatGuid)
+                        {
+                            formatValidated = true;
+                            decodeAsFloat = false;
+                        }
+                        else if (subFormatGuid == IeeeFloatSubFormatGuid)
+                        {
+                            formatValidated = true;
+                            decodeAsFloat = true;
+                        }
+                        else
+                        {
+                            Logger.LogWarning($"[SoundManager] Unsupported WAV extensible SubFormat GUID {subFormatGuid}. File: {clipName}");
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning($"[SoundManager] Unsupported WAV format {audioFormat}. File: {clipName}");
                         return null;
                     }
                 }
                 else if (chunkId == "data")
                 {
+                    if (!formatValidated)
+                    {
+                        Logger.LogWarning($"[SoundManager] WAV data chunk encountered before valid fmt chunk: {clipName}");
+                        return null;
+                    }
+
                     int dataStart = pos + 8;
                     int dataSize = System.Math.Min(chunkSize, wavData.Length - dataStart);
 
-                    if (bitsPerSample == 16)
+                    if (!decodeAsFloat && bitsPerSample == 16)
                     {
                         int sampleCount = dataSize / 2;
                         samples = new float[sampleCount];
@@ -149,7 +206,7 @@ namespace SpiderSurge
                             samples[i] = sample / 32768f;
                         }
                     }
-                    else if (bitsPerSample == 8)
+                    else if (!decodeAsFloat && bitsPerSample == 8)
                     {
                         int sampleCount = dataSize;
                         samples = new float[sampleCount];
@@ -158,7 +215,7 @@ namespace SpiderSurge
                             samples[i] = (wavData[dataStart + i] - 128) / 128f;
                         }
                     }
-                    else if (bitsPerSample == 24)
+                    else if (!decodeAsFloat && bitsPerSample == 24)
                     {
                         int sampleCount = dataSize / 3;
                         samples = new float[sampleCount];
@@ -171,9 +228,19 @@ namespace SpiderSurge
                             samples[i] = sample / 8388608f;
                         }
                     }
+                    else if (decodeAsFloat && bitsPerSample == 32)
+                    {
+                        int sampleCount = dataSize / bytesPerSample;
+                        samples = new float[sampleCount];
+                        for (int i = 0; i < sampleCount; i++)
+                        {
+                            samples[i] = System.BitConverter.ToSingle(wavData, dataStart + i * bytesPerSample);
+                        }
+                    }
                     else
                     {
-                        Logger.LogWarning($"[SoundManager] Unsupported bit depth: {bitsPerSample}. File: {clipName}");
+                        string encoding = decodeAsFloat ? "float" : "integer PCM";
+                        Logger.LogWarning($"[SoundManager] Unsupported {encoding} bit depth: {bitsPerSample}. File: {clipName}");
                         return null;
                     }
                 }

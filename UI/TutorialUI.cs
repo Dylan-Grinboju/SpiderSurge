@@ -282,26 +282,22 @@ namespace SpiderSurge
             GUILayout.Label("Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color=#00FFFF>Synergized</color> in the perk selection.", labelStyle);
             GUILayout.Space(10);
 
-            // Parry (Shield) Synergies
-            GUILayout.Label("<b><color=#FFD700>Parry</color></b> + Shield Perks:", labelStyle);
+            GUILayout.Label("<b><color=#FFD700>Null Field</color></b> + Shield Perks:", labelStyle);
             GUILayout.Label("• <b>Start Shields</b>, <b>Positive Encouragement</b>, or <b>Safety Net</b>:", labelStyle);
-            GUILayout.Label("  → If you have a shield when activating Parry, gain <b>full immunity</b> instead of a breakable shield.", labelStyle);
+            GUILayout.Label("  → If you have a shield when activating Null Field and avoid getting hit, you keep the shield after immunity ends.", labelStyle);
             GUILayout.Space(8);
 
-            // Keep Shooting (Infinite Ammo) Synergies
-            GUILayout.Label("<b><color=#FFD700>Keep Shooting</color></b> + Efficiency:", labelStyle);
+            GUILayout.Label("<b><color=#FFD700>Bottomless Clip</color></b> + Efficiency:", labelStyle);
             GUILayout.Label("• <b>Efficiency Lv1</b>: Ability refills ammo to at least <b>50%</b> of max.", labelStyle);
             GUILayout.Label("• <b>Efficiency Lv2</b>: Ability refills ammo to <b>100%</b> of max.", labelStyle);
             GUILayout.Space(8);
 
-            // The Force (Explosion) Synergies
-            GUILayout.Label("<b><color=#FFD700>The Force</color></b> + Explosion Perks:", labelStyle);
+            GUILayout.Label("<b><color=#FFD700>Kinetic Pulse</color></b> + Explosion Perks:", labelStyle);
             GUILayout.Label("• <b>Bigger Boom</b>: Increases <b>knockback strength</b>.", labelStyle);
             GUILayout.Label("• <b>Too Cool</b>: Increases <b>death radius</b> of the ultimate.", labelStyle);
             GUILayout.Space(8);
 
-            // Interdimensional Storage Synergies
-            GUILayout.Label("<b><color=#FFD700>Interdimensional Storage</color></b> + Weapon Perks:", labelStyle);
+            GUILayout.Label("<b><color=#FFD700>Pocket Dimension</color></b> + Weapon Perks:", labelStyle);
             GUILayout.Label("• <b>More Guns</b>, <b>More Boom</b>, or <b>More Particles</b>:", labelStyle);
             GUILayout.Label("  → <b>Level 1</b>: Keep matching stored weapons between rounds.", labelStyle);
             GUILayout.Label("  → <b>Level 2</b>: Keep matching stored weapons even after <b>death</b>.", labelStyle);

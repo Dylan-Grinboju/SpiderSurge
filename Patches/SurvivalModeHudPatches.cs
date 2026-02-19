@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Reflection;
 using Doozy.Engine.UI;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace SpiderSurge
 {
@@ -14,6 +15,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(SurvivalModeHud __instance)
         {
+            if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
 
             // Access perkChoiceView using reflection since it might be private
@@ -93,7 +95,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (ModConfig.UnlimitedPerkChoosingTime)
+            if (SurgeGameModeManager.IsSurgeRunActive && ModConfig.UnlimitedPerkChoosingTime)
             {
                 __result = EmptyEnumerator();
                 return false;
@@ -104,6 +106,24 @@ namespace SpiderSurge
         private static IEnumerator EmptyEnumerator()
         {
             yield break;
+        }
+    }
+
+    [HarmonyPatch(typeof(PerkChoiseTimer), "SetTimerValue")]
+    public class PerkChoiseTimer_SetTimerValue_Patch
+    {
+        private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly Regex s_trailingDigits = new Regex(@"\d+$", RegexOptions.Compiled);
+
+        [HarmonyPostfix]
+        public static void Postfix(PerkChoiseTimer __instance)
+        {
+            if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
+
+            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+            if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
+
+            timerText.text = s_trailingDigits.Replace(timerText.text, "∞");
         }
     }
 }

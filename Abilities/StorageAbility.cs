@@ -6,9 +6,9 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
-    public class InterdimensionalStorageAbility : BaseAbility
+    public class StorageAbility : BaseAbility
     {
-        public override string PerkName => Consts.PerkNames.InterdimensionalStorageAbility;
+        public override string PerkName => Consts.PerkNames.StorageAbility;
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
@@ -18,8 +18,8 @@ namespace SpiderSurge
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Storage.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
-        public override string UltimatePerkName => Consts.PerkNames.InterdimensionalStorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Storage Ultimate";
+        public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
+        public override string UltimatePerkDisplayName => "Pocket Dimension^2";
         public override string UltimatePerkDescription => "Adds a second storage slot (3x cooldown).";
 
         public override float AbilityDuration
@@ -83,7 +83,7 @@ namespace SpiderSurge
 
             if (_weaponManager == null)
             {
-                Logger.LogError($"InterdimensionalStorageAbility: SpiderWeaponManager not found on {name}");
+                Logger.LogError($"StorageAbility: SpiderWeaponManager not found on {name}");
             }
 
             // Restore weapons on start (local only)
@@ -262,22 +262,34 @@ namespace SpiderSurge
             List<Weapon.WeaponType> effectiveTypes = weapon.Types.Count != 0 ? weapon.Types : GetEffectiveWeaponTypes(weapon.Name);
 
             if (effectiveTypes == null || effectiveTypes.Count == 0) return false;
-            int maxModLevel = 0;
-
-            foreach (var wType in effectiveTypes)
-            {
-                if (wType == Weapon.WeaponType.Gun)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreGunsLevel);
-                else if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreBoomLevel);
-                else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
-                    maxModLevel = Mathf.Max(maxModLevel, _cachedMoreParticlesLevel);
-            }
+            int requiredModLevel = GetRequiredModLevel(effectiveTypes);
 
             if (isDeath)
-                return maxModLevel >= 2;
+                return requiredModLevel >= 2;
             else
-                return maxModLevel >= 1;
+                return requiredModLevel >= 1;
+        }
+
+        private int GetRequiredModLevel(List<Weapon.WeaponType> types)
+        {
+            bool isBoom = false;
+            bool isParticles = false;
+            bool isGuns = false;
+
+            foreach (var wType in types)
+            {
+                if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
+                    isBoom = true;
+                else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
+                    isParticles = true;
+                else if (wType == Weapon.WeaponType.Gun)
+                    isGuns = true;
+            }
+
+            if (isBoom) return _cachedMoreBoomLevel;
+            if (isParticles) return _cachedMoreParticlesLevel;
+            if (isGuns) return _cachedMoreGunsLevel;
+            return 0;
         }
 
         private void RestoreWeapons()
@@ -320,7 +332,7 @@ namespace SpiderSurge
                 }
                 else
                 {
-                    Logger.LogWarning("[InterdimensionalStorageAbility] Could not retrieve _weapons from SurvivalMode instance.");
+                    Logger.LogWarning("[StorageAbility] Could not retrieve _weapons from SurvivalMode instance.");
                 }
             }
 
@@ -352,7 +364,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = newWeapon.type
+                            Types = new List<Weapon.WeaponType>(newWeapon.type)
                         };
                     else
                         _storedWeaponData = new RuntimeStoredWeapon
@@ -360,7 +372,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = newWeapon.type
+                            Types = new List<Weapon.WeaponType>(newWeapon.type)
                         };
                 }
                 else
@@ -372,10 +384,10 @@ namespace SpiderSurge
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
-        public static InterdimensionalStorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
+        public static StorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
-            return healthSystem.GetComponentInParent<InterdimensionalStorageAbility>();
+            return healthSystem.GetComponentInParent<StorageAbility>();
         }
 
         private List<Weapon.WeaponType> GetEffectiveWeaponTypes(SerializationWeaponName name)

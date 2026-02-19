@@ -6,6 +6,20 @@
       "type": "shell",
       "command": "dotnet",
       "args": ["build"],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build + Deploy Mod",
+      "type": "process",
+      "command": "${env:ProgramFiles}/PowerShell/7/pwsh.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/build-deploy.ps1"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true

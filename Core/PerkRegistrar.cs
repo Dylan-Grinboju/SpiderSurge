@@ -18,15 +18,19 @@ namespace SpiderSurge
                 // Map perk keys to icon filenames (without extension)
                 Dictionary<string, string> iconMapping = new Dictionary<string, string>
                 {
-                    { Consts.PerkNames.ShieldAbility, "shield_ability" },
-                    { Consts.PerkNames.InfiniteAmmoAbility, "ammo_ability" },
-                    { Consts.PerkNames.InterdimensionalStorageAbility, "storage_ability" },
+                    { Consts.PerkNames.ImmuneAbility, "immune_ability" },
+                    { Consts.PerkNames.ImmuneAbilityUltimate, "immune_ability" },
+                    { Consts.PerkNames.AmmoAbility, "ammo_ability" },
+                    { Consts.PerkNames.AmmoAbilityUltimate, "ammo_ability" },
+                    { Consts.PerkNames.StorageAbility, "storage_ability" },
+                    { Consts.PerkNames.StorageAbilityUltimate, "storage_ability" },
+                    { Consts.PerkNames.PulseAbility, "pulse_ability" },
+                    { Consts.PerkNames.PulseAbilityUltimate, "pulse_ability" },
                     { Consts.PerkNames.AbilityCooldown, "cooldown_perk" },
                     { Consts.PerkNames.AbilityDuration, "duration_perk" },
                     { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },
                     { Consts.PerkNames.LongTermInvestment, "long_term_perk" },
-                    { Consts.PerkNames.PerkLuck, "luck_perk" },
-                    { Consts.PerkNames.ExplosionAbility, "explosion_ability" }
+                    { Consts.PerkNames.PerkLuck, "luck_perk" }
                 };
 
                 // Use an existing modifier's icon as fallback/placeholder

@@ -8,22 +8,22 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
-    public class ExplosionAbility : BaseAbility
+    public class PulseAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, ExplosionAbility> playerExplosions = new Dictionary<PlayerInput, ExplosionAbility>();
+        public static Dictionary<PlayerInput, PulseAbility> playerPulseAbilities = new Dictionary<PlayerInput, PulseAbility>();
 
-        public override string PerkName => Consts.PerkNames.ExplosionAbility;
+        public override string PerkName => Consts.PerkNames.PulseAbility;
 
-        public override float AbilityBaseCooldown => Consts.Values.Explosion.AbilityBaseCooldown;
-        public override float AbilityBaseDuration => Consts.Values.Explosion.AbilityBaseDuration;
-        public override float UltimateBaseDuration => Consts.Values.Explosion.UltimateBaseDuration;
-        public override float UltimateBaseCooldown => Consts.Values.Explosion.UltimateBaseCooldown;
-        public override float AbilityCooldownPerPerkLevel => Consts.Values.Explosion.AbilityCooldownReductionPerLevel;
-        public override float UltimateCooldownPerPerkLevel => Consts.Values.Explosion.UltimateCooldownReductionPerLevel;
+        public override float AbilityBaseCooldown => Consts.Values.Pulse.AbilityBaseCooldown;
+        public override float AbilityBaseDuration => Consts.Values.Pulse.AbilityBaseDuration;
+        public override float UltimateBaseDuration => Consts.Values.Pulse.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Pulse.UltimateBaseCooldown;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Pulse.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Pulse.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Explosion Ultimate";
-        public override string UltimatePerkDescription => "Explosion deals lethal damage in the death zone instead of just knockback.";
+        public override string UltimatePerkDisplayName => "Thermal Detonation";
+        public override string UltimatePerkDescription => "Pulse deals lethal damage in the death zone instead of just knockback.";
 
         private float GetKnockBackRadius(bool isUlt)
         {
@@ -33,17 +33,17 @@ namespace SpiderSurge
             int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
             if (isUlt)
             {
-                radius = Consts.Values.Explosion.UltimateBaseKnockbackRadius;
-                if (durationLevel >= 2) radius += Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
-                if (shortTermLevel > 0) radius -= Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
-                if (longTermLevel > 0) radius += Consts.Values.Explosion.UltimateKnockbackRadiusIncreasePerLevel;
+                radius = Consts.Values.Pulse.UltimateBaseKnockbackRadius;
+                if (durationLevel >= 2) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius -= Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
             }
             else
             {
-                radius = Consts.Values.Explosion.AbilityBaseKnockbackRadius;
-                if (durationLevel >= 1) radius += Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
-                if (shortTermLevel > 0) radius += Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
-                if (longTermLevel > 0) radius -= Consts.Values.Explosion.AbilityKnockbackRadiusIncreasePerLevel;
+                radius = Consts.Values.Pulse.AbilityBaseKnockbackRadius;
+                if (durationLevel >= 1) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius -= Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
             }
             return radius;
         }
@@ -59,13 +59,13 @@ namespace SpiderSurge
 
             if (isUlt)
             {
-                strength = Consts.Values.Explosion.UltimateBaseKnockbackStrength;
-                if (biggerBoom > 1) strength += Consts.Values.Explosion.UltimateKnockbackStrengthIncreasePerLevel;
+                strength = Consts.Values.Pulse.UltimateBaseKnockbackStrength;
+                if (biggerBoom > 1) strength += Consts.Values.Pulse.UltimateKnockbackStrengthIncreasePerLevel;
             }
             else
             {
-                strength = Consts.Values.Explosion.AbilityBaseKnockbackStrength;
-                if (biggerBoom > 0) strength += Consts.Values.Explosion.AbilityKnockbackStrengthIncreasePerLevel;
+                strength = Consts.Values.Pulse.AbilityBaseKnockbackStrength;
+                if (biggerBoom > 0) strength += Consts.Values.Pulse.AbilityKnockbackStrengthIncreasePerLevel;
             }
 
             return strength;
@@ -78,54 +78,54 @@ namespace SpiderSurge
                 return 0f;
             }
 
-            float deathRadius = Consts.Values.Explosion.UltimateBaseDeathRadius;
+            float deathRadius = Consts.Values.Pulse.UltimateBaseDeathRadius;
 
             if (ModifierManager.instance != null)
             {
                 int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
-                deathRadius += Consts.Values.Explosion.UltimateDeathRadiusIncreasePerLevel * tooCool;
+                deathRadius += Consts.Values.Pulse.UltimateDeathRadiusIncreasePerLevel * tooCool;
             }
 
             return deathRadius;
         }
 
-        private LayerMask explosionLayers;
+        private LayerMask pulseLayers;
 
-        // Cached explosion VFX prefab (obtained from SpiderHealthSystem at runtime)
+        // Cached pulse VFX prefab (obtained from SpiderHealthSystem at runtime)
         private static GameObject cachedExplosionPrefab;
 
         // Pre-allocated buffer for physics queries to avoid GC allocation
-        private Collider2D[] _explosionResults = new Collider2D[64];
+        private Collider2D[] _pulseResults = new Collider2D[64];
 
         protected override void Awake()
         {
             base.Awake();
             if (playerInput != null)
             {
-                playerExplosions[playerInput] = this;
+                playerPulseAbilities[playerInput] = this;
             }
 
-            explosionLayers = LayerMask.GetMask("Player", "Item", "Enemy", "DynamicWorld");
+            pulseLayers = LayerMask.GetMask("Player", "Item", "Enemy", "DynamicWorld");
 
-            if (explosionLayers == 0)
+            if (pulseLayers == 0)
             {
-                explosionLayers = ~0;// All layers
-                Logger.LogWarning("ExplosionAbility: Could not find expected layers, using all layers");
+                pulseLayers = ~0;// All layers
+                Logger.LogWarning("PulseAbility: Could not find expected layers, using all layers");
             }
         }
 
         protected override void OnActivate()
         {
-            // Play explosion ability sound (only for regular ability, not ultimate)
+            // Play pulse ability sound (only for regular ability, not ultimate)
             if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.ExplosionAbility,
-                    Consts.SoundVolumes.ExplosionAbility * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundNames.PulseAbility,
+                    Consts.SoundVolumes.PulseAbility * Consts.SoundVolumes.MasterVolume
                 );
             }
 
-            TriggerExplosion(deadly: false);
+            TriggerPulse(deadly: false);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
             StartCooldown();
@@ -133,7 +133,7 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            TriggerExplosion(deadly: true);
+            TriggerPulse(deadly: true);
             // Start cooldown immediately since this is an instant ability
             isActive = false;
             isUltimateActive = false;
@@ -142,10 +142,10 @@ namespace SpiderSurge
 
         protected override void OnDeactivate()
         {
-            // Nothing to do - explosion is instant
+            // Nothing to do - pulse is instant
         }
 
-        private struct ExplosionParams
+        private struct PulseParams
         {
             public Vector3 Position;
             public float KnockBackRadius;
@@ -153,35 +153,35 @@ namespace SpiderSurge
             public float KnockBackStrength;
         }
 
-        private void TriggerExplosion(bool deadly)
+        private void TriggerPulse(bool deadly)
         {
             if (playerController == null || spiderHealthSystem == null)
             {
-                Logger.LogWarning($"ExplosionAbility: Missing playerController or spiderHealthSystem for player {playerInput?.playerIndex}");
+                Logger.LogWarning($"PulseAbility: Missing playerController or spiderHealthSystem for player {playerInput?.playerIndex}");
                 return;
             }
 
-            ExplosionParams explosionParams = CalculateExplosionParameters(deadly);
+            PulseParams pulseParams = CalculatePulseParameters(deadly);
 
             // Visual effects
-            ApplyCameraEffects(deadly, explosionParams.KnockBackRadius);
-            SpawnRingVisual(explosionParams.Position, explosionParams.KnockBackRadius);
+            ApplyCameraEffects(deadly, pulseParams.KnockBackRadius);
+            SpawnRingVisual(pulseParams.Position, pulseParams.KnockBackRadius);
 
             if (deadly)
             {
-                SpawnExplosionVFX(explosionParams.Position, GetDeathRadius(deadly));
+                SpawnExplosionVFX(pulseParams.Position, GetDeathRadius(deadly));
             }
 
             // Physics (Host only)
             if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
             {
-                ApplyExplosionPhysics(explosionParams, deadly);
+                ApplyPulsePhysics(pulseParams, deadly);
             }
         }
 
-        private ExplosionParams CalculateExplosionParameters(bool deadly)
+        private PulseParams CalculatePulseParameters(bool deadly)
         {
-            return new ExplosionParams
+            return new PulseParams
             {
                 Position = spiderHealthSystem.transform.position,
                 KnockBackRadius = GetKnockBackRadius(deadly),
@@ -196,24 +196,24 @@ namespace SpiderSurge
             {
                 CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
                 float shakeStrength = deadly ? (radius / 2f) : (radius / 4f);
-                CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Explosion.CameraShakeDuration);
+                CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Pulse.CameraShakeDuration);
             }
             catch (System.Exception ex)
             {
-                Logger.LogWarning($"ExplosionAbility: Could not trigger camera effects: {ex.Message}");
+                Logger.LogWarning($"PulseAbility: Could not trigger camera effects: {ex.Message}");
             }
         }
 
-        private void ApplyExplosionPhysics(ExplosionParams p, bool deadly)
+        private void ApplyPulsePhysics(PulseParams p, bool deadly)
         {
             int playerID = playerController.playerID.Value;
 
             // Use NonAlloc to avoid allocating new array every time
-            int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _explosionResults, explosionLayers);
+            int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _pulseResults, pulseLayers);
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider2D collider = _explosionResults[i];
+                Collider2D collider = _pulseResults[i];
                 if (collider == null) continue;
                 if (collider.gameObject == gameObject) continue;
 
@@ -263,15 +263,15 @@ namespace SpiderSurge
         {
             try
             {
-                GameObject ringObj = new GameObject("ExplosionRing");
+                GameObject ringObj = new GameObject("PulseRing");
                 ringObj.transform.position = position;
-                var ringEffect = ringObj.AddComponent<ExplosionRingEffect>();
+                var ringEffect = ringObj.AddComponent<PulseRingEffect>();
                 // Match the visual expansion to the actual physics radius
                 ringEffect.Setup(radius);
             }
             catch (System.Exception ex)
             {
-                Logger.LogWarning($"ExplosionAbility: Failed to spawn ring visual: {ex.Message}");
+                Logger.LogWarning($"PulseAbility: Failed to spawn ring visual: {ex.Message}");
             }
         }
 
@@ -282,12 +282,12 @@ namespace SpiderSurge
                 GameObject explosionPrefab = GetExplosionPrefab();
                 if (explosionPrefab == null)
                 {
-                    Logger.LogWarning("ExplosionAbility: Could not get explosion prefab");
+                    Logger.LogWarning("PulseAbility: Could not get pulse prefab");
                     return;
                 }
 
                 GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
-                float vfxScale = Mathf.Clamp(radius / Consts.Values.Explosion.UltimateBaseDeathRadius, 0.5f, 2f);
+                float vfxScale = Mathf.Clamp(radius / Consts.Values.Pulse.UltimateBaseDeathRadius, 0.5f, 2f);
                 explosionVFX.transform.localScale *= vfxScale;
 
                 if (playerController != null)
@@ -303,13 +303,13 @@ namespace SpiderSurge
                     }
                     catch (System.Exception ex)
                     {
-                        Logger.LogWarning($"ExplosionAbility: Could not set explosion color: {ex.Message}");
+                        Logger.LogWarning($"PulseAbility: Could not set pulse color: {ex.Message}");
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"ExplosionAbility: Failed to spawn explosion VFX: {ex.Message}");
+                Logger.LogError($"PulseAbility: Failed to spawn pulse VFX: {ex.Message}");
             }
         }
 
@@ -340,7 +340,7 @@ namespace SpiderSurge
                 }
                 catch (System.Exception ex)
                 {
-                    Logger.LogWarning($"ExplosionAbility: Failed to get DeadExplosionParticlePrefab via reflection: {ex.Message}");
+                    Logger.LogWarning($"PulseAbility: Failed to get DeadExplosionParticlePrefab via reflection: {ex.Message}");
                 }
             }
             return null;
@@ -350,9 +350,9 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (playerInput != null && playerExplosions.ContainsKey(playerInput))
+            if (playerInput != null && playerPulseAbilities.ContainsKey(playerInput))
             {
-                playerExplosions.Remove(playerInput);
+                playerPulseAbilities.Remove(playerInput);
             }
         }
     }

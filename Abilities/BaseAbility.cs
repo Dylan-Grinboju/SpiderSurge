@@ -20,6 +20,7 @@ namespace SpiderSurge
         protected bool skipNextCooldown = false;
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
+        protected float cooldownEndTime = 0f;
 
         // Rate limit for ability not ready sound (once per second, per player)
         private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
@@ -495,6 +496,60 @@ namespace SpiderSurge
                 cooldownCoroutine = null;
             }
             onCooldown = false;
+            cooldownEndTime = 0f;
+        }
+
+        public void ReduceCooldown(float amount)
+        {
+            if (!onCooldown || amount <= 0f)
+            {
+                return;
+            }
+
+            float remaining = cooldownEndTime - Time.time;
+            if (remaining <= 0f)
+            {
+                SetCooldownToZero();
+                return;
+            }
+
+            remaining -= amount;
+            if (remaining <= 0f)
+            {
+                SetCooldownToZero();
+                return;
+            }
+
+            if (cooldownCoroutine != null)
+            {
+                StopCoroutine(cooldownCoroutine);
+            }
+
+            cooldownEndTime = Time.time + remaining;
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine(remaining));
+        }
+
+        public void ForceStartCooldown(bool wasUltimate = false)
+        {
+            skipNextCooldown = false;
+
+            if (cooldownCoroutine != null)
+            {
+                StopCoroutine(cooldownCoroutine);
+                cooldownCoroutine = null;
+            }
+
+            float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
+            if (cooldown <= 0f)
+            {
+                onCooldown = false;
+                cooldownEndTime = 0f;
+                return;
+            }
+
+            onCooldown = true;
+            cooldownEndTime = Time.time + cooldown;
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
         }
 
         public bool IsUnlocked()
@@ -569,6 +624,7 @@ namespace SpiderSurge
         protected virtual void OnDeactivate() { }
         protected virtual void OnActivateUltimate() { OnActivate(); }
         protected virtual void OnDeactivateUltimate() { }
+        protected virtual bool ShouldPlayAbilityEndedSound(bool wasUltimate) { return true; }
 
         private void PlayAbilityNotReadySound()
         {
@@ -607,7 +663,10 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
-                PlayAbilityEndedSound();
+                if (ShouldPlayAbilityEndedSound(wasUltimate))
+                {
+                    PlayAbilityEndedSound();
+                }
             }
 
             StartCooldown(wasUltimate);
@@ -621,7 +680,10 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
-                PlayAbilityEndedSound();
+                if (ShouldPlayAbilityEndedSound(wasUltimate))
+                {
+                    PlayAbilityEndedSound();
+                }
             }
 
             StartCooldown(wasUltimate);
@@ -643,6 +705,7 @@ namespace SpiderSurge
             {
                 StopCoroutine(cooldownCoroutine);
             }
+            cooldownEndTime = Time.time + cooldown;
             cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
         }
 
@@ -653,6 +716,7 @@ namespace SpiderSurge
             yield return new WaitForSeconds(cooldownTime);
 
             onCooldown = false;
+            cooldownEndTime = 0f;
 
             if (SoundManager.Instance != null && IsUnlocked())
             {

@@ -1,12 +1,19 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
+using System.Collections.Generic;
 
 namespace SpiderSurge
 {
     public static class PlayerAbilityHandler
     {
-        public static System.Collections.Generic.List<SpiderController> ActiveSpiderControllers = new System.Collections.Generic.List<SpiderController>();
+        public static List<SpiderController> ActiveSpiderControllers = new List<SpiderController>();
+        private static readonly HashSet<int> SeenPlayerSpawns = new HashSet<int>();
+
+        public static void ResetSpawnTracking()
+        {
+            SeenPlayerSpawns.Clear();
+        }
 
         public static void InitializePlayerAbilities(GameObject playerObject)
         {
@@ -27,6 +34,10 @@ namespace SpiderSurge
                     return;
                 }
 
+                int playerIndex = playerInput.playerIndex;
+                bool isRespawn = SeenPlayerSpawns.Contains(playerIndex);
+                SeenPlayerSpawns.Add(playerIndex);
+
                 SpiderController spiderController = playerObject.GetComponent<SpiderController>();
                 if (spiderController == null)
                 {
@@ -45,24 +56,30 @@ namespace SpiderSurge
                     spiderController.gameObject.AddComponent<InputInterceptor>();
                 }
 
-                if (spiderController.GetComponent<ShieldAbility>() == null)
+                if (spiderController.GetComponent<ImmuneAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<ShieldAbility>();
+                    spiderController.gameObject.AddComponent<ImmuneAbility>();
                 }
 
-                if (spiderController.GetComponent<InfiniteAmmoAbility>() == null)
+                var immuneAbility = spiderController.GetComponent<ImmuneAbility>();
+                if (isRespawn && immuneAbility != null && immuneAbility.IsUnlocked())
                 {
-                    spiderController.gameObject.AddComponent<InfiniteAmmoAbility>();
+                    immuneAbility.ForceStartCooldown();
                 }
 
-                if (spiderController.GetComponent<ExplosionAbility>() == null)
+                if (spiderController.GetComponent<AmmoAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<ExplosionAbility>();
+                    spiderController.gameObject.AddComponent<AmmoAbility>();
                 }
 
-                if (spiderController.GetComponent<InterdimensionalStorageAbility>() == null)
+                if (spiderController.GetComponent<PulseAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<InterdimensionalStorageAbility>();
+                    spiderController.gameObject.AddComponent<PulseAbility>();
+                }
+
+                if (spiderController.GetComponent<StorageAbility>() == null)
+                {
+                    spiderController.gameObject.AddComponent<StorageAbility>();
                 }
             }
             catch (System.Exception ex)
