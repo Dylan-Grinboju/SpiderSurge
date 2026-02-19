@@ -15,50 +15,50 @@ namespace SpiderSurge
         public bool IsUltSwapPerkSelection { get; set; } = false;
 
         // Ability perks - shown in special ability selection screen
-        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ShieldAbility, Consts.PerkNames.InfiniteAmmoAbility, Consts.PerkNames.ExplosionAbility, Consts.PerkNames.InterdimensionalStorageAbility };
+        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ImmuneAbility, Consts.PerkNames.AmmoAbility, Consts.PerkNames.PulseAbility, Consts.PerkNames.StorageAbility };
 
         // Upgrade perks - shown in normal perk selection
         private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
-        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ShieldAbilityUltimate, Consts.PerkNames.InfiniteAmmoAbilityUltimate, Consts.PerkNames.ExplosionAbilityUltimate, Consts.PerkNames.InterdimensionalStorageAbilityUltimate };
+        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ImmuneAbilityUltimate, Consts.PerkNames.AmmoAbilityUltimate, Consts.PerkNames.PulseAbilityUltimate, Consts.PerkNames.StorageAbilityUltimate };
 
 
 
         private readonly Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
-            [Consts.PerkNames.ShieldAbility] = 1,
-            [Consts.PerkNames.InfiniteAmmoAbility] = 1,
-            [Consts.PerkNames.ExplosionAbility] = 1,
-            [Consts.PerkNames.InterdimensionalStorageAbility] = 1,
+            [Consts.PerkNames.ImmuneAbility] = 1,
+            [Consts.PerkNames.AmmoAbility] = 1,
+            [Consts.PerkNames.PulseAbility] = 1,
+            [Consts.PerkNames.StorageAbility] = 1,
             [Consts.PerkNames.AbilityCooldown] = 2,
             [Consts.PerkNames.AbilityDuration] = 2,
             [Consts.PerkNames.ShortTermInvestment] = 1,
             [Consts.PerkNames.LongTermInvestment] = 1,
             [Consts.PerkNames.PerkLuck] = 2,
             // Ultimate perks are level 1 only
-            [Consts.PerkNames.ShieldAbilityUltimate] = 1,
-            [Consts.PerkNames.InfiniteAmmoAbilityUltimate] = 1,
-            [Consts.PerkNames.ExplosionAbilityUltimate] = 1,
-            [Consts.PerkNames.InterdimensionalStorageAbilityUltimate] = 1
+            [Consts.PerkNames.ImmuneAbilityUltimate] = 1,
+            [Consts.PerkNames.AmmoAbilityUltimate] = 1,
+            [Consts.PerkNames.PulseAbilityUltimate] = 1,
+            [Consts.PerkNames.StorageAbilityUltimate] = 1
         };
 
         private readonly Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
         {
-            [Consts.PerkNames.ShieldAbility] = new List<string>(),
-            [Consts.PerkNames.InfiniteAmmoAbility] = new List<string>(),
-            [Consts.PerkNames.ExplosionAbility] = new List<string>(),
-            [Consts.PerkNames.InterdimensionalStorageAbility] = new List<string>(),
+            [Consts.PerkNames.ImmuneAbility] = new List<string>(),
+            [Consts.PerkNames.AmmoAbility] = new List<string>(),
+            [Consts.PerkNames.PulseAbility] = new List<string>(),
+            [Consts.PerkNames.StorageAbility] = new List<string>(),
             [Consts.PerkNames.AbilityCooldown] = new List<string>(),
             [Consts.PerkNames.AbilityDuration] = new List<string>(),
             [Consts.PerkNames.ShortTermInvestment] = new List<string>(),
             [Consts.PerkNames.LongTermInvestment] = new List<string>(),
             [Consts.PerkNames.PerkLuck] = new List<string>(),
             // Ultimate perks require the base ability to be unlocked
-            [Consts.PerkNames.ShieldAbilityUltimate] = new List<string> { Consts.PerkNames.ShieldAbility },
-            [Consts.PerkNames.InfiniteAmmoAbilityUltimate] = new List<string> { Consts.PerkNames.InfiniteAmmoAbility },
-            [Consts.PerkNames.ExplosionAbilityUltimate] = new List<string> { Consts.PerkNames.ExplosionAbility },
-            [Consts.PerkNames.InterdimensionalStorageAbilityUltimate] = new List<string> { Consts.PerkNames.InterdimensionalStorageAbility }
+            [Consts.PerkNames.ImmuneAbilityUltimate] = new List<string> { Consts.PerkNames.ImmuneAbility },
+            [Consts.PerkNames.AmmoAbilityUltimate] = new List<string> { Consts.PerkNames.AmmoAbility },
+            [Consts.PerkNames.PulseAbilityUltimate] = new List<string> { Consts.PerkNames.PulseAbility },
+            [Consts.PerkNames.StorageAbilityUltimate] = new List<string> { Consts.PerkNames.StorageAbility }
         };
 
         private readonly Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -85,44 +85,44 @@ namespace SpiderSurge
 
 
 
-        public static void EnableShieldAbility()
+        public static void EnableImmuneAbility()
         {
-            EnableAbility<ShieldAbility>(Consts.PerkNames.ShieldAbility);
+            EnableAbility<ImmuneAbility>(Consts.PerkNames.ImmuneAbility);
         }
 
-        public static void EnableInfiniteAmmoAbility()
+        public static void EnableAmmoAbility()
         {
-            EnableAbility<InfiniteAmmoAbility>(Consts.PerkNames.InfiniteAmmoAbility);
+            EnableAbility<AmmoAbility>(Consts.PerkNames.AmmoAbility);
         }
 
-        public static void EnableExplosionAbility()
+        public static void EnablePulseAbility()
         {
-            EnableAbility<ExplosionAbility>(Consts.PerkNames.ExplosionAbility);
+            EnableAbility<PulseAbility>(Consts.PerkNames.PulseAbility);
         }
 
         public static void EnableStorageAbility()
         {
-            EnableAbility<InterdimensionalStorageAbility>(Consts.PerkNames.InterdimensionalStorageAbility);
+            EnableAbility<StorageAbility>(Consts.PerkNames.StorageAbility);
         }
 
-        public static void EnableShieldUltimate()
+        public static void EnableImmuneUltimate()
         {
-            EnableUltimate<ShieldAbility>(Consts.PerkNames.ShieldAbilityUltimate);
+            EnableUltimate<ImmuneAbility>(Consts.PerkNames.ImmuneAbilityUltimate);
         }
 
-        public static void EnableInfiniteAmmoUltimate()
+        public static void EnableAmmoUltimate()
         {
-            EnableUltimate<InfiniteAmmoAbility>(Consts.PerkNames.InfiniteAmmoAbilityUltimate);
+            EnableUltimate<AmmoAbility>(Consts.PerkNames.AmmoAbilityUltimate);
         }
 
-        public static void EnableExplosionUltimate()
+        public static void EnablePulseUltimate()
         {
-            EnableUltimate<ExplosionAbility>(Consts.PerkNames.ExplosionAbilityUltimate);
+            EnableUltimate<PulseAbility>(Consts.PerkNames.PulseAbilityUltimate);
         }
 
         public static void EnableStorageUltimate()
         {
-            EnableUltimate<InterdimensionalStorageAbility>(Consts.PerkNames.InterdimensionalStorageAbilityUltimate);
+            EnableUltimate<StorageAbility>(Consts.PerkNames.StorageAbilityUltimate);
         }
 
         private static void EnableAbility<T>(string perkName) where T : BaseAbility
@@ -218,19 +218,19 @@ namespace SpiderSurge
 
             if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
             {
-                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
                 if (!hasAnyUltimate) return false;
             }
 
             if (perkName == Consts.PerkNames.ShortTermInvestment || perkName == Consts.PerkNames.LongTermInvestment)
             {
-                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ShieldAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.ExplosionAbilityUltimate) > 0 ||
-                                      GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbilityUltimate) > 0;
+                bool hasAnyUltimate = GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
+                                      GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
                 if (!hasAnyUltimate) return false;
             }
 
@@ -239,15 +239,15 @@ namespace SpiderSurge
 
         public bool HasAnyAbilityUnlocked()
         {
-            return GetPerkLevel(Consts.PerkNames.ShieldAbility) > 0 || GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0 || GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbility) > 0;
+            return GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0 || GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.PulseAbility) > 0 || GetPerkLevel(Consts.PerkNames.StorageAbility) > 0;
         }
 
         public string GetChosenAbilityUltimate()
         {
-            if (GetPerkLevel(Consts.PerkNames.ShieldAbility) > 0) return Consts.PerkNames.ShieldAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.InfiniteAmmoAbility) > 0) return Consts.PerkNames.InfiniteAmmoAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0) return Consts.PerkNames.ExplosionAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.InterdimensionalStorageAbility) > 0) return Consts.PerkNames.InterdimensionalStorageAbilityUltimate;
+            if (GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0) return Consts.PerkNames.ImmuneAbilityUltimate;
+            if (GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return Consts.PerkNames.AmmoAbilityUltimate;
+            if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return Consts.PerkNames.PulseAbilityUltimate;
+            if (GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return Consts.PerkNames.StorageAbilityUltimate;
             return null;
         }
 
@@ -270,14 +270,14 @@ namespace SpiderSurge
         {
             _perkActions = new Dictionary<string, System.Action>
             {
-                [Consts.PerkNames.ShieldAbility] = EnableShieldAbility,
-                [Consts.PerkNames.InfiniteAmmoAbility] = EnableInfiniteAmmoAbility,
-                [Consts.PerkNames.ExplosionAbility] = EnableExplosionAbility,
-                [Consts.PerkNames.InterdimensionalStorageAbility] = EnableStorageAbility,
-                [Consts.PerkNames.ShieldAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.ShieldAbilityUltimate, EnableShieldUltimate),
-                [Consts.PerkNames.InfiniteAmmoAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.InfiniteAmmoAbilityUltimate, EnableInfiniteAmmoUltimate),
-                [Consts.PerkNames.ExplosionAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.ExplosionAbilityUltimate, EnableExplosionUltimate),
-                [Consts.PerkNames.InterdimensionalStorageAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.InterdimensionalStorageAbilityUltimate, EnableStorageUltimate)
+                [Consts.PerkNames.ImmuneAbility] = EnableImmuneAbility,
+                [Consts.PerkNames.AmmoAbility] = EnableAmmoAbility,
+                [Consts.PerkNames.PulseAbility] = EnablePulseAbility,
+                [Consts.PerkNames.StorageAbility] = EnableStorageAbility,
+                [Consts.PerkNames.ImmuneAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.ImmuneAbilityUltimate, EnableImmuneUltimate),
+                [Consts.PerkNames.AmmoAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.AmmoAbilityUltimate, EnableAmmoUltimate),
+                [Consts.PerkNames.PulseAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.PulseAbilityUltimate, EnablePulseUltimate),
+                [Consts.PerkNames.StorageAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.StorageAbilityUltimate, EnableStorageUltimate)
             };
         }
 
@@ -338,9 +338,9 @@ namespace SpiderSurge
             if (durationMod == null || durationMod.data == null) return;
 
             Sprite newIcon;
-            if (GetPerkLevel(Consts.PerkNames.ExplosionAbility) > 0)
+            if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0)
             {
-                newIcon = IconLoader.GetIcon("explosion_duration_perk");
+                newIcon = IconLoader.GetIcon("pulse_duration_perk");
             }
             else
             {

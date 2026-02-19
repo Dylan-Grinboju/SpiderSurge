@@ -8,20 +8,20 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
-    public class ShieldAbility : BaseAbility
+    public class ImmuneAbility : BaseAbility
     {
-        private static Dictionary<SpiderHealthSystem, ShieldAbility> shieldsByHealth = new Dictionary<SpiderHealthSystem, ShieldAbility>();
+        private static Dictionary<SpiderHealthSystem, ImmuneAbility> immuneByHealthSystem = new Dictionary<SpiderHealthSystem, ImmuneAbility>();
 
-        public override string PerkName => Consts.PerkNames.ShieldAbility;
+        public override string PerkName => Consts.PerkNames.ImmuneAbility;
 
-        public override float AbilityBaseDuration => Consts.Values.Shield.AbilityBaseDuration;
-        public override float AbilityBaseCooldown => Consts.Values.Shield.AbilityBaseCooldown;
-        public override float UltimateBaseDuration => Consts.Values.Shield.UltimateBaseDuration;
-        public override float UltimateBaseCooldown => Consts.Values.Shield.UltimateBaseCooldown;
-        public override float AbilityDurationPerPerkLevel => Consts.Values.Shield.AbilityDurationIncreasePerLevel;
-        public override float AbilityCooldownPerPerkLevel => Consts.Values.Shield.AbilityCooldownReductionPerLevel;
-        public override float UltimateDurationPerPerkLevel => Consts.Values.Shield.UltimateDurationIncreasePerLevel;
-        public override float UltimateCooldownPerPerkLevel => Consts.Values.Shield.UltimateCooldownReductionPerLevel;
+        public override float AbilityBaseDuration => Consts.Values.Immune.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.Immune.AbilityBaseCooldown;
+        public override float UltimateBaseDuration => Consts.Values.Immune.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Immune.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Immune.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Immune.AbilityCooldownReductionPerLevel;
+        public override float UltimateDurationPerPerkLevel => Consts.Values.Immune.UltimateDurationIncreasePerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Immune.UltimateCooldownReductionPerLevel;
 
         public override float UltimateDuration
         {
@@ -41,16 +41,16 @@ namespace SpiderSurge
         }
 
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Resurgence";
+        public override string UltimatePerkDisplayName => "Neural Backup";
         public override string UltimatePerkDescription => "After a cast time, revive one dead player or summon 3 friendly wasps if nobody is dead.";
 
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
 
-        private bool hadShieldOnSessionStart = false;
+        private bool hadBarrierOnSessionStart = false;
         private bool wasHitDuringSession = false;
         private bool isUltimateCastPending = false;
-        private bool hadShieldOnUltimateCastStart = false;
+        private bool hadBarrierOnUltimateCastStart = false;
 
         public bool IsImmune { get; private set; }
 
@@ -65,7 +65,7 @@ namespace SpiderSurge
 
                 if (immuneTimeField == null)
                 {
-                    Logger.LogError("ShieldAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
+                    Logger.LogError("ImmuneAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
                 }
             }
 
@@ -88,13 +88,13 @@ namespace SpiderSurge
             {
                 yield return null;
             }
-            shieldsByHealth[spiderHealthSystem] = this;
+            immuneByHealthSystem[spiderHealthSystem] = this;
         }
 
-        public static ShieldAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
+        public static ImmuneAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
-            shieldsByHealth.TryGetValue(healthSystem, out var ability);
+            immuneByHealthSystem.TryGetValue(healthSystem, out var ability);
             return ability;
         }
 
@@ -109,15 +109,15 @@ namespace SpiderSurge
         protected override void OnActivate()
         {
             wasHitDuringSession = false;
-            hadShieldOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+            hadBarrierOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             ApplyImmunity(true);
 
             if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.ShieldAbility,
-                    Consts.SoundVolumes.ShieldAbility * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundNames.ImmuneAbility,
+                    Consts.SoundVolumes.ImmuneAbility * Consts.SoundVolumes.MasterVolume
                 );
             }
         }
@@ -126,10 +126,10 @@ namespace SpiderSurge
         {
             if (spiderHealthSystem != null)
             {
-                bool shouldKeepShield = hadShieldOnSessionStart && !wasHitDuringSession;
-                if (hadShieldOnSessionStart && !shouldKeepShield)
+                bool shouldKeepBarrier = hadBarrierOnSessionStart && !wasHitDuringSession;
+                if (hadBarrierOnSessionStart && !shouldKeepBarrier)
                 {
-                    DestroyShield();
+                    DestroyBarrier();
                     spiderHealthSystem.DisableShield();
                 }
             }
@@ -140,19 +140,19 @@ namespace SpiderSurge
             }
 
             wasHitDuringSession = false;
-            hadShieldOnSessionStart = false;
+            hadBarrierOnSessionStart = false;
         }
 
         protected override void OnActivateUltimate()
         {
             isUltimateCastPending = true;
-            hadShieldOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+            hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.ShieldUlt,
-                    Consts.SoundVolumes.ShieldUlt * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundNames.ImmuneUlt,
+                    Consts.SoundVolumes.ImmuneUlt * Consts.SoundVolumes.MasterVolume
                 );
             }
         }
@@ -166,7 +166,7 @@ namespace SpiderSurge
 
             isUltimateCastPending = false;
             ExecuteUltimateEffect();
-            hadShieldOnUltimateCastStart = false;
+            hadBarrierOnUltimateCastStart = false;
         }
 
 
@@ -318,7 +318,7 @@ namespace SpiderSurge
 
             if (TryRespawnDeadPlayer(out var revivedPlayer))
             {
-                if (hadShieldOnUltimateCastStart && Random.value <= 0.5f)
+                if (hadBarrierOnUltimateCastStart && Random.value <= 0.5f)
                 {
                     StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
                 }
@@ -490,16 +490,16 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (spiderHealthSystem != null && shieldsByHealth.ContainsKey(spiderHealthSystem))
+            if (spiderHealthSystem != null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
             {
-                shieldsByHealth.Remove(spiderHealthSystem);
+                immuneByHealthSystem.Remove(spiderHealthSystem);
             }
 
             isUltimateCastPending = false;
-            hadShieldOnUltimateCastStart = false;
+            hadBarrierOnUltimateCastStart = false;
         }
 
-        private void DestroyShield()
+        private void DestroyBarrier()
         {
             try
             {
@@ -514,7 +514,7 @@ namespace SpiderSurge
             }
             catch (System.Exception e)
             {
-                Logger.LogError($"Failed to trigger shield explosion for player {playerInput.playerIndex}: {e.Message}");
+                Logger.LogError($"Failed to trigger immune barrier burst for player {playerInput.playerIndex}: {e.Message}");
             }
         }
     }

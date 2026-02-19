@@ -38,10 +38,10 @@ namespace SpiderSurge
         {
             if (healthSystem == null) return;
 
-            var storageAbility = InterdimensionalStorageAbility.GetByHealthSystem(healthSystem);
+            var storageAbility = StorageAbility.GetByHealthSystem(healthSystem);
             if (storageAbility == null && healthSystem.rootObject != null)
             {
-                storageAbility = healthSystem.rootObject.GetComponent<InterdimensionalStorageAbility>();
+                storageAbility = healthSystem.rootObject.GetComponent<StorageAbility>();
             }
 
             storageAbility?.OnCharacterDied();
@@ -49,29 +49,29 @@ namespace SpiderSurge
 
         private static void TryRecordHit(SpiderHealthSystem healthSystem)
         {
-            ShieldAbility ability = GetAbilitySafe(healthSystem);
+            ImmuneAbility ability = GetAbilitySafe(healthSystem);
             if (ability != null)
             {
                 ability.RegisterHit();
             }
         }
 
-        private static ShieldAbility GetAbilitySafe(SpiderHealthSystem healthSystem)
+        private static ImmuneAbility GetAbilitySafe(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
 
-            var ability = ShieldAbility.GetByHealthSystem(healthSystem);
+            var ability = ImmuneAbility.GetByHealthSystem(healthSystem);
 
             if (ability == null)
             {
-                ability = healthSystem.GetComponent<ShieldAbility>();
+                ability = healthSystem.GetComponent<ImmuneAbility>();
 
                 if (ability == null && healthSystem.rootObject != null)
                 {
-                    ability = healthSystem.rootObject.GetComponentInChildren<ShieldAbility>();
+                    ability = healthSystem.rootObject.GetComponentInChildren<ImmuneAbility>();
                     if (ability == null)
                     {
-                        ability = healthSystem.rootObject.GetComponentInParent<ShieldAbility>();
+                        ability = healthSystem.rootObject.GetComponentInParent<ImmuneAbility>();
                     }
                 }
             }

@@ -189,7 +189,7 @@ namespace SpiderSurge
                         var playerAbilities = controller.GetComponents<BaseAbility>();
                         foreach (var ability in playerAbilities)
                         {
-                            if (ability is ShieldAbility)
+                            if (ability is ImmuneAbility)
                             {
                                 continue;
                             }
@@ -210,8 +210,8 @@ namespace SpiderSurge
                     PerksManager.Instance.IsUltSwapPerkSelection = true;
                 }
 
-                // Update InterdimensionalStorageAbility cache
-                var abilities = UnityEngine.Object.FindObjectsOfType<InterdimensionalStorageAbility>();
+                // Update StorageAbility cache
+                var abilities = UnityEngine.Object.FindObjectsOfType<StorageAbility>();
                 foreach (var ab in abilities)
                 {
                     ab.UpdateCachedModifierLevels();

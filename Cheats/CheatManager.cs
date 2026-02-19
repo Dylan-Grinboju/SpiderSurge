@@ -42,15 +42,31 @@ namespace SpiderSurge
         // Surge perks for cheat menu
         private static readonly (string key, string title)[] _surgePerks = new (string key, string title)[]
         {
-            ("shieldAbility", "Shield Ability"),
-            ("infiniteAmmoAbility", "Infinite Ammo Ability"),
-            ("explosionAbility", "Explosion Ability"),
-            ("interdimensionalStorageAbility", "Interdimensional Storage"),
-            ("abilityCooldown", "Ability Cooldown"),
-            ("abilityDuration", "Ability Duration"),
-            ("shortTermInvestment", "Short Term Investment"),
-            ("longTermInvestment", "Long Term Investment"),
-            ("perkLuck", "Perk Luck"),
+            (Consts.PerkNames.ImmuneAbility, "Null Field"),
+            (Consts.PerkNames.AmmoAbility, "Bottomless Clip"),
+            (Consts.PerkNames.PulseAbility, "Kinetic Pulse"),
+            (Consts.PerkNames.StorageAbility, "Pocket Dimention"),
+            (Consts.PerkNames.AbilityCooldown, "Ability Cooldown"),
+            (Consts.PerkNames.AbilityDuration, "Ability Duration"),
+            (Consts.PerkNames.ShortTermInvestment, "Short Term Investment"),
+            (Consts.PerkNames.LongTermInvestment, "Long Term Investment"),
+            (Consts.PerkNames.PerkLuck, "Perk Luck"),
+        };
+
+        private static readonly Dictionary<string, string> _abilityToUltimatePerk = new Dictionary<string, string>
+        {
+            [Consts.PerkNames.ImmuneAbility] = Consts.PerkNames.ImmuneAbilityUltimate,
+            [Consts.PerkNames.AmmoAbility] = Consts.PerkNames.AmmoAbilityUltimate,
+            [Consts.PerkNames.PulseAbility] = Consts.PerkNames.PulseAbilityUltimate,
+            [Consts.PerkNames.StorageAbility] = Consts.PerkNames.StorageAbilityUltimate
+        };
+
+        private static readonly Dictionary<string, System.Action> _abilityEnableActions = new Dictionary<string, System.Action>
+        {
+            [Consts.PerkNames.ImmuneAbility] = PerksManager.EnableImmuneAbility,
+            [Consts.PerkNames.AmmoAbility] = PerksManager.EnableAmmoAbility,
+            [Consts.PerkNames.PulseAbility] = PerksManager.EnablePulseAbility,
+            [Consts.PerkNames.StorageAbility] = PerksManager.EnableStorageAbility
         };
 
         public bool SpawningFrozen => _spawningFrozen;
@@ -542,10 +558,9 @@ namespace SpiderSurge
                 if (SurgeGameModeManager.Instance != null)
                 {
                     currentLevel = PerksManager.Instance.GetPerkLevel(key);
-                    // Add Ultimate level for abilities
-                    if (key.EndsWith("Ability"))
+                    if (_abilityToUltimatePerk.TryGetValue(key, out string ultimateKey))
                     {
-                        currentLevel += PerksManager.Instance.GetPerkLevel(key + "Ultimate");
+                        currentLevel += PerksManager.Instance.GetPerkLevel(ultimateKey);
                     }
                 }
 
@@ -596,30 +611,28 @@ namespace SpiderSurge
         {
             if (SurgeGameModeManager.Instance == null) return;
 
-            // Handle abilities (level 1 -> Ultimate -> reset)
-            if (key.EndsWith("Ability"))
+            if (_abilityToUltimatePerk.TryGetValue(key, out string ultimateKey))
             {
                 int baseLevel = PerksManager.Instance.GetPerkLevel(key);
-                string ultimateKey = key + "Ultimate";
                 int ultimateLevel = PerksManager.Instance.GetPerkLevel(ultimateKey);
 
                 if (baseLevel == 0)
                 {
-                    // Activate base ability
-                    if (key == "shieldAbility") PerksManager.EnableShieldAbility();
-                    else if (key == "infiniteAmmoAbility") PerksManager.EnableInfiniteAmmoAbility();
-                    else if (key == "explosionAbility") PerksManager.EnableExplosionAbility();
-                    else if (key == "interdimensionalStorageAbility") PerksManager.EnableStorageAbility();
-                    else PerksManager.Instance.SetPerkLevel(key, 1);
+                    if (_abilityEnableActions.TryGetValue(key, out var enableAction))
+                    {
+                        enableAction.Invoke();
+                    }
+                    else
+                    {
+                        PerksManager.Instance.SetPerkLevel(key, 1);
+                    }
                 }
                 else if (baseLevel == 1 && ultimateLevel == 0)
                 {
-                    // Activate Ultimate
                     PerksManager.Instance.SetPerkLevel(ultimateKey, 1);
                 }
                 else
                 {
-                    // Reset both
                     PerksManager.Instance.SetPerkLevel(key, 0);
                     PerksManager.Instance.SetPerkLevel(ultimateKey, 0);
                 }

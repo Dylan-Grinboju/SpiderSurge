@@ -384,6 +384,7 @@ FodyWeavers.xsd
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
+!.vscode/build-deploy.ps1
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace

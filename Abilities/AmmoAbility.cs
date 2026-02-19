@@ -9,23 +9,23 @@ using UnityEngine.SceneManagement;
 
 namespace SpiderSurge
 {
-    public class InfiniteAmmoAbility : BaseAbility
+    public class AmmoAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, InfiniteAmmoAbility> playerInfiniteAmmo = new Dictionary<PlayerInput, InfiniteAmmoAbility>();
+        public static Dictionary<PlayerInput, AmmoAbility> playerAmmoAbilities = new Dictionary<PlayerInput, AmmoAbility>();
 
-        public override string PerkName => Consts.PerkNames.InfiniteAmmoAbility;
+        public override string PerkName => Consts.PerkNames.AmmoAbility;
 
-        public override float AbilityBaseDuration => Consts.Values.InfiniteAmmo.AbilityBaseDuration;
-        public override float AbilityBaseCooldown => Consts.Values.InfiniteAmmo.AbilityBaseCooldown;
-        public override float UltimateBaseCooldown => Consts.Values.InfiniteAmmo.UltimateBaseCooldown;
-        public override float AbilityDurationPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityDurationIncreasePerLevel;
-        public override float AbilityCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.AbilityCooldownReductionPerLevel;
-        public override float UltimateCooldownPerPerkLevel => Consts.Values.InfiniteAmmo.UltimateCooldownReductionPerLevel;
-        public override float UltimateBaseDuration => Consts.Values.InfiniteAmmo.UltimateBaseDuration;
+        public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
+        public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown;
+        public override float UltimateBaseCooldown => Consts.Values.Ammo.UltimateBaseCooldown;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Ammo.AbilityDurationIncreasePerLevel;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Ammo.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Ammo.UltimateCooldownReductionPerLevel;
+        public override float UltimateBaseDuration => Consts.Values.Ammo.UltimateBaseDuration;
 
         // Ultimate: Care Package
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Care Package";
+        public override string UltimatePerkDisplayName => "care package";
         public override string UltimatePerkDescription => "Spawns weapons at half the weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
@@ -41,7 +41,7 @@ namespace SpiderSurge
             base.Awake();
             if (playerInput != null)
             {
-                playerInfiniteAmmo[playerInput] = this;
+                playerAmmoAbilities[playerInput] = this;
             }
 
             if (networkAmmoField == null)
@@ -51,7 +51,7 @@ namespace SpiderSurge
 
                 if (networkAmmoField == null)
                 {
-                    Logger.LogError("InfiniteAmmoAbility: Could not find networkAmmo field!");
+                    Logger.LogError("AmmoAbility: Could not find networkAmmo field!");
                 }
             }
         }
@@ -73,7 +73,7 @@ namespace SpiderSurge
                 weaponCheckTimer -= Time.deltaTime;
                 if (weaponCheckTimer <= 0)
                 {
-                    weaponCheckTimer = Consts.Values.InfiniteAmmo.CheckInterval;
+                    weaponCheckTimer = Consts.Values.Ammo.CheckInterval;
                     weaponManager = GetComponentInChildren<SpiderWeaponManager>();
                     if (weaponManager == null && playerController != null)
                     {
@@ -144,7 +144,7 @@ namespace SpiderSurge
                 }
                 catch (System.Exception ex)
                 {
-                    Logger.LogError($"InfiniteAmmoAbility: Failed to set ammo via reflection: {ex.Message}");
+                    Logger.LogError($"AmmoAbility: Failed to set ammo via reflection: {ex.Message}");
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace SpiderSurge
             }
             else
             {
-                Logger.LogWarning($"Infinite Ammo ACTIVATED for player {playerInput.playerIndex} - no weapon equipped");
+                Logger.LogWarning($"Bottomless Clip activated for player {playerInput.playerIndex} - no weapon equipped");
             }
         }
 
@@ -181,7 +181,7 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            // Ultimate does NOT grant infinite ammo - it only spawns weapons
+            // Ultimate does not grant ammo locking - it only spawns weapons
             SoundManager.Instance?.PlaySound(
                     Consts.SoundNames.AmmoAbility,
                     Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
@@ -296,9 +296,9 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (playerInput != null && playerInfiniteAmmo.ContainsKey(playerInput))
+            if (playerInput != null && playerAmmoAbilities.ContainsKey(playerInput))
             {
-                playerInfiniteAmmo.Remove(playerInput);
+                playerAmmoAbilities.Remove(playerInput);
             }
         }
     }

@@ -56,30 +56,30 @@ namespace SpiderSurge
                     spiderController.gameObject.AddComponent<InputInterceptor>();
                 }
 
-                if (spiderController.GetComponent<ShieldAbility>() == null)
+                if (spiderController.GetComponent<ImmuneAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<ShieldAbility>();
+                    spiderController.gameObject.AddComponent<ImmuneAbility>();
                 }
 
-                var shieldAbility = spiderController.GetComponent<ShieldAbility>();
-                if (isRespawn && shieldAbility != null && shieldAbility.IsUnlocked())
+                var immuneAbility = spiderController.GetComponent<ImmuneAbility>();
+                if (isRespawn && immuneAbility != null && immuneAbility.IsUnlocked())
                 {
-                    shieldAbility.ForceStartCooldown();
+                    immuneAbility.ForceStartCooldown();
                 }
 
-                if (spiderController.GetComponent<InfiniteAmmoAbility>() == null)
+                if (spiderController.GetComponent<AmmoAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<InfiniteAmmoAbility>();
+                    spiderController.gameObject.AddComponent<AmmoAbility>();
                 }
 
-                if (spiderController.GetComponent<ExplosionAbility>() == null)
+                if (spiderController.GetComponent<PulseAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<ExplosionAbility>();
+                    spiderController.gameObject.AddComponent<PulseAbility>();
                 }
 
-                if (spiderController.GetComponent<InterdimensionalStorageAbility>() == null)
+                if (spiderController.GetComponent<StorageAbility>() == null)
                 {
-                    spiderController.gameObject.AddComponent<InterdimensionalStorageAbility>();
+                    spiderController.gameObject.AddComponent<StorageAbility>();
                 }
             }
             catch (System.Exception ex)

@@ -6,15 +6,15 @@ namespace SpiderSurge
     {
         public static class PerkNames
         {
-            public const string ShieldAbility = "shieldAbility";
-            public const string InfiniteAmmoAbility = "infiniteAmmoAbility";
-            public const string ExplosionAbility = "explosionAbility";
-            public const string InterdimensionalStorageAbility = "interdimensionalStorageAbility";
+            public const string ImmuneAbility = "immune";
+            public const string AmmoAbility = "ammo";
+            public const string PulseAbility = "pulse";
+            public const string StorageAbility = "storage";
 
-            public const string ShieldAbilityUltimate = "shieldAbilityUltimate";
-            public const string InfiniteAmmoAbilityUltimate = "infiniteAmmoAbilityUltimate";
-            public const string ExplosionAbilityUltimate = "explosionAbilityUltimate";
-            public const string InterdimensionalStorageAbilityUltimate = "interdimensionalStorageAbilityUltimate";
+            public const string ImmuneAbilityUltimate = "immuneUltimate";
+            public const string AmmoAbilityUltimate = "ammoUltimate";
+            public const string PulseAbilityUltimate = "pulseUltimate";
+            public const string StorageAbilityUltimate = "storageUltimate";
 
             public const string AbilityCooldown = "abilityCooldown";
             public const string AbilityDuration = "abilityDuration";
@@ -43,10 +43,10 @@ namespace SpiderSurge
             public const string AbilityNotReady = "ability_not_ready";
             public const string AbilityReady = "ability_ready";
             public const string AmmoAbility = "ammo_ability";
-            public const string ExplosionAbility = "explosion_ability";
+            public const string PulseAbility = "pulse_ability";
             public const string PowerUp = "power_up";
-            public const string ShieldAbility = "shield_ability";
-            public const string ShieldUlt = "shield_ult";
+            public const string ImmuneAbility = "immune_ability";
+            public const string ImmuneUlt = "immune_ult";
             public const string StorageSend = "storage_send";
             public const string StorageRetrieve = "storage_retrieve";
             public const string AbilityEnded = "ability_ended";
@@ -58,10 +58,10 @@ namespace SpiderSurge
             public static float AbilityNotReady = 0.5f;
             public static float AbilityReady = 1f;
             public static float AmmoAbility = 0.5f;
-            public static float ExplosionAbility = 0.5f;
+            public static float PulseAbility = 0.5f;
             public static float PowerUp = 0.5f;
-            public static float ShieldAbility = 0.9f;
-            public static float ShieldUlt = 0.7f;
+            public static float ImmuneAbility = 0.9f;
+            public static float ImmuneUlt = 0.7f;
             public static float StorageSend = 0.7f;
             public static float StorageRetrieve = 0.7f;
             public static float AbilityEnded = 0.7f;
@@ -84,7 +84,7 @@ namespace SpiderSurge
 
         public static class Values
         {
-            public static class Shield
+            public static class Immune
             {
                 public const float AbilityBaseCooldown = 15f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
@@ -96,7 +96,7 @@ namespace SpiderSurge
                 public const float UltimateDurationIncreasePerLevel = 2.5f;
             }
 
-            public static class InfiniteAmmo
+            public static class Ammo
             {
                 public const float AbilityBaseCooldown = 30f;
                 public const float AbilityCooldownReductionPerLevel = 7.5f;
@@ -108,7 +108,7 @@ namespace SpiderSurge
                 public const float CheckInterval = 0.5f;
             }
 
-            public static class Explosion
+            public static class Pulse
             {
                 public const float AbilityBaseCooldown = 15f;
                 public const float AbilityBaseDuration = 0f;
@@ -263,64 +263,64 @@ namespace SpiderSurge
         {
             private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Aegis",
-                [PerkNames.InfiniteAmmoAbility] = "Keep Shooting",
-                [PerkNames.ExplosionAbility] = "The Force",
-                [PerkNames.InterdimensionalStorageAbility] = "Interdimensional Storage",
+                [PerkNames.ImmuneAbility] = "Null Field",
+                [PerkNames.AmmoAbility] = "Bottomless Clip",
+                [PerkNames.PulseAbility] = "Kinetic Pulse",
+                [PerkNames.StorageAbility] = "Pocket Dimention",
                 [PerkNames.AbilityCooldown] = "Ability Cooldown",
                 [PerkNames.AbilityDuration] = "Ability Duration",
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
                 [PerkNames.LongTermInvestment] = "Long Term Investment",
                 [PerkNames.PerkLuck] = "Lucky",
                 // Ultimate perks - dynamic names based on which ability is active
-                [PerkNames.ShieldAbilityUltimate] = "Resurgence",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "Care Package",
-                [PerkNames.ExplosionAbilityUltimate] = "Unstoppable Force",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = "More Dimensions"
+                [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
+                [PerkNames.AmmoAbilityUltimate] = "care package",
+                [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
+                [PerkNames.StorageAbilityUltimate] = "Pocket Dimention^2"
             };
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "Unlocks an immunity ability with gold radiance",
-                [PerkNames.InfiniteAmmoAbility] = "Unlocks the infinite ammo ability",
-                [PerkNames.ExplosionAbility] = "Unlocks the knockback ability",
-                [PerkNames.InterdimensionalStorageAbility] = "Unlocks the storage ability",
+                [PerkNames.ImmuneAbility] = "Become immune to all damage for a short duration",
+                [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
+                [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
+                [PerkNames.StorageAbility] = "Store a weapon for later use",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
                 [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
                 [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
-                [PerkNames.ShieldAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
-                [PerkNames.ExplosionAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
+                [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
+                [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
+                [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
+                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
             {
-                [PerkNames.ShieldAbility] = "",
-                [PerkNames.InfiniteAmmoAbility] = "",
-                [PerkNames.ExplosionAbility] = "",
-                [PerkNames.InterdimensionalStorageAbility] = "",
+                [PerkNames.ImmuneAbility] = "",
+                [PerkNames.AmmoAbility] = "",
+                [PerkNames.PulseAbility] = "",
+                [PerkNames.StorageAbility] = "",
                 [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown. (Requires ultimate unlocked)",
                 [PerkNames.AbilityDuration] = "Increases ultimate duration. (Requires ultimate unlocked)",
                 [PerkNames.ShortTermInvestment] = "",
                 [PerkNames.LongTermInvestment] = "",
                 [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
-                [PerkNames.ShieldAbilityUltimate] = "",
-                [PerkNames.InfiniteAmmoAbilityUltimate] = "",
-                [PerkNames.ExplosionAbilityUltimate] = "",
-                [PerkNames.InterdimensionalStorageAbilityUltimate] = ""
+                [PerkNames.ImmuneAbilityUltimate] = "",
+                [PerkNames.AmmoAbilityUltimate] = "",
+                [PerkNames.PulseAbilityUltimate] = "",
+                [PerkNames.StorageAbilityUltimate] = ""
             };
 
             // Custom display names for Duration perk based on active ability
-            private const string DURATION_NAME_WITH_EXPLOSION = "Bigger Explosion";
+            private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
             private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
             private const string DURATION_NAME_WITH_AMMO = "More Spawns";
 
             // Custom descriptions for Duration perk based on active ability
-            private const string DURATION_DESC_WITH_EXPLOSION = "Increases knockback ability area of effect";
-            private const string DURATION_UPGRADE_DESC_WITH_EXPLOSION = "Increases ultimate explosion area of effect";
+            private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
+            private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
             private const string DURATION_DESC_WITH_AMMO = "Increases ammo ability duration";
@@ -330,15 +330,15 @@ namespace SpiderSurge
             {
                 if (perksManager != null && name == PerkNames.AbilityDuration)
                 {
-                    if (perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
+                    if (perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
                     {
-                        return DURATION_NAME_WITH_EXPLOSION;
+                        return DURATION_NAME_WITH_PULSE;
                     }
-                    if (perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                    if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                     {
                         return DURATION_NAME_WITH_STORAGE;
                     }
-                    if (perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                    if (perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
                     {
                         return DURATION_NAME_WITH_AMMO;
                     }
@@ -350,15 +350,15 @@ namespace SpiderSurge
             {
                 if (perksManager == null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
 
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
                 {
-                    return DURATION_DESC_WITH_EXPLOSION;
+                    return DURATION_DESC_WITH_PULSE;
                 }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                 {
                     return DURATION_DESC_WITH_STORAGE;
                 }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
                 {
                     return DURATION_DESC_WITH_AMMO;
                 }
@@ -369,15 +369,15 @@ namespace SpiderSurge
             {
                 if (perksManager == null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
 
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ExplosionAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
                 {
-                    return DURATION_UPGRADE_DESC_WITH_EXPLOSION;
+                    return DURATION_UPGRADE_DESC_WITH_PULSE;
                 }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InterdimensionalStorageAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_STORAGE;
                 }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.InfiniteAmmoAbility) > 0)
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_AMMO;
                 }

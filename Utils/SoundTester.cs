@@ -74,10 +74,10 @@ namespace SpiderSurge
                 },
                 new SoundInfo
                 {
-                    Name = Consts.SoundNames.ExplosionAbility,
-                    DisplayName = "Explosion Ability",
-                    GetVolume = () => Consts.SoundVolumes.ExplosionAbility,
-                    SetVolume = (v) => Consts.SoundVolumes.ExplosionAbility = v
+                    Name = Consts.SoundNames.PulseAbility,
+                    DisplayName = "Pulse Ability",
+                    GetVolume = () => Consts.SoundVolumes.PulseAbility,
+                    SetVolume = (v) => Consts.SoundVolumes.PulseAbility = v
                 },
                 new SoundInfo
                 {
@@ -88,17 +88,17 @@ namespace SpiderSurge
                 },
                 new SoundInfo
                 {
-                    Name = Consts.SoundNames.ShieldAbility,
-                    DisplayName = "Shield Ability",
-                    GetVolume = () => Consts.SoundVolumes.ShieldAbility,
-                    SetVolume = (v) => Consts.SoundVolumes.ShieldAbility = v
+                    Name = Consts.SoundNames.ImmuneAbility,
+                    DisplayName = "Immune Ability",
+                    GetVolume = () => Consts.SoundVolumes.ImmuneAbility,
+                    SetVolume = (v) => Consts.SoundVolumes.ImmuneAbility = v
                 },
                 new SoundInfo
                 {
-                    Name = Consts.SoundNames.ShieldUlt,
-                    DisplayName = "Shield Ultimate",
-                    GetVolume = () => Consts.SoundVolumes.ShieldUlt,
-                    SetVolume = (v) => Consts.SoundVolumes.ShieldUlt = v
+                    Name = Consts.SoundNames.ImmuneUlt,
+                    DisplayName = "Immune Ultimate",
+                    GetVolume = () => Consts.SoundVolumes.ImmuneUlt,
+                    SetVolume = (v) => Consts.SoundVolumes.ImmuneUlt = v
                 },
                 new SoundInfo
                 {
