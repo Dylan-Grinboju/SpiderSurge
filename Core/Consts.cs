@@ -90,11 +90,13 @@ namespace SpiderSurge
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1.5f;
-                public const float UltimateBaseCooldown = 1f;
+                public const float UltimateBaseCooldown = 75f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
                 public const float UltimateBaseDuration = 10f;
                 public const float UltimateDurationIncreasePerLevel = 2.5f;
-                public const float UltimateShieldedAllySpawnChance = 1f;
+                public const float UltimateShieldSynergyChance = 0.5f;
+                public const int UltimateFriendlyWaspSpawnCount = 3;
+                public const int UltimateFriendlyWaspShieldBonusCount = 1;
             }
 
             public static class Ammo

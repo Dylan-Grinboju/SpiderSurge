@@ -324,16 +324,13 @@ namespace SpiderSurge
 
             if (TryRespawnDeadPlayer(out var revivedPlayer))
             {
-                Logger.LogInfo($"[ImmuneAbility] Ultimate revived player. Barrier-at-cast-start={hadBarrierOnUltimateCastStart}");
-                if (hadBarrierOnUltimateCastStart && Random.value <= 0.5f)
+                if (hadBarrierOnUltimateCastStart && Random.value <= Consts.Values.Immune.UltimateShieldSynergyChance)
                 {
-                    Logger.LogInfo("[ImmuneAbility] Attempting to apply shield to revived player.");
                     StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
                 }
                 return;
             }
 
-            Logger.LogInfo("[ImmuneAbility] No dead player found; spawning friendly wasps.");
             SpawnFriendlyWasps();
         }
 
@@ -387,7 +384,6 @@ namespace SpiderSurge
                 if (revivedHealth != null)
                 {
                     revivedHealth.EnableShield();
-                    Logger.LogInfo("[ImmuneAbility] Shield applied to revived player.");
                     yield break;
                 }
 
@@ -419,51 +415,68 @@ namespace SpiderSurge
                 return;
             }
 
-            var selectedSpawns = GetDistinctSpawnPoints(spawnPoints, 3);
-            Logger.LogInfo($"[ImmuneAbility] Spawning {selectedSpawns.Count} friendly wasp(s).");
-            int shieldedCount = 0;
+            int baseSpawnCount = Consts.Values.Immune.UltimateFriendlyWaspSpawnCount;
+            int shieldBonusCount = hadBarrierOnUltimateCastStart ? Consts.Values.Immune.UltimateFriendlyWaspShieldBonusCount : 0;
+            var selectedSpawns = GetDistinctSpawnPoints(spawnPoints, baseSpawnCount);
 
             foreach (var spawn in selectedSpawns)
             {
-                if (spawn == null)
+                if (!TrySpawnFriendlyWaspAtTransform(friendlyWaspPrefab, spawn))
                 {
-                    Logger.LogWarning("[ImmuneAbility] Selected friendly wasp spawn point was null.");
                     continue;
-                }
-
-                var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
-                spawnedObj.SetActive(true);
-                Logger.LogInfo($"[ImmuneAbility] Friendly wasp instantiated at {spawn.position}.");
-
-                var netObj = spawnedObj.GetComponent<NetworkObject>();
-                if (netObj != null)
-                {
-                    netObj.Spawn(true);
-                    netObj.DestroyWithScene = true;
-                    Logger.LogDebug("[ImmuneAbility] Friendly wasp NetworkObject spawned.");
-                }
-                else
-                {
-                    Logger.LogWarning("[ImmuneAbility] Friendly wasp has no NetworkObject component.");
-                }
-
-                if (EnemySpawner.instance != null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
-                {
-                    EnemySpawner.instance.spawnedEnemies.Add(spawnedObj);
-                }
-
-                if (Random.value <= Consts.Values.Immune.UltimateShieldedAllySpawnChance)
-                {
-                    bool shieldApplied = TryGiveEnemyShield(spawnedObj);
-                    if (shieldApplied)
-                    {
-                        shieldedCount++;
-                    }
-                    Logger.LogInfo($"[ImmuneAbility] Friendly wasp shield attempt result: {(shieldApplied ? "success" : "failed")}");
                 }
             }
 
-            Logger.LogInfo($"[ImmuneAbility] Friendly wasp spawn complete. Shielded={shieldedCount}/{selectedSpawns.Count}");
+            int extraSpawnCount = 0;
+            for (int i = 0; i < shieldBonusCount; i++)
+            {
+                if (Random.value > Consts.Values.Immune.UltimateShieldSynergyChance)
+                {
+                    continue;
+                }
+
+                var bonusSpawn = spawnPoints[Random.Range(0, spawnPoints.Length)];
+                if (TrySpawnFriendlyWaspAtTransform(friendlyWaspPrefab, bonusSpawn))
+                {
+                    extraSpawnCount++;
+                }
+            }
+
+        }
+
+        private bool TrySpawnFriendlyWaspAtTransform(GameObject friendlyWaspPrefab, Transform spawn)
+        {
+            if (friendlyWaspPrefab == null)
+            {
+                return false;
+            }
+
+            if (spawn == null)
+            {
+                Logger.LogWarning("[ImmuneAbility] Selected friendly wasp spawn point was null.");
+                return false;
+            }
+
+            var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
+            spawnedObj.SetActive(true);
+
+            var netObj = spawnedObj.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                netObj.Spawn(true);
+                netObj.DestroyWithScene = true;
+            }
+            else
+            {
+                Logger.LogWarning("[ImmuneAbility] Friendly wasp has no NetworkObject component.");
+            }
+
+            if (EnemySpawner.instance != null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
+            {
+                EnemySpawner.instance.spawnedEnemies.Add(spawnedObj);
+            }
+
+            return true;
         }
 
         private List<Transform> GetDistinctSpawnPoints(Transform[] spawnPoints, int count)
@@ -481,33 +494,6 @@ namespace SpiderSurge
             }
 
             return selectedSpawns;
-        }
-
-        private bool TryGiveEnemyShield(GameObject enemyObject)
-        {
-            if (enemyObject == null)
-            {
-                return false;
-            }
-
-            var enemyHealth = enemyObject.GetComponent<EnemyHealthSystem>();
-            if (enemyHealth == null || enemyHealth.shield == null)
-            {
-                return false;
-            }
-
-            enemyHealth.shield.SetActive(true);
-
-            try
-            {
-                var enableShieldMethod = typeof(EnemyHealthSystem).GetMethod("EnableShield", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                enableShieldMethod?.Invoke(enemyHealth, null);
-                return enemyHealth.shield.activeSelf;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         private bool IsServerAuthority()
