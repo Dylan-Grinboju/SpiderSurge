@@ -297,7 +297,7 @@ namespace SpiderSurge
             GUILayout.Label("• <b>Too Cool</b>: Increases <b>death radius</b> of the ultimate.", labelStyle);
             GUILayout.Space(8);
 
-            GUILayout.Label("<b><color=#FFD700>Pocket Dimention</color></b> + Weapon Perks:", labelStyle);
+            GUILayout.Label("<b><color=#FFD700>Pocket Dimension</color></b> + Weapon Perks:", labelStyle);
             GUILayout.Label("• <b>More Guns</b>, <b>More Boom</b>, or <b>More Particles</b>:", labelStyle);
             GUILayout.Label("  → <b>Level 1</b>: Keep matching stored weapons between rounds.", labelStyle);
             GUILayout.Label("  → <b>Level 2</b>: Keep matching stored weapons even after <b>death</b>.", labelStyle);

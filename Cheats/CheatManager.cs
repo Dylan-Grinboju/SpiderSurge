@@ -45,7 +45,7 @@ namespace SpiderSurge
             (Consts.PerkNames.ImmuneAbility, "Null Field"),
             (Consts.PerkNames.AmmoAbility, "Bottomless Clip"),
             (Consts.PerkNames.PulseAbility, "Kinetic Pulse"),
-            (Consts.PerkNames.StorageAbility, "Pocket Dimention"),
+            (Consts.PerkNames.StorageAbility, "Pocket Dimension"),
             (Consts.PerkNames.AbilityCooldown, "Ability Cooldown"),
             (Consts.PerkNames.AbilityDuration, "Ability Duration"),
             (Consts.PerkNames.ShortTermInvestment, "Short Term Investment"),

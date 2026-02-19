@@ -11,7 +11,7 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 - **New Abilities**:
     - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
-    - **Pocket Dimention**: Store and recall weapons at will, enabling advanced inventory tactics.
+    - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
     - **Null Field**: Deploys a temporary protective energy barrier.
 - **Custom Enemies**:
     - **Twin Whisp**: Fires dual projectiles simultaneously.

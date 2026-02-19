@@ -427,7 +427,6 @@ namespace SpiderSurge
                 }
             }
 
-            int extraSpawnCount = 0;
             for (int i = 0; i < shieldBonusCount; i++)
             {
                 if (Random.value > Consts.Values.Immune.UltimateShieldSynergyChance)
@@ -436,10 +435,7 @@ namespace SpiderSurge
                 }
 
                 var bonusSpawn = spawnPoints[Random.Range(0, spawnPoints.Length)];
-                if (TrySpawnFriendlyWaspAtTransform(friendlyWaspPrefab, bonusSpawn))
-                {
-                    extraSpawnCount++;
-                }
+                TrySpawnFriendlyWaspAtTransform(friendlyWaspPrefab, bonusSpawn);
             }
 
         }

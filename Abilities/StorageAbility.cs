@@ -19,7 +19,7 @@ namespace SpiderSurge
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Pocket Dimention^2";
+        public override string UltimatePerkDisplayName => "Pocket Dimension^2";
         public override string UltimatePerkDescription => "Adds a second storage slot (3x cooldown).";
 
         public override float AbilityDuration
@@ -364,7 +364,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = newWeapon.type
+                            Types = new List<Weapon.WeaponType>(newWeapon.type)
                         };
                     else
                         _storedWeaponData = new RuntimeStoredWeapon
@@ -372,7 +372,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = newWeapon.type
+                            Types = new List<Weapon.WeaponType>(newWeapon.type)
                         };
                 }
                 else

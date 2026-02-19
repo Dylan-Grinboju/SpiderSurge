@@ -113,6 +113,7 @@ namespace SpiderSurge
     public class PerkChoiseTimer_SetTimerValue_Patch
     {
         private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly Regex s_trailingDigits = new Regex(@"\d+$", RegexOptions.Compiled);
 
         [HarmonyPostfix]
         public static void Postfix(PerkChoiseTimer __instance)
@@ -122,7 +123,7 @@ namespace SpiderSurge
             var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
             if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
 
-            timerText.text = Regex.Replace(timerText.text, @"\d+$", "∞");
+            timerText.text = s_trailingDigits.Replace(timerText.text, "∞");
         }
     }
 }

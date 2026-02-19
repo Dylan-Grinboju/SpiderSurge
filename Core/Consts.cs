@@ -269,7 +269,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbility] = "Null Field",
                 [PerkNames.AmmoAbility] = "Bottomless Clip",
                 [PerkNames.PulseAbility] = "Kinetic Pulse",
-                [PerkNames.StorageAbility] = "Pocket Dimention",
+                [PerkNames.StorageAbility] = "Pocket Dimension",
                 [PerkNames.AbilityCooldown] = "Ability Cooldown",
                 [PerkNames.AbilityDuration] = "Ability Duration",
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
@@ -279,7 +279,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "care package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Pocket Dimention^2"
+                [PerkNames.StorageAbilityUltimate] = "Pocket Dimension^2"
             };
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>

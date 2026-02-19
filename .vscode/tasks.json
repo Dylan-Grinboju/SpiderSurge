@@ -12,7 +12,7 @@
     {
       "label": "Build + Deploy Mod",
       "type": "process",
-      "command": "C:/Program Files/PowerShell/7/pwsh.exe",
+      "command": "${env:ProgramFiles}/PowerShell/7/pwsh.exe",
       "args": [
         "-NoProfile",
         "-ExecutionPolicy",

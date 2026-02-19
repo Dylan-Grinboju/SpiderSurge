@@ -76,7 +76,7 @@ namespace SpiderSurge.Patches
                 var child = menu.objectParent.GetChild(i);
                 if (child != null)
                 {
-                    UnityEngine.Object.Destroy(child.gameObject);
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
                 }
             }
 

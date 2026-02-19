@@ -279,7 +279,7 @@ namespace SpiderSurge
         {
             try
             {
-                // Try to get weapons from VersusMode or SurvivalMode
+                // Try to get weapons from SurvivalMode
                 if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive())
                 {
                     return SurvivalMode.instance.GetRandomWeapon(false);
