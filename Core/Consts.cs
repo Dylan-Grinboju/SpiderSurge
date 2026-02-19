@@ -54,14 +54,14 @@ namespace SpiderSurge
 
         public static class SoundVolumes
         {
-            public static float LuckyUpgrade = 0.5f;
+            public static float LuckyUpgrade = 1f;
             public static float AbilityNotReady = 0.5f;
             public static float AbilityReady = 1f;
-            public static float AmmoAbility = 0.5f;
-            public static float PulseAbility = 0.5f;
-            public static float PowerUp = 0.5f;
+            public static float AmmoAbility = 0.75f;
+            public static float PulseAbility = 0.75f;
+            public static float PowerUp = 1f;
             public static float ImmuneAbility = 0.9f;
-            public static float ImmuneUlt = 0.7f;
+            public static float ImmuneUlt = 0.9f;
             public static float StorageSend = 0.7f;
             public static float StorageRetrieve = 0.7f;
             public static float AbilityEnded = 0.7f;
@@ -89,16 +89,17 @@ namespace SpiderSurge
                 public const float AbilityBaseCooldown = 15f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 3f;
-                public const float AbilityDurationIncreasePerLevel = 1f;
-                public const float UltimateBaseCooldown = 75f;
+                public const float AbilityDurationIncreasePerLevel = 1.5f;
+                public const float UltimateBaseCooldown = 1f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
                 public const float UltimateBaseDuration = 10f;
                 public const float UltimateDurationIncreasePerLevel = 2.5f;
+                public const float UltimateShieldedAllySpawnChance = 1f;
             }
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 30f;
+                public const float AbilityBaseCooldown = 25f;
                 public const float AbilityCooldownReductionPerLevel = 7.5f;
                 public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
@@ -111,11 +112,11 @@ namespace SpiderSurge
             public static class Pulse
             {
                 public const float AbilityBaseCooldown = 15f;
-                public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 30f;
-                public const float UltimateBaseDuration = 0f;
                 public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseDuration = 0f;
+                public const float UltimateBaseCooldown = 25f;
                 public const float UltimateCooldownReductionPerLevel = 7.5f;
+                public const float UltimateBaseDuration = 0f;
 
                 //duration perk
                 public const float AbilityBaseKnockbackRadius = 100f;
@@ -162,7 +163,7 @@ namespace SpiderSurge
             public static class Enemies
             {
                 public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 1.5f;
+                public const float SpawnCountMultiplier = 1.75f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
             }
@@ -302,8 +303,8 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "",
                 [PerkNames.PulseAbility] = "",
                 [PerkNames.StorageAbility] = "",
-                [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown. (Requires ultimate unlocked)",
-                [PerkNames.AbilityDuration] = "Increases ultimate duration. (Requires ultimate unlocked)",
+                [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
+                [PerkNames.AbilityDuration] = "Increases ultimate duration",
                 [PerkNames.ShortTermInvestment] = "",
                 [PerkNames.LongTermInvestment] = "",
                 [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
@@ -316,14 +317,12 @@ namespace SpiderSurge
             // Custom display names for Duration perk based on active ability
             private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
             private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
-            private const string DURATION_NAME_WITH_AMMO = "More Spawns";
 
             // Custom descriptions for Duration perk based on active ability
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
-            private const string DURATION_DESC_WITH_AMMO = "Increases ammo ability duration";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
@@ -337,10 +336,6 @@ namespace SpiderSurge
                     if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                     {
                         return DURATION_NAME_WITH_STORAGE;
-                    }
-                    if (perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_AMMO;
                     }
                 }
                 return displayNames.ContainsKey(name) ? displayNames[name] : name;
@@ -357,10 +352,6 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                 {
                     return DURATION_DESC_WITH_STORAGE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_AMMO;
                 }
                 return descriptions.ContainsKey(name) ? descriptions[name] : "";
             }

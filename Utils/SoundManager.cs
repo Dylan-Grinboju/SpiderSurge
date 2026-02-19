@@ -123,14 +123,14 @@ namespace SpiderSurge
                 if (chunkId == "fmt ")
                 {
                     // Format chunk
-                    int audioFormat = System.BitConverter.ToInt16(wavData, pos + 8);
+                    ushort audioFormat = System.BitConverter.ToUInt16(wavData, pos + 8);
                     channels = System.BitConverter.ToInt16(wavData, pos + 10);
                     sampleRate = System.BitConverter.ToInt32(wavData, pos + 12);
                     bitsPerSample = System.BitConverter.ToInt16(wavData, pos + 22);
 
-                    if (audioFormat != 1)
+                    if (audioFormat != 1 && audioFormat != 65534)
                     {
-                        Logger.LogWarning($"[SoundManager] Only PCM WAV format is supported. File: {clipName}");
+                        Logger.LogWarning($"[SoundManager] Unsupported WAV format {audioFormat}. File: {clipName}");
                         return null;
                     }
                 }

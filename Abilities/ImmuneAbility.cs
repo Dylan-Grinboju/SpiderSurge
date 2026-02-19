@@ -169,6 +169,11 @@ namespace SpiderSurge
             hadBarrierOnUltimateCastStart = false;
         }
 
+        protected override bool ShouldPlayAbilityEndedSound(bool wasUltimate)
+        {
+            return !wasUltimate;
+        }
+
 
         private Dictionary<SpriteRenderer, Color> _originalColors = new Dictionary<SpriteRenderer, Color>();
         private Color? _originalLightColor;
@@ -313,18 +318,22 @@ namespace SpiderSurge
         {
             if (!IsServerAuthority())
             {
+                Logger.LogDebug("[ImmuneAbility] Ultimate effect skipped: not server authority.");
                 return;
             }
 
             if (TryRespawnDeadPlayer(out var revivedPlayer))
             {
+                Logger.LogInfo($"[ImmuneAbility] Ultimate revived player. Barrier-at-cast-start={hadBarrierOnUltimateCastStart}");
                 if (hadBarrierOnUltimateCastStart && Random.value <= 0.5f)
                 {
+                    Logger.LogInfo("[ImmuneAbility] Attempting to apply shield to revived player.");
                     StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
                 }
                 return;
             }
 
+            Logger.LogInfo("[ImmuneAbility] No dead player found; spawning friendly wasps.");
             SpawnFriendlyWasps();
         }
 
@@ -370,6 +379,7 @@ namespace SpiderSurge
             {
                 if (revivedPlayer == null)
                 {
+                    Logger.LogWarning("[ImmuneAbility] Revived player reference became null before shield application.");
                     yield break;
                 }
 
@@ -377,12 +387,15 @@ namespace SpiderSurge
                 if (revivedHealth != null)
                 {
                     revivedHealth.EnableShield();
+                    Logger.LogInfo("[ImmuneAbility] Shield applied to revived player.");
                     yield break;
                 }
 
                 elapsed += Time.deltaTime;
                 yield return null;
             }
+
+            Logger.LogWarning("[ImmuneAbility] Timed out waiting to apply shield to revived player.");
         }
 
         private void SpawnFriendlyWasps()
@@ -390,6 +403,7 @@ namespace SpiderSurge
             var friendlyWaspPrefab = SurvivalMode.instance != null ? SurvivalMode.instance.friendlyWasp : null;
             if (friendlyWaspPrefab == null)
             {
+                Logger.LogWarning("[ImmuneAbility] Friendly wasp prefab is missing; cannot spawn friendly wasps.");
                 return;
             }
 
@@ -401,25 +415,36 @@ namespace SpiderSurge
 
             if (spawnPoints == null || spawnPoints.Length == 0)
             {
+                Logger.LogWarning("[ImmuneAbility] No spawn points found for friendly wasp spawn.");
                 return;
             }
 
             var selectedSpawns = GetDistinctSpawnPoints(spawnPoints, 3);
+            Logger.LogInfo($"[ImmuneAbility] Spawning {selectedSpawns.Count} friendly wasp(s).");
+            int shieldedCount = 0;
+
             foreach (var spawn in selectedSpawns)
             {
                 if (spawn == null)
                 {
+                    Logger.LogWarning("[ImmuneAbility] Selected friendly wasp spawn point was null.");
                     continue;
                 }
 
                 var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
                 spawnedObj.SetActive(true);
+                Logger.LogInfo($"[ImmuneAbility] Friendly wasp instantiated at {spawn.position}.");
 
                 var netObj = spawnedObj.GetComponent<NetworkObject>();
                 if (netObj != null)
                 {
                     netObj.Spawn(true);
                     netObj.DestroyWithScene = true;
+                    Logger.LogDebug("[ImmuneAbility] Friendly wasp NetworkObject spawned.");
+                }
+                else
+                {
+                    Logger.LogWarning("[ImmuneAbility] Friendly wasp has no NetworkObject component.");
                 }
 
                 if (EnemySpawner.instance != null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
@@ -427,11 +452,18 @@ namespace SpiderSurge
                     EnemySpawner.instance.spawnedEnemies.Add(spawnedObj);
                 }
 
-                if (Random.value <= 0.5f)
+                if (Random.value <= Consts.Values.Immune.UltimateShieldedAllySpawnChance)
                 {
-                    TryGiveEnemyShield(spawnedObj);
+                    bool shieldApplied = TryGiveEnemyShield(spawnedObj);
+                    if (shieldApplied)
+                    {
+                        shieldedCount++;
+                    }
+                    Logger.LogInfo($"[ImmuneAbility] Friendly wasp shield attempt result: {(shieldApplied ? "success" : "failed")}");
                 }
             }
+
+            Logger.LogInfo($"[ImmuneAbility] Friendly wasp spawn complete. Shielded={shieldedCount}/{selectedSpawns.Count}");
         }
 
         private List<Transform> GetDistinctSpawnPoints(Transform[] spawnPoints, int count)
@@ -451,17 +483,17 @@ namespace SpiderSurge
             return selectedSpawns;
         }
 
-        private void TryGiveEnemyShield(GameObject enemyObject)
+        private bool TryGiveEnemyShield(GameObject enemyObject)
         {
             if (enemyObject == null)
             {
-                return;
+                return false;
             }
 
             var enemyHealth = enemyObject.GetComponent<EnemyHealthSystem>();
             if (enemyHealth == null || enemyHealth.shield == null)
             {
-                return;
+                return false;
             }
 
             enemyHealth.shield.SetActive(true);
@@ -470,9 +502,11 @@ namespace SpiderSurge
             {
                 var enableShieldMethod = typeof(EnemyHealthSystem).GetMethod("EnableShield", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 enableShieldMethod?.Invoke(enemyHealth, null);
+                return enemyHealth.shield.activeSelf;
             }
             catch
             {
+                return false;
             }
         }
 

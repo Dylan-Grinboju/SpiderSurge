@@ -191,6 +191,7 @@ namespace SpiderSurge
                         {
                             if (ability is ImmuneAbility)
                             {
+                                ability.ReduceCooldown(Consts.Values.Immune.AbilityBaseCooldown);
                                 continue;
                             }
                             ability.SetCooldownToZero();
