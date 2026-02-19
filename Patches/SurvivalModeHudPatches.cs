@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Reflection;
 using Doozy.Engine.UI;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace SpiderSurge
 {
@@ -105,6 +106,23 @@ namespace SpiderSurge
         private static IEnumerator EmptyEnumerator()
         {
             yield break;
+        }
+    }
+
+    [HarmonyPatch(typeof(PerkChoiseTimer), "SetTimerValue")]
+    public class PerkChoiseTimer_SetTimerValue_Patch
+    {
+        private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        [HarmonyPostfix]
+        public static void Postfix(PerkChoiseTimer __instance)
+        {
+            if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
+
+            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+            if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
+
+            timerText.text = Regex.Replace(timerText.text, @"\d+$", "∞");
         }
     }
 }
