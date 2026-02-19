@@ -30,28 +30,18 @@ namespace SpiderSurge.Patches
             {
                 menu.CreateParagraph("<size=95%><color=#FFAA66>Toggle locked while a session is active.</color></size>");
             }
-            menu.CreateParagraph("<size=100%>\n </size>");
-            menu.CreateParagraph("<size=130%>\nThis mod expands your toolkit with powerful new abilities and mechanics:\n</size>");
-
-            menu.CreateParagraph(" • <b>Aegis:</b> Gain temporary immunity with a golden radiance.\n");
-            menu.CreateParagraph(" • <b>Explosion:</b> Release a devastating blast around you.\n");
-            menu.CreateParagraph(" • <b>Storage:</b> Store and recall weapons at will.\n");
-            menu.CreateParagraph(" • <b>Infinite Ammo:</b> Keep firing without depletion for a duration.\n");
 
             // Custom thin divider with more space
             menu.CreateParagraph("<size=100%>\n </size>");
 
-            menu.CreateParagraph("<size=110%><color=#AAAAAA>Check the config file for detailed settings!</color></size>");
+            menu.CreateParagraph("<size=130%><color=#AAAAAA>Check the config file for detailed settings!</color></size>");
             menu.CreateParagraph("<size=100%>\n </size>");
-            menu.CreateParagraph("<size=140%><b>Credits:</b>\n</size>");
+            menu.CreateParagraph("<size=120%><b>Credits:</b>\n</size>");
             menu.CreateParagraph("<size=120%>Icons by these artists from game-icons.net:\n</size>");
             menu.CreateParagraph(" • delapouite\n");
             menu.CreateParagraph(" • lorc\n");
             menu.CreateParagraph(" • pierre-leducq\n");
-            menu.CreateParagraph("Licence CC BY 3.0 can be found here: https://creativecommons.org/licenses/by/3.0/");
-
-
-
+            menu.CreateParagraph("Licence CC BY 3.0 for the icons can be found here: https://creativecommons.org/licenses/by/3.0/");
         }
 
         private static void ToggleSurgeMode(ModsMenuPopup menu)
@@ -66,7 +56,6 @@ namespace SpiderSurge.Patches
             bool newValue = !ModConfig.enableSurgeMode;
             ModConfig.SetEnableSurgeMode(newValue);
             GameModePatches.UpdateSurgeSurvivalText();
-            Announcer.InformationPopup(newValue ? "Surge Mode enabled for the next run." : "Surge Mode disabled for the next run.");
             RefreshMenu(menu);
         }
 
