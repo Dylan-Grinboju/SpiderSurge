@@ -10,6 +10,8 @@ namespace SpiderSurge
     public class SoundManager : MonoBehaviour
     {
         public static SoundManager Instance { get; private set; }
+        private static readonly Guid PcmSubFormatGuid = new Guid("00000001-0000-0010-8000-00AA00389B71");
+        private static readonly Guid IeeeFloatSubFormatGuid = new Guid("00000003-0000-0010-8000-00AA00389B71");
 
         private readonly Dictionary<string, AudioClip> _loadedClips = new Dictionary<string, AudioClip>();
         private AudioSource _audioSource;
@@ -96,9 +98,6 @@ namespace SpiderSurge
 
         private AudioClip ParseWavFile(byte[] wavData, string clipName)
         {
-            Guid pcmSubFormatGuid = new Guid("00000001-0000-0010-8000-00AA00389B71");
-            Guid ieeeFloatSubFormatGuid = new Guid("00000003-0000-0010-8000-00AA00389B71");
-
             if (wavData.Length < 44)
             {
                 Logger.LogWarning($"[SoundManager] WAV file too small: {clipName}");
@@ -164,12 +163,12 @@ namespace SpiderSurge
                         System.Buffer.BlockCopy(wavData, pos + 32, subFormatBytes, 0, 16);
                         Guid subFormatGuid = new Guid(subFormatBytes);
 
-                        if (subFormatGuid == pcmSubFormatGuid)
+                        if (subFormatGuid == PcmSubFormatGuid)
                         {
                             formatValidated = true;
                             decodeAsFloat = false;
                         }
-                        else if (subFormatGuid == ieeeFloatSubFormatGuid)
+                        else if (subFormatGuid == IeeeFloatSubFormatGuid)
                         {
                             formatValidated = true;
                             decodeAsFloat = true;

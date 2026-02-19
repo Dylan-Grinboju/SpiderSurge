@@ -78,7 +78,8 @@ namespace SpiderSurge
 
             if (_spiderLightField == null)
             {
-                _spiderLightField = typeof(SpiderHealthSystem).GetField("spiderLight");
+                _spiderLightField = typeof(SpiderHealthSystem).GetField("spiderLight",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
             }
         }
 
@@ -512,6 +513,7 @@ namespace SpiderSurge
 
             if (spiderHealthSystem != null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
             {
+                ApplyImmunity(false);
                 immuneByHealthSystem.Remove(spiderHealthSystem);
             }
 
