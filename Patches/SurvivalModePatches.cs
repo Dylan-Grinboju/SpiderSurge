@@ -10,10 +10,17 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
     public class SurvivalMode_StartGame_Patch
     {
+        private static bool ShouldApplySurge(SurvivalConfig survivalConfig)
+        {
+            return ModConfig.enableSurgeMode
+                && survivalConfig != null
+                && survivalConfig.type == SurvivalConfig.Type.EndlessSurvival;
+        }
+
         [HarmonyPrefix]
         public static void Prefix(ref SurvivalConfig survivalConfig)
         {
-            if (ModConfig.enableSurgeMode && survivalConfig != null)
+            if (ShouldApplySurge(survivalConfig))
             {
                 // Find templates
                 GameObject meleeWhispPrefab = null;
@@ -150,7 +157,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(bool __result, SurvivalConfig survivalConfig)
         {
-            if (__result && ModConfig.enableSurgeMode)
+            if (__result && ShouldApplySurge(survivalConfig))
             {
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
