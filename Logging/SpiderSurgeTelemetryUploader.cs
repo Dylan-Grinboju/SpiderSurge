@@ -184,7 +184,7 @@ namespace SpiderSurge.Logging
 
             return "{" +
                 "\"eventType\":\"spidersurge_match\"," +
-                "\"schemaVersion\":2," +
+                "\"schemaVersion\":1," +
                 "\"anonId\":\"" + EscapeJson(GetOrCreateAnonymousId()) + "\"," +
                 "\"timestampUtc\":\"" + DateTime.UtcNow.ToString("O") + "\"," +
                 "\"modVersion\":\"" + EscapeJson(SpiderSurgeMod.Version) + "\"," +

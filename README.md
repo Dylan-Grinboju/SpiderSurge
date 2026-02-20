@@ -84,7 +84,7 @@ In `...\Silk\Config\Mods\SpiderSurge_Mod.yaml`:
 
 A compact JSON event is sent at the end of each tracked SpiderSurge Survival match with:
 
-- Event metadata: `eventType`, `schemaVersion` (now `2`), `timestampUtc`, `modVersion`
+- Event metadata: `eventType`, `schemaVersion` (now `1`), `timestampUtc`, `modVersion`
 - Match summary: `matchDurationSeconds`, `playerCount`, `wavesSurvived`, `painLevel`
 - Ability usage: per-player `abilityActivationCount`, `ultimateActivationCount`
 - Perks snapshot: active `globalPerks`
