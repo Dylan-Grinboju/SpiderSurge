@@ -1,5 +1,6 @@
 using System;
-using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Logger = Silk.Logger;
 
@@ -9,6 +10,7 @@ namespace SpiderSurge
     public static class ModUpdater
     {
         private static string CurrentVersion => SpiderSurgeMod.Version;
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
         private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
@@ -34,10 +36,14 @@ namespace SpiderSurge
 
         private static async Task<string> GetLatestVersionAsync()
         {
-            using (var client = new TimeoutWebClient(5000)) // 5 second timeout limit
+            using (var timeout = new CancellationTokenSource(Consts.ModUpdater.RequestTimeoutMs))
             {
-                var response = await Task.Run(() => client.DownloadString(LatestVersionUrl));
-                return response.Trim();
+                using (var response = await _httpClient.GetAsync(LatestVersionUrl, timeout.Token))
+                {
+                    response.EnsureSuccessStatusCode();
+                    var content = await response.Content.ReadAsStringAsync();
+                    return content.Trim();
+                }
             }
         }
 
@@ -94,17 +100,6 @@ namespace SpiderSurge
                 },
                 null
             );
-        }
-        private class TimeoutWebClient : WebClient
-        {
-            private readonly int _timeout;
-            public TimeoutWebClient(int timeout) => _timeout = timeout;
-            protected override WebRequest GetWebRequest(Uri uri)
-            {
-                var request = base.GetWebRequest(uri);
-                request.Timeout = _timeout;
-                return request;
-            }
         }
     }
 }

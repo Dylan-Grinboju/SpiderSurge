@@ -94,6 +94,11 @@ namespace SpiderSurge
             public const int DuplicatePayloadWindowMinutes = 10;
         }
 
+        public static class ModUpdater
+        {
+            public const int RequestTimeoutMs = 5000;
+        }
+
         public static class Values
         {
             public static class Immune

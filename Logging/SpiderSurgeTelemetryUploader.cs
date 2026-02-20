@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -16,6 +16,7 @@ namespace SpiderSurge.Logging
     {
         private static readonly TimeSpan MinSendInterval = TimeSpan.FromMilliseconds(Consts.Telemetry.MinSendIntervalMs);
         private static readonly TimeSpan DuplicatePayloadWindow = TimeSpan.FromMinutes(Consts.Telemetry.DuplicatePayloadWindowMinutes);
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         private static readonly Lazy<SpiderSurgeTelemetryUploader> _lazy = new Lazy<SpiderSurgeTelemetryUploader>(() => new SpiderSurgeTelemetryUploader());
         public static SpiderSurgeTelemetryUploader Instance => _lazy.Value;
@@ -24,6 +25,7 @@ namespace SpiderSurge.Logging
         private readonly string _anonymousIdPath;
         private readonly object _sendGuard = new object();
         private readonly Dictionary<string, DateTime> _recentPayloadHashes = new Dictionary<string, DateTime>();
+        private readonly HashSet<string> _inflightPayloadHashes = new HashSet<string>();
         private static readonly Regex EscapedTimestampFieldRegex = new Regex("\\\\\"timestampUtc\\\\\":\\\\\"[^\\\\\"]*\\\\\"", RegexOptions.Compiled);
         private static readonly Regex PlainTimestampFieldRegex = new Regex("\"timestampUtc\":\"[^\"]*\"", RegexOptions.Compiled);
         private string _anonymousId;
@@ -61,9 +63,9 @@ namespace SpiderSurge.Logging
             }
 
             string payload = BuildRelayPayload(snapshot);
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
-                if (!TryPostPayload(relayUrl, payload))
+                if (!await TryPostPayload(relayUrl, payload))
                 {
                     QueuePayload(payload);
                 }
@@ -77,7 +79,7 @@ namespace SpiderSurge.Logging
             string relayUrl = GetRelayUrl();
             if (string.IsNullOrEmpty(relayUrl)) return;
 
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
@@ -94,7 +96,7 @@ namespace SpiderSurge.Logging
                     foreach (var file in files)
                     {
                         string payload = File.ReadAllText(file);
-                        if (!TryPostPayload(relayUrl, payload))
+                        if (!await TryPostPayload(relayUrl, payload))
                         {
                             failedCount++;
                             continue;
@@ -214,8 +216,9 @@ namespace SpiderSurge.Logging
             }
         }
 
-        private bool TryPostPayload(string relayUrl, string payload)
+        private async Task<bool> TryPostPayload(string relayUrl, string payload)
         {
+            bool isReserved = false;
             try
             {
                 if (IsDuplicatePayload(payload))
@@ -224,18 +227,32 @@ namespace SpiderSurge.Logging
                     return true;
                 }
 
-                ApplySendThrottle();
-
-                using (var client = new TimeoutWebClient(Consts.Telemetry.RequestTimeoutMs))
+                if (!ReservePayloadAsInflight(payload))
                 {
-                    client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                    client.UploadString(relayUrl, "POST", payload);
+                    Logger.LogInfo("Telemetry payload skipped: duplicate within dedupe window.");
+                    return true;
+                }
+
+                isReserved = true;
+
+                await ApplySendThrottleAsync();
+
+                using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                using (var timeout = new CancellationTokenSource(Consts.Telemetry.RequestTimeoutMs))
+                {
+                    var response = await _httpClient.PostAsync(relayUrl, content, timeout.Token);
+                    response.EnsureSuccessStatusCode();
                     RegisterPayloadAsSent(payload);
                     return true;
                 }
             }
             catch (Exception ex)
             {
+                if (isReserved)
+                {
+                    ReleasePayloadInflightReservation(payload);
+                }
+
                 Logger.LogWarning($"Telemetry upload failed: {ex.Message}");
                 return false;
             }
@@ -298,6 +315,11 @@ namespace SpiderSurge.Logging
             lock (_sendGuard)
             {
                 PruneOldHashes(now);
+                if (_inflightPayloadHashes.Contains(hash))
+                {
+                    return true;
+                }
+
                 if (_recentPayloadHashes.TryGetValue(hash, out DateTime lastSeen))
                 {
                     if ((now - lastSeen) <= DuplicatePayloadWindow)
@@ -310,6 +332,42 @@ namespace SpiderSurge.Logging
             return false;
         }
 
+        private bool ReservePayloadAsInflight(string payload)
+        {
+            string hash = ComputePayloadHash(payload);
+            DateTime now = DateTime.UtcNow;
+
+            lock (_sendGuard)
+            {
+                PruneOldHashes(now);
+                if (_inflightPayloadHashes.Contains(hash))
+                {
+                    return false;
+                }
+
+                if (_recentPayloadHashes.TryGetValue(hash, out DateTime lastSeen))
+                {
+                    if ((now - lastSeen) <= DuplicatePayloadWindow)
+                    {
+                        return false;
+                    }
+                }
+
+                _inflightPayloadHashes.Add(hash);
+                return true;
+            }
+        }
+
+        private void ReleasePayloadInflightReservation(string payload)
+        {
+            string hash = ComputePayloadHash(payload);
+
+            lock (_sendGuard)
+            {
+                _inflightPayloadHashes.Remove(hash);
+            }
+        }
+
         private void RegisterPayloadAsSent(string payload)
         {
             string hash = ComputePayloadHash(payload);
@@ -317,15 +375,16 @@ namespace SpiderSurge.Logging
 
             lock (_sendGuard)
             {
+                _inflightPayloadHashes.Remove(hash);
                 _recentPayloadHashes[hash] = now;
                 _lastSuccessfulSendUtc = now;
                 PruneOldHashes(now);
             }
         }
 
-        private void ApplySendThrottle()
+        private async Task ApplySendThrottleAsync()
         {
-            TimeSpan waitTime = TimeSpan.Zero;
+            int waitMs = 0;
 
             lock (_sendGuard)
             {
@@ -333,17 +392,13 @@ namespace SpiderSurge.Logging
                 DateTime nextAllowed = _lastSuccessfulSendUtc + MinSendInterval;
                 if (nextAllowed > now)
                 {
-                    waitTime = nextAllowed - now;
+                    waitMs = (int)Math.Ceiling((nextAllowed - now).TotalMilliseconds);
                 }
             }
 
-            if (waitTime > TimeSpan.Zero)
+            if (waitMs > 0)
             {
-                int waitMs = (int)Math.Ceiling(waitTime.TotalMilliseconds);
-                if (waitMs > 0)
-                {
-                    Thread.Sleep(waitMs);
-                }
+                await Task.Delay(waitMs);
             }
         }
 
@@ -389,30 +444,5 @@ namespace SpiderSurge.Logging
                 .Replace("\n", "\\n");
         }
 
-        private class TimeoutWebClient : WebClient
-        {
-            private readonly int _timeout;
-
-            public TimeoutWebClient(int timeout)
-            {
-                _timeout = timeout;
-            }
-
-            protected override WebRequest GetWebRequest(Uri address)
-            {
-                var request = base.GetWebRequest(address);
-                if (request != null)
-                {
-                    request.Timeout = _timeout;
-
-                    if (request is HttpWebRequest httpRequest)
-                    {
-                        httpRequest.ReadWriteTimeout = _timeout;
-                    }
-                }
-
-                return request;
-            }
-        }
     }
 }
