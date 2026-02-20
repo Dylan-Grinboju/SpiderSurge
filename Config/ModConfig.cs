@@ -29,6 +29,7 @@ namespace SpiderSurge
         public static bool EnableStatsLogging => Config.GetModConfigValue(ModId, "EnableStatsLogging", true);
         public static bool TelemetryEnabled => Config.GetModConfigValue(ModId, "TelemetryEnabled", false);
         public static bool ShowTutorial => Config.GetModConfigValue(ModId, "display.showTutorial", true);
+        public static bool ShowTelemetryConsentPrompt => Config.GetModConfigValue(ModId, "display.showTelemetryConsentPrompt", true);
 
         public static void SetEnableSurgeMode(bool value)
         {
@@ -38,6 +39,16 @@ namespace SpiderSurge
         public static void SetShowTutorial(bool value)
         {
             Config.SetModConfigValue(ModId, "display.showTutorial", value);
+        }
+
+        public static void SetTelemetryEnabled(bool value)
+        {
+            Config.SetModConfigValue(ModId, "TelemetryEnabled", value);
+        }
+
+        public static void SetShowTelemetryConsentPrompt(bool value)
+        {
+            Config.SetModConfigValue(ModId, "display.showTelemetryConsentPrompt", value);
         }
 
         private static float ValidateIndicatorRadius(float value)

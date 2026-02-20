@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.2.0", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.2.1", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -46,6 +46,7 @@ namespace SpiderSurge
             new GameObject("SoundManager").AddComponent<SoundManager>();
             // Initialize Tutorial UI
             TutorialUI.Initialize();
+            TelemetryConsentUI.Initialize();
 
             // Initialize CheatManager
             // CheatManager.Initialize();
@@ -93,6 +94,7 @@ namespace SpiderSurge
                 { "EnableStatsLogging", true },
                 { "TelemetryEnabled", false },
                 { "display.showTutorial", true },
+                { "display.showTelemetryConsentPrompt", true },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)
@@ -130,6 +132,12 @@ namespace SpiderSurge
             var playerControlSettings = GameObject.Find("PlayerControlSettings");
             if (playerControlSettings != null)
                 Destroy(playerControlSettings);
+
+            var telemetryConsentUi = GameObject.Find("TelemetryConsentUI");
+            if (telemetryConsentUi != null)
+                Destroy(telemetryConsentUi);
+
+            TelemetryConsentUI.ResetInstance();
 
             Instance = null;
         }
