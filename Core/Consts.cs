@@ -84,7 +84,7 @@ namespace SpiderSurge
 
         public static class Telemetry
         {
-            public const string DiscordWebhookUrl = "https://discord.com/api/webhooks/1474127069767270664/8Fxc26eJtWbjAcW2hq0JaHYFs1vMRoUsJclO0B_3HUKDjqujpu-3bzb6qaeSASVFM5zB";
+            public const string RelayEndpointUrl = "https://spidersurge-telemetry-relay.dylanyair.workers.dev";
             public const string PendingDirectoryName = "TelemetryPending";
             public const string AnonymousIdFileName = "telemetry_anonymous_id.txt";
             public const int AnonymousIdBytes = 32;

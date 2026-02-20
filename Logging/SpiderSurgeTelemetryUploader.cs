@@ -53,17 +53,17 @@ namespace SpiderSurge.Logging
             if (snapshot == null) return;
             if (!ModConfig.TelemetryEnabled) return;
 
-            string webhookUrl = GetWebhookUrl();
-            if (string.IsNullOrEmpty(webhookUrl))
+            string relayUrl = GetRelayUrl();
+            if (string.IsNullOrEmpty(relayUrl))
             {
-                Logger.LogWarning("Telemetry enabled but telemetry webhook URL is not configured in code.");
+                Logger.LogWarning("Telemetry enabled but telemetry relay endpoint URL is not configured in code.");
                 return;
             }
 
-            string payload = BuildDiscordPayload(snapshot);
+            string payload = BuildRelayPayload(snapshot);
             _ = Task.Run(() =>
             {
-                if (!TryPostPayload(webhookUrl, payload))
+                if (!TryPostPayload(relayUrl, payload))
                 {
                     QueuePayload(payload);
                 }
@@ -74,8 +74,8 @@ namespace SpiderSurge.Logging
         {
             if (!ModConfig.TelemetryEnabled) return;
 
-            string webhookUrl = GetWebhookUrl();
-            if (string.IsNullOrEmpty(webhookUrl)) return;
+            string relayUrl = GetRelayUrl();
+            if (string.IsNullOrEmpty(relayUrl)) return;
 
             _ = Task.Run(() =>
             {
@@ -94,7 +94,7 @@ namespace SpiderSurge.Logging
                     foreach (var file in files)
                     {
                         string payload = File.ReadAllText(file);
-                        if (!TryPostPayload(webhookUrl, payload))
+                        if (!TryPostPayload(relayUrl, payload))
                         {
                             failedCount++;
                             continue;
@@ -121,7 +121,7 @@ namespace SpiderSurge.Logging
             });
         }
 
-        private string BuildDiscordPayload(SpiderSurgeStatsSnapshot snapshot)
+        private string BuildRelayPayload(SpiderSurgeStatsSnapshot snapshot)
         {
             string message = BuildCompactEventJson(snapshot);
             return "{\"content\":\"" + EscapeJson(message) + "\"}";
@@ -243,7 +243,7 @@ namespace SpiderSurge.Logging
             }
         }
 
-        private bool TryPostPayload(string webhookUrl, string payload)
+        private bool TryPostPayload(string relayUrl, string payload)
         {
             try
             {
@@ -258,7 +258,7 @@ namespace SpiderSurge.Logging
                 using (var client = new TimeoutWebClient(Consts.Telemetry.RequestTimeoutMs))
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                    client.UploadString(webhookUrl, "POST", payload);
+                    client.UploadString(relayUrl, "POST", payload);
                     RegisterPayloadAsSent(payload);
                     return true;
                 }
@@ -313,9 +313,9 @@ namespace SpiderSurge.Logging
             }
         }
 
-        private string GetWebhookUrl()
+        private string GetRelayUrl()
         {
-            var value = Consts.Telemetry.DiscordWebhookUrl;
+            var value = Consts.Telemetry.RelayEndpointUrl;
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
