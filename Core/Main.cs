@@ -37,7 +37,7 @@ namespace SpiderSurge
             Logger.LogInfo("Initializing SpiderSurge Mod...");
             // Initialize configuration with default values first
             SetupConfiguration();
-            Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloadsAsync();
+            Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();
 
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton

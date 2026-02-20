@@ -90,7 +90,7 @@ namespace SpiderSurge.Logging
             if (ShouldUploadTelemetryFromThisClient())
             {
                 Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
-                SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshotAsync(snapshot);
+                SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshot(snapshot);
             }
             else
             {

@@ -50,7 +50,7 @@ namespace SpiderSurge.Logging
             }
         }
 
-        public void QueueAndSendSnapshotAsync(SpiderSurgeStatsSnapshot snapshot)
+        public void QueueAndSendSnapshot(SpiderSurgeStatsSnapshot snapshot)
         {
             if (snapshot == null) return;
             if (!ModConfig.TelemetryEnabled) return;
@@ -72,7 +72,7 @@ namespace SpiderSurge.Logging
             });
         }
 
-        public void FlushQueuedPayloadsAsync()
+        public void FlushQueuedPayloads()
         {
             if (!ModConfig.TelemetryEnabled) return;
 
@@ -221,12 +221,6 @@ namespace SpiderSurge.Logging
             bool isReserved = false;
             try
             {
-                if (IsDuplicatePayload(payload))
-                {
-                    Logger.LogInfo("Telemetry payload skipped: duplicate within dedupe window.");
-                    return true;
-                }
-
                 if (!ReservePayloadAsInflight(payload))
                 {
                     Logger.LogInfo("Telemetry payload skipped: duplicate within dedupe window.");
@@ -305,31 +299,6 @@ namespace SpiderSurge.Logging
         {
             var value = Consts.Telemetry.RelayEndpointUrl;
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
-        }
-
-        private bool IsDuplicatePayload(string payload)
-        {
-            string hash = ComputePayloadHash(payload);
-            DateTime now = DateTime.UtcNow;
-
-            lock (_sendGuard)
-            {
-                PruneOldHashes(now);
-                if (_inflightPayloadHashes.Contains(hash))
-                {
-                    return true;
-                }
-
-                if (_recentPayloadHashes.TryGetValue(hash, out DateTime lastSeen))
-                {
-                    if ((now - lastSeen) <= DuplicatePayloadWindow)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         private bool ReservePayloadAsInflight(string payload)
