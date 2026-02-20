@@ -3,7 +3,7 @@
 A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
 
 
-<img width="2559" height="1439" alt="Pasted image 20260219121801" src="https://github.com/user-attachments/assets/a7c04ff6-16f2-49c2-a91a-5453d4e8b546" />
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
 
 ## Features
 
