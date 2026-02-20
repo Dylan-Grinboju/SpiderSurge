@@ -65,6 +65,7 @@ namespace SpiderSurge.Logging
                 MatchDuration = duration,
                 PlayerCount = PlayerInput.all.Count,
                 WavesSurvived = GetWavesSurvived(),
+                PainLevel = GetCurrentPainLevel(),
                 GlobalPerks = GetGlobalPerks()
             };
 
@@ -122,6 +123,22 @@ namespace SpiderSurge.Logging
         private int GetWavesSurvived()
         {
             return _currentWave;
+        }
+
+        private int GetCurrentPainLevel()
+        {
+            try
+            {
+                if (SurvivalModeHud.instance != null)
+                {
+                    return Math.Max(1, SurvivalModeHud.instance.currentPainLevel.Value);
+                }
+            }
+            catch
+            {
+            }
+
+            return 1;
         }
 
         private bool ShouldUploadTelemetryFromThisClient()

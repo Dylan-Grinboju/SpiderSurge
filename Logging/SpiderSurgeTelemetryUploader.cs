@@ -185,6 +185,7 @@ namespace SpiderSurge.Logging
                 "\"matchDurationSeconds\":" + Math.Max(0, (int)snapshot.MatchDuration.TotalSeconds) + "," +
                 "\"playerCount\":" + Math.Max(0, snapshot.PlayerCount) + "," +
                 "\"wavesSurvived\":" + Math.Max(0, snapshot.WavesSurvived) + "," +
+                "\"painLevel\":" + Math.Max(1, snapshot.PainLevel) + "," +
                 "\"globalPerksTruncated\":" + (perksTruncated ? "true" : "false") + "," +
                 "\"playerStatsTruncated\":" + (playerStatsTruncated ? "true" : "false") + "," +
                 "\"totalActivations\":" + Math.Max(0, totalActivations) + "," +

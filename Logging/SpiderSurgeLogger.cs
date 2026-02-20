@@ -71,6 +71,7 @@ namespace SpiderSurge.Logging
             sb.AppendLine($"Match Time: {FormatTimeSpan(stats.MatchDuration)}");
             sb.AppendLine($"Players: {stats.PlayerCount}");
             sb.AppendLine($"Waves Survived: {stats.WavesSurvived}");
+            sb.AppendLine($"Pain Level: {stats.PainLevel}");
             sb.AppendLine();
 
             sb.AppendLine("GLOBAL PERKS (Active):");
