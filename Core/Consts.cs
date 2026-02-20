@@ -90,7 +90,7 @@ namespace SpiderSurge
             public const int AnonymousIdBytes = 32;
             public const int RequestTimeoutMs = 5000;
             public const int MaxDiscordMessageLength = 1900;
-            public const int MaxQueuedPayloads = 200;
+            public const int MaxQueuedPayloads = 50;
             public const int MinSendIntervalMs = 2000;
             public const int DuplicatePayloadWindowMinutes = 10;
         }

@@ -16,6 +16,7 @@ namespace SpiderSurge.Logging
     public class PlayerStats
     {
         public int PlayerIndex { get; set; }
-        public int ActivationCount { get; set; }
+        public int AbilityActivationCount { get; set; }
+        public int UltimateActivationCount { get; set; }
     }
 }

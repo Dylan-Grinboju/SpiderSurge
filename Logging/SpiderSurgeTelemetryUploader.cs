@@ -87,12 +87,14 @@ namespace SpiderSurge.Logging
                     if (files.Count == 0) return;
 
                     int sentCount = 0;
+                    int failedCount = 0;
                     foreach (var file in files)
                     {
                         string payload = File.ReadAllText(file);
                         if (!TryPostPayload(webhookUrl, payload))
                         {
-                            break;
+                            failedCount++;
+                            continue;
                         }
 
                         File.Delete(file);
@@ -102,6 +104,11 @@ namespace SpiderSurge.Logging
                     if (sentCount > 0)
                     {
                         Logger.LogInfo($"Flushed {sentCount} queued telemetry payload(s).");
+                    }
+
+                    if (failedCount > 0)
+                    {
+                        Logger.LogWarning($"Failed to flush {failedCount} queued telemetry payload(s); they remain queued for retry.");
                     }
                 }
                 catch (Exception ex)
@@ -128,7 +135,8 @@ namespace SpiderSurge.Logging
                 .Select(player => new PlayerStats
                 {
                     PlayerIndex = player.PlayerIndex,
-                    ActivationCount = player.ActivationCount
+                    AbilityActivationCount = player.AbilityActivationCount,
+                    UltimateActivationCount = player.UltimateActivationCount
                 })
                 .ToList();
 
@@ -170,15 +178,13 @@ namespace SpiderSurge.Logging
             bool perksTruncated,
             bool playerStatsTruncated)
         {
-            int totalActivations = playerStats.Sum(player => player.ActivationCount);
-
             string perksJson = "[" + string.Join(",", globalPerks.Select(perk => "\"" + EscapeJson(perk) + "\"")) + "]";
             string playerStatsJson = "[" + string.Join(",", playerStats.Select(player =>
-                "{\"playerIndex\":" + player.PlayerIndex + ",\"activationCount\":" + player.ActivationCount + "}")) + "]";
+                "{\"playerIndex\":" + player.PlayerIndex + ",\"abilityActivationCount\":" + player.AbilityActivationCount + ",\"ultimateActivationCount\":" + player.UltimateActivationCount + "}")) + "]";
 
             return "{" +
                 "\"eventType\":\"spidersurge_match\"," +
-                "\"schemaVersion\":1," +
+                "\"schemaVersion\":2," +
                 "\"anonId\":\"" + EscapeJson(GetOrCreateAnonymousId()) + "\"," +
                 "\"timestampUtc\":\"" + DateTime.UtcNow.ToString("O") + "\"," +
                 "\"modVersion\":\"" + EscapeJson(SpiderSurgeMod.Version) + "\"," +
@@ -188,7 +194,6 @@ namespace SpiderSurge.Logging
                 "\"painLevel\":" + Math.Max(1, snapshot.PainLevel) + "," +
                 "\"globalPerksTruncated\":" + (perksTruncated ? "true" : "false") + "," +
                 "\"playerStatsTruncated\":" + (playerStatsTruncated ? "true" : "false") + "," +
-                "\"totalActivations\":" + Math.Max(0, totalActivations) + "," +
                 "\"globalPerks\":" + perksJson + "," +
                 "\"playerStats\":" + playerStatsJson +
                 "}";
@@ -409,6 +414,22 @@ namespace SpiderSurge.Logging
             public TimeoutWebClient(int timeout)
             {
                 _timeout = timeout;
+            }
+
+            protected override WebRequest GetWebRequest(Uri address)
+            {
+                var request = base.GetWebRequest(address);
+                if (request != null)
+                {
+                    request.Timeout = _timeout;
+
+                    if (request is HttpWebRequest httpRequest)
+                    {
+                        httpRequest.ReadWriteTimeout = _timeout;
+                    }
+                }
+
+                return request;
             }
         }
     }
