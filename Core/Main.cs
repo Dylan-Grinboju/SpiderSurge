@@ -46,6 +46,7 @@ namespace SpiderSurge
             new GameObject("SoundManager").AddComponent<SoundManager>();
             // Initialize Tutorial UI
             TutorialUI.Initialize();
+            TelemetryConsentUI.Initialize();
 
             // Initialize CheatManager
             // CheatManager.Initialize();
@@ -93,6 +94,7 @@ namespace SpiderSurge
                 { "EnableStatsLogging", true },
                 { "TelemetryEnabled", false },
                 { "display.showTutorial", true },
+                { "display.showTelemetryConsentPrompt", true },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)
