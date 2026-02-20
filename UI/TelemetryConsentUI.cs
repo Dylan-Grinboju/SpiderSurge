@@ -7,6 +7,11 @@ namespace SpiderSurge
     {
         private static TelemetryConsentUI _instance;
 
+        public static void ResetInstance()
+        {
+            _instance = null;
+        }
+
         public static void Initialize()
         {
             if (_instance != null)
