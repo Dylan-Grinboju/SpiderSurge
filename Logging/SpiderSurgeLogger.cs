@@ -12,6 +12,7 @@ namespace SpiderSurge.Logging
         public static SpiderSurgeLogger Instance => _lazy.Value;
 
         private readonly string logDirectory;
+        public string LogDirectory => logDirectory;
 
         private SpiderSurgeLogger()
         {
@@ -70,6 +71,7 @@ namespace SpiderSurge.Logging
             sb.AppendLine($"Match Time: {FormatTimeSpan(stats.MatchDuration)}");
             sb.AppendLine($"Players: {stats.PlayerCount}");
             sb.AppendLine($"Waves Survived: {stats.WavesSurvived}");
+            sb.AppendLine($"Pain Level: {stats.PainLevel}");
             sb.AppendLine();
 
             sb.AppendLine("GLOBAL PERKS (Active):");
@@ -92,7 +94,8 @@ namespace SpiderSurge.Logging
                 foreach (var player in stats.PlayerStats)
                 {
                     sb.AppendLine($"  Player {player.PlayerIndex + 1}:");
-                    sb.AppendLine($"    Ability Activations: {player.ActivationCount}");
+                    sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
+                    sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
                     sb.AppendLine();
                 }
             }

@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.1.0", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.2.0", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -37,6 +37,7 @@ namespace SpiderSurge
             Logger.LogInfo("Initializing SpiderSurge Mod...");
             // Initialize configuration with default values first
             SetupConfiguration();
+            Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();
 
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
@@ -90,6 +91,7 @@ namespace SpiderSurge
                 { "UseDpadForUltimate", false },
                 { "UnlimitedPerkChoosingTime", true },
                 { "EnableStatsLogging", true },
+                { "TelemetryEnabled", false },
                 { "display.showTutorial", true },
             };
 

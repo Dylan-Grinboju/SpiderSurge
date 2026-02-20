@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 using HarmonyLib;
 using Logger = Silk.Logger;
 
@@ -25,7 +26,8 @@ namespace SpiderSurge.Logging
             }
         }
 
-        private readonly Dictionary<int, int> _activationsPerPlayer = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _abilityActivationsPerPlayer = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _ultimateActivationsPerPlayer = new Dictionary<int, int>();
         private DateTime _matchStartTime;
         private bool _isTracking = false;
         private int _currentWave = 0;
@@ -45,7 +47,8 @@ namespace SpiderSurge.Logging
             if (!ModConfig.EnableStatsLogging) return;
 
             _matchStartTime = DateTime.Now;
-            _activationsPerPlayer.Clear();
+            _abilityActivationsPerPlayer.Clear();
+            _ultimateActivationsPerPlayer.Clear();
             _isTracking = true;
             _currentWave = 0;
             Logger.LogInfo("SpiderSurge stats tracking started.");
@@ -64,33 +67,64 @@ namespace SpiderSurge.Logging
                 MatchDuration = duration,
                 PlayerCount = PlayerInput.all.Count,
                 WavesSurvived = GetWavesSurvived(),
+                PainLevel = GetCurrentPainLevel(),
                 GlobalPerks = GetGlobalPerks()
             };
 
             foreach (var player in PlayerInput.all)
             {
                 int pIndex = player.playerIndex;
-                int activations = _activationsPerPlayer.ContainsKey(pIndex) ? _activationsPerPlayer[pIndex] : 0;
+                int abilityActivations = _abilityActivationsPerPlayer.ContainsKey(pIndex) ? _abilityActivationsPerPlayer[pIndex] : 0;
+                int ultimateActivations = _ultimateActivationsPerPlayer.ContainsKey(pIndex) ? _ultimateActivationsPerPlayer[pIndex] : 0;
 
                 snapshot.PlayerStats.Add(new PlayerStats
                 {
                     PlayerIndex = pIndex,
-                    ActivationCount = activations
+                    AbilityActivationCount = abilityActivations,
+                    UltimateActivationCount = ultimateActivations
                 });
             }
 
             SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
+
+            if (ShouldUploadTelemetryFromThisClient())
+            {
+                Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
+                SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshot(snapshot);
+            }
+            else
+            {
+                if (!ModConfig.TelemetryEnabled)
+                {
+                    Logger.LogInfo("SpiderSurge telemetry skipped: telemetry is disabled in config.");
+                }
+                else
+                {
+                    Logger.LogInfo("SpiderSurge telemetry skipped: this client is not host/server.");
+                }
+            }
         }
 
-        public void LogActivation(int playerIndex)
+        public void LogAbilityActivation(int playerIndex)
         {
             if (!_isTracking) return;
 
-            if (!_activationsPerPlayer.ContainsKey(playerIndex))
+            if (!_abilityActivationsPerPlayer.ContainsKey(playerIndex))
             {
-                _activationsPerPlayer[playerIndex] = 0;
+                _abilityActivationsPerPlayer[playerIndex] = 0;
             }
-            _activationsPerPlayer[playerIndex]++;
+            _abilityActivationsPerPlayer[playerIndex]++;
+        }
+
+        public void LogUltimateActivation(int playerIndex)
+        {
+            if (!_isTracking) return;
+
+            if (!_ultimateActivationsPerPlayer.ContainsKey(playerIndex))
+            {
+                _ultimateActivationsPerPlayer[playerIndex] = 0;
+            }
+            _ultimateActivationsPerPlayer[playerIndex]++;
         }
 
         public void IncrementWave()
@@ -104,6 +138,34 @@ namespace SpiderSurge.Logging
         private int GetWavesSurvived()
         {
             return _currentWave;
+        }
+
+        private int GetCurrentPainLevel()
+        {
+            try
+            {
+                if (SurvivalModeHud.instance != null)
+                {
+                    return Math.Max(1, SurvivalModeHud.instance.currentPainLevel.Value);
+                }
+            }
+            catch
+            {
+            }
+
+            return 1;
+        }
+
+        private bool ShouldUploadTelemetryFromThisClient()
+        {
+            if (!ModConfig.TelemetryEnabled) return false;
+
+            if (NetworkManager.Singleton == null)
+            {
+                return true;
+            }
+
+            return NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer;
         }
 
         private List<string> GetGlobalPerks()

@@ -63,7 +63,47 @@ Changes to this file require a game restart to take effect. If invalid values ar
 ### Logging:
 `EnableStatsLogging`: Enables or disables the recording of mod-specific events to the Silk logs.
 
+`TelemetryEnabled`: Enables or disables anonymous telemetry uploads for completed SpiderSurge Survival matches.
+
 </details>
+
+## Telemetry
+
+SpiderSurge supports optional telemetry to help track balancing and gameplay trends in Surge matches.
+
+### How to enable
+
+In `...\Silk\Config\Mods\SpiderSurge_Mod.yaml`:
+
+- Set `EnableStatsLogging: true` to keep local match stat files.
+- Set `TelemetryEnabled: true` to allow telemetry upload.
+
+**Telemetry is disabled by default.**
+
+### What is sent
+
+A compact JSON event is sent at the end of each tracked SpiderSurge Survival match with:
+
+- Event metadata: `eventType`, `schemaVersion` (now `1`), `timestampUtc`, `modVersion`
+- Match summary: `matchDurationSeconds`, `playerCount`, `wavesSurvived`, `painLevel`
+- Ability usage: per-player `abilityActivationCount`, `ultimateActivationCount`
+- Perks snapshot: active `globalPerks`
+- Truncation flags: `globalPerksTruncated`, `playerStatsTruncated`
+- Anonymous identifier: `anonId`
+
+### Privacy and identity
+
+- Telemetry uses an anonymous random ID, not player names.
+- The anonymous ID is generated locally and stored in:
+    `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
+
+
+### Local log files (non-telemetry)
+
+When `EnableStatsLogging` is enabled, per-match text reports are written to:
+
+`...\Silk\Logs\SpiderSurge\SpiderSurge_Match_YYYY-MM-DD_HH-mm-ss.txt`
+
 
 ## Notes and disclaimers
 

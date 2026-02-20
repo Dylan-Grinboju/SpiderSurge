@@ -8,6 +8,7 @@ namespace SpiderSurge.Logging
         public TimeSpan MatchDuration { get; set; }
         public int PlayerCount { get; set; }
         public int WavesSurvived { get; set; }
+        public int PainLevel { get; set; }
         public List<PlayerStats> PlayerStats { get; set; } = new List<PlayerStats>();
         public List<string> GlobalPerks { get; set; } = new List<string>();
     }
@@ -15,6 +16,7 @@ namespace SpiderSurge.Logging
     public class PlayerStats
     {
         public int PlayerIndex { get; set; }
-        public int ActivationCount { get; set; }
+        public int AbilityActivationCount { get; set; }
+        public int UltimateActivationCount { get; set; }
     }
 }

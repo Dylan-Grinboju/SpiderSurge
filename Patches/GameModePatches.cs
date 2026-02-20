@@ -58,18 +58,69 @@ namespace SpiderSurge
         }
     }
 
+    [HarmonyPatch(typeof(PainLevelsScreen), "RefreshScreen")]
+    public class PainLevelsScreen_RefreshScreen_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(PainLevelsScreen __instance)
+        {
+            if (__instance != null)
+            {
+                GameModePatches.UpdateSurgeSurvivalText(__instance.gameObject);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(HudController), "ShowSurvivalStartPrompt")]
+    public class HudController_ShowSurvivalStartPrompt_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(HudController __instance)
+        {
+            if (__instance != null)
+            {
+                GameModePatches.UpdateSurgeSurvivalText(__instance.gameObject);
+            }
+        }
+    }
+
     public static class GameModePatches
     {
+        private static string GetSurvivalModeDisplayName()
+        {
+            return ModConfig.enableSurgeMode ? "Surge Survival" : "Wave Survival";
+        }
+
         public static void UpdateSurgeSurvivalText()
         {
             const string path = "Level/SurvivalStartPlatform/Text/Survival Mode Text/ModeText";
             var modeTextObj = GameObject.Find(path) ?? GameObject.Find("ModeText");
             if (modeTextObj != null)
             {
-                var tmp = modeTextObj.GetComponent<TMP_Text>();
-                if (tmp != null)
+                UpdateSurgeSurvivalText(modeTextObj);
+            }
+        }
+
+        public static void UpdateSurgeSurvivalText(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var textElements = root.GetComponentsInChildren<TMP_Text>(true);
+            foreach (var tmp in textElements)
+            {
+                if (tmp == null || string.IsNullOrWhiteSpace(tmp.text))
                 {
-                    tmp.text = ModConfig.enableSurgeMode ? "Surge Survival" : "Waves Survival";
+                    continue;
+                }
+
+                if (string.Equals(tmp.text, "Wave Survival", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(tmp.text, "Waves Survival", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(tmp.text, "Surge Survival", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    tmp.text = GetSurvivalModeDisplayName();
                 }
             }
         }

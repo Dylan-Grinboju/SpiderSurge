@@ -393,7 +393,7 @@ namespace SpiderSurge
 
             if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
             {
-                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+                SpiderSurgeStatsManager.Instance.LogAbilityActivation(playerInput.playerIndex);
             }
 
             if (AbilityDuration > 0)
@@ -454,7 +454,7 @@ namespace SpiderSurge
 
             if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
             {
-                SpiderSurgeStatsManager.Instance.LogActivation(playerInput.playerIndex);
+                SpiderSurgeStatsManager.Instance.LogUltimateActivation(playerInput.playerIndex);
             }
 
             if (UltimateDuration > 0)

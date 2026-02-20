@@ -5,6 +5,8 @@
 
 *.instructions.md
 *.agent
+LocalTools/
+__pycache__/
 # User-specific files
 *.rsuser
 *.suo

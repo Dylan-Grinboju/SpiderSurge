@@ -82,6 +82,23 @@ namespace SpiderSurge
             public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
         }
 
+        public static class Telemetry
+        {
+            public const string RelayEndpointUrl = "https://spidersurge-telemetry-relay.dylanyair.workers.dev";
+            public const string PendingDirectoryName = "TelemetryPending";
+            public const string AnonymousIdFileName = "telemetry_anonymous_id.txt";
+            public const int AnonymousIdBytes = 32;
+            public const int RequestTimeoutMs = 5000;
+            public const int MaxQueuedPayloads = 50;
+            public const int MinSendIntervalMs = 2000;
+            public const int DuplicatePayloadWindowMinutes = 10;
+        }
+
+        public static class ModUpdater
+        {
+            public const int RequestTimeoutMs = 5000;
+        }
+
         public static class Values
         {
             public static class Immune

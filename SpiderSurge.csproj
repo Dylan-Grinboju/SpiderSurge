@@ -6,7 +6,7 @@
     <Title>SpiderSurge Mod</Title>
 
     <!-- Version -->
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
 
@@ -61,6 +61,7 @@
 
   <!-- Assembly References -->
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
     <Reference Include="GdkUtilities">
       <HintPath>./lib/GdkUtilities.dll</HintPath>
       <Private>false</Private>
