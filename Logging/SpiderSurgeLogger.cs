@@ -12,6 +12,7 @@ namespace SpiderSurge.Logging
         public static SpiderSurgeLogger Instance => _lazy.Value;
 
         private readonly string logDirectory;
+        public string LogDirectory => logDirectory;
 
         private SpiderSurgeLogger()
         {

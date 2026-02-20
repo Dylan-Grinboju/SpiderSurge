@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 using HarmonyLib;
 using Logger = Silk.Logger;
 
@@ -80,6 +81,23 @@ namespace SpiderSurge.Logging
             }
 
             SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
+
+            if (ShouldUploadTelemetryFromThisClient())
+            {
+                Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
+                SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshotAsync(snapshot);
+            }
+            else
+            {
+                if (!ModConfig.TelemetryEnabled)
+                {
+                    Logger.LogInfo("SpiderSurge telemetry skipped: telemetry is disabled in config.");
+                }
+                else
+                {
+                    Logger.LogInfo("SpiderSurge telemetry skipped: this client is not host/server.");
+                }
+            }
         }
 
         public void LogActivation(int playerIndex)
@@ -104,6 +122,18 @@ namespace SpiderSurge.Logging
         private int GetWavesSurvived()
         {
             return _currentWave;
+        }
+
+        private bool ShouldUploadTelemetryFromThisClient()
+        {
+            if (!ModConfig.TelemetryEnabled) return false;
+
+            if (NetworkManager.Singleton == null)
+            {
+                return true;
+            }
+
+            return NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer;
         }
 
         private List<string> GetGlobalPerks()

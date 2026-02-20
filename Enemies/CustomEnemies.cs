@@ -240,14 +240,8 @@ namespace SpiderSurge.Enemies
 
             bool registered = false;
 
-            if (CheatManager.Instance != null)
+            if (CustomTiersScreen.instance != null && CustomTiersScreen.instance.allElements != null)
             {
-                CheatManager.Instance.RegisterCheatEnemy(healthSystem);
-                registered = true;
-            }
-            else if (CustomTiersScreen.instance != null && CustomTiersScreen.instance.allElements != null)
-            {
-                // Fallback check to avoid duplicates manually if CheatManager is missing
                 bool alreadyExists = false;
                 foreach (var enemy in CustomTiersScreen.instance.allElements.allEnemies)
                 {
@@ -267,7 +261,7 @@ namespace SpiderSurge.Enemies
 
             if (!registered)
             {
-                Logger.LogWarning($"[SpiderSurge] Could not register {enemyObj.name} for cheats: CheatManager and CustomTiersScreen unavailable.");
+                Logger.LogWarning($"[SpiderSurge] Could not register {enemyObj.name} for cheats: CustomTiersScreen unavailable.");
             }
         }
 

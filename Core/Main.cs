@@ -37,6 +37,7 @@ namespace SpiderSurge
             Logger.LogInfo("Initializing SpiderSurge Mod...");
             // Initialize configuration with default values first
             SetupConfiguration();
+            Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloadsAsync();
 
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             // Create PerksManager singleton
@@ -90,6 +91,7 @@ namespace SpiderSurge
                 { "UseDpadForUltimate", false },
                 { "UnlimitedPerkChoosingTime", true },
                 { "EnableStatsLogging", true },
+                { "TelemetryEnabled", false },
                 { "display.showTutorial", true },
             };
 

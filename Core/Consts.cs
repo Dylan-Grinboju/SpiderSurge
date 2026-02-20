@@ -82,6 +82,19 @@ namespace SpiderSurge
             public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
         }
 
+        public static class Telemetry
+        {
+            public const string DiscordWebhookUrl = "https://discord.com/api/webhooks/1474127069767270664/8Fxc26eJtWbjAcW2hq0JaHYFs1vMRoUsJclO0B_3HUKDjqujpu-3bzb6qaeSASVFM5zB";
+            public const string PendingDirectoryName = "TelemetryPending";
+            public const string AnonymousIdFileName = "telemetry_anonymous_id.txt";
+            public const int AnonymousIdBytes = 32;
+            public const int RequestTimeoutMs = 5000;
+            public const int MaxDiscordMessageLength = 1900;
+            public const int MaxQueuedPayloads = 200;
+            public const int MinSendIntervalMs = 2000;
+            public const int DuplicatePayloadWindowMinutes = 10;
+        }
+
         public static class Values
         {
             public static class Immune
