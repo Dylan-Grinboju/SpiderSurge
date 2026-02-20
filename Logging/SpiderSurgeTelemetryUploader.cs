@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Logger = Silk.Logger;
@@ -23,6 +24,8 @@ namespace SpiderSurge.Logging
         private readonly string _anonymousIdPath;
         private readonly object _sendGuard = new object();
         private readonly Dictionary<string, DateTime> _recentPayloadHashes = new Dictionary<string, DateTime>();
+        private static readonly Regex EscapedTimestampFieldRegex = new Regex("\\\\\"timestampUtc\\\\\":\\\\\"[^\\\\\"]*\\\\\"", RegexOptions.Compiled);
+        private static readonly Regex PlainTimestampFieldRegex = new Regex("\"timestampUtc\":\"[^\"]*\"", RegexOptions.Compiled);
         private string _anonymousId;
         private DateTime _lastSuccessfulSendUtc = DateTime.MinValue;
 
@@ -390,10 +393,18 @@ namespace SpiderSurge.Logging
         {
             using (var sha = SHA256.Create())
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(payload ?? string.Empty);
+                byte[] bytes = Encoding.UTF8.GetBytes(NormalizePayloadForHashing(payload));
                 byte[] hash = sha.ComputeHash(bytes);
                 return Convert.ToBase64String(hash);
             }
+        }
+
+        private string NormalizePayloadForHashing(string payload)
+        {
+            string normalized = payload ?? string.Empty;
+            normalized = EscapedTimestampFieldRegex.Replace(normalized, "\\\"timestampUtc\\\":\\\"redacted\\\"");
+            normalized = PlainTimestampFieldRegex.Replace(normalized, "\"timestampUtc\":\"redacted\"");
+            return normalized;
         }
 
         private static string EscapeJson(string value)
