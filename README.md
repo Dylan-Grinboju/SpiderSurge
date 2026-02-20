@@ -88,7 +88,7 @@ A compact JSON event is sent at the end of each tracked SpiderSurge Survival mat
 - Match summary: `matchDurationSeconds`, `playerCount`, `wavesSurvived`, `painLevel`
 - Ability usage: per-player `abilityActivationCount`, `ultimateActivationCount`
 - Perks snapshot: active `globalPerks`
-- Truncation flags: `globalPerksTruncated`, `playerStatsTruncated` when payload is shortened to fit Discord limits
+- Truncation flags: `globalPerksTruncated`, `playerStatsTruncated`
 - Anonymous identifier: `anonId`
 
 ### Privacy and identity
@@ -97,13 +97,6 @@ A compact JSON event is sent at the end of each tracked SpiderSurge Survival mat
 - The anonymous ID is generated locally and stored in:
     `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
 
-### Delivery behavior
-
-- Telemetry is sent through a Discord webhook.
-- In multiplayer, upload is only attempted by host/server to avoid duplicate reports.
-- Failed uploads are queued locally in:
-    `...\Silk\Logs\SpiderSurge\TelemetryPending`
-- Queued payloads are retried automatically later.
 
 ### Local log files (non-telemetry)
 

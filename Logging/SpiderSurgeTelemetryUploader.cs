@@ -123,8 +123,7 @@ namespace SpiderSurge.Logging
 
         private string BuildRelayPayload(SpiderSurgeStatsSnapshot snapshot)
         {
-            string message = BuildCompactEventJson(snapshot);
-            return "{\"content\":\"" + EscapeJson(message) + "\"}";
+            return BuildCompactEventJson(snapshot);
         }
 
         private string BuildCompactEventJson(SpiderSurgeStatsSnapshot snapshot)
@@ -143,35 +142,7 @@ namespace SpiderSurge.Logging
                 })
                 .ToList();
 
-            bool perksTruncated = false;
-            bool playerStatsTruncated = false;
-
-            string json = BuildEventJson(snapshot, globalPerks, playerStats, perksTruncated, playerStatsTruncated);
-
-            while (json.Length > Consts.Telemetry.MaxDiscordMessageLength && globalPerks.Count > 0)
-            {
-                globalPerks.RemoveAt(globalPerks.Count - 1);
-                perksTruncated = true;
-                json = BuildEventJson(snapshot, globalPerks, playerStats, perksTruncated, playerStatsTruncated);
-            }
-
-            while (json.Length > Consts.Telemetry.MaxDiscordMessageLength && playerStats.Count > 0)
-            {
-                playerStats.RemoveAt(playerStats.Count - 1);
-                playerStatsTruncated = true;
-                json = BuildEventJson(snapshot, globalPerks, playerStats, perksTruncated, playerStatsTruncated);
-            }
-
-            if (json.Length > Consts.Telemetry.MaxDiscordMessageLength)
-            {
-                globalPerks.Clear();
-                playerStats.Clear();
-                perksTruncated = true;
-                playerStatsTruncated = true;
-                json = BuildEventJson(snapshot, globalPerks, playerStats, perksTruncated, playerStatsTruncated);
-            }
-
-            return json;
+            return BuildEventJson(snapshot, globalPerks, playerStats, false, false);
         }
 
         private string BuildEventJson(
