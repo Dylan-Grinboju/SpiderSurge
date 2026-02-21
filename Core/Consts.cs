@@ -103,14 +103,14 @@ namespace SpiderSurge
         {
             public static class Immune
             {
-                public const float AbilityBaseCooldown = 15f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1.5f;
                 public const float UltimateBaseCooldown = 75f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
                 public const float UltimateBaseDuration = 10f;
-                public const float UltimateDurationIncreasePerLevel = 2.5f;
+                public const float UltimateDurationIncreasePerLevel = 3f;
                 public const float UltimateShieldSynergyChance = 0.5f;
                 public const int UltimateFriendlyWaspSpawnCount = 3;
                 public const int UltimateFriendlyWaspShieldBonusCount = 1;
@@ -118,12 +118,12 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 25f;
-                public const float AbilityCooldownReductionPerLevel = 7.5f;
+                public const float AbilityBaseCooldown = 20f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
-                public const float UltimateBaseCooldown = 45f;
-                public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseCooldown = 30f;
+                public const float UltimateCooldownReductionPerLevel = 10f;
                 public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
                 public const float CheckInterval = 0.5f;
             }

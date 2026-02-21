@@ -3,6 +3,19 @@ using UnityEngine;
 
 namespace SpiderSurge
 {
+    internal static class AmmoAbilityPatchUtils
+    {
+        internal static void TryHandleWeaponRemoved(SpiderWeaponManager manager)
+        {
+            if (manager == null || manager.equippedWeapon == null)
+            {
+                return;
+            }
+
+            AmmoAbility.HandleWeaponRemoved(manager, manager.equippedWeapon);
+        }
+    }
+
     [HarmonyPatch(typeof(Weapon), nameof(Weapon.CanEquip))]
     public class Weapon_CanEquip_Patch
     {
@@ -15,6 +28,26 @@ namespace SpiderSurge
             {
                 __result = false;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(SpiderWeaponManager), nameof(SpiderWeaponManager.UnEquipWeapon))]
+    public class SpiderWeaponManager_UnEquipWeapon_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(SpiderWeaponManager __instance)
+        {
+            AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(SpiderWeaponManager), "ThrowWeapon")]
+    public class SpiderWeaponManager_ThrowWeapon_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(SpiderWeaponManager __instance)
+        {
+            AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
         }
     }
 }

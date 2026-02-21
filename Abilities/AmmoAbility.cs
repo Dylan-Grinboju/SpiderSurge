@@ -29,10 +29,12 @@ namespace SpiderSurge
         public override string UltimatePerkDescription => "Spawns weapons at half the weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
-        private float storedMaxAmmo = 0f;
         private float weaponCheckTimer = 0f;
         private static FieldInfo networkAmmoField;
-        private Weapon lastWeapon;
+        private Weapon trackedWeapon;
+        private float trackedOriginalAmmo = 0f;
+        private Weapon lastResolvedWeapon;
+        private int lastResolvedFrame = -1;
         private static WeaponSpawner[] cachedWeaponSpawners;
         private static string cachedSceneName;
 
@@ -86,45 +88,96 @@ namespace SpiderSurge
             {
                 var weapon = weaponManager.equippedWeapon;
 
-                if (weapon != lastWeapon)
-                {
-                    lastWeapon = weapon;
-                    storedMaxAmmo = GetTargetAmmoCount(weapon);
-                }
+                EnsureTrackedWeapon(weapon);
 
-                if (weapon.ammo < storedMaxAmmo)
+                float currentAmmoFloor = GetHeldWeaponFloorAmmo(weapon);
+
+                if (weapon.ammo < currentAmmoFloor)
                 {
-                    SetWeaponAmmo(weapon, storedMaxAmmo);
+                    SetWeaponAmmo(weapon, currentAmmoFloor);
                 }
             }
         }
 
-        private float GetTargetAmmoCount(Weapon weapon)
+        private float GetHeldWeaponFloorAmmo(Weapon weapon)
         {
             if (weapon == null) return 0f;
 
-            // Default: Lock at current ammo (no refill)
-            float floor = weapon.ammo;
+            float originalAmmo = GetTrackedOriginalAmmo(weapon);
+            int efficiencyLevel = GetEfficiencyLevel();
 
-            // Synergy Logic
-            if (ModifierManager.instance != null)
+            if (efficiencyLevel >= 2)
             {
-                int efficiencyLevel = ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
-
-                if (efficiencyLevel == 1)
-                {
-                    // Level 1: Ensure at least 50% ammo
-                    float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
-                    if (halfMax > floor) floor = halfMax;
-                }
-                else if (efficiencyLevel >= 2)
-                {
-                    // Level 2: Fill to max
-                    floor = weapon.maxAmmo;
-                }
+                float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
+                return Mathf.Max(originalAmmo, halfMax);
             }
 
-            return floor;
+            return originalAmmo;
+        }
+
+        private int GetEfficiencyLevel()
+        {
+            if (ModifierManager.instance == null) return 0;
+            return ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
+        }
+
+        private void EnsureTrackedWeapon(Weapon weapon)
+        {
+            if (weapon == null)
+            {
+                return;
+            }
+
+            if (trackedWeapon != weapon)
+            {
+                trackedWeapon = weapon;
+                trackedOriginalAmmo = weapon.ammo;
+            }
+        }
+
+        private float GetTrackedOriginalAmmo(Weapon weapon)
+        {
+            if (weapon == null) return 0f;
+
+            EnsureTrackedWeapon(weapon);
+
+            return trackedOriginalAmmo;
+        }
+
+        private float GetRemovalAmmoTarget(Weapon weapon, bool duringActiveUnequip, int efficiencyLevel)
+        {
+            if (weapon == null) return 0f;
+
+            float originalAmmo = GetTrackedOriginalAmmo(weapon);
+
+            if (efficiencyLevel == 1)
+            {
+                return originalAmmo;
+            }
+
+            if (duringActiveUnequip)
+            {
+                return originalAmmo;
+            }
+
+            float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
+            return Mathf.Max(originalAmmo, halfMax);
+        }
+
+        private bool ShouldDisintegrateOnRemoval(Weapon weapon)
+        {
+            if (weapon == null)
+            {
+                return false;
+            }
+
+            if (weapon.type == null)
+            {
+                return true;
+            }
+
+            return !weapon.type.Contains(Weapon.WeaponType.Explosive)
+                && !weapon.type.Contains(Weapon.WeaponType.Mine);
         }
 
         private void SetWeaponAmmo(Weapon weapon, float value)
@@ -133,7 +186,7 @@ namespace SpiderSurge
 
             weapon.ammo = value;
 
-            if (weapon.ammo < value && networkAmmoField != null)
+            if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField != null)
             {
                 try
                 {
@@ -160,23 +213,92 @@ namespace SpiderSurge
                 );
             }
 
-            storedMaxAmmo = 0f;
+            trackedWeapon = null;
+            trackedOriginalAmmo = 0f;
+            lastResolvedWeapon = null;
+            lastResolvedFrame = -1;
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)
             {
-                lastWeapon = weaponManager.equippedWeapon;
-                storedMaxAmmo = GetTargetAmmoCount(lastWeapon);
-                SetWeaponAmmo(lastWeapon, storedMaxAmmo);
-            }
-            else
-            {
-                Logger.LogWarning($"Bottomless Clip activated for player {playerInput.playerIndex} - no weapon equipped");
+                trackedWeapon = weaponManager.equippedWeapon;
+                trackedOriginalAmmo = trackedWeapon.ammo;
+                float currentAmmoFloor = GetHeldWeaponFloorAmmo(trackedWeapon);
+                SetWeaponAmmo(trackedWeapon, currentAmmoFloor);
             }
         }
 
         protected override void OnDeactivate()
         {
-            storedMaxAmmo = 0f;
+            if (weaponManager != null && weaponManager.equippedWeapon != null)
+            {
+                ResolveWeaponAmmoOnAbilityRemoval(weaponManager.equippedWeapon, false);
+            }
+
+            trackedWeapon = null;
+            trackedOriginalAmmo = 0f;
+            lastResolvedWeapon = null;
+            lastResolvedFrame = -1;
+        }
+
+        public static void HandleWeaponRemoved(SpiderWeaponManager manager, Weapon weapon)
+        {
+            if (manager == null || weapon == null) return;
+
+            PlayerInput playerInput = manager.GetComponentInParent<PlayerInput>();
+            if (playerInput == null) return;
+
+            if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability == null)
+            {
+                return;
+            }
+
+            if (!ability.isActive)
+            {
+                return;
+            }
+
+            ability.ResolveWeaponAmmoOnAbilityRemoval(weapon, true);
+        }
+
+        private void ResolveWeaponAmmoOnAbilityRemoval(Weapon weapon, bool duringActiveUnequip)
+        {
+            if (weapon == null) return;
+            if (weapon == lastResolvedWeapon && Time.frameCount == lastResolvedFrame) return;
+
+            int efficiencyLevel = GetEfficiencyLevel();
+            if (efficiencyLevel <= 0)
+            {
+                lastResolvedWeapon = weapon;
+                lastResolvedFrame = Time.frameCount;
+
+                if (ShouldDisintegrateOnRemoval(weapon))
+                {
+                    weapon.Disintegrate();
+                }
+                else
+                {
+                    //for explosives, nothing
+                }
+
+                if (weapon == trackedWeapon)
+                {
+                    trackedWeapon = null;
+                    trackedOriginalAmmo = 0f;
+                }
+
+                return;
+            }
+
+            float targetAmmo = GetRemovalAmmoTarget(weapon, duringActiveUnequip, efficiencyLevel);
+            SetWeaponAmmo(weapon, targetAmmo);
+            lastResolvedWeapon = weapon;
+            lastResolvedFrame = Time.frameCount;
+
+            if (weapon == trackedWeapon)
+            {
+                trackedWeapon = null;
+                trackedOriginalAmmo = 0f;
+            }
         }
 
         protected override void OnActivateUltimate()
