@@ -130,11 +130,11 @@ namespace SpiderSurge
 
             public static class Pulse
             {
-                public const float AbilityBaseCooldown = 15f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 25f;
-                public const float UltimateCooldownReductionPerLevel = 7.5f;
+                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateCooldownReductionPerLevel = 5f;
                 public const float UltimateBaseDuration = 0f;
 
                 //duration perk
