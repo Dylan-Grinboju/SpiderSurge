@@ -105,7 +105,7 @@ namespace SpiderSurge
                 playerPulseAbilities[playerInput] = this;
             }
 
-            pulseLayers = LayerMask.GetMask("Player", "Item", "Enemy", "DynamicWorld");
+            pulseLayers = LayerMask.GetMask("Player", "Item", "Enemy", "EnemyWeapon", "DynamicWorld");
 
             if (pulseLayers == 0)
             {
@@ -232,6 +232,12 @@ namespace SpiderSurge
                 Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
                 Vector2 force = direction * p.KnockBackStrength;
 
+                Rigidbody2D rb = collider.attachedRigidbody;
+
+                // Reset momentum so flying enemies/objects don't counteract the pulse
+                rb?.velocity = Vector2.zero;
+
+
                 if (collider.CompareTag("PlayerRigidbody"))
                 {
                     PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
@@ -256,6 +262,53 @@ namespace SpiderSurge
                         damageable.Impact(force, closestPoint, true, true);
                     }
                 }
+            }
+
+            ApplyPulseToRailShotsWithoutColliders(p);
+        }
+
+        private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
+        {
+            RailShot[] railShots = FindObjectsOfType<RailShot>();
+            if (railShots == null || railShots.Length == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < railShots.Length; i++)
+            {
+                RailShot railShot = railShots[i];
+                if (railShot == null || !railShot.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Rigidbody2D rb = railShot.GetComponent<Rigidbody2D>();
+                if (rb == null)
+                {
+                    continue;
+                }
+
+                if (rb.attachedColliderCount > 0)
+                {
+                    continue;
+                }
+
+                Vector2 railShotPosition = rb.position;
+                float distance = Vector2.Distance((Vector2)p.Position, railShotPosition);
+                if (distance > p.KnockBackRadius)
+                {
+                    continue;
+                }
+
+                Vector2 direction = (railShotPosition - (Vector2)p.Position).normalized;
+                if (direction.sqrMagnitude < 0.0001f)
+                {
+                    direction = Vector2.up;
+                }
+
+                rb.velocity = Vector2.zero;
+                rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
             }
         }
 
