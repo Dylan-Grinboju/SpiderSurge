@@ -23,7 +23,6 @@
 
     <!-- Target Framework -->
     <TargetFramework>net472</TargetFramework>
-    <LangVersion>14.0</LangVersion>
 
   </PropertyGroup>
 

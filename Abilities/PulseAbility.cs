@@ -234,10 +234,6 @@ namespace SpiderSurge
 
                 Rigidbody2D rb = collider.attachedRigidbody;
 
-                // Reset momentum so flying enemies/objects don't counteract the pulse
-                rb?.velocity = Vector2.zero;
-
-
                 if (collider.CompareTag("PlayerRigidbody"))
                 {
                     PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
@@ -246,6 +242,9 @@ namespace SpiderSurge
                         continue;
                     }
                 }
+
+                if (rb != null)
+                    rb.velocity = Vector2.zero;
 
                 if (distance > p.DeathRadius)
                 {
