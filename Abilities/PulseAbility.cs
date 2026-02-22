@@ -268,13 +268,13 @@ namespace SpiderSurge
 
         private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
         {
-            RailShot[] railShots = FindObjectsOfType<RailShot>();
-            if (railShots == null || railShots.Length == 0)
+            IReadOnlyList<RailShot> railShots = RailShotTracker.All;
+            if (railShots == null || railShots.Count == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < railShots.Length; i++)
+            for (int i = 0; i < railShots.Count; i++)
             {
                 RailShot railShot = railShots[i];
                 if (railShot == null || !railShot.gameObject.activeInHierarchy)

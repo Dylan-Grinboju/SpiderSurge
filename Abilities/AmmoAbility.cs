@@ -160,6 +160,7 @@ namespace SpiderSurge
                 return originalAmmo;
             }
 
+            //efficiency is 2
             float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
             return Mathf.Max(originalAmmo, halfMax);
         }
