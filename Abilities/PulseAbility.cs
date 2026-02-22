@@ -269,7 +269,7 @@ namespace SpiderSurge
         private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
         {
             IReadOnlyList<RailShot> railShots = RailShotTracker.All;
-            if (railShots == null || railShots.Count == 0)
+            if (railShots.Count == 0)
             {
                 return;
             }

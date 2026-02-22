@@ -87,9 +87,6 @@ namespace SpiderSurge
             if (isActive && weaponManager != null && weaponManager.equippedWeapon != null)
             {
                 var weapon = weaponManager.equippedWeapon;
-
-                EnsureTrackedWeapon(weapon);
-
                 float currentAmmoFloor = GetHeldWeaponFloorAmmo(weapon);
 
                 if (weapon.ammo < currentAmmoFloor)
@@ -138,10 +135,8 @@ namespace SpiderSurge
         private float GetTrackedOriginalAmmo(Weapon weapon)
         {
             if (weapon == null) return 0f;
-
             EnsureTrackedWeapon(weapon);
-
-            return trackedOriginalAmmo;
+            return weapon == trackedWeapon ? trackedOriginalAmmo : 0f;
         }
 
         private float GetRemovalAmmoTarget(Weapon weapon, bool duringActiveUnequip, int efficiencyLevel)
