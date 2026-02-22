@@ -103,14 +103,14 @@ namespace SpiderSurge
         {
             public static class Immune
             {
-                public const float AbilityBaseCooldown = 15f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 3f;
                 public const float AbilityDurationIncreasePerLevel = 1.5f;
                 public const float UltimateBaseCooldown = 75f;
                 public const float UltimateCooldownReductionPerLevel = 15f;
                 public const float UltimateBaseDuration = 10f;
-                public const float UltimateDurationIncreasePerLevel = 2.5f;
+                public const float UltimateDurationIncreasePerLevel = 3f;
                 public const float UltimateShieldSynergyChance = 0.5f;
                 public const int UltimateFriendlyWaspSpawnCount = 3;
                 public const int UltimateFriendlyWaspShieldBonusCount = 1;
@@ -118,23 +118,23 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 25f;
-                public const float AbilityCooldownReductionPerLevel = 7.5f;
+                public const float AbilityBaseCooldown = 20f;
+                public const float AbilityCooldownReductionPerLevel = 5f;
                 public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
-                public const float UltimateBaseCooldown = 45f;
-                public const float UltimateCooldownReductionPerLevel = 15f;
+                public const float UltimateBaseCooldown = 30f;
+                public const float UltimateCooldownReductionPerLevel = 10f;
                 public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
                 public const float CheckInterval = 0.5f;
             }
 
             public static class Pulse
             {
-                public const float AbilityBaseCooldown = 15f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 25f;
-                public const float UltimateCooldownReductionPerLevel = 7.5f;
+                public const float UltimateBaseCooldown = 20f;
+                public const float UltimateCooldownReductionPerLevel = 5f;
                 public const float UltimateBaseDuration = 0f;
 
                 //duration perk
@@ -162,8 +162,8 @@ namespace SpiderSurge
 
             public static class Storage
             {
-                public const float AbilityBaseCooldown = 15f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
                 public const float UltimateBaseCooldown = 15f;
@@ -220,28 +220,28 @@ namespace SpiderSurge
 
             public static readonly Dictionary<string, EnemySpawnConfig> CustomEnemyStats = new Dictionary<string, EnemySpawnConfig>
                 {
-                    { "Wasp", new EnemySpawnConfig(1.5f, 0, 22) },
-                    { "Roller", new EnemySpawnConfig(1.5f, 2, 26) },
-                    { "Whisp", new EnemySpawnConfig(2f, 4, 30) },
-                    { "MeleeWhisp", new EnemySpawnConfig(2f, 6, 20) },
-                    { "Khepri", new EnemySpawnConfig(2.5f, 8, 36) },
-                    { "ExplodingRoller", new EnemySpawnConfig(3f, 10, 0) },
-                    { "PowerWhisp Variant", new EnemySpawnConfig(3f, 12, 0) },
-                    { "PowerWasp Variant", new EnemySpawnConfig(3f, 14, 0) },
-                    { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 16, 30) },
-                    { "PowerRoller Variant", new EnemySpawnConfig(4f, 18, 0) },
-                    { "PowerKhepri Variant", new EnemySpawnConfig(4f, 20, 0) },
-                    { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 22, 0) },
-                    { "TwinWhisp", new EnemySpawnConfig(4f, 24, 44) },
-                    { "Wasp Shielded", new EnemySpawnConfig(4f, 26, 0) },
-                    { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 28, 0) },
-                    { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 30, 0) },
-                    { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 32, 0) },
-                    { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 34, 0) },
-                    { "Hornet Variant", new EnemySpawnConfig(6f, 36, 0) },
-                    { "MissileWhisp", new EnemySpawnConfig(7f, 38, 0) },
-                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 40, 0) },
-                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 42, 0) },
+                    { "Wasp", new EnemySpawnConfig(1.5f, 0, 7) },
+                    { "Roller", new EnemySpawnConfig(1.5f, 1, 9) },
+                    { "Whisp", new EnemySpawnConfig(2f, 2, 10) },
+                    { "MeleeWhisp", new EnemySpawnConfig(2f, 3, 10) },
+                    { "Khepri", new EnemySpawnConfig(2.5f, 4, 24) },
+                    { "ExplodingRoller", new EnemySpawnConfig(3f, 5, 0) },
+                    { "PowerWhisp Variant", new EnemySpawnConfig(3f, 6, 0) },
+                    { "PowerWasp Variant", new EnemySpawnConfig(3f, 7, 16) },
+                    { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 8, 16) },
+                    { "PowerRoller Variant", new EnemySpawnConfig(4f, 9, 0) },
+                    { "PowerKhepri Variant", new EnemySpawnConfig(4f, 10, 0) },
+                    { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 11, 20) },
+                    { "TwinWhisp", new EnemySpawnConfig(4f, 12, 20) },
+                    { "Wasp Shielded", new EnemySpawnConfig(4f, 13, 42) },
+                    { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 14, 0) },
+                    { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 15, 0) },
+                    { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 16, 0) },
+                    { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 17, 0) },
+                    { "Hornet Variant", new EnemySpawnConfig(6f, 18, 25) },
+                    { "MissileWhisp", new EnemySpawnConfig(7f, 19, 25) },
+                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 20, 0) },
+                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 21, 0) },
                 };
 
             public struct EnemySpawnConfig

@@ -288,8 +288,10 @@ namespace SpiderSurge
             GUILayout.Space(8);
 
             GUILayout.Label("<b><color=#FFD700>Bottomless Clip</color></b> + Efficiency:", labelStyle);
-            GUILayout.Label("• <b>Efficiency Lv1</b>: Ability refills ammo to at least <b>50%</b> of max.", labelStyle);
-            GUILayout.Label("• <b>Efficiency Lv2</b>: Ability refills ammo to <b>100%</b> of max.", labelStyle);
+            GUILayout.Label("• No Efficiency: When the effect ends or weapon is dropped, the weapon is <b>disintegrated</b>.", labelStyle);
+            GUILayout.Label("• <b>Efficiency Lv1</b>: Keep weapon ammo at its original pre-effect value.", labelStyle);
+            GUILayout.Label("• <b>Efficiency Lv2</b>: Held weapon is kept at least at <b>50%</b> capacity.", labelStyle);
+            GUILayout.Label("  → If dropped/thrown, both Lv1/Lv2 keep original pre-effect ammo.", labelStyle);
             GUILayout.Space(8);
 
             GUILayout.Label("<b><color=#FFD700>Kinetic Pulse</color></b> + Explosion Perks:", labelStyle);
