@@ -43,6 +43,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.44.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="SilkLoader" Version="$(SilkVersion)" />
     <PackageReference Include="MonoMod.Backports" Version="1.1.2" />
   </ItemGroup>
@@ -207,9 +211,4 @@
     <Message Text="Generated version.txt with version $(Version)" Importance="high" />
   </Target>
 
-  <!-- Import ILRepack targets for dependency merging -->
-  <Import Project="ILRepack.targets" />
-
 </Project>
-
-
