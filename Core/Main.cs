@@ -49,7 +49,7 @@ namespace SpiderSurge
             TelemetryConsentUI.Initialize();
 
             // Initialize CheatManager
-            // CheatManager.Initialize();
+            CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
             // SoundTester.Initialize();
             // Initialize per-player control settings
