@@ -137,7 +137,7 @@ namespace SpiderSurge
             // Start cooldown immediately since this is an instant ability
             isActive = false;
             isUltimateActive = false;
-            StartCooldown();
+            StartCooldown(wasUltimate: true);
         }
 
         protected override void OnDeactivate()
