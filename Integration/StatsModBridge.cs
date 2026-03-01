@@ -93,6 +93,30 @@ namespace SpiderSurge.Integration
         private const string ReqLeastAbility = "SurgeLeastAbility";
         private const string ReqMostUlt = "SurgeMostUlt";
         private const string ReqLeastUlt = "SurgeLeastUlt";
+        private const string ReqMostImmuneAbility = "SurgeMostImmuneAbility";
+        private const string ReqMostPulseAbility = "SurgeMostPulseAbility";
+        private const string ReqMostImmuneUlt = "SurgeMostImmuneUlt";
+        private const string ReqMostPulseUlt = "SurgeMostPulseUlt";
+
+        private static string GetActiveAbilityType()
+        {
+            if (PerksManager.Instance == null) return null;
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0) return "Immune";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return "Pulse";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return "Ammo";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return "Storage";
+            return null;
+        }
+
+        private static string GetActiveUltType()
+        {
+            if (PerksManager.Instance == null) return null;
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0) return "Immune";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0) return "Pulse";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0) return "Ammo";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0) return "Storage";
+            return null;
+        }
 
         private class LeaderInfo
         {
@@ -123,7 +147,19 @@ namespace SpiderSurge.Integration
                 TryRegisterTitle("Simple is Better", (mostAbility, ReqMostAbility), (leastUlt, ReqLeastUlt));
                 TryRegisterTitle("Vanilla", (leastUlt, ReqLeastUlt), (leastAbility, ReqLeastAbility));
 
+                string abilityType = GetActiveAbilityType();
+                string ultType = GetActiveUltType();
+
                 TryRegisterTitle("Ability Destroyer", (mostAbility, ReqMostAbility), (null, "MostOffense"));
+
+                if (abilityType == "Immune")
+                    TryRegisterTitle("Cautious", (mostAbility, ReqMostImmuneAbility), (null, "MostDamageTaken"));
+                if (abilityType == "Pulse")
+                    TryRegisterTitle("Down with the Ship", (mostAbility, ReqMostPulseAbility), (null, "MostLavaDeaths"));
+                if (ultType == "Pulse")
+                    TryRegisterTitle("Boom Boom", (mostUlt, ReqMostPulseUlt), (null, "MostExplosionsKills"));
+                if (ultType == "Immune")
+                    TryRegisterTitle("Self Sacrifice", (mostUlt, ReqMostImmuneUlt), (null, "MostDamageTaken"));
             }
             catch (Exception ex)
             {
