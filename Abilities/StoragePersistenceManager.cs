@@ -15,7 +15,7 @@ public static class StoragePersistenceManager
 
     public static void SaveStoredWeapons(int playerId, List<SavedWeaponData> weapons)
     {
-        if (weapons == null || weapons.Count == 0)
+        if (weapons is null || weapons.Count == 0)
         {
             if (_storedWeapons.ContainsKey(playerId))
             {

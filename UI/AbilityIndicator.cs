@@ -71,7 +71,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private Sprite CreateCircleSprite()
     {
-        if (_cachedCircleSprite != null) return _cachedCircleSprite;
+        if (_cachedCircleSprite is not null) return _cachedCircleSprite;
 
         // Create a small texture for the circle
         int textureSize = 64;
@@ -110,7 +110,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private Sprite CreateGlowSprite()
     {
-        if (_cachedGlowSprite != null) return _cachedGlowSprite;
+        if (_cachedGlowSprite is not null) return _cachedGlowSprite;
 
         // Create a larger texture for the glow
         int textureSize = 128;
@@ -184,7 +184,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private void UpdateGlowPulse()
     {
-        if (glowRenderer == null) return;
+        if (glowRenderer is null) return;
 
         // Create pulsing effect using sine wave
         float pulse = Mathf.Sin(Time.time * glowPulseSpeed * 2f * Mathf.PI) * 0.5f + 0.5f; // 0 to 1
@@ -197,7 +197,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private void UpdateIndicatorScale()
     {
-        if (circleObject != null)
+        if (circleObject is not null)
         {
             float targetDiameter = indicatorRadius * 2f;
             float currentDiameter = 0.64f;
@@ -205,7 +205,7 @@ public class AbilityIndicator : MonoBehaviour
             circleObject.transform.localScale = new Vector3(scale, scale, 1f);
         }
 
-        if (glowObject != null)
+        if (glowObject is not null)
         {
             float targetDiameter = indicatorRadius * 4f; // Glow is 2x larger
             float currentDiameter = 1.28f; // Since glow texture is 128px vs 64px for main
@@ -216,7 +216,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private void Update()
     {
-        if (targetTransform == null || circleObject == null)
+        if (targetTransform is null || circleObject is null)
         {
             return;
         }
@@ -231,7 +231,7 @@ public class AbilityIndicator : MonoBehaviour
 
     private void UpdateIndicatorState()
     {
-        if (spriteRenderer == null || glowRenderer == null || trackedAbility == null)
+        if (spriteRenderer is null || glowRenderer is null || trackedAbility is null)
         {
             return;
         }
@@ -305,11 +305,11 @@ public class AbilityIndicator : MonoBehaviour
             CleanupStaticSprites();
         }
 
-        if (circleObject != null)
+        if (circleObject is not null)
         {
             Destroy(circleObject);
         }
-        if (glowObject != null)
+        if (glowObject is not null)
         {
             Destroy(glowObject);
         }
@@ -317,9 +317,9 @@ public class AbilityIndicator : MonoBehaviour
 
     private static void CleanupStaticSprites()
     {
-        if (_cachedCircleSprite != null)
+        if (_cachedCircleSprite is not null)
         {
-            if (_cachedCircleSprite.texture != null)
+            if (_cachedCircleSprite.texture is not null)
             {
                 Destroy(_cachedCircleSprite.texture);
             }
@@ -327,9 +327,9 @@ public class AbilityIndicator : MonoBehaviour
             _cachedCircleSprite = null;
         }
 
-        if (_cachedGlowSprite != null)
+        if (_cachedGlowSprite is not null)
         {
-            if (_cachedGlowSprite.texture != null)
+            if (_cachedGlowSprite.texture is not null)
             {
                 Destroy(_cachedGlowSprite.texture);
             }

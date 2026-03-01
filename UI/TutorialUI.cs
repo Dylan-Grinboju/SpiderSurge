@@ -41,7 +41,7 @@ public class TutorialUI : MonoBehaviour
 
     public static void Initialize()
     {
-        if (_instance == null)
+        if (_instance is null)
         {
             GameObject obj = new("TutorialUI");
             _instance = obj.AddComponent<TutorialUI>();
@@ -51,7 +51,7 @@ public class TutorialUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_instance != null && _instance != this)
+        if (_instance is not null && _instance != this)
         {
             Destroy(gameObject);
             return;
@@ -343,8 +343,8 @@ public class TutorialUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (darkTexture != null) Destroy(darkTexture);
-        if (mediumTexture != null) Destroy(mediumTexture);
+        if (darkTexture is not null) Destroy(darkTexture);
+        if (mediumTexture is not null) Destroy(mediumTexture);
         _instance = null;
     }
 }

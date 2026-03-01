@@ -16,22 +16,21 @@ public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
     public static void Postfix(SurvivalModeHud __instance)
     {
         if (!SurgeGameModeManager.IsSurgeRunActive) return;
-        if (PerksManager.Instance == null) return;
+        if (PerksManager.Instance is null) return;
 
         // Access perkChoiceView using reflection since it might be private
         var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        if (viewField == null) return;
+        if (viewField is null) return;
 
-        var view = viewField.GetValue(__instance) as Component;
-        if (view == null) return;
+        if (viewField.GetValue(__instance) is not Component view) return;
 
         // Find the Heading child
         var heading = view.transform.Find("Heading");
-        if (heading == null)
+        if (heading is null)
         {
             // Try recursive find if direct child fails, though screenshot suggests direct child
             heading = view.transform.Find("View - PerkChoice/Heading");
-            if (heading == null)
+            if (heading is null)
             {
                 // Fallback: search children
                 var headings = view.GetComponentsInChildren<TextMeshProUGUI>(true);
@@ -46,12 +45,12 @@ public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
             }
         }
 
-        if (heading == null) return;
+        if (heading is null) return;
 
         var tmpro = heading.GetComponent<TextMeshProUGUI>();
         var localize = heading.GetComponent<Localize>();
 
-        if (tmpro == null) return;
+        if (tmpro is null) return;
 
         bool isSpecialRound = false;
         string specialTitle = "";
@@ -79,7 +78,7 @@ public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
         }
         else
         {
-            if (localize != null)
+            if (localize is not null)
             {
                 localize.enabled = true;
                 // Force update to ensure text resets to "You must choose!"
@@ -120,8 +119,7 @@ public class PerkChoiseTimer_SetTimerValue_Patch
     {
         if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
 
-        var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
-        if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
+        if (_timerTextField?.GetValue(__instance) is not TextMeshProUGUI timerText || string.IsNullOrEmpty(timerText.text)) return;
 
         timerText.text = s_trailingDigits.Replace(timerText.text, "∞");
     }

@@ -13,7 +13,7 @@ public class SurvivalMode_StartGame_Patch
     private static bool ShouldApplySurge(SurvivalConfig survivalConfig)
     {
         return ModConfig.enableSurgeMode
-            && survivalConfig != null
+            && survivalConfig is not null
             && survivalConfig.type == SurvivalConfig.Type.EndlessSurvival;
     }
 
@@ -30,7 +30,7 @@ public class SurvivalMode_StartGame_Patch
 
             foreach (var enemy in survivalConfig.enemies)
             {
-                if (enemy.enemyObject != null)
+                if (enemy.enemyObject is not null)
                 {
                     if (enemy.enemyObject.name.Contains("MeleeWhisp") && !enemy.enemyObject.name.Contains("Power"))
                     {
@@ -45,10 +45,10 @@ public class SurvivalMode_StartGame_Patch
                         whispPrefab = enemy.enemyObject;
                     }
 
-                    if (shieldSource == null)
+                    if (shieldSource is null)
                     {
                         var ehs = enemy.enemyObject.GetComponent<EnemyHealthSystem>();
-                        if (ehs != null && ehs.shield != null)
+                        if (ehs is not null && ehs.shield is not null)
                         {
                             shieldSource = enemy.enemyObject;
                         }
@@ -57,7 +57,7 @@ public class SurvivalMode_StartGame_Patch
             }
 
             GameObject rocketProjectile = null;
-            if (CustomEnemies.MissileWhispPrefab == null)
+            if (CustomEnemies.MissileWhispPrefab is null)
             {
                 var projectiles = Resources.FindObjectsOfTypeAll<BasicProjectile>();
                 foreach (var p in projectiles)
@@ -71,21 +71,21 @@ public class SurvivalMode_StartGame_Patch
             }
 
             // Initialize Custom Enemies if missing
-            if (CustomEnemies.TwinBladeMeleeWhispPrefab == null && meleeWhispPrefab != null)
+            if (CustomEnemies.TwinBladeMeleeWhispPrefab is null && meleeWhispPrefab is not null)
             {
                 CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
             }
-            if (CustomEnemies.TwinBladePowerMeleeWhispPrefab == null && powerMeleeWhispPrefab != null)
+            if (CustomEnemies.TwinBladePowerMeleeWhispPrefab is null && powerMeleeWhispPrefab is not null)
             {
                 CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
             }
-            if (whispPrefab != null)
+            if (whispPrefab is not null)
             {
-                if (CustomEnemies.MissileWhispPrefab == null && rocketProjectile != null)
+                if (CustomEnemies.MissileWhispPrefab is null && rocketProjectile is not null)
                 {
                     CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
                 }
-                if (CustomEnemies.TwinWhispPrefab == null)
+                if (CustomEnemies.TwinWhispPrefab is null)
                 {
                     CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
                 }
@@ -101,7 +101,7 @@ public class SurvivalMode_StartGame_Patch
             // Update enemy stats from config
             foreach (var enemy in surgeConfig.enemies)
             {
-                if (enemy.enemyObject != null && Consts.Values.CustomEnemyStats.TryGetValue(enemy.enemyObject.name, out var stats))
+                if (enemy.enemyObject is not null && Consts.Values.CustomEnemyStats.TryGetValue(enemy.enemyObject.name, out var stats))
                 {
                     enemy.cost = stats.Cost;
                     enemy.minWave = stats.MinWave;
@@ -110,38 +110,38 @@ public class SurvivalMode_StartGame_Patch
             }
 
             // Add custom enemies to the surge config
-            if (CustomEnemies.TwinBladeMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladeMeleeWhisp", out var doubleStats))
+            if (CustomEnemies.TwinBladeMeleeWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladeMeleeWhisp", out var doubleStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladeMeleeWhispPrefab, doubleStats.Cost, doubleStats.MinWave, doubleStats.MaxWave));
             }
 
-            if (CustomEnemies.TwinBladePowerMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladePowerMeleeWhisp", out var twinStats))
+            if (CustomEnemies.TwinBladePowerMeleeWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladePowerMeleeWhisp", out var twinStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
             }
 
-            if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
+            if (CustomEnemies.TwinWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
             }
 
-            if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
+            if (CustomEnemies.MissileWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
             }
 
-            if (CustomEnemies.ShieldedMissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedMissileWhisp", out var shieldedStats))
+            if (CustomEnemies.ShieldedMissileWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedMissileWhisp", out var shieldedStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedMissileWhispPrefab, shieldedStats.Cost, shieldedStats.MinWave, shieldedStats.MaxWave));
             }
 
-            if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
+            if (CustomEnemies.ShieldedTwinWhispPrefab is not null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
             {
                 surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
             }
 
             // If Pain Level is 2 or higher, set min wave to 0 for all enemies
-            if (SurvivalModeHud.instance != null && SurvivalModeHud.instance.currentPainLevel.Value >= 2)
+            if (SurvivalModeHud.instance is not null && SurvivalModeHud.instance.currentPainLevel.Value >= 2)
             {
 
                 foreach (var enemy in surgeConfig.enemies)
@@ -159,12 +159,12 @@ public class SurvivalMode_StartGame_Patch
     {
         if (__result && ShouldApplySurge(survivalConfig))
         {
-            if (SurgeGameModeManager.Instance == null) return;
+            if (SurgeGameModeManager.Instance is null) return;
             SurgeGameModeManager.Instance.SetActive(true);
             PerksManager.Instance.ResetPerks();
             PlayerAbilityHandler.ResetSpawnTracking();
             var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
-            if (eventField != null)
+            if (eventField is not null)
             {
                 var action = (Action<int>)eventField.GetValue(null);
                 action?.Invoke(SurvivalMode.instance.GetHighScore());
@@ -179,15 +179,15 @@ public class SurvivalMode_set_CurrentWave_Patch
     [HarmonyPostfix]
     public static void Postfix(int value)
     {
-        if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
+        if (SurgeGameModeManager.Instance is not null && SurgeGameModeManager.Instance.IsActive && value > 0)
         {
             // Reset cooldowns for all abilities for all active players
-            if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+            if (PlayerAbilityHandler.ActiveSpiderControllers is not null)
             {
                 for (int i = PlayerAbilityHandler.ActiveSpiderControllers.Count - 1; i >= 0; i--)
                 {
                     var controller = PlayerAbilityHandler.ActiveSpiderControllers[i];
-                    if (controller == null)
+                    if (controller is null)
                     {
                         PlayerAbilityHandler.ActiveSpiderControllers.RemoveAt(i);
                         continue;

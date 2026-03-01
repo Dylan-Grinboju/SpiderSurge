@@ -39,7 +39,7 @@ public class SpiderSurgeLogger
 
     public void LogMatchStats(SpiderSurgeStatsSnapshot stats)
     {
-        if (stats == null)
+        if (stats is null)
         {
             Logger.LogError("SpiderSurge match stats are null");
             return;
@@ -75,7 +75,7 @@ public class SpiderSurgeLogger
         sb.AppendLine();
 
         sb.AppendLine("GLOBAL PERKS (Active):");
-        if (stats.GlobalPerks != null && stats.GlobalPerks.Count > 0)
+        if (stats.GlobalPerks is not null && stats.GlobalPerks.Count > 0)
         {
             foreach (var perk in stats.GlobalPerks)
             {
@@ -89,7 +89,7 @@ public class SpiderSurgeLogger
         sb.AppendLine();
 
         sb.AppendLine("PLAYER STATISTICS:");
-        if (stats.PlayerStats != null && stats.PlayerStats.Count > 0)
+        if (stats.PlayerStats is not null && stats.PlayerStats.Count > 0)
         {
             foreach (var player in stats.PlayerStats)
             {

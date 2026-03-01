@@ -65,13 +65,13 @@ public class PerksManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        if (Instance is null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
             // Ensure managers exist
-            if (SurgeGameModeManager.Instance == null)
+            if (SurgeGameModeManager.Instance is null)
             {
                 GameObject surgeManager = new("SurgeGameModeManager");
                 surgeManager.AddComponent<SurgeGameModeManager>();
@@ -108,7 +108,7 @@ public class PerksManager : MonoBehaviour
             Instance.SetPerkLevel(perkName, 1);
 
             // Register abilities with input interceptor now that they're unlocked
-            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc == null);
+            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc is null);
             foreach (SpiderController player in PlayerAbilityHandler.ActiveSpiderControllers)
             {
                 var ability = player.GetComponent<T>();
@@ -126,7 +126,7 @@ public class PerksManager : MonoBehaviour
     {
         try
         {
-            if (!Instance.dependencies.TryGetValue(perkName, out List<string> perkDependencies) || perkDependencies == null || perkDependencies.Count == 0)
+            if (!Instance.dependencies.TryGetValue(perkName, out List<string> perkDependencies) || perkDependencies is null || perkDependencies.Count == 0)
             {
                 Logger.LogError($"Cannot enable ultimate {perkName}: missing base ability dependency");
                 return;
@@ -143,7 +143,7 @@ public class PerksManager : MonoBehaviour
             Instance.SetPerkLevel(perkName, 1);
 
             // Register abilities with input interceptor now that they're unlocked
-            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc == null);
+            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc is null);
             foreach (SpiderController player in PlayerAbilityHandler.ActiveSpiderControllers)
             {
                 var ability = player.GetComponent<T>();
@@ -240,7 +240,7 @@ public class PerksManager : MonoBehaviour
 
     public void OnSelected(string name)
     {
-        if (_perkActions == null) InitializePerkActions();
+        if (_perkActions is null) InitializePerkActions();
 
         if (_perkActions.ContainsKey(name))
         {
@@ -252,7 +252,7 @@ public class PerksManager : MonoBehaviour
     {
         string currentUltPath = GetChosenAbilityUltimate();
 
-        if (currentUltPath != null && currentUltPath != newUltName)
+        if (currentUltPath is not null && currentUltPath != newUltName)
         {
             if (dependencies.ContainsKey(currentUltPath) && dependencies[currentUltPath].Count > 0)
             {
@@ -284,13 +284,13 @@ public class PerksManager : MonoBehaviour
 
     private void UpdatePerkIcons()
     {
-        if (ModifierManager.instance == null) return;
+        if (ModifierManager.instance is null) return;
 
         int durationId = ModifierManager.instance.GetModId(Consts.PerkNames.AbilityDuration);
         if (durationId == -1) return;
 
         Modifier durationMod = ModifierManager.instance.GetModById(durationId);
-        if (durationMod == null || durationMod.data == null) return;
+        if (durationMod is null || durationMod.data is null) return;
 
         Sprite newIcon;
         if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0)
@@ -302,7 +302,7 @@ public class PerksManager : MonoBehaviour
             newIcon = IconLoader.GetIcon("duration_perk");
         }
 
-        if (newIcon != null)
+        if (newIcon is not null)
         {
             durationMod.data.icon = newIcon;
         }

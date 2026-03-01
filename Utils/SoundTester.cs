@@ -27,7 +27,7 @@ public class SoundTester : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance is not null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -115,7 +115,7 @@ public class SoundTester : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current == null)
+        if (Keyboard.current is null)
             return;
 
         // F10 - Toggle sound tester menu
@@ -152,7 +152,7 @@ public class SoundTester : MonoBehaviour
 
         _scrollPos = GUILayout.BeginScrollView(_scrollPos);
 
-        if (SoundManager.Instance == null)
+        if (SoundManager.Instance is null)
         {
             GUILayout.Label("SoundManager not initialized!");
         }
@@ -215,7 +215,7 @@ public class SoundTester : MonoBehaviour
 
     public static void Initialize()
     {
-        if (Instance != null)
+        if (Instance is not null)
         {
             return;
         }

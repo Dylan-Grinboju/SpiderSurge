@@ -40,14 +40,14 @@ public static class IconLoader
                 try
                 {
                     using Stream stream = assembly.GetManifestResourceStream(resourceName);
-                    if (stream != null)
+                    if (stream is not null)
                     {
                         using MemoryStream ms = new();
                         stream.CopyTo(ms);
                         byte[] fileData = ms.ToArray();
 
                         Sprite sprite = LoadSpriteFromData(fileData);
-                        if (sprite != null)
+                        if (sprite is not null)
                         {
                             _loadedIcons[iconName] = sprite;
                         }

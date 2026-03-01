@@ -22,11 +22,11 @@ public class WhispBrain_LaunchChargeAttack_Patch
         if (!__instance.gameObject.activeSelf) return false;
 
         // Initialize reflection cache
-        if (_stopChargeCosmeticsRpc == null) _stopChargeCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
-        if (_playAttackCosmeticsRpc == null) _playAttackCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "PlayAttackCosmeticsClientRpc");
-        if (_shotCooldownTillField == null) _shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
-        if (_targetField == null) _targetField = AccessTools.Field(typeof(WhispBrain), "target"); // On EnemyBrain usually
-        if (_obstacleLayerField == null) _obstacleLayerField = AccessTools.Field(typeof(WhispBrain), "obstacleLayer"); // On EnemyBrain
+        _stopChargeCosmeticsRpc ??= AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
+        _playAttackCosmeticsRpc ??= AccessTools.Method(typeof(WhispBrain), "PlayAttackCosmeticsClientRpc");
+        _shotCooldownTillField ??= AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
+        _targetField ??= AccessTools.Field(typeof(WhispBrain), "target"); // On EnemyBrain usually
+        _obstacleLayerField ??= AccessTools.Field(typeof(WhispBrain), "obstacleLayer"); // On EnemyBrain
 
         _stopChargeCosmeticsRpc.Invoke(__instance, null);
 
@@ -108,7 +108,7 @@ public class WhispBrain_LaunchChargeAttack_Patch
         rb?.AddForce(v, ForceMode2D.Impulse);
 
         // Configure Projectile Properties
-        if (rs != null)
+        if (rs is not null)
         {
             rs.ignore.Add(__instance.gameObject);
             rs.railColor = __instance.energyColor;
@@ -122,7 +122,7 @@ public class WhispBrain_LaunchChargeAttack_Patch
             // Ignore collision with shooter
             var projCollider = gameObject.GetComponent<Collider2D>();
             var shooterCollider = __instance.GetComponent<Collider2D>();
-            if (projCollider != null && shooterCollider != null)
+            if (projCollider is not null && shooterCollider is not null)
             {
                 Physics2D.IgnoreCollision(projCollider, shooterCollider, true);
             }

@@ -75,13 +75,13 @@ public class StorageAbility : BaseAbility
     {
         base.Start();
         _weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-        if (_weaponManager == null && playerController != null)
+        if (_weaponManager is null && playerController is not null)
         {
             // Try from the player controller's health system
             _weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
         }
 
-        if (_weaponManager == null)
+        if (_weaponManager is null)
         {
             Logger.LogError($"StorageAbility: SpiderWeaponManager not found on {name}");
         }
@@ -99,10 +99,10 @@ public class StorageAbility : BaseAbility
     {
         float duration = useUltimateStorage ? UltimateDuration : AbilityDuration;
 
-        if (_weaponManager == null) yield break;
+        if (_weaponManager is null) yield break;
 
         RuntimeStoredWeapon currentSlotData = useUltimateStorage ? _ultimateStoredWeaponData : _storedWeaponData;
-        GameObject storedWeaponObj = currentSlotData?.WeaponRef != null ? currentSlotData.WeaponRef.gameObject : null;
+        GameObject storedWeaponObj = currentSlotData?.WeaponRef is not null ? currentSlotData.WeaponRef.gameObject : null;
         GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
 
         RuntimeStoredWeapon newStoredData = StoreWeapon(heldWeaponObj);
@@ -119,10 +119,10 @@ public class StorageAbility : BaseAbility
 
     private RuntimeStoredWeapon StoreWeapon(GameObject heldWeaponObj)
     {
-        if (heldWeaponObj == null) return null;
+        if (heldWeaponObj is null) return null;
 
         Weapon val = heldWeaponObj.GetComponent<Weapon>();
-        if (val == null) return null;
+        if (val is null) return null;
 
         _weaponManager.UnEquipWeapon();
 
@@ -146,10 +146,10 @@ public class StorageAbility : BaseAbility
 
     private void RetrieveWeapon(GameObject storedWeaponObj)
     {
-        if (storedWeaponObj == null) return;
+        if (storedWeaponObj is null) return;
 
         // Drop any weapon the player picked up during the delay
-        if (_weaponManager != null && _weaponManager.equippedWeapon != null)
+        if (_weaponManager is not null && _weaponManager.equippedWeapon is not null)
         {
             _weaponManager.UnEquipWeapon();
         }
@@ -163,9 +163,9 @@ public class StorageAbility : BaseAbility
         storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
 
         Weapon weapon = storedWeaponObj.GetComponent<Weapon>();
-        if (weapon != null)
+        if (weapon is not null)
         {
-            if (weapon.rb2D != null)
+            if (weapon.rb2D is not null)
             {
                 weapon.rb2D.velocity = Vector2.zero;
                 weapon.rb2D.angularVelocity = 0f;
@@ -203,9 +203,9 @@ public class StorageAbility : BaseAbility
 
     private void SaveWeapons(bool isDeath)
     {
-        if (PerksManager.Instance == null) return;
+        if (PerksManager.Instance is null) return;
 
-        int playerId = playerInput != null ? playerInput.playerIndex : -1;
+        int playerId = playerInput is not null ? playerInput.playerIndex : -1;
         if (playerId == -1) return;
 
         List<StoragePersistenceManager.SavedWeaponData> dataList = [];
@@ -221,7 +221,7 @@ public class StorageAbility : BaseAbility
 
     private void SaveSlot(RuntimeStoredWeapon weaponData, bool isUltimateSlot, bool isDeath, List<StoragePersistenceManager.SavedWeaponData> dataList)
     {
-        if (weaponData == null) return;
+        if (weaponData is null) return;
 
         if (ShouldKeepWeapon(weaponData, isDeath))
         {
@@ -236,7 +236,7 @@ public class StorageAbility : BaseAbility
 
     public void UpdateCachedModifierLevels()
     {
-        if (ModifierManager.instance != null)
+        if (ModifierManager.instance is not null)
         {
             _cachedMoreGunsLevel = ModifierManager.instance.GetModLevel(Consts.ModifierNames.MoreGuns);
             _cachedMoreBoomLevel = ModifierManager.instance.GetModLevel(Consts.ModifierNames.MoreBoom);
@@ -249,7 +249,7 @@ public class StorageAbility : BaseAbility
         UpdateCachedModifierLevels();
         List<Weapon.WeaponType> effectiveTypes = weapon.Types.Count != 0 ? weapon.Types : GetEffectiveWeaponTypes(weapon.Name);
 
-        if (effectiveTypes == null || effectiveTypes.Count == 0) return false;
+        if (effectiveTypes is null || effectiveTypes.Count == 0) return false;
         int requiredModLevel = GetRequiredModLevel(effectiveTypes);
 
         return isDeath ? requiredModLevel >= 2 : requiredModLevel >= 1;
@@ -277,39 +277,39 @@ public class StorageAbility : BaseAbility
 
     private void RestoreWeapons()
     {
-        if (PerksManager.Instance == null) return;
+        if (PerksManager.Instance is null) return;
 
-        int playerId = playerInput != null ? playerInput.playerIndex : -1;
+        int playerId = playerInput is not null ? playerInput.playerIndex : -1;
         List<StoragePersistenceManager.SavedWeaponData> dataList = StoragePersistenceManager.GetStoredWeapons(playerId);
 
-        if (dataList == null || dataList.Count == 0) return;
+        if (dataList is null || dataList.Count == 0) return;
 
         Dictionary<string, GameObject> weaponPrefabMap = [];
 
         void AddWeaponsToMap(List<SpawnableWeapon> weapons)
         {
-            if (weapons == null) return;
+            if (weapons is null) return;
             foreach (var sw in weapons)
             {
-                if (sw == null || sw.weaponObject == null) continue;
+                if (sw is null || sw.weaponObject is null) continue;
                 Weapon w = sw.weaponObject.GetComponent<Weapon>();
-                if (w != null && !weaponPrefabMap.ContainsKey(w.serializationWeaponName.ToString()))
+                if (w is not null && !weaponPrefabMap.ContainsKey(w.serializationWeaponName.ToString()))
                 {
                     weaponPrefabMap[w.serializationWeaponName.ToString()] = sw.weaponObject;
                 }
             }
         }
 
-        if (VersusMode.instance != null)
+        if (VersusMode.instance is not null)
         {
             AddWeaponsToMap(VersusMode.instance.weapons);
         }
 
-        if (SurvivalMode.instance != null)
+        if (SurvivalMode.instance is not null)
         {
             // Use ReflectionHelper to get private fields safely
             var survivalWeapons = ReflectionHelper.GetPrivateField<List<SpawnableWeapon>>(SurvivalMode.instance, "_weapons");
-            if (survivalWeapons != null)
+            if (survivalWeapons is not null)
             {
                 AddWeaponsToMap(survivalWeapons);
             }
@@ -325,7 +325,7 @@ public class StorageAbility : BaseAbility
             {
                 GameObject newWeaponObj = Instantiate(prefab, Vector3.zero, Quaternion.identity);
 
-                if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
+                if (NetworkManager.Singleton is not null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
                 {
                     var no = newWeaponObj.GetComponent<NetworkObject>();
                     no?.Spawn(true);

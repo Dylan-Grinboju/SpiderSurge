@@ -30,14 +30,14 @@ public static class StatsModBridge
                 try
                 {
                     apiType = assembly.GetType("StatsMod.StatsModApi");
-                    if (apiType != null) break;
+                    if (apiType is not null) break;
                 }
                 catch
                 {
                 }
             }
 
-            if (apiType == null)
+            if (apiType is null)
             {
                 Logger.LogInfo("StatsModBridge: Stats Mod not detected, integration disabled.");
                 return;
@@ -46,7 +46,7 @@ public static class StatsModBridge
             _registerCustomStats = apiType.GetMethod("RegisterCustomStats", BindingFlags.Public | BindingFlags.Static);
             _registerCustomTitle = apiType.GetMethod("RegisterCustomTitle", BindingFlags.Public | BindingFlags.Static);
 
-            _statsModAvailable = _registerCustomStats != null && _registerCustomTitle != null;
+            _statsModAvailable = _registerCustomStats is not null && _registerCustomTitle is not null;
 
             if (_statsModAvailable)
                 Logger.LogInfo("StatsModBridge: Stats Mod API found, integration enabled.");
@@ -63,7 +63,7 @@ public static class StatsModBridge
     public static void SendSurgeStats(Logging.SpiderSurgeStatsSnapshot snapshot)
     {
         Initialize();
-        if (!_statsModAvailable || snapshot == null) return;
+        if (!_statsModAvailable || snapshot is null) return;
 
         try
         {
@@ -75,7 +75,7 @@ public static class StatsModBridge
             foreach (var ps in snapshot.PlayerStats)
             {
                 var playerInput = PlayerInput.all.FirstOrDefault(p => p.playerIndex == ps.PlayerIndex);
-                string playerName = playerInput != null ? $"Player {ps.PlayerIndex + 1}" : $"Player {ps.PlayerIndex + 1}";
+                string playerName = playerInput is not null ? $"Player {ps.PlayerIndex + 1}" : $"Player {ps.PlayerIndex + 1}";
                 lines.Add($"  {playerName}:");
                 lines.Add($"    Ability Activations: {ps.AbilityActivationCount}");
                 lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");
@@ -100,7 +100,7 @@ public static class StatsModBridge
 
     private static string GetActiveAbilityType()
     {
-        if (PerksManager.Instance == null) return null;
+        if (PerksManager.Instance is null) return null;
         if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0) return "Immune";
         if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return "Pulse";
         return PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0
@@ -110,7 +110,7 @@ public static class StatsModBridge
 
     private static string GetActiveUltType()
     {
-        if (PerksManager.Instance == null) return null;
+        if (PerksManager.Instance is null) return null;
         if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0) return "Immune";
         if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0) return "Pulse";
         return PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0
@@ -129,7 +129,7 @@ public static class StatsModBridge
     public static void SendSurgeTitles(Logging.SpiderSurgeStatsSnapshot snapshot)
     {
         Initialize();
-        if (!_statsModAvailable || snapshot == null) return;
+        if (!_statsModAvailable || snapshot is null) return;
         if (snapshot.PlayerStats.Count < 2) return;
 
         try
@@ -193,12 +193,12 @@ public static class StatsModBridge
     {
         if (requirements.Length == 0) return;
 
-        var leaderReqs = new List<(LeaderInfo Leader, string ReqName)>();
-        var externalReqs = new List<string>();
+        List<(LeaderInfo Leader, string ReqName)> leaderReqs = [];
+        List<string> externalReqs = [];
 
         foreach (var (leader, reqName) in requirements)
         {
-            if (leader == null)
+            if (leader is null)
                 externalReqs.Add(reqName);
             else
                 leaderReqs.Add((leader, reqName));
@@ -206,17 +206,17 @@ public static class StatsModBridge
 
         PlayerInput primaryPlayer = null;
         bool allHaveStats = true;
-        var allReqNames = new List<string>();
-        var descriptions = new List<string>();
+        List<string> allReqNames = [];
+        List<string> descriptions = [];
 
         if (leaderReqs.Count > 0)
         {
             primaryPlayer = leaderReqs[0].Leader.Player;
-            if (primaryPlayer == null) return;
+            if (primaryPlayer is null) return;
 
             foreach (var (leader, _) in leaderReqs)
             {
-                if (leader.Player == null || !leader.HasStat) { allHaveStats = false; break; }
+                if (leader.Player is null || !leader.HasStat) { allHaveStats = false; break; }
                 if (leader.Player != primaryPlayer) { allHaveStats = false; break; }
             }
             if (!allHaveStats) return;

@@ -16,7 +16,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
     {
         get
         {
-            if (_instance == null)
+            if (_instance is null)
             {
                 GameObject obj = new("SpiderSurgeStatsManager");
                 _instance = obj.AddComponent<SpiderSurgeStatsManager>();
@@ -33,7 +33,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
     private int _currentWave = 0;
     private void Awake()
     {
-        if (_instance != null && _instance != this)
+        if (_instance is not null && _instance != this)
         {
             Destroy(gameObject);
             return;
@@ -144,7 +144,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
     {
         try
         {
-            if (SurvivalModeHud.instance != null)
+            if (SurvivalModeHud.instance is not null)
             {
                 return Math.Max(1, SurvivalModeHud.instance.currentPainLevel.Value);
             }
@@ -160,7 +160,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
     {
         return !ModConfig.TelemetryEnabled
             ? false
-            : NetworkManager.Singleton == null ? true : NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer;
+            : NetworkManager.Singleton is null ? true : NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer;
     }
 
     private List<string> GetGlobalPerks()
@@ -168,7 +168,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
         List<string> perks = [];
 
         // Add Surge Perks
-        if (PerksManager.Instance != null)
+        if (PerksManager.Instance is not null)
         {
             foreach (var perkName in PerksManager.Instance.GetAllPerkNames())
             {
@@ -181,7 +181,7 @@ public class SpiderSurgeStatsManager : MonoBehaviour
 
         // Add Vanilla Perks (Modifiers)
         var modManager = FindObjectOfType<ModifierManager>();
-        if (modManager != null)
+        if (modManager is not null)
         {
             var fields = typeof(ModifierManager).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             foreach (var field in fields)
@@ -193,10 +193,10 @@ public class SpiderSurgeStatsManager : MonoBehaviour
                     {
                         foreach (var mod in mods)
                         {
-                            if (mod != null && mod.levelInSurvival > 0)
+                            if (mod is not null && mod.levelInSurvival > 0)
                             {
                                 // Avoid duplicates with Surge perks if they are also registered as modifiers
-                                if (PerksManager.Instance != null && PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key))
+                                if (PerksManager.Instance is not null && PerksManager.Instance.GetAllPerkNames().Contains(mod.data.key))
                                     continue;
 
                                 perks.Add(mod.data.key + $" (Lvl {mod.levelInSurvival})");
@@ -219,7 +219,7 @@ public class SurvivalMode_StartGame_Patch
     [HarmonyPostfix]
     public static void Postfix(bool __result)
     {
-        if (__result && SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
+        if (__result && SurgeGameModeManager.Instance is not null && SurgeGameModeManager.Instance.IsActive)
         {
             SpiderSurgeStatsManager.Instance.StartTracking();
         }
@@ -232,7 +232,7 @@ public class SurvivalMode_StopGameMode_Patch
     [HarmonyPrefix]
     public static void Prefix(SurvivalMode __instance)
     {
-        if (__instance.GameModeActive() && SpiderSurgeStatsManager.Instance != null)
+        if (__instance.GameModeActive() && SpiderSurgeStatsManager.Instance is not null)
         {
             SpiderSurgeStatsManager.Instance.StopTrackingAndLog();
         }

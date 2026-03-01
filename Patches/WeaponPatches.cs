@@ -7,7 +7,7 @@ internal static class AmmoAbilityPatchUtils
 {
     internal static void TryHandleWeaponRemoved(SpiderWeaponManager manager)
     {
-        if (manager == null || manager.equippedWeapon == null)
+        if (manager is null || manager.equippedWeapon is null)
         {
             return;
         }

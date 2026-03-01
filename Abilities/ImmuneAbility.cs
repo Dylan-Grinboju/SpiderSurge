@@ -59,28 +59,22 @@ public class ImmuneAbility : BaseAbility
     {
         base.Awake();
 
-        if (immuneTimeField == null)
+        if (immuneTimeField is null)
         {
             immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
                 BindingFlags.NonPublic | BindingFlags.Instance);
 
-            if (immuneTimeField == null)
+            if (immuneTimeField is null)
             {
                 Logger.LogError("ImmuneAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
             }
         }
 
-        if (_breakShieldMethod == null)
-        {
-            _breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-        }
+        _breakShieldMethod ??= typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
+            BindingFlags.NonPublic | BindingFlags.Instance);
 
-        if (_spiderLightField == null)
-        {
-            _spiderLightField = typeof(SpiderHealthSystem).GetField("spiderLight",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-        }
+        _spiderLightField ??= typeof(SpiderHealthSystem).GetField("spiderLight",
+            BindingFlags.NonPublic | BindingFlags.Instance);
     }
 
     protected override void Start()
@@ -91,7 +85,7 @@ public class ImmuneAbility : BaseAbility
 
     private IEnumerator RegisterWithHealthSystem()
     {
-        while (spiderHealthSystem == null)
+        while (spiderHealthSystem is null)
         {
             yield return null;
         }
@@ -100,7 +94,7 @@ public class ImmuneAbility : BaseAbility
 
     public static ImmuneAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
     {
-        if (healthSystem == null) return null;
+        if (healthSystem is null) return null;
         immuneByHealthSystem.TryGetValue(healthSystem, out var ability);
         return ability;
     }
@@ -116,7 +110,7 @@ public class ImmuneAbility : BaseAbility
     protected override void OnActivate()
     {
         wasHitDuringSession = false;
-        hadBarrierOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+        hadBarrierOnSessionStart = spiderHealthSystem is not null && spiderHealthSystem.HasShield();
 
         ApplyImmunity(true);
 
@@ -128,7 +122,7 @@ public class ImmuneAbility : BaseAbility
 
     protected override void OnDeactivate()
     {
-        if (spiderHealthSystem != null)
+        if (spiderHealthSystem is not null)
         {
             if (hadBarrierOnSessionStart && wasHitDuringSession)
             {
@@ -149,7 +143,7 @@ public class ImmuneAbility : BaseAbility
     protected override void OnActivateUltimate()
     {
         isUltimateCastPending = true;
-        hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+        hadBarrierOnUltimateCastStart = spiderHealthSystem is not null && spiderHealthSystem.HasShield();
 
         SoundManager.Instance?.PlaySound(
                 Consts.SoundNames.ImmuneUlt,
@@ -178,17 +172,17 @@ public class ImmuneAbility : BaseAbility
 
     private void ApplyRadiance(bool enable)
     {
-        if (spiderHealthSystem == null) return;
+        if (spiderHealthSystem is null) return;
 
         if (enable)
         {
             // -- 1. Apply to Sprites --
-            if (spiderHealthSystem.spritesRoot != null)
+            if (spiderHealthSystem.spritesRoot is not null)
             {
                 var renderers = spiderHealthSystem.spritesRoot.GetComponentsInChildren<SpriteRenderer>(true);
                 foreach (var sr in renderers)
                 {
-                    if (sr == null) continue;
+                    if (sr is null) continue;
                     if (!_originalColors.ContainsKey(sr))
                     {
                         _originalColors[sr] = sr.color;
@@ -198,7 +192,7 @@ public class ImmuneAbility : BaseAbility
             }
 
             // Also the head
-            if (spiderHealthSystem.head != null)
+            if (spiderHealthSystem.head is not null)
             {
                 if (!_originalColors.ContainsKey(spiderHealthSystem.head))
                 {
@@ -228,10 +222,10 @@ public class ImmuneAbility : BaseAbility
     {
         try
         {
-            if (_spiderLightField == null) return;
+            if (_spiderLightField is null) return;
 
             var lightObj = _spiderLightField.GetValue(spiderHealthSystem);
-            if (lightObj == null) return;
+            if (lightObj is null) return;
 
             var lightType = lightObj.GetType();
             var colorProp = lightType.GetProperty("color");
@@ -239,10 +233,10 @@ public class ImmuneAbility : BaseAbility
 
             if (enable)
             {
-                if (colorProp != null && _originalLightColor == null)
+                if (colorProp is not null && _originalLightColor is null)
                     _originalLightColor = (Color)colorProp.GetValue(lightObj, null);
 
-                if (intensityProp != null && _originalLightIntensity == null)
+                if (intensityProp is not null && _originalLightIntensity is null)
                     _originalLightIntensity = (float)intensityProp.GetValue(lightObj, null);
 
                 colorProp?.SetValue(lightObj, new Color(1f, 0.6f, 0.0f), null);
@@ -250,13 +244,13 @@ public class ImmuneAbility : BaseAbility
             }
             else
             {
-                if (colorProp != null && _originalLightColor != null)
+                if (colorProp is not null && _originalLightColor is not null)
                 {
                     colorProp.SetValue(lightObj, _originalLightColor.Value, null);
                     _originalLightColor = null;
                 }
 
-                if (intensityProp != null && _originalLightIntensity != null)
+                if (intensityProp is not null && _originalLightIntensity is not null)
                 {
                     intensityProp.SetValue(lightObj, _originalLightIntensity.Value, null);
                     _originalLightIntensity = null;
@@ -271,7 +265,7 @@ public class ImmuneAbility : BaseAbility
 
     private void ApplyImmunity(bool enable)
     {
-        if (spiderHealthSystem == null) return;
+        if (spiderHealthSystem is null) return;
         IsImmune = enable;
 
         ApplyRadiance(enable);
@@ -325,24 +319,24 @@ public class ImmuneAbility : BaseAbility
     {
         revivedPlayer = null;
 
-        if (LobbyController.instance == null)
+        if (LobbyController.instance is null)
         {
             return false;
         }
 
         var playerControllers = LobbyController.instance.GetPlayerControllers();
-        if (playerControllers == null || !playerControllers.Any())
+        if (playerControllers is null || !playerControllers.Any())
         {
             return false;
         }
 
         var spawnPoints = LobbyController.instance.GetSpawnPoints();
-        if (spawnPoints == null || spawnPoints.Length == 0)
+        if (spawnPoints is null || spawnPoints.Length == 0)
         {
             return false;
         }
 
-        var deadPlayers = playerControllers.Where(pc => pc != null && !pc.isAlive).ToList();
+        var deadPlayers = playerControllers.Where(pc => pc is not null && !pc.isAlive).ToList();
         if (deadPlayers.Count == 0)
         {
             return false;
@@ -361,14 +355,14 @@ public class ImmuneAbility : BaseAbility
 
         while (elapsed < timeout)
         {
-            if (revivedPlayer == null)
+            if (revivedPlayer is null)
             {
                 Logger.LogWarning("[ImmuneAbility] Revived player reference became null before shield application.");
                 yield break;
             }
 
             var revivedHealth = revivedPlayer.spiderHealthSystem;
-            if (revivedHealth != null)
+            if (revivedHealth is not null)
             {
                 revivedHealth.EnableShield();
                 yield break;
@@ -384,19 +378,19 @@ public class ImmuneAbility : BaseAbility
     private void SpawnFriendlyWasps()
     {
         var friendlyWaspPrefab = SurvivalMode.instance?.friendlyWasp;
-        if (friendlyWaspPrefab == null)
+        if (friendlyWaspPrefab is null)
         {
             Logger.LogWarning("[ImmuneAbility] Friendly wasp prefab is missing; cannot spawn friendly wasps.");
             return;
         }
 
         var spawnPoints = LobbyController.instance?.GetSpawnPoints();
-        if (spawnPoints == null || spawnPoints.Length == 0)
+        if (spawnPoints is null || spawnPoints.Length == 0)
         {
             spawnPoints = GameObject.FindGameObjectsWithTag("EnemySpawn").Select(go => go.transform).ToArray();
         }
 
-        if (spawnPoints == null || spawnPoints.Length == 0)
+        if (spawnPoints is null || spawnPoints.Length == 0)
         {
             Logger.LogWarning("[ImmuneAbility] No spawn points found for friendly wasp spawn.");
             return;
@@ -429,12 +423,12 @@ public class ImmuneAbility : BaseAbility
 
     private bool TrySpawnFriendlyWaspAtTransform(GameObject friendlyWaspPrefab, Transform spawn)
     {
-        if (friendlyWaspPrefab == null)
+        if (friendlyWaspPrefab is null)
         {
             return false;
         }
 
-        if (spawn == null)
+        if (spawn is null)
         {
             Logger.LogWarning("[ImmuneAbility] Selected friendly wasp spawn point was null.");
             return false;
@@ -444,7 +438,7 @@ public class ImmuneAbility : BaseAbility
         spawnedObj.SetActive(true);
 
         var netObj = spawnedObj.GetComponent<NetworkObject>();
-        if (netObj != null)
+        if (netObj is not null)
         {
             netObj.Spawn(true);
             netObj.DestroyWithScene = true;
@@ -454,7 +448,7 @@ public class ImmuneAbility : BaseAbility
             Logger.LogWarning("[ImmuneAbility] Friendly wasp has no NetworkObject component.");
         }
 
-        if (EnemySpawner.instance != null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
+        if (EnemySpawner.instance is not null && !EnemySpawner.instance.spawnedEnemies.Contains(spawnedObj))
         {
             EnemySpawner.instance.spawnedEnemies.Add(spawnedObj);
         }
@@ -464,7 +458,7 @@ public class ImmuneAbility : BaseAbility
 
     private List<Transform> GetDistinctSpawnPoints(Transform[] spawnPoints, int count)
     {
-        var selectedSpawns = new List<Transform>();
+        List<Transform> selectedSpawns = [];
         var availableIndices = Enumerable.Range(0, spawnPoints.Length).ToList();
 
         int spawnCount = Mathf.Min(count, spawnPoints.Length);
@@ -479,13 +473,13 @@ public class ImmuneAbility : BaseAbility
         return selectedSpawns;
     }
 
-    private bool IsServerAuthority() => NetworkManager.Singleton == null ? true : NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost;
+    private bool IsServerAuthority() => NetworkManager.Singleton is null ? true : NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost;
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
 
-        if (spiderHealthSystem != null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
+        if (spiderHealthSystem is not null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
         {
             ApplyImmunity(false);
             immuneByHealthSystem.Remove(spiderHealthSystem);
@@ -499,7 +493,7 @@ public class ImmuneAbility : BaseAbility
     {
         try
         {
-            if (_breakShieldMethod != null)
+            if (_breakShieldMethod is not null)
             {
                 _breakShieldMethod.Invoke(spiderHealthSystem, null);
             }

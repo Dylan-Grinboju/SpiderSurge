@@ -29,7 +29,7 @@ public class ModifierManager_SetModLevel_Patch
     [HarmonyPrefix]
     public static void Prefix(Modifier modifier, GameMode mode, ref int value)
     {
-        if (mode == GameMode.Wave && value == 1 && modifier != null && modifier.data != null)
+        if (mode == GameMode.Wave && value == 1 && modifier is not null && modifier.data is not null)
         {
             if (!SurgeGameModeManager.IsSurgeRunActive)
             {
@@ -102,7 +102,7 @@ public class ModifierManager_SetModLevel_Patch
 
     public static void PlayPowerUpSound()
     {
-        if (SoundManager.Instance != null)
+        if (SoundManager.Instance is not null)
         {
             SoundManager.Instance.PlaySound(
                 Consts.SoundNames.PowerUp,
@@ -147,12 +147,12 @@ public class SurvivalModifierChoiceCard_SetupCard_Patch
         var perkNameText = _perkNameTextField?.GetValue(__instance) as TMP_Text;
         var perkDescriptionText = _perkDescriptionTextField?.GetValue(__instance) as TMP_Text;
 
-        if (perkNameText == null) Logger.LogWarning($"[Surge] Could not find perkNameText for card {key}");
-        if (perkDescriptionText == null) Logger.LogWarning($"[Surge] Could not find perkDescriptionText for card {key}");
+        if (perkNameText is null) Logger.LogWarning($"[Surge] Could not find perkNameText for card {key}");
+        if (perkDescriptionText is null) Logger.LogWarning($"[Surge] Could not find perkDescriptionText for card {key}");
 
         if (isSurgePerk)
         {
-            if (perkNameText != null)
+            if (perkNameText is not null)
             {
                 string displayName = PerksManager.Instance.GetDisplayName(key);
 
@@ -163,7 +163,7 @@ public class SurvivalModifierChoiceCard_SetupCard_Patch
                 perkNameText.text = displayName;
             }
 
-            if (perkDescriptionText != null)
+            if (perkDescriptionText is not null)
             {
                 string description = PerksManager.Instance.GetDescription(key);
 
@@ -188,7 +188,7 @@ public class SurvivalModifierChoiceCard_SetupCard_Patch
         else
         {
             // Vanilla Modifier Handling
-            if (perkDescriptionText != null)
+            if (perkDescriptionText is not null)
             {
                 if (isLucky)
                 {
@@ -212,7 +212,7 @@ public class ModifierManager_GetNonMaxedSurvivalMods_Patch
     public static void Postfix(ModifierManager __instance, ref List<Modifier> __result)
     {
         var perksManager = PerksManager.Instance;
-        if (perksManager == null)
+        if (perksManager is null)
         {
             return;
         }
@@ -221,17 +221,17 @@ public class ModifierManager_GetNonMaxedSurvivalMods_Patch
         {
             LuckyPerkKeys.Clear();
             __result = __result
-                .Where(mod => mod?.data != null && !perksManager.GetAllPerkNames().Contains(mod.data.key))
+                .Where(mod => mod?.data is not null && !perksManager.GetAllPerkNames().Contains(mod.data.key))
                 .ToList();
             return;
         }
-        var filteredList = new List<Modifier>();
-        var processedKeys = new HashSet<string>();
+        List<Modifier> filteredList = [];
+        List<string> processedKeys = [];
 
         // Only filter for validity/availability. DO NOT select/limit count here.
         foreach (var mod in __result)
         {
-            if (mod == null || mod.data == null) continue;
+            if (mod is null || mod.data is null) continue;
             string key = mod.data.key;
 
             // Deduplicate
@@ -273,7 +273,7 @@ public class SelectionHelper_PickRandomModifiers_Patch
     public static bool Prefix(int count, List<Modifier> availableModifiers, ref List<Modifier> __result)
     {
         // If list is null or empty, return empty
-        if (availableModifiers == null || availableModifiers.Count == 0)
+        if (availableModifiers is null || availableModifiers.Count == 0)
         {
             __result = [];
             return false;
@@ -411,7 +411,7 @@ public class SelectionHelper_PickRandomModifiers_Patch
 
         foreach (var mod in perks)
         {
-            if (mod == null || mod.data == null) continue;
+            if (mod is null || mod.data is null) continue;
 
             // Only apply luck to perks with max level > 1 
             if (mod.data.maxLevel <= 1) continue;
@@ -424,7 +424,7 @@ public class SelectionHelper_PickRandomModifiers_Patch
             }
         }
 
-        if (anyLuckyPerk && !ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection && SoundManager.Instance != null)
+        if (anyLuckyPerk && !ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection && SoundManager.Instance is not null)
         {
             SoundManager.Instance.PlaySound(
                 Consts.SoundNames.LuckyUpgrade,

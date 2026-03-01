@@ -339,7 +339,7 @@ public static class Consts
 
         public static string GetDisplayName(string name, PerksManager perksManager = null)
         {
-            if (perksManager != null && name == PerkNames.AbilityDuration)
+            if (perksManager is not null && name == PerkNames.AbilityDuration)
             {
                 if (perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
                 {
@@ -355,7 +355,7 @@ public static class Consts
 
         public static string GetDescription(string name, PerksManager perksManager)
         {
-            if (perksManager == null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
+            if (perksManager is null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
 
             return name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0
                 ? DURATION_DESC_WITH_PULSE
@@ -366,7 +366,7 @@ public static class Consts
 
         public static string GetUpgradeDescription(string name, PerksManager perksManager)
         {
-            if (perksManager == null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+            if (perksManager is null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
 
             if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
             {

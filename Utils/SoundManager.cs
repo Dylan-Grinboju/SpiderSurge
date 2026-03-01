@@ -18,7 +18,7 @@ public class SoundManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance is not null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -47,7 +47,7 @@ public class SoundManager : MonoBehaviour
                 try
                 {
                     using Stream stream = assembly.GetManifestResourceStream(resourceName);
-                    if (stream != null)
+                    if (stream is not null)
                     {
                         byte[] wavData = new byte[stream.Length];
                         int totalRead = 0;
@@ -63,7 +63,7 @@ public class SoundManager : MonoBehaviour
                         }
 
                         AudioClip clip = ParseWavFile(wavData, soundName);
-                        if (clip != null)
+                        if (clip is not null)
                         {
                             _loadedClips[soundName] = clip;
                         }
@@ -243,7 +243,7 @@ public class SoundManager : MonoBehaviour
                 pos++;
         }
 
-        if (samples == null || channels == 0 || sampleRate == 0)
+        if (samples is null || channels == 0 || sampleRate == 0)
         {
             Logger.LogWarning($"[SoundManager] Invalid WAV file structure: {clipName}");
             return null;

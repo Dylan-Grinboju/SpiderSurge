@@ -60,7 +60,7 @@ public abstract class BaseAbility : MonoBehaviour
         {
             // Get the player-specific gamepad button, fallback to default L1
             string gamepadButton = Consts.Values.Inputs.GamepadLeftShoulder;
-            if (playerInput != null)
+            if (playerInput is not null)
             {
                 gamepadButton = PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex);
             }
@@ -154,7 +154,7 @@ public abstract class BaseAbility : MonoBehaviour
     protected virtual void Start()
     {
         playerController = GetComponentInParent<PlayerController>();
-        if (playerController == null)
+        if (playerController is null)
         {
             Logger.LogError($"PlayerController not found for {GetType().Name} on player {playerInput?.playerIndex}");
         }
@@ -172,20 +172,17 @@ public abstract class BaseAbility : MonoBehaviour
     private IEnumerator WaitForInit()
     {
         // Wait for components to be available
-        while (spiderHealthSystem == null || inputInterceptor == null)
+        while (spiderHealthSystem is null || inputInterceptor is null)
         {
-            if (playerController != null && spiderHealthSystem == null)
+            if (playerController is not null)
             {
-                spiderHealthSystem = playerController.spiderHealthSystem;
+                spiderHealthSystem ??= playerController.spiderHealthSystem;
             }
 
-            if (inputInterceptor == null)
-            {
-                inputInterceptor = GetComponentInParent<InputInterceptor>();
-            }
+            inputInterceptor ??= GetComponentInParent<InputInterceptor>();
 
             // If we have everything we need, we can stop waiting
-            if (spiderHealthSystem != null && inputInterceptor != null)
+            if (spiderHealthSystem is not null && inputInterceptor is not null)
             {
                 break;
             }
@@ -194,16 +191,16 @@ public abstract class BaseAbility : MonoBehaviour
         }
 
         // Perform delayed initialization
-        if (abilityIndicator == null && showIndicator && IsUnlocked())
+        if (abilityIndicator is null && showIndicator && IsUnlocked())
         {
             CreateAbilityIndicator();
         }
 
-        if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+        if (inputInterceptor is not null && ShouldRegister() && ActivationButtons is not null)
         {
             RegisterWithInputInterceptor();
         }
-        else if (inputInterceptor == null)
+        else if (inputInterceptor is null)
         {
             Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex} after waiting.");
         }
@@ -324,7 +321,7 @@ public abstract class BaseAbility : MonoBehaviour
 
     private bool IsDeviceAssigned(InputDevice device)
     {
-        if (playerInput == null) return false;
+        if (playerInput is null) return false;
         foreach (var assignedDevice in playerInput.devices)
         {
             if (assignedDevice == device)
@@ -337,7 +334,7 @@ public abstract class BaseAbility : MonoBehaviour
 
     protected virtual void CreateAbilityIndicator()
     {
-        if (!showIndicator || !IsUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
+        if (!showIndicator || !IsUnlocked() || abilityIndicator is not null || spiderHealthSystem is null)
         {
             return;
         }
@@ -388,14 +385,14 @@ public abstract class BaseAbility : MonoBehaviour
         isActive = true;
         OnActivate();
 
-        if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+        if (playerInput is not null && SpiderSurgeStatsManager.Instance is not null)
         {
             SpiderSurgeStatsManager.Instance.LogAbilityActivation(playerInput.playerIndex);
         }
 
         if (AbilityDuration > 0)
         {
-            if (durationCoroutine != null)
+            if (durationCoroutine is not null)
             {
                 StopCoroutine(durationCoroutine);
             }
@@ -449,14 +446,14 @@ public abstract class BaseAbility : MonoBehaviour
         isUltimateActive = true;
         OnActivateUltimate();
 
-        if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+        if (playerInput is not null && SpiderSurgeStatsManager.Instance is not null)
         {
             SpiderSurgeStatsManager.Instance.LogUltimateActivation(playerInput.playerIndex);
         }
 
         if (UltimateDuration > 0)
         {
-            if (durationCoroutine != null)
+            if (durationCoroutine is not null)
             {
                 StopCoroutine(durationCoroutine);
             }
@@ -464,7 +461,7 @@ public abstract class BaseAbility : MonoBehaviour
         }
     }
 
-    public virtual bool IsPlayerAlive() => spiderHealthSystem == null ? false : !spiderHealthSystem.dead && !spiderHealthSystem.astralDead;
+    public virtual bool IsPlayerAlive() => spiderHealthSystem is null ? false : !spiderHealthSystem.dead && !spiderHealthSystem.astralDead;
 
     public virtual bool IsActive() => isActive;
 
@@ -477,7 +474,7 @@ public abstract class BaseAbility : MonoBehaviour
             skipNextCooldown = true;
         }
 
-        if (cooldownCoroutine != null)
+        if (cooldownCoroutine is not null)
         {
             StopCoroutine(cooldownCoroutine);
             cooldownCoroutine = null;
@@ -507,7 +504,7 @@ public abstract class BaseAbility : MonoBehaviour
             return;
         }
 
-        if (cooldownCoroutine != null)
+        if (cooldownCoroutine is not null)
         {
             StopCoroutine(cooldownCoroutine);
         }
@@ -520,7 +517,7 @@ public abstract class BaseAbility : MonoBehaviour
     {
         skipNextCooldown = false;
 
-        if (cooldownCoroutine != null)
+        if (cooldownCoroutine is not null)
         {
             StopCoroutine(cooldownCoroutine);
             cooldownCoroutine = null;
@@ -539,15 +536,15 @@ public abstract class BaseAbility : MonoBehaviour
         cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
     }
 
-    public bool IsUnlocked() => PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
+    public bool IsUnlocked() => PerksManager.Instance is not null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
 
-    public bool IsUltimateUnlocked() => HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
+    public bool IsUltimateUnlocked() => HasUltimate && PerksManager.Instance is not null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
 
     protected virtual bool ShouldRegister() => IsUnlocked();
 
     public void RegisterWithInputInterceptor()
     {
-        if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+        if (inputInterceptor is not null && ShouldRegister() && ActivationButtons is not null)
         {
             _cachedActivationButtons = ActivationButtons;
             Logger.LogDebug($"[{GetType().Name}] Registering buttons: {string.Join(", ", _cachedActivationButtons)}");
@@ -561,7 +558,7 @@ public abstract class BaseAbility : MonoBehaviour
         }
         else
         {
-            if (inputInterceptor == null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
+            if (inputInterceptor is null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
         }
     }
 
@@ -569,14 +566,14 @@ public abstract class BaseAbility : MonoBehaviour
     public void RefreshInputBindings()
     {
         Logger.LogDebug($"[{GetType().Name}] Refreshing input bindings...");
-        if (inputInterceptor == null)
+        if (inputInterceptor is null)
         {
             Logger.LogWarning($"[{this.GetType().Name}] RefreshInputBindings aborted: InputInterceptor is null");
             return;
         }
 
         // Unregister old bindings using cached buttons
-        if (_cachedActivationButtons != null)
+        if (_cachedActivationButtons is not null)
         {
             foreach (string button in _cachedActivationButtons)
             {
@@ -679,7 +676,7 @@ public abstract class BaseAbility : MonoBehaviour
         float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
         if (cooldown <= 0) return;
 
-        if (cooldownCoroutine != null)
+        if (cooldownCoroutine is not null)
         {
             StopCoroutine(cooldownCoroutine);
         }
@@ -696,7 +693,7 @@ public abstract class BaseAbility : MonoBehaviour
         onCooldown = false;
         cooldownEndTime = 0f;
 
-        if (SoundManager.Instance != null && IsUnlocked())
+        if (SoundManager.Instance is not null && IsUnlocked())
         {
             SoundManager.Instance.PlaySound(
                 Consts.SoundNames.AbilityReady,
@@ -707,7 +704,7 @@ public abstract class BaseAbility : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
-        if (inputInterceptor != null && _cachedActivationButtons != null)
+        if (inputInterceptor is not null && _cachedActivationButtons is not null)
         {
             foreach (string button in _cachedActivationButtons)
             {
@@ -719,44 +716,44 @@ public abstract class BaseAbility : MonoBehaviour
         }
 
         // Clean up Ultimate input actions
-        if (leftStickPressAction != null)
+        if (leftStickPressAction is not null)
         {
             leftStickPressAction.performed -= OnLeftStickPressed;
             leftStickPressAction.canceled -= OnLeftStickReleased;
             leftStickPressAction.Disable();
             leftStickPressAction.Dispose();
         }
-        if (rightStickPressAction != null)
+        if (rightStickPressAction is not null)
         {
             rightStickPressAction.performed -= OnRightStickPressed;
             rightStickPressAction.canceled -= OnRightStickReleased;
             rightStickPressAction.Disable();
             rightStickPressAction.Dispose();
         }
-        if (ultimateButtonAction != null)
+        if (ultimateButtonAction is not null)
         {
             ultimateButtonAction.performed -= OnUltimateButtonPressed;
             ultimateButtonAction.Disable();
             ultimateButtonAction.Dispose();
         }
-        if (dpadActivationAction != null)
+        if (dpadActivationAction is not null)
         {
             dpadActivationAction.performed -= OnDpadPressed;
             dpadActivationAction.Disable();
             dpadActivationAction.Dispose();
         }
 
-        if (durationCoroutine != null)
+        if (durationCoroutine is not null)
         {
             StopCoroutine(durationCoroutine);
         }
-        if (cooldownCoroutine != null)
+        if (cooldownCoroutine is not null)
         {
             StopCoroutine(cooldownCoroutine);
         }
 
         // Clean up ability indicator
-        if (abilityIndicator != null)
+        if (abilityIndicator is not null)
         {
             Destroy(abilityIndicator.gameObject);
             abilityIndicator = null;

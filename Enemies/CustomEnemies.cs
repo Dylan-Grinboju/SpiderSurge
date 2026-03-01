@@ -15,12 +15,12 @@ public static class CustomEnemies
 
     public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
     {
-        if (TwinWhispPrefab != null) return;
+        if (TwinWhispPrefab is not null) return;
 
         TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
 
         // Create Shielded Variant if source is provided
-        if (shieldSourceEnemy != null && ShieldedTwinWhispPrefab == null)
+        if (shieldSourceEnemy is not null && ShieldedTwinWhispPrefab is null)
         {
             ShieldedTwinWhispPrefab = CreateShieldedEnemy(TwinWhispPrefab, shieldSourceEnemy, "ShieldedTwinWhisp");
         }
@@ -28,7 +28,7 @@ public static class CustomEnemies
 
     public static void CreateTwinBladeMeleeWhisp(GameObject original)
     {
-        if (TwinBladeMeleeWhispPrefab != null) return;
+        if (TwinBladeMeleeWhispPrefab is not null) return;
 
         TwinBladeMeleeWhispPrefab = CreateBaseEnemy(original, "TwinBladeMeleeWhisp");
         AddTwinBlade(TwinBladeMeleeWhispPrefab);
@@ -36,7 +36,7 @@ public static class CustomEnemies
 
     public static void CreateTwinBladePowerMeleeWhisp(GameObject original)
     {
-        if (TwinBladePowerMeleeWhispPrefab != null) return;
+        if (TwinBladePowerMeleeWhispPrefab is not null) return;
 
         TwinBladePowerMeleeWhispPrefab = CreateBaseEnemy(original, "TwinBladePowerMeleeWhisp");
         AddTwinBlade(TwinBladePowerMeleeWhispPrefab);
@@ -44,9 +44,9 @@ public static class CustomEnemies
 
     public static void CreateMissileWhisp(GameObject original, GameObject rocketProjectilePrefab, GameObject shieldSourceEnemy = null)
     {
-        if (MissileWhispPrefab != null && ShieldedMissileWhispPrefab != null) return;
+        if (MissileWhispPrefab is not null && ShieldedMissileWhispPrefab is not null) return;
 
-        if (MissileWhispPrefab == null)
+        if (MissileWhispPrefab is null)
         {
             MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp", Consts.Values.Colors.MissileWhispColor);
             SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
@@ -54,7 +54,7 @@ public static class CustomEnemies
         }
 
         // Create Shielded Variant if source is provided
-        if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null && MissileWhispPrefab != null)
+        if (shieldSourceEnemy is not null && ShieldedMissileWhispPrefab is null && MissileWhispPrefab is not null)
         {
             ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp");
         }
@@ -87,9 +87,9 @@ public static class CustomEnemies
         Transform[] allChildren = enemyObj.GetComponentsInChildren<Transform>(true);
         meleeWeaponTr = Enumerable.FirstOrDefault(allChildren, t => t.name == "MeleeWeapon");
 
-        if (meleeWeaponTr == null && brain != null) meleeWeaponTr = brain.rotatingBase;
+        if (meleeWeaponTr is null && brain is not null) meleeWeaponTr = brain.rotatingBase;
 
-        if (meleeWeaponTr != null)
+        if (meleeWeaponTr is not null)
         {
             Transform bladehandle = null;
             foreach (Transform child in meleeWeaponTr)
@@ -101,7 +101,7 @@ public static class CustomEnemies
                 }
             }
 
-            if (bladehandle != null)
+            if (bladehandle is not null)
             {
                 Transform blade2 = Object.Instantiate(bladehandle, meleeWeaponTr);
                 blade2.name = "SecondBladeHandle";
@@ -114,19 +114,19 @@ public static class CustomEnemies
     private static void SetupMissileProjectile(GameObject enemyObj, GameObject rocketProjectilePrefab)
     {
         var brain = enemyObj.GetComponent<WhispBrain>();
-        if (brain != null && rocketProjectilePrefab != null)
+        if (brain is not null && rocketProjectilePrefab is not null)
         {
             // Configure Rocket Logic
             var bp = rocketProjectilePrefab.GetComponent<BasicProjectile>();
-            if (bp != null)
+            if (bp is not null)
             {
                 bp.destroyOnCollision = true;
 
                 // Find "Explosion" effect if missing
-                if (bp.destroyEffect == null)
+                if (bp.destroyEffect is null)
                 {
                     var explosionPrefab = Resources.FindObjectsOfTypeAll<Explosion>().FirstOrDefault(e => e.name == "Explosion")?.gameObject;
-                    if (explosionPrefab != null)
+                    if (explosionPrefab is not null)
                     {
                         bp.destroyEffect = explosionPrefab;
                     }
@@ -147,25 +147,25 @@ public static class CustomEnemies
         var offScreen = enemyObj.GetComponentInChildren<OffScreenIndicator>(true);
         var type = typeof(OffScreenIndicator);
 
-        if (offScreen == null)
+        if (offScreen is null)
         {
             GameObject indicatorPrefab = null;
             // Find indicator prefab from sources
             var rollers = Resources.FindObjectsOfTypeAll<ExplodingRoller>();
-            if (rollers != null && rollers.Length > 0)
+            if (rollers is not null && rollers.Length > 0)
             {
                 // Try to get from first available roller
-                var rollerIndicator = rollers.Select(r => r.GetComponent<OffScreenIndicator>()).FirstOrDefault(i => i != null);
+                var rollerIndicator = rollers.Select(r => r.GetComponent<OffScreenIndicator>()).FirstOrDefault(i => i is not null);
 
-                if (rollerIndicator != null)
+                if (rollerIndicator is not null)
                 {
                     // Access 'indicator' field via reflection since it is private
                     var field = type.GetField("indicator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    if (field != null) indicatorPrefab = (GameObject)field.GetValue(rollerIndicator);
+                    if (field is not null) indicatorPrefab = (GameObject)field.GetValue(rollerIndicator);
                 }
             }
 
-            if (indicatorPrefab != null)
+            if (indicatorPrefab is not null)
             {
                 offScreen = enemyObj.AddComponent<OffScreenIndicator>();
 
@@ -181,7 +181,7 @@ public static class CustomEnemies
             }
         }
 
-        if (offScreen != null)
+        if (offScreen is not null)
         {
             type.GetField("color", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, Consts.Values.Colors.MissileWhispColor);
             type.GetField("_mainCamera", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, Camera.main); // Initialize camera
@@ -194,14 +194,14 @@ public static class CustomEnemies
 
     private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name)
     {
-        if (baseEnemy == null || shieldSourceEnemy == null) return null;
+        if (baseEnemy is null || shieldSourceEnemy is null) return null;
 
         GameObject newEnemyObj = CreateBaseEnemy(baseEnemy, name);
 
         var healthSystem = newEnemyObj.GetComponent<EnemyHealthSystem>();
         var sourceHealth = shieldSourceEnemy.GetComponent<EnemyHealthSystem>();
 
-        if (sourceHealth != null && sourceHealth.shield != null)
+        if (sourceHealth is not null && sourceHealth.shield is not null)
         {
             // Clone Shield
             GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
@@ -214,7 +214,7 @@ public static class CustomEnemies
             newShield.SetActive(true);
 
             // Clone Shatter Effect if available
-            if (sourceHealth.shieldShatterEffect != null)
+            if (sourceHealth.shieldShatterEffect is not null)
             {
                 GameObject newShatter = Object.Instantiate(sourceHealth.shieldShatterEffect, newEnemyObj.transform);
                 newShatter.name = sourceHealth.shieldShatterEffect.name;
@@ -232,7 +232,7 @@ public static class CustomEnemies
     private static void RegisterEnemyForCheats(GameObject enemyObj)
     {
         var healthSystem = enemyObj.GetComponent<EnemyHealthSystem>();
-        if (healthSystem == null)
+        if (healthSystem is null)
         {
             Logger.LogError($"[SpiderSurge] Cannot register {enemyObj.name}: No EnemyHealthSystem found.");
             return;
@@ -240,7 +240,7 @@ public static class CustomEnemies
 
         bool registered = false;
 
-        if (CustomTiersScreen.instance != null && CustomTiersScreen.instance.allElements != null)
+        if (CustomTiersScreen.instance is not null && CustomTiersScreen.instance.allElements is not null)
         {
             bool alreadyExists = false;
             foreach (var enemy in CustomTiersScreen.instance.allElements.allEnemies)
@@ -277,17 +277,17 @@ public static class CustomEnemies
 
         GameObject shieldSource = null;
 
-        if (elements.allEnemies != null)
+        if (elements.allEnemies is not null)
         {
             foreach (var enemy in elements.allEnemies)
             {
-                if (enemy == null) continue;
+                if (enemy is null) continue;
                 if (enemy.name.Contains("MeleeWhisp") && !enemy.name.Contains("Power")) meleeWhispPrefab = enemy.gameObject;
                 else if (enemy.name.Contains("MeleeWhisp") && enemy.name.Contains("Power")) powerMeleeWhispPrefab = enemy.gameObject;
                 else if (enemy.name.Contains("Whisp") && !enemy.name.Contains("Melee") && !enemy.name.Contains("Power") && !enemy.name.Contains("Missile")) whispPrefab = enemy.gameObject;
 
                 // Look for a shield source
-                if (enemy.shield != null && shieldSource == null)
+                if (enemy.shield is not null && shieldSource is null)
                 {
                     shieldSource = enemy.gameObject;
                 }
@@ -305,27 +305,27 @@ public static class CustomEnemies
             }
         }
 
-        if (rocketProjectile == null)
+        if (rocketProjectile is null)
         {
             Logger.LogWarning("[SpiderSurge] 'Rocket' projectile not found explicitly.");
         }
 
         // Invoke Missile Whisp creation (and shielded variant if possible)
-        if (whispPrefab != null && rocketProjectile != null)
+        if (whispPrefab is not null && rocketProjectile is not null)
         {
             CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
         }
         else
         {
-            Logger.LogWarning($"[SpiderSurge] Missing prefabs for MissileWhisp. Whisp: {whispPrefab != null}, RocketProjectile: {rocketProjectile != null}");
+            Logger.LogWarning($"[SpiderSurge] Missing prefabs for MissileWhisp. Whisp: {whispPrefab is not null}, RocketProjectile: {rocketProjectile is not null}");
         }
 
-        if (whispPrefab != null)
+        if (whispPrefab is not null)
         {
             CreateTwinWhisp(whispPrefab, shieldSource);
         }
 
-        if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
-        if (powerMeleeWhispPrefab != null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
+        if (meleeWhispPrefab is not null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
+        if (powerMeleeWhispPrefab is not null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
     }
 }

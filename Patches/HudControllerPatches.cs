@@ -16,7 +16,7 @@ public class HudController_Restart_Patch
         }
 
         UIButton component = null;
-        if (__instance.restart != null && __instance.restart.gameObject.activeInHierarchy)
+        if (__instance.restart is not null && __instance.restart.gameObject.activeInHierarchy)
         {
             component = __instance.restart.GetComponent<UIButton>();
         }
@@ -38,7 +38,7 @@ public class HudController_OpenLobby_Patch
     public static bool Prefix(HudController __instance)
     {
         UIButton component = null;
-        if (__instance.mainMenuButton != null && __instance.mainMenuButton.gameObject.activeInHierarchy)
+        if (__instance.mainMenuButton is not null && __instance.mainMenuButton.gameObject.activeInHierarchy)
         {
             component = __instance.mainMenuButton.GetComponent<UIButton>();
         }

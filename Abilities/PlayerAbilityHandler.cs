@@ -14,18 +14,18 @@ public static class PlayerAbilityHandler
 
     public static void InitializePlayerAbilities(GameObject playerObject)
     {
-        if (playerObject == null) return;
+        if (playerObject is null) return;
 
         try
         {
-            if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive)
+            if (SurgeGameModeManager.Instance is null || !SurgeGameModeManager.Instance.IsActive)
             {
                 Logger.LogWarning("Surge mode not active - skipping ability initialization");
                 return;
             }
 
             PlayerInput playerInput = playerObject.GetComponentInParent<PlayerInput>();
-            if (playerInput == null)
+            if (playerInput is null)
             {
                 Logger.LogWarning("Could not find PlayerInput component on player object");
                 return;
@@ -36,45 +36,45 @@ public static class PlayerAbilityHandler
             SeenPlayerSpawns.Add(playerIndex);
 
             SpiderController spiderController = playerObject.GetComponent<SpiderController>();
-            if (spiderController == null)
+            if (spiderController is null)
             {
                 Logger.LogWarning("Could not find SpiderController component on player object");
                 return;
             }
 
-            ActiveSpiderControllers.RemoveAll(sc => sc == null);
+            ActiveSpiderControllers.RemoveAll(sc => sc is null);
             if (!ActiveSpiderControllers.Contains(spiderController))
             {
                 ActiveSpiderControllers.Add(spiderController);
             }
 
-            if (spiderController.GetComponent<InputInterceptor>() == null)
+            if (spiderController.GetComponent<InputInterceptor>() is null)
             {
                 spiderController.gameObject.AddComponent<InputInterceptor>();
             }
 
-            if (spiderController.GetComponent<ImmuneAbility>() == null)
+            if (spiderController.GetComponent<ImmuneAbility>() is null)
             {
                 spiderController.gameObject.AddComponent<ImmuneAbility>();
             }
 
             var immuneAbility = spiderController.GetComponent<ImmuneAbility>();
-            if (isRespawn && immuneAbility != null && immuneAbility.IsUnlocked())
+            if (isRespawn && immuneAbility is not null && immuneAbility.IsUnlocked())
             {
                 immuneAbility.ForceStartCooldown();
             }
 
-            if (spiderController.GetComponent<AmmoAbility>() == null)
+            if (spiderController.GetComponent<AmmoAbility>() is null)
             {
                 spiderController.gameObject.AddComponent<AmmoAbility>();
             }
 
-            if (spiderController.GetComponent<PulseAbility>() == null)
+            if (spiderController.GetComponent<PulseAbility>() is null)
             {
                 spiderController.gameObject.AddComponent<PulseAbility>();
             }
 
-            if (spiderController.GetComponent<StorageAbility>() == null)
+            if (spiderController.GetComponent<StorageAbility>() is null)
             {
                 spiderController.gameObject.AddComponent<StorageAbility>();
             }

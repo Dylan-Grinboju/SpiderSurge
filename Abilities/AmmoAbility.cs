@@ -41,17 +41,17 @@ public class AmmoAbility : BaseAbility
     protected override void Awake()
     {
         base.Awake();
-        if (playerInput != null)
+        if (playerInput is not null)
         {
             playerAmmoAbilities[playerInput] = this;
         }
 
-        if (networkAmmoField == null)
+        if (networkAmmoField is null)
         {
             networkAmmoField = typeof(Weapon).GetField("networkAmmo",
                 BindingFlags.NonPublic | BindingFlags.Instance);
 
-            if (networkAmmoField == null)
+            if (networkAmmoField is null)
             {
                 Logger.LogError("AmmoAbility: Could not find networkAmmo field!");
             }
@@ -62,7 +62,7 @@ public class AmmoAbility : BaseAbility
     {
         base.Start();
         weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-        if (weaponManager == null && playerController != null)
+        if (weaponManager is null && playerController is not null)
         {
             weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
         }
@@ -70,21 +70,21 @@ public class AmmoAbility : BaseAbility
 
     protected void Update()
     {
-        if (weaponManager == null)
+        if (weaponManager is null)
         {
             weaponCheckTimer -= Time.deltaTime;
             if (weaponCheckTimer <= 0)
             {
                 weaponCheckTimer = Consts.Values.Ammo.CheckInterval;
                 weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-                if (weaponManager == null && playerController != null)
+                if (weaponManager is null && playerController is not null)
                 {
                     weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
                 }
             }
         }
 
-        if (isActive && weaponManager != null && weaponManager.equippedWeapon != null)
+        if (isActive && weaponManager is not null && weaponManager.equippedWeapon is not null)
         {
             var weapon = weaponManager.equippedWeapon;
             float currentAmmoFloor = GetHeldWeaponFloorAmmo(weapon);
@@ -98,7 +98,7 @@ public class AmmoAbility : BaseAbility
 
     private float GetHeldWeaponFloorAmmo(Weapon weapon)
     {
-        if (weapon == null) return 0f;
+        if (weapon is null) return 0f;
 
         float originalAmmo = GetTrackedOriginalAmmo(weapon);
         int efficiencyLevel = GetEfficiencyLevel();
@@ -112,11 +112,11 @@ public class AmmoAbility : BaseAbility
         return originalAmmo;
     }
 
-    private int GetEfficiencyLevel() => ModifierManager.instance == null ? 0 : ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
+    private int GetEfficiencyLevel() => ModifierManager.instance is null ? 0 : ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
 
     private void EnsureTrackedWeapon(Weapon weapon)
     {
-        if (weapon == null)
+        if (weapon is null)
         {
             return;
         }
@@ -130,14 +130,14 @@ public class AmmoAbility : BaseAbility
 
     private float GetTrackedOriginalAmmo(Weapon weapon)
     {
-        if (weapon == null) return 0f;
+        if (weapon is null) return 0f;
         EnsureTrackedWeapon(weapon);
         return weapon == trackedWeapon ? trackedOriginalAmmo : 0f;
     }
 
     private float GetRemovalAmmoTarget(Weapon weapon, bool duringActiveUnequip, int efficiencyLevel)
     {
-        if (weapon == null) return 0f;
+        if (weapon is null) return 0f;
 
         float originalAmmo = GetTrackedOriginalAmmo(weapon);
 
@@ -158,9 +158,9 @@ public class AmmoAbility : BaseAbility
 
     private bool ShouldDisintegrateOnRemoval(Weapon weapon)
     {
-        return weapon == null
+        return weapon is null
             ? false
-            : weapon.type == null
+            : weapon.type is null
             ? true
             : !weapon.type.Contains(Weapon.WeaponType.Explosive)
             && !weapon.type.Contains(Weapon.WeaponType.Mine);
@@ -168,11 +168,11 @@ public class AmmoAbility : BaseAbility
 
     private void SetWeaponAmmo(Weapon weapon, float value)
     {
-        if (weapon == null) return;
+        if (weapon is null) return;
 
         weapon.ammo = value;
 
-        if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField != null)
+        if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField is not null)
         {
             try
             {
@@ -201,7 +201,7 @@ public class AmmoAbility : BaseAbility
         lastResolvedWeapon = null;
         lastResolvedFrame = -1;
 
-        if (weaponManager != null && weaponManager.equippedWeapon != null)
+        if (weaponManager is not null && weaponManager.equippedWeapon is not null)
         {
             trackedWeapon = weaponManager.equippedWeapon;
             trackedOriginalAmmo = trackedWeapon.ammo;
@@ -212,7 +212,7 @@ public class AmmoAbility : BaseAbility
 
     protected override void OnDeactivate()
     {
-        if (weaponManager != null && weaponManager.equippedWeapon != null)
+        if (weaponManager is not null && weaponManager.equippedWeapon is not null)
         {
             ResolveWeaponAmmoOnAbilityRemoval(weaponManager.equippedWeapon, false);
         }
@@ -225,12 +225,12 @@ public class AmmoAbility : BaseAbility
 
     public static void HandleWeaponRemoved(SpiderWeaponManager manager, Weapon weapon)
     {
-        if (manager == null || weapon == null) return;
+        if (manager is null || weapon is null) return;
 
         PlayerInput playerInput = manager.GetComponentInParent<PlayerInput>();
-        if (playerInput == null) return;
+        if (playerInput is null) return;
 
-        if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability == null)
+        if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability is null)
         {
             return;
         }
@@ -245,7 +245,7 @@ public class AmmoAbility : BaseAbility
 
     private void ResolveWeaponAmmoOnAbilityRemoval(Weapon weapon, bool duringActiveUnequip)
     {
-        if (weapon == null) return;
+        if (weapon is null) return;
         if (weapon == lastResolvedWeapon && Time.frameCount == lastResolvedFrame) return;
 
         int efficiencyLevel = GetEfficiencyLevel();
@@ -305,7 +305,7 @@ public class AmmoAbility : BaseAbility
         try
         {
             string currentScene = SceneManager.GetActiveScene().name;
-            if (cachedWeaponSpawners == null || cachedSceneName != currentScene)
+            if (cachedWeaponSpawners is null || cachedSceneName != currentScene)
             {
                 cachedWeaponSpawners = FindObjectsOfType<WeaponSpawner>();
                 cachedSceneName = currentScene;
@@ -326,7 +326,7 @@ public class AmmoAbility : BaseAbility
 
             foreach (WeaponSpawner spawner in weaponSpawners)
             {
-                if (spawner != null) validSpawners.Add(spawner);
+                if (spawner is not null) validSpawners.Add(spawner);
             }
 
             // If not spawning all, shuffle and take half
@@ -353,12 +353,12 @@ public class AmmoAbility : BaseAbility
                 try
                 {
                     GameObject weaponPrefab = GetRandomWeaponPrefab();
-                    if (weaponPrefab == null) continue;
+                    if (weaponPrefab is null) continue;
 
                     GameObject spawnedWeapon = Instantiate(weaponPrefab, spawner.transform.position, spawner.transform.rotation);
 
                     NetworkObject netObj = spawnedWeapon.GetComponent<NetworkObject>();
-                    if (netObj != null)
+                    if (netObj is not null)
                     {
                         netObj.Spawn(true);
                         netObj.DestroyWithScene = true;
@@ -385,7 +385,7 @@ public class AmmoAbility : BaseAbility
         try
         {
             // Try to get weapons from SurvivalMode
-            if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive())
+            if (SurvivalMode.instance is not null && SurvivalMode.instance.GameModeActive())
             {
                 return SurvivalMode.instance.GetRandomWeapon(false);
             }
@@ -401,7 +401,7 @@ public class AmmoAbility : BaseAbility
     {
         base.OnDestroy();
 
-        if (playerInput != null && playerAmmoAbilities.ContainsKey(playerInput))
+        if (playerInput is not null && playerAmmoAbilities.ContainsKey(playerInput))
         {
             playerAmmoAbilities.Remove(playerInput);
         }

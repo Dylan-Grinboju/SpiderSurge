@@ -9,7 +9,7 @@ public class EOSLeaderboards_SetRecord_Patch
     [HarmonyPrefix]
     public static bool Prefix()
     {
-        if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
+        if (SurgeGameModeManager.Instance is not null && SurgeGameModeManager.Instance.IsActive)
         {
             return false; // Skip leaderboard submission for Surge mode
         }
