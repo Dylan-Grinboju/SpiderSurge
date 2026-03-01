@@ -1,34 +1,30 @@
 using UnityEngine;
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+public class SurgeGameModeManager : MonoBehaviour
 {
-    public class SurgeGameModeManager : MonoBehaviour
+    public static SurgeGameModeManager Instance { get; private set; }
+
+    public bool IsActive { get; private set; }
+
+    public static bool IsModeEnabled => ModConfig.enableSurgeMode;
+
+    public static bool IsSurgeRunActive => IsModeEnabled && Instance != null && Instance.IsActive;
+
+    private void Awake()
     {
-        public static SurgeGameModeManager Instance { get; private set; }
-
-        public bool IsActive { get; private set; }
-
-        public static bool IsModeEnabled => ModConfig.enableSurgeMode;
-
-        public static bool IsSurgeRunActive => IsModeEnabled && Instance != null && Instance.IsActive;
-
-        private void Awake()
+        if (Instance == null)
         {
-            if (Instance == null)
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-
-        public void SetActive(bool active)
+        else
         {
-            IsActive = IsModeEnabled && active;
+            Destroy(gameObject);
         }
-
     }
+
+    public void SetActive(bool active) => IsActive = IsModeEnabled && active;
+
 }

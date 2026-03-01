@@ -4,103 +4,90 @@ using System.Collections.Generic;
 using System.Reflection;
 using Logger = Silk.Logger;
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+public static class IconLoader
 {
-    public static class IconLoader
+    private static Dictionary<string, Sprite> _loadedIcons = [];
+    private static bool _initialized = false;
+
+    public static void LoadAllIcons()
     {
-        private static Dictionary<string, Sprite> _loadedIcons = new Dictionary<string, Sprite>();
-        private static bool _initialized = false;
+        if (_initialized) return;
 
-        public static void LoadAllIcons()
+        try
         {
-            if (_initialized) return;
-
-            try
-            {
-                LoadEmbeddedIcons();
-                _initialized = true;
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"[IconLoader] Error loading icons: {ex.Message}");
-            }
+            LoadEmbeddedIcons();
+            _initialized = true;
         }
-
-        private static void LoadEmbeddedIcons()
+        catch (System.Exception ex)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string[] resourceNames = assembly.GetManifestResourceNames();
+            Logger.LogError($"[IconLoader] Error loading icons: {ex.Message}");
+        }
+    }
 
-            foreach (string resourceName in resourceNames)
+    private static void LoadEmbeddedIcons()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        string[] resourceNames = assembly.GetManifestResourceNames();
+
+        foreach (string resourceName in resourceNames)
+        {
+            if (resourceName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (resourceName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
+                string iconName = ExtractIconName(resourceName);
+
+                try
                 {
-                    string iconName = ExtractIconName(resourceName);
-
-                    try
+                    using Stream stream = assembly.GetManifestResourceStream(resourceName);
+                    if (stream != null)
                     {
-                        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                        {
-                            if (stream != null)
-                            {
-                                byte[] fileData = new byte[stream.Length];
-                                stream.Read(fileData, 0, fileData.Length);
+                        using MemoryStream ms = new();
+                        stream.CopyTo(ms);
+                        byte[] fileData = ms.ToArray();
 
-                                Sprite sprite = LoadSpriteFromData(fileData);
-                                if (sprite != null)
-                                {
-                                    _loadedIcons[iconName] = sprite;
-                                }
-                            }
-                            else
-                            {
-                                Logger.LogWarning($"[IconLoader] Could not load resource stream: {resourceName}");
-                            }
+                        Sprite sprite = LoadSpriteFromData(fileData);
+                        if (sprite != null)
+                        {
+                            _loadedIcons[iconName] = sprite;
                         }
                     }
-                    catch (System.Exception ex)
+                    else
                     {
-                        Logger.LogError($"[IconLoader] Failed to load embedded icon '{resourceName}': {ex.Message}");
+                        Logger.LogWarning($"[IconLoader] Could not load resource stream: {resourceName}");
                     }
                 }
-            }
-        }
-
-        private static string ExtractIconName(string resourceName)
-        {
-            string withoutExtension = resourceName.Substring(0, resourceName.Length - 4);
-            int lastDot = withoutExtension.LastIndexOf('.');
-            if (lastDot >= 0)
-            {
-                return withoutExtension.Substring(lastDot + 1);
-            }
-            return withoutExtension;
-        }
-
-        public static Sprite GetIcon(string name)
-        {
-            if (_loadedIcons.TryGetValue(name, out Sprite sprite))
-            {
-                return sprite;
-            }
-            return null;
-        }
-
-        private static Sprite LoadSpriteFromData(byte[] data)
-        {
-            try
-            {
-                Texture2D texture = new Texture2D(2, 2);
-                if (texture.LoadImage(data))
+                catch (System.Exception ex)
                 {
-                    return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    Logger.LogError($"[IconLoader] Failed to load embedded icon '{resourceName}': {ex.Message}");
                 }
             }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"[IconLoader] Failed to load sprite from data: {ex.Message}");
-            }
-            return null;
         }
+    }
+
+    private static string ExtractIconName(string resourceName)
+    {
+        string withoutExtension = resourceName.Substring(0, resourceName.Length - 4);
+        int lastDot = withoutExtension.LastIndexOf('.');
+        return lastDot >= 0 ? withoutExtension.Substring(lastDot + 1) : withoutExtension;
+    }
+
+    public static Sprite GetIcon(string name) => _loadedIcons.TryGetValue(name, out Sprite sprite) ? sprite : null;
+
+    private static Sprite LoadSpriteFromData(byte[] data)
+    {
+        try
+        {
+            Texture2D texture = new(2, 2);
+            if (texture.LoadImage(data))
+            {
+                return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"[IconLoader] Failed to load sprite from data: {ex.Message}");
+        }
+        return null;
     }
 }

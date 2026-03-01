@@ -3,56 +3,55 @@ using System.Collections.Generic;
 using System.Reflection;
 using Logger = Silk.Logger;
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+public static class ReflectionHelper
 {
-    public static class ReflectionHelper
+    private static readonly Dictionary<(Type, string), FieldInfo> _fieldCache = [];
+
+    private static FieldInfo GetFieldInfo(Type type, string fieldName)
     {
-        private static readonly Dictionary<(Type, string), FieldInfo> _fieldCache = new Dictionary<(Type, string), FieldInfo>();
-
-        private static FieldInfo GetFieldInfo(Type type, string fieldName)
+        var key = (type, fieldName);
+        if (_fieldCache.TryGetValue(key, out var field))
         {
-            var key = (type, fieldName);
-            if (_fieldCache.TryGetValue(key, out var field))
-            {
-                return field;
-            }
-
-            field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-            if (field != null)
-            {
-                _fieldCache[key] = field;
-            }
             return field;
         }
 
-        public static T GetPrivateField<T>(object instance, string fieldName) where T : class
+        field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+        if (field != null)
         {
-            if (instance == null) return null;
-
-            var field = GetFieldInfo(instance.GetType(), fieldName);
-
-            if (field == null)
-            {
-                Logger.LogWarning($"[ReflectionHelper] Field '{fieldName}' not found on type '{instance.GetType().Name}'");
-                return null;
-            }
-            return field.GetValue(instance) as T;
+            _fieldCache[key] = field;
         }
+        return field;
+    }
 
-        public static void SetPrivateField(object instance, string fieldName, object value)
+    public static T GetPrivateField<T>(object instance, string fieldName) where T : class
+    {
+        if (instance == null) return null;
+
+        var field = GetFieldInfo(instance.GetType(), fieldName);
+
+        if (field == null)
         {
-            if (instance == null) return;
+            Logger.LogWarning($"[ReflectionHelper] Field '{fieldName}' not found on type '{instance.GetType().Name}'");
+            return null;
+        }
+        return field.GetValue(instance) as T;
+    }
 
-            var field = GetFieldInfo(instance.GetType(), fieldName);
+    public static void SetPrivateField(object instance, string fieldName, object value)
+    {
+        if (instance == null) return;
 
-            if (field != null)
-            {
-                field.SetValue(instance, value);
-            }
-            else
-            {
-                Logger.LogWarning($"[ReflectionHelper] Field '{fieldName}' not found on type '{instance.GetType().Name}'");
-            }
+        var field = GetFieldInfo(instance.GetType(), fieldName);
+
+        if (field != null)
+        {
+            field.SetValue(instance, value);
+        }
+        else
+        {
+            Logger.LogWarning($"[ReflectionHelper] Field '{fieldName}' not found on type '{instance.GetType().Name}'");
         }
     }
 }

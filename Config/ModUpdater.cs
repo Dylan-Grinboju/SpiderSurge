@@ -5,101 +5,96 @@ using System.Threading.Tasks;
 using Logger = Silk.Logger;
 
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+public static class ModUpdater
 {
-    public static class ModUpdater
+    private static string CurrentVersion => SpiderSurgeMod.Version;
+    private static readonly HttpClient _httpClient = new();
+
+    private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
+    private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
+
+    public static async Task CheckForUpdatesAsync()
     {
-        private static string CurrentVersion => SpiderSurgeMod.Version;
-        private static readonly HttpClient _httpClient = new HttpClient();
-
-        private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
-        private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
-
-        public static async Task CheckForUpdatesAsync()
+        try
         {
-            try
-            {
-                var latestVersion = await GetLatestVersionAsync();
-                Logger.LogInfo($"Latest version: {latestVersion}, Current version: {CurrentVersion}");
+            var latestVersion = await GetLatestVersionAsync();
+            Logger.LogInfo($"Latest version: {latestVersion}, Current version: {CurrentVersion}");
 
-                if (IsNewerVersion(latestVersion, CurrentVersion))
-                {
-                    Logger.LogInfo("A new version of SpiderSurge is available!");
-                    ShowUpdatePrompt(latestVersion);
-                }
-            }
-            catch (Exception ex)
+            if (IsNewerVersion(latestVersion, CurrentVersion))
             {
-                Logger.LogError($"Failed to check for SpiderSurge updates: {ex.Message}");
+                Logger.LogInfo("A new version of SpiderSurge is available!");
+                ShowUpdatePrompt(latestVersion);
             }
         }
-
-        private static async Task<string> GetLatestVersionAsync()
+        catch (Exception ex)
         {
-            using (var timeout = new CancellationTokenSource(Consts.ModUpdater.RequestTimeoutMs))
-            {
-                using (var response = await _httpClient.GetAsync(LatestVersionUrl, timeout.Token))
-                {
-                    response.EnsureSuccessStatusCode();
-                    var content = await response.Content.ReadAsStringAsync();
-                    return content.Trim();
-                }
-            }
+            Logger.LogError($"Failed to check for SpiderSurge updates: {ex.Message}");
         }
+    }
 
-        private static bool IsNewerVersion(string latestVersion, string currentVersion)
+    private static async Task<string> GetLatestVersionAsync()
+    {
+        using var timeout = new CancellationTokenSource(Consts.ModUpdater.RequestTimeoutMs);
+        using var response = await _httpClient.GetAsync(LatestVersionUrl, timeout.Token);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        return content.Trim();
+    }
+
+    private static bool IsNewerVersion(string latestVersion, string currentVersion)
+    {
+        try
         {
-            try
-            {
-                var latest = new Version(latestVersion);
-                var current = new Version(currentVersion);
-                return latest > current;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Failed to compare versions: {ex.Message}");
-                return false;
-            }
+            var latest = new Version(latestVersion);
+            var current = new Version(currentVersion);
+            return latest > current;
         }
-
-        private static void ShowUpdatePrompt(string latestVersion)
+        catch (Exception ex)
         {
-            var downloadUrl = string.Format(DownloadUrl, latestVersion);
-            Logger.LogInfo($"Download URL: {downloadUrl}");
+            Logger.LogError($"Failed to compare versions: {ex.Message}");
+            return false;
+        }
+    }
 
-            Announcer.TwoOptionsPopup(
-                $"SpiderSurge v{latestVersion} is available!\nCurrent version: {CurrentVersion}\nWould you like to open the download page?",
-                "Yes", "No",
-                () =>
+    private static void ShowUpdatePrompt(string latestVersion)
+    {
+        var downloadUrl = string.Format(DownloadUrl, latestVersion);
+        Logger.LogInfo($"Download URL: {downloadUrl}");
+
+        Announcer.TwoOptionsPopup(
+            $"SpiderSurge v{latestVersion} is available!\nCurrent version: {CurrentVersion}\nWould you like to open the download page?",
+            "Yes", "No",
+            () =>
+            {
+                try
                 {
-                    try
+                    Logger.LogInfo("Opening SpiderSurge download page...");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                     {
-                        Logger.LogInfo("Opening SpiderSurge download page...");
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = downloadUrl,
-                            UseShellExecute = true
-                        });
+                        FileName = downloadUrl,
+                        UseShellExecute = true
+                    });
 
-                        Announcer.InformationPopup(
-                            "To update:\n" +
-                            "1. Download the new SpiderSurge.dll\n" +
-                            "2. Replace the old file in your <Game_Path>/Silk/Mods folder\n" +
-                            "3. Restart SpiderHeck"
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"Failed to open download page: {ex.Message}");
-                        Announcer.InformationPopup("Could not open download page automatically. Please visit:\nhttps://github.com/Dylan-Grinboju/SpiderSurge/releases");
-                    }
-                },
-                () =>
+                    Announcer.InformationPopup(
+                        "To update:\n" +
+                        "1. Download the new SpiderSurge.dll\n" +
+                        "2. Replace the old file in your <Game_Path>/Silk/Mods folder\n" +
+                        "3. Restart SpiderHeck"
+                    );
+                }
+                catch (Exception ex)
                 {
-                    Logger.LogInfo("Update declined by user.");
-                },
-                null
-            );
-        }
+                    Logger.LogError($"Failed to open download page: {ex.Message}");
+                    Announcer.InformationPopup("Could not open download page automatically. Please visit:\nhttps://github.com/Dylan-Grinboju/SpiderSurge/releases");
+                }
+            },
+            () =>
+            {
+                Logger.LogInfo("Update declined by user.");
+            },
+            null
+        );
     }
 }

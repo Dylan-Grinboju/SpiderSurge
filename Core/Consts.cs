@@ -1,398 +1,382 @@
 using System.Collections.Generic;
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+public static class Consts
 {
-    public static class Consts
+    public static class PerkNames
     {
-        public static class PerkNames
+        public const string ImmuneAbility = "immune";
+        public const string AmmoAbility = "ammo";
+        public const string PulseAbility = "pulse";
+        public const string StorageAbility = "storage";
+
+        public const string ImmuneAbilityUltimate = "immuneUltimate";
+        public const string AmmoAbilityUltimate = "ammoUltimate";
+        public const string PulseAbilityUltimate = "pulseUltimate";
+        public const string StorageAbilityUltimate = "storageUltimate";
+
+        public const string AbilityCooldown = "abilityCooldown";
+        public const string AbilityDuration = "abilityDuration";
+        public const string ShortTermInvestment = "shortTermInvestment";
+        public const string LongTermInvestment = "longTermInvestment";
+        public const string PerkLuck = "perkLuck";
+    }
+
+    public static class ModifierNames
+    {
+        public const string TooCool = "tooCool";
+        public const string BiggerBoom = "biggerBoom";
+        public const string MoreBoom = "moreBoom";
+        public const string MoreGuns = "moreGuns";
+        public const string MoreParticles = "moreParticles";
+        public const string Efficiency = "efficiency";
+        public const string StartShields = "startShields";
+        public const string PositiveEncouragement = "positiveencouragement";
+        public const string SafetyNet = "safetynet";
+    }
+
+    // Sound file names (without extension) - must match embedded .wav filenames
+    public static class SoundNames
+    {
+        public const string LuckyUpgrade = "lucky_upgrade";
+        public const string AbilityNotReady = "ability_not_ready";
+        public const string AbilityReady = "ability_ready";
+        public const string AmmoAbility = "ammo_ability";
+        public const string PulseAbility = "pulse_ability";
+        public const string PowerUp = "power_up";
+        public const string ImmuneAbility = "immune_ability";
+        public const string ImmuneUlt = "immune_ult";
+        public const string StorageSend = "storage_send";
+        public const string StorageRetrieve = "storage_retrieve";
+        public const string AbilityEnded = "ability_ended";
+    }
+
+    public static class SoundVolumes
+    {
+        public static float LuckyUpgrade = 1f;
+        public static float AbilityNotReady = 0.5f;
+        public static float AbilityReady = 1f;
+        public static float AmmoAbility = 0.75f;
+        public static float PulseAbility = 0.75f;
+        public static float PowerUp = 1f;
+        public static float ImmuneAbility = 0.9f;
+        public static float ImmuneUlt = 0.9f;
+        public static float StorageSend = 0.7f;
+        public static float StorageRetrieve = 0.7f;
+        public static float AbilityEnded = 0.7f;
+
+        // Master volume multiplier
+        public static float MasterVolume = 1f;
+    }
+
+    public static class Formatting
+    {
+        public const string ColorGold = "#FFD700";
+        public const string ColorCyan = "#00FFFF";
+        public const string ColorGreen = "#00FF00";
+        public const string ColorRed = "#FF0000";
+
+        public const string TextLuckyUpgrade = "<color=" + ColorGold + ">Lucky Upgrade</color>";
+        public const string TextSwapAbility = "<color=" + ColorGreen + ">Swap Ability!</color>";
+        public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
+    }
+
+    public static class Telemetry
+    {
+        public const string RelayEndpointUrl = "https://spidersurge-telemetry-relay.dylanyair.workers.dev";
+        public const string PendingDirectoryName = "TelemetryPending";
+        public const string AnonymousIdFileName = "telemetry_anonymous_id.txt";
+        public const int AnonymousIdBytes = 32;
+        public const int RequestTimeoutMs = 5000;
+        public const int MaxQueuedPayloads = 50;
+        public const int MinSendIntervalMs = 2000;
+        public const int DuplicatePayloadWindowMinutes = 10;
+    }
+
+    public static class ModUpdater
+    {
+        public const int RequestTimeoutMs = 5000;
+    }
+
+    public static class Values
+    {
+        public static class Immune
         {
-            public const string ImmuneAbility = "immune";
-            public const string AmmoAbility = "ammo";
-            public const string PulseAbility = "pulse";
-            public const string StorageAbility = "storage";
-
-            public const string ImmuneAbilityUltimate = "immuneUltimate";
-            public const string AmmoAbilityUltimate = "ammoUltimate";
-            public const string PulseAbilityUltimate = "pulseUltimate";
-            public const string StorageAbilityUltimate = "storageUltimate";
-
-            public const string AbilityCooldown = "abilityCooldown";
-            public const string AbilityDuration = "abilityDuration";
-            public const string ShortTermInvestment = "shortTermInvestment";
-            public const string LongTermInvestment = "longTermInvestment";
-            public const string PerkLuck = "perkLuck";
+            public const float AbilityBaseCooldown = 12f;
+            public const float AbilityCooldownReductionPerLevel = 4f;
+            public const float AbilityBaseDuration = 3f;
+            public const float AbilityDurationIncreasePerLevel = 1.5f;
+            public const float UltimateBaseCooldown = 75f;
+            public const float UltimateCooldownReductionPerLevel = 15f;
+            public const float UltimateBaseDuration = 10f;
+            public const float UltimateDurationIncreasePerLevel = 3f;
+            public const float UltimateShieldSynergyChance = 0.5f;
+            public const int UltimateFriendlyWaspSpawnCount = 3;
+            public const int UltimateFriendlyWaspShieldBonusCount = 1;
         }
 
-        public static class ModifierNames
+        public static class Ammo
         {
-            public const string TooCool = "tooCool";
-            public const string BiggerBoom = "biggerBoom";
-            public const string MoreBoom = "moreBoom";
-            public const string MoreGuns = "moreGuns";
-            public const string MoreParticles = "moreParticles";
-            public const string Efficiency = "efficiency";
-            public const string StartShields = "startShields";
-            public const string PositiveEncouragement = "positiveencouragement";
-            public const string SafetyNet = "safetynet";
+            public const float AbilityBaseCooldown = 20f;
+            public const float AbilityCooldownReductionPerLevel = 5f;
+            public const float AbilityBaseDuration = 5f;
+            public const float AbilityDurationIncreasePerLevel = 2.5f;
+            public const float UltimateBaseCooldown = 30f;
+            public const float UltimateCooldownReductionPerLevel = 10f;
+            public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
+            public const float CheckInterval = 0.5f;
         }
 
-        // Sound file names (without extension) - must match embedded .wav filenames
-        public static class SoundNames
+        public static class Pulse
         {
-            public const string LuckyUpgrade = "lucky_upgrade";
-            public const string AbilityNotReady = "ability_not_ready";
-            public const string AbilityReady = "ability_ready";
-            public const string AmmoAbility = "ammo_ability";
-            public const string PulseAbility = "pulse_ability";
-            public const string PowerUp = "power_up";
-            public const string ImmuneAbility = "immune_ability";
-            public const string ImmuneUlt = "immune_ult";
-            public const string StorageSend = "storage_send";
-            public const string StorageRetrieve = "storage_retrieve";
-            public const string AbilityEnded = "ability_ended";
+            public const float AbilityBaseCooldown = 12f;
+            public const float AbilityCooldownReductionPerLevel = 4f;
+            public const float AbilityBaseDuration = 0f;
+            public const float UltimateBaseCooldown = 20f;
+            public const float UltimateCooldownReductionPerLevel = 5f;
+            public const float UltimateBaseDuration = 0f;
+
+            //duration perk
+            public const float AbilityBaseKnockbackRadius = 100f;
+            public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
+            public const float UltimateBaseKnockbackRadius = 150f;
+            public const float UltimateKnockbackRadiusIncreasePerLevel = 50f;
+
+            //Bigger boom perk
+            public const float AbilityBaseKnockbackStrength = 900f;
+            public const float AbilityKnockbackStrengthIncreasePerLevel = 200f;
+            public const float UltimateBaseKnockbackStrength = 1200f;
+            public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
+
+            //too cool perk
+            public const float UltimateBaseDeathRadius = 100f;
+            public const float UltimateDeathRadiusIncreasePerLevel = 30f;
+            public const float CameraShakeDuration = 5f;
+
+            // Visuals
+            public static readonly UnityEngine.Color RingColor = new(0f, 0.7f, 1f, 0.8f); // Light blue
+            public const float RingWidth = 0.3f;
+            public const float RingSpeed = 500f;
         }
 
-        public static class SoundVolumes
+        public static class Storage
         {
-            public static float LuckyUpgrade = 1f;
-            public static float AbilityNotReady = 0.5f;
-            public static float AbilityReady = 1f;
-            public static float AmmoAbility = 0.75f;
-            public static float PulseAbility = 0.75f;
-            public static float PowerUp = 1f;
-            public static float ImmuneAbility = 0.9f;
-            public static float ImmuneUlt = 0.9f;
-            public static float StorageSend = 0.7f;
-            public static float StorageRetrieve = 0.7f;
-            public static float AbilityEnded = 0.7f;
-
-            // Master volume multiplier
-            public static float MasterVolume = 1f;
+            public const float AbilityBaseCooldown = 12f;
+            public const float AbilityCooldownReductionPerLevel = 4f;
+            public const float AbilityBaseDuration = 2.5f;
+            public const float AbilityDurationReductionPerLevel = 1f;
+            public const float UltimateBaseCooldown = 15f;
+            public const float UltimateCooldownReductionPerLevel = 5f;
+            public const float UltimateBaseDuration = 4f;
+            public const float UltimateDurationReductionPerLevel = 1f;
+            public const float SpawnDistance = 50f;
         }
 
-        public static class Formatting
+        public static class Luck
         {
-            public const string ColorGold = "#FFD700";
-            public const string ColorCyan = "#00FFFF";
-            public const string ColorGreen = "#00FF00";
-            public const string ColorRed = "#FF0000";
-
-            public const string TextLuckyUpgrade = "<color=" + ColorGold + ">Lucky Upgrade</color>";
-            public const string TextSwapAbility = "<color=" + ColorGreen + ">Swap Ability!</color>";
-            public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
+            public const float Level1Chance = 0.15f;
+            public const float Level2Chance = 0.3f;
         }
 
-        public static class Telemetry
+        public static class Enemies
         {
-            public const string RelayEndpointUrl = "https://spidersurge-telemetry-relay.dylanyair.workers.dev";
-            public const string PendingDirectoryName = "TelemetryPending";
-            public const string AnonymousIdFileName = "telemetry_anonymous_id.txt";
-            public const int AnonymousIdBytes = 32;
-            public const int RequestTimeoutMs = 5000;
-            public const int MaxQueuedPayloads = 50;
-            public const int MinSendIntervalMs = 2000;
-            public const int DuplicatePayloadWindowMinutes = 10;
+            public const float SpeedMultiplier = 1.1f;
+            public const float SpawnCountMultiplier = 1.75f;
+            public const float MissileWhispShotForce = 40f;
+            public const float TwinWhispShotMargin = 5f;
         }
 
-        public static class ModUpdater
+        public static class Colors
         {
-            public const int RequestTimeoutMs = 5000;
+            public static readonly UnityEngine.Color MissileWhispColor = new(0.2f, 0f, 0f, 1f); // black red
+            public static readonly UnityEngine.Color TwinWhispColor = new(1f, 0.9f, 0f, 1f); // Yellow
         }
 
-        public static class Values
+        public static class Waves
         {
-            public static class Immune
-            {
-                public const float AbilityBaseCooldown = 12f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityBaseDuration = 3f;
-                public const float AbilityDurationIncreasePerLevel = 1.5f;
-                public const float UltimateBaseCooldown = 75f;
-                public const float UltimateCooldownReductionPerLevel = 15f;
-                public const float UltimateBaseDuration = 10f;
-                public const float UltimateDurationIncreasePerLevel = 3f;
-                public const float UltimateShieldSynergyChance = 0.5f;
-                public const int UltimateFriendlyWaspSpawnCount = 3;
-                public const int UltimateFriendlyWaspShieldBonusCount = 1;
-            }
-
-            public static class Ammo
-            {
-                public const float AbilityBaseCooldown = 20f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
-                public const float AbilityBaseDuration = 5f;
-                public const float AbilityDurationIncreasePerLevel = 2.5f;
-                public const float UltimateBaseCooldown = 30f;
-                public const float UltimateCooldownReductionPerLevel = 10f;
-                public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
-                public const float CheckInterval = 0.5f;
-            }
-
-            public static class Pulse
-            {
-                public const float AbilityBaseCooldown = 12f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityBaseDuration = 0f;
-                public const float UltimateBaseCooldown = 20f;
-                public const float UltimateCooldownReductionPerLevel = 5f;
-                public const float UltimateBaseDuration = 0f;
-
-                //duration perk
-                public const float AbilityBaseKnockbackRadius = 100f;
-                public const float AbilityKnockbackRadiusIncreasePerLevel = 30f;
-                public const float UltimateBaseKnockbackRadius = 150f;
-                public const float UltimateKnockbackRadiusIncreasePerLevel = 50f;
-
-                //Bigger boom perk
-                public const float AbilityBaseKnockbackStrength = 900f;
-                public const float AbilityKnockbackStrengthIncreasePerLevel = 200f;
-                public const float UltimateBaseKnockbackStrength = 1200f;
-                public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
-
-                //too cool perk
-                public const float UltimateBaseDeathRadius = 100f;
-                public const float UltimateDeathRadiusIncreasePerLevel = 30f;
-                public const float CameraShakeDuration = 5f;
-
-                // Visuals
-                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
-                public const float RingWidth = 0.3f;
-                public const float RingSpeed = 500f;
-            }
-
-            public static class Storage
-            {
-                public const float AbilityBaseCooldown = 12f;
-                public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityBaseDuration = 2.5f;
-                public const float AbilityDurationReductionPerLevel = 1f;
-                public const float UltimateBaseCooldown = 15f;
-                public const float UltimateCooldownReductionPerLevel = 5f;
-                public const float UltimateBaseDuration = 4f;
-                public const float UltimateDurationReductionPerLevel = 1f;
-                public const float SpawnDistance = 50f;
-            }
-
-            public static class Luck
-            {
-                public const float Level1Chance = 0.15f;
-                public const float Level2Chance = 0.3f;
-            }
-
-            public static class Enemies
-            {
-                public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 1.75f;
-                public const float MissileWhispShotForce = 40f;
-                public const float TwinWhispShotMargin = 5f;
-            }
-
-            public static class Colors
-            {
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f); // black red
-                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(1f, 0.9f, 0f, 1f); // Yellow
-            }
-
-            public static class Waves
-            {
-                public const int UltUpgradeWave = 30;
-                public const int UltSwapWave = 60;
-            }
-
-            //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
-            // Wasp, Cost: 1.5, MinWave: 0, MaxWave: 22
-            // Roller, Cost: 1.5, MinWave: 2, MaxWave: 26
-            // Whisp, Cost: 2, MinWave: 4, MaxWave: 30
-            // MeleeWhisp, Cost: 2, MinWave: 6, MaxWave: 34
-            // Khepri, Cost: 2.5, MinWave: 8, MaxWave: 36
-            // ExplodingRoller, Cost: 3, MinWave: 10, MaxWave: 0
-            // PowerWhisp Variant, Cost: 3, MinWave: 12, MaxWave: 0
-            // PowerWasp Variant, Cost: 3, MinWave: 14, MaxWave: 0
-            // PowerRoller Variant, Cost: 4, MinWave: 16, MaxWave: 0
-            // PowerKhepri Variant, Cost: 4, MinWave: 18, MaxWave: 0
-            // PowerMeleeWhisp Variant, Cost: 4, MinWave: 20, MaxWave: 0
-            // Wasp Shielded, Cost: 4, MinWave: 22, MaxWave: 0
-            // Hornet_Shaman Variant, Cost: 6, MinWave: 24, MaxWave: 0
-            // PowerWasp Variant Shield, Cost: 6, MinWave: 26, MaxWave: 0
-            // Hornet Variant, Cost: 6, MinWave: 28, MaxWave: 0
-            // Shielded Hornet Variant, Cost: 8, MinWave: 32, MaxWave: 0
-
-
-            public static readonly Dictionary<string, EnemySpawnConfig> CustomEnemyStats = new Dictionary<string, EnemySpawnConfig>
-                {
-                    { "Wasp", new EnemySpawnConfig(1.5f, 0, 7) },
-                    { "Roller", new EnemySpawnConfig(1.5f, 1, 9) },
-                    { "Whisp", new EnemySpawnConfig(2f, 2, 10) },
-                    { "MeleeWhisp", new EnemySpawnConfig(2f, 3, 10) },
-                    { "Khepri", new EnemySpawnConfig(2.5f, 4, 24) },
-                    { "ExplodingRoller", new EnemySpawnConfig(3f, 5, 0) },
-                    { "PowerWhisp Variant", new EnemySpawnConfig(3f, 6, 0) },
-                    { "PowerWasp Variant", new EnemySpawnConfig(3f, 7, 16) },
-                    { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 8, 16) },
-                    { "PowerRoller Variant", new EnemySpawnConfig(4f, 9, 0) },
-                    { "PowerKhepri Variant", new EnemySpawnConfig(4f, 10, 0) },
-                    { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 11, 20) },
-                    { "TwinWhisp", new EnemySpawnConfig(4f, 12, 20) },
-                    { "Wasp Shielded", new EnemySpawnConfig(4f, 13, 42) },
-                    { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 14, 0) },
-                    { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 15, 0) },
-                    { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 16, 0) },
-                    { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 17, 0) },
-                    { "Hornet Variant", new EnemySpawnConfig(6f, 18, 25) },
-                    { "MissileWhisp", new EnemySpawnConfig(7f, 19, 25) },
-                    { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 20, 0) },
-                    { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 21, 0) },
-                };
-
-            public struct EnemySpawnConfig
-            {
-                public float Cost;
-                public int MinWave;
-                public int MaxWave;
-
-                public EnemySpawnConfig(float cost, int minWave, int maxWave)
-                {
-                    Cost = cost;
-                    MinWave = minWave;
-                    MaxWave = maxWave;
-                }
-            }
-
-            public static class Inputs
-            {
-                public const string KeyboardQ = "<keyboard>/q";
-                public const string GamepadLeftShoulder = "<Gamepad>/leftshoulder";
-                public const string KeyboardC = "<Keyboard>/c";
-                public const string GamepadDpadUp = "<Gamepad>/dpad/up";
-                public const string GamepadDpadDown = "<Gamepad>/dpad/down";
-                public const string GamepadDpadLeft = "<Gamepad>/dpad/left";
-                public const string GamepadDpadRight = "<Gamepad>/dpad/right";
-                public const string GamepadLeftStickPress = "<Gamepad>/leftStickPress";
-                public const string GamepadRightStickPress = "<Gamepad>/rightStickPress";
-                public const float ComboWindow = 0.15f;
-            }
-
-            public static class UI
-            {
-                public const string UltimateDisplayName = "<color=" + Formatting.ColorRed + ">Ultimate</color>";
-                public const string UltimateDefaultDescription = "<color=" + Formatting.ColorRed + ">Ultimate version of the ability.</color>";
-            }
+            public const int UltUpgradeWave = 30;
+            public const int UltSwapWave = 60;
         }
 
-        public static class Descriptions
+        //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
+        // Wasp, Cost: 1.5, MinWave: 0, MaxWave: 22
+        // Roller, Cost: 1.5, MinWave: 2, MaxWave: 26
+        // Whisp, Cost: 2, MinWave: 4, MaxWave: 30
+        // MeleeWhisp, Cost: 2, MinWave: 6, MaxWave: 34
+        // Khepri, Cost: 2.5, MinWave: 8, MaxWave: 36
+        // ExplodingRoller, Cost: 3, MinWave: 10, MaxWave: 0
+        // PowerWhisp Variant, Cost: 3, MinWave: 12, MaxWave: 0
+        // PowerWasp Variant, Cost: 3, MinWave: 14, MaxWave: 0
+        // PowerRoller Variant, Cost: 4, MinWave: 16, MaxWave: 0
+        // PowerKhepri Variant, Cost: 4, MinWave: 18, MaxWave: 0
+        // PowerMeleeWhisp Variant, Cost: 4, MinWave: 20, MaxWave: 0
+        // Wasp Shielded, Cost: 4, MinWave: 22, MaxWave: 0
+        // Hornet_Shaman Variant, Cost: 6, MinWave: 24, MaxWave: 0
+        // PowerWasp Variant Shield, Cost: 6, MinWave: 26, MaxWave: 0
+        // Hornet Variant, Cost: 6, MinWave: 28, MaxWave: 0
+        // Shielded Hornet Variant, Cost: 8, MinWave: 32, MaxWave: 0
+
+
+        public static readonly Dictionary<string, EnemySpawnConfig> CustomEnemyStats = new()
         {
-            private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
-            {
-                [PerkNames.ImmuneAbility] = "Null Field",
-                [PerkNames.AmmoAbility] = "Bottomless Clip",
-                [PerkNames.PulseAbility] = "Kinetic Pulse",
-                [PerkNames.StorageAbility] = "Pocket Dimension",
-                [PerkNames.AbilityCooldown] = "Ability Cooldown",
-                [PerkNames.AbilityDuration] = "Ability Duration",
-                [PerkNames.ShortTermInvestment] = "Short Term Investment",
-                [PerkNames.LongTermInvestment] = "Long Term Investment",
-                [PerkNames.PerkLuck] = "Lucky",
-                // Ultimate perks - dynamic names based on which ability is active
-                [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
-                [PerkNames.AmmoAbilityUltimate] = "Care Package",
-                [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Pocket Dimension^2"
+                { "Wasp", new EnemySpawnConfig(1.5f, 0, 7) },
+                { "Roller", new EnemySpawnConfig(1.5f, 1, 9) },
+                { "Whisp", new EnemySpawnConfig(2f, 2, 10) },
+                { "MeleeWhisp", new EnemySpawnConfig(2f, 3, 10) },
+                { "Khepri", new EnemySpawnConfig(2.5f, 4, 24) },
+                { "ExplodingRoller", new EnemySpawnConfig(3f, 5, 0) },
+                { "PowerWhisp Variant", new EnemySpawnConfig(3f, 6, 0) },
+                { "PowerWasp Variant", new EnemySpawnConfig(3f, 7, 16) },
+                { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 8, 16) },
+                { "PowerRoller Variant", new EnemySpawnConfig(4f, 9, 0) },
+                { "PowerKhepri Variant", new EnemySpawnConfig(4f, 10, 0) },
+                { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 11, 20) },
+                { "TwinWhisp", new EnemySpawnConfig(4f, 12, 20) },
+                { "Wasp Shielded", new EnemySpawnConfig(4f, 13, 42) },
+                { "Hornet_Shaman Variant", new EnemySpawnConfig(6f, 14, 0) },
+                { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 15, 0) },
+                { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 16, 0) },
+                { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 17, 0) },
+                { "Hornet Variant", new EnemySpawnConfig(6f, 18, 25) },
+                { "MissileWhisp", new EnemySpawnConfig(7f, 19, 25) },
+                { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 20, 0) },
+                { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 21, 0) },
             };
 
-            private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
+        public struct EnemySpawnConfig(float cost, int minWave, int maxWave)
+        {
+            public float Cost = cost;
+            public int MinWave = minWave;
+            public int MaxWave = maxWave;
+        }
+
+        public static class Inputs
+        {
+            public const string KeyboardQ = "<keyboard>/q";
+            public const string GamepadLeftShoulder = "<Gamepad>/leftshoulder";
+            public const string KeyboardC = "<Keyboard>/c";
+            public const string GamepadDpadUp = "<Gamepad>/dpad/up";
+            public const string GamepadDpadDown = "<Gamepad>/dpad/down";
+            public const string GamepadDpadLeft = "<Gamepad>/dpad/left";
+            public const string GamepadDpadRight = "<Gamepad>/dpad/right";
+            public const string GamepadLeftStickPress = "<Gamepad>/leftStickPress";
+            public const string GamepadRightStickPress = "<Gamepad>/rightStickPress";
+            public const float ComboWindow = 0.15f;
+        }
+
+        public static class UI
+        {
+            public const string UltimateDisplayName = "<color=" + Formatting.ColorRed + ">Ultimate</color>";
+            public const string UltimateDefaultDescription = "<color=" + Formatting.ColorRed + ">Ultimate version of the ability.</color>";
+        }
+    }
+
+    public static class Descriptions
+    {
+        private static readonly Dictionary<string, string> displayNames = new()
+        {
+            [PerkNames.ImmuneAbility] = "Null Field",
+            [PerkNames.AmmoAbility] = "Bottomless Clip",
+            [PerkNames.PulseAbility] = "Kinetic Pulse",
+            [PerkNames.StorageAbility] = "Pocket Dimension",
+            [PerkNames.AbilityCooldown] = "Ability Cooldown",
+            [PerkNames.AbilityDuration] = "Ability Duration",
+            [PerkNames.ShortTermInvestment] = "Short Term Investment",
+            [PerkNames.LongTermInvestment] = "Long Term Investment",
+            [PerkNames.PerkLuck] = "Lucky",
+            // Ultimate perks - dynamic names based on which ability is active
+            [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
+            [PerkNames.AmmoAbilityUltimate] = "Care Package",
+            [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
+            [PerkNames.StorageAbilityUltimate] = "Pocket Dimension^2"
+        };
+
+        private static readonly Dictionary<string, string> descriptions = new()
+        {
+            [PerkNames.ImmuneAbility] = "Become immune to all damage for a short duration",
+            [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
+            [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
+            [PerkNames.StorageAbility] = "Store a weapon for later use",
+            [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
+            [PerkNames.AbilityDuration] = "Increases ability duration",
+            [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
+            [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
+            [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
+            [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
+            [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
+            [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
+            [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
+        };
+
+        private static readonly Dictionary<string, string> upgradeDescriptions = new()
+        {
+            [PerkNames.ImmuneAbility] = "",
+            [PerkNames.AmmoAbility] = "",
+            [PerkNames.PulseAbility] = "",
+            [PerkNames.StorageAbility] = "",
+            [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
+            [PerkNames.AbilityDuration] = "Increases ultimate duration",
+            [PerkNames.ShortTermInvestment] = "",
+            [PerkNames.LongTermInvestment] = "",
+            [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
+            [PerkNames.ImmuneAbilityUltimate] = "",
+            [PerkNames.AmmoAbilityUltimate] = "",
+            [PerkNames.PulseAbilityUltimate] = "",
+            [PerkNames.StorageAbilityUltimate] = ""
+        };
+
+        // Custom display names for Duration perk based on active ability
+        private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
+        private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+
+        // Custom descriptions for Duration perk based on active ability
+        private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
+        private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
+        private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
+        private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
+        private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
+
+        public static string GetDisplayName(string name, PerksManager perksManager = null)
+        {
+            if (perksManager != null && name == PerkNames.AbilityDuration)
             {
-                [PerkNames.ImmuneAbility] = "Become immune to all damage for a short duration",
-                [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
-                [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
-                [PerkNames.StorageAbility] = "Store a weapon for later use",
-                [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
-                [PerkNames.AbilityDuration] = "Increases ability duration",
-                [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
-                [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
-                [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
-                [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
-                [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
-                [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
-            };
-
-            private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
-            {
-                [PerkNames.ImmuneAbility] = "",
-                [PerkNames.AmmoAbility] = "",
-                [PerkNames.PulseAbility] = "",
-                [PerkNames.StorageAbility] = "",
-                [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
-                [PerkNames.AbilityDuration] = "Increases ultimate duration",
-                [PerkNames.ShortTermInvestment] = "",
-                [PerkNames.LongTermInvestment] = "",
-                [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
-                [PerkNames.ImmuneAbilityUltimate] = "",
-                [PerkNames.AmmoAbilityUltimate] = "",
-                [PerkNames.PulseAbilityUltimate] = "",
-                [PerkNames.StorageAbilityUltimate] = ""
-            };
-
-            // Custom display names for Duration perk based on active ability
-            private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
-            private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
-
-            // Custom descriptions for Duration perk based on active ability
-            private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
-            private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
-            private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
-            private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
-
-            public static string GetDisplayName(string name, PerksManager perksManager = null)
-            {
-                if (perksManager != null && name == PerkNames.AbilityDuration)
+                if (perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
                 {
-                    if (perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_PULSE;
-                    }
-                    if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_STORAGE;
-                    }
+                    return DURATION_NAME_WITH_PULSE;
                 }
-                return displayNames.ContainsKey(name) ? displayNames[name] : name;
+                if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
+                {
+                    return DURATION_NAME_WITH_STORAGE;
+                }
             }
+            return displayNames.ContainsKey(name) ? displayNames[name] : name;
+        }
 
-            public static string GetDescription(string name, PerksManager perksManager)
+        public static string GetDescription(string name, PerksManager perksManager)
+        {
+            if (perksManager == null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
+
+            return name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0
+                ? DURATION_DESC_WITH_PULSE
+                : name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0
+                ? DURATION_DESC_WITH_STORAGE
+                : descriptions.ContainsKey(name) ? descriptions[name] : "";
+        }
+
+        public static string GetUpgradeDescription(string name, PerksManager perksManager)
+        {
+            if (perksManager == null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+
+            if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
             {
-                if (perksManager == null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
-
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_PULSE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_STORAGE;
-                }
-                return descriptions.ContainsKey(name) ? descriptions[name] : "";
+                return DURATION_UPGRADE_DESC_WITH_PULSE;
             }
-
-            public static string GetUpgradeDescription(string name, PerksManager perksManager)
-            {
-                if (perksManager == null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
-
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_PULSE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_STORAGE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_AMMO;
-                }
-                return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
-            }
+            return name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0
+                ? DURATION_UPGRADE_DESC_WITH_STORAGE
+                : name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0
+                ? DURATION_UPGRADE_DESC_WITH_AMMO
+                : upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
         }
     }
 }

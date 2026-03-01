@@ -7,123 +7,122 @@ using Doozy.Engine.UI;
 using System.Collections;
 using System.Text.RegularExpressions;
 
-namespace SpiderSurge
+namespace SpiderSurge;
+
+[HarmonyPatch(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc")]
+public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
 {
-    [HarmonyPatch(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc")]
-    public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
+    [HarmonyPostfix]
+    public static void Postfix(SurvivalModeHud __instance)
     {
-        [HarmonyPostfix]
-        public static void Postfix(SurvivalModeHud __instance)
+        if (!SurgeGameModeManager.IsSurgeRunActive) return;
+        if (PerksManager.Instance == null) return;
+
+        // Access perkChoiceView using reflection since it might be private
+        var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        if (viewField == null) return;
+
+        var view = viewField.GetValue(__instance) as Component;
+        if (view == null) return;
+
+        // Find the Heading child
+        var heading = view.transform.Find("Heading");
+        if (heading == null)
         {
-            if (!SurgeGameModeManager.IsSurgeRunActive) return;
-            if (PerksManager.Instance == null) return;
-
-            // Access perkChoiceView using reflection since it might be private
-            var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (viewField == null) return;
-
-            var view = viewField.GetValue(__instance) as Component;
-            if (view == null) return;
-
-            // Find the Heading child
-            var heading = view.transform.Find("Heading");
+            // Try recursive find if direct child fails, though screenshot suggests direct child
+            heading = view.transform.Find("View - PerkChoice/Heading");
             if (heading == null)
             {
-                // Try recursive find if direct child fails, though screenshot suggests direct child
-                heading = view.transform.Find("View - PerkChoice/Heading");
-                if (heading == null)
+                // Fallback: search children
+                var headings = view.GetComponentsInChildren<TextMeshProUGUI>(true);
+                foreach (var h in headings)
                 {
-                    // Fallback: search children
-                    var headings = view.GetComponentsInChildren<TextMeshProUGUI>(true);
-                    foreach (var h in headings)
+                    if (h.name == "Heading")
                     {
-                        if (h.name == "Heading")
-                        {
-                            heading = h.transform;
-                            break;
-                        }
+                        heading = h.transform;
+                        break;
                     }
                 }
             }
+        }
 
-            if (heading == null) return;
+        if (heading == null) return;
 
-            var tmpro = heading.GetComponent<TextMeshProUGUI>();
-            var localize = heading.GetComponent<Localize>();
+        var tmpro = heading.GetComponent<TextMeshProUGUI>();
+        var localize = heading.GetComponent<Localize>();
 
-            if (tmpro == null) return;
+        if (tmpro == null) return;
 
-            bool isSpecialRound = false;
-            string specialTitle = "";
+        bool isSpecialRound = false;
+        string specialTitle = "";
 
-            if (PerksManager.Instance.IsFirstNormalPerkSelection)
+        if (PerksManager.Instance.IsFirstNormalPerkSelection)
+        {
+            isSpecialRound = true;
+            specialTitle = "CHOOSE YOUR ABILITY";
+        }
+        else if (PerksManager.Instance.IsUltSwapPerkSelection)
+        {
+            isSpecialRound = true;
+            specialTitle = "SWITCH ULTIMATE";
+        }
+        else if (PerksManager.Instance.IsUltUpgradePerkSelection)
+        {
+            isSpecialRound = true;
+            specialTitle = "CHOOSE YOUR ULTIMATE";
+        }
+
+        if (isSpecialRound)
+        {
+            localize?.enabled = false;
+            tmpro.text = specialTitle;
+        }
+        else
+        {
+            if (localize != null)
             {
-                isSpecialRound = true;
-                specialTitle = "CHOOSE YOUR ABILITY";
-            }
-            else if (PerksManager.Instance.IsUltSwapPerkSelection)
-            {
-                isSpecialRound = true;
-                specialTitle = "SWITCH ULTIMATE";
-            }
-            else if (PerksManager.Instance.IsUltUpgradePerkSelection)
-            {
-                isSpecialRound = true;
-                specialTitle = "CHOOSE YOUR ULTIMATE";
-            }
-
-            if (isSpecialRound)
-            {
-                if (localize != null) localize.enabled = false;
-                tmpro.text = specialTitle;
-            }
-            else
-            {
-                if (localize != null)
-                {
-                    localize.enabled = true;
-                    // Force update to ensure text resets to "You must choose!"
-                    localize.OnLocalize(true);
-                }
+                localize.enabled = true;
+                // Force update to ensure text resets to "You must choose!"
+                localize.OnLocalize(true);
             }
         }
     }
+}
 
-    [HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
-    public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
+[HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
+public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
+{
+    [HarmonyPrefix]
+    public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
     {
-        [HarmonyPrefix]
-        public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
+        if (SurgeGameModeManager.IsSurgeRunActive && ModConfig.UnlimitedPerkChoosingTime)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive && ModConfig.UnlimitedPerkChoosingTime)
-            {
-                __result = EmptyEnumerator();
-                return false;
-            }
-            return true;
+            __result = EmptyEnumerator();
+            return false;
         }
-
-        private static IEnumerator EmptyEnumerator()
-        {
-            yield break;
-        }
+        return true;
     }
 
-    [HarmonyPatch(typeof(PerkChoiseTimer), "SetTimerValue")]
-    public class PerkChoiseTimer_SetTimerValue_Patch
+    private static IEnumerator EmptyEnumerator()
     {
-        private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly Regex s_trailingDigits = new Regex(@"\d+$", RegexOptions.Compiled);
+        yield break;
+    }
+}
 
-        [HarmonyPostfix]
-        public static void Postfix(PerkChoiseTimer __instance)
-        {
-            if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
+[HarmonyPatch(typeof(PerkChoiseTimer), "SetTimerValue")]
+public class PerkChoiseTimer_SetTimerValue_Patch
+{
+    private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly Regex s_trailingDigits = new(@"\d+$", RegexOptions.Compiled);
 
-            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
-            if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
+    [HarmonyPostfix]
+    public static void Postfix(PerkChoiseTimer __instance)
+    {
+        if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
 
-            timerText.text = s_trailingDigits.Replace(timerText.text, "∞");
-        }
+        var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+        if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
+
+        timerText.text = s_trailingDigits.Replace(timerText.text, "∞");
     }
 }
