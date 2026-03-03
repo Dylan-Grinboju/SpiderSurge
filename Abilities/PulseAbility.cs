@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Unity.Netcode;
 using Interfaces;
+using HarmonyLib;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -107,12 +108,14 @@ namespace SpiderSurge
 
             pulseLayers = LayerMask.GetMask("Player", "Item", "Enemy", "EnemyWeapon", "DynamicWorld");
 
-            if (pulseLayers == 0)
-            {
-                pulseLayers = ~0;// All layers
-                Logger.LogWarning("PulseAbility: Could not find expected layers, using all layers");
-            }
+        if (pulseLayers == 0)
+        {
+            pulseLayers = ~0;// All layers
+            Logger.LogWarning("PulseAbility: Could not find expected layers, using all layers");
         }
+
+        InitExplosionReflection();
+    }
 
         protected override void OnActivate()
         {
@@ -243,28 +246,30 @@ namespace SpiderSurge
                     }
                 }
 
-                if (rb != null)
-                    rb.velocity = Vector2.zero;
-
-                if (distance > p.DeathRadius)
+            // When deadly and within death radius, let the Explosion component handle damage
+            // (the stats mod tracks kills from Explosion.KnockBack automatically)
+            if (deadly && distance <= p.DeathRadius)
+            {
+                if (!_canUseExplosion)
                 {
-                    damageable.Impact(force, closestPoint, true, true);
+                    // Fallback: apply damage directly if Explosion reflection not available
+                    rb?.velocity = Vector2.zero;
+                    damageable.Damage(force, closestPoint, true);
                 }
-                else
-                {
-                    if (deadly)
-                    {
-                        damageable.Damage(force, closestPoint, true);
-                    }
-                    else
-                    {
-                        damageable.Impact(force, closestPoint, true, true);
-                    }
-                }
+                continue;
             }
 
-            ApplyPulseToRailShotsWithoutColliders(p);
+            rb?.velocity = Vector2.zero;
+            damageable.Impact(force, closestPoint, true, true);
         }
+
+        ApplyPulseToRailShotsWithoutColliders(p);
+
+        if (deadly && _canUseExplosion)
+        {
+            SpawnLethalExplosion(p);
+        }
+    }
 
         private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
         {
@@ -306,10 +311,82 @@ namespace SpiderSurge
                     direction = Vector2.up;
                 }
 
-                rb.velocity = Vector2.zero;
-                rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
-            }
+            rb.velocity = Vector2.zero;
+            rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
         }
+    }
+
+    // ─── Explosion Reflection (for stats mod kill tracking) ─────────────────────
+    private static bool _explosionReflectionInitialized;
+    private static bool _canUseExplosion;
+    private static FieldInfo _expKnockBackRadius;
+    private static FieldInfo _expLayers;
+    private static FieldInfo _expDeathRadius;
+    private static FieldInfo _expPlayerDeathRadius;
+    private static FieldInfo _expIsBoomSpear;
+    private static FieldInfo _expPlayerExplosionID;
+    private static FieldInfo _expOwnerId;
+    private static MethodInfo _expKnockBack;
+
+    private static void InitExplosionReflection()
+    {
+        if (_explosionReflectionInitialized) return;
+        _explosionReflectionInitialized = true;
+
+        try
+        {
+            _expKnockBackRadius = AccessTools.Field(typeof(Explosion), "knockBackRadius");
+            _expLayers = AccessTools.Field(typeof(Explosion), "layers");
+            _expDeathRadius = AccessTools.Field(typeof(Explosion), "deathRadius");
+            _expPlayerDeathRadius = AccessTools.Field(typeof(Explosion), "_playerDeathRadius");
+            _expIsBoomSpear = AccessTools.Field(typeof(Explosion), "isBoomSpear");
+            _expPlayerExplosionID = AccessTools.Field(typeof(Explosion), "playerExplosionID");
+            _expOwnerId = AccessTools.Field(typeof(Explosion), "explosionOwnerId");
+            _expKnockBack = AccessTools.Method(typeof(Explosion), "KnockBack");
+
+            _canUseExplosion = _expKnockBack is not null
+                && _expKnockBackRadius is not null
+                && _expDeathRadius is not null
+                && _expOwnerId is not null;
+
+            if (!_canUseExplosion)
+                Logger.LogWarning("PulseAbility: Explosion reflection incomplete — pulse ult kills will use fallback (not tracked)");
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogWarning($"PulseAbility: Explosion reflection failed: {ex.Message}");
+            _canUseExplosion = false;
+        }
+    }
+
+    private void SpawnLethalExplosion(PulseParams p)
+    {
+        try
+        {
+            GameObject tempObj = new("PulseExplosion");
+            tempObj.transform.position = p.Position;
+
+            var explosion = tempObj.AddComponent<Explosion>();
+
+            int playerID = playerController.playerID.Value;
+
+            _expKnockBackRadius.SetValue(explosion, p.DeathRadius);
+            _expLayers?.SetValue(explosion, pulseLayers);
+            _expDeathRadius.SetValue(explosion, p.DeathRadius);
+            _expPlayerDeathRadius?.SetValue(explosion, p.DeathRadius);
+            _expIsBoomSpear?.SetValue(explosion, true);
+            _expPlayerExplosionID?.SetValue(explosion, playerID);
+            _expOwnerId.SetValue(explosion, (ulong)playerID);
+
+            _expKnockBack.Invoke(explosion, null);
+
+            Destroy(tempObj);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"PulseAbility: Failed to spawn lethal explosion for stats tracking: {ex.Message}");
+        }
+    }
 
         private void SpawnRingVisual(Vector3 position, float radius)
         {

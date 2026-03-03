@@ -48,25 +48,25 @@ namespace SpiderSurge
             TutorialUI.Initialize();
             TelemetryConsentUI.Initialize();
 
-            // Initialize CheatManager
-            CheatManager.Initialize();
-            // Initialize SoundTester for testing sounds without playing the game
-            // SoundTester.Initialize();
-            // Initialize per-player control settings
-            PlayerControlSettings.Initialize();
-            // Check for updates asynchronously
-            try
+        // Initialize CheatManager
+        CheatManager.Initialize();
+        // Initialize SoundTester for testing sounds without playing the game
+        // SoundTester.Initialize();
+        // Initialize per-player control settings
+        PlayerControlSettings.Initialize();
+        // Check for updates asynchronously
+        try
+        {
+            _ = Task.Run(async () =>
             {
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(15000);
-                    await ModUpdater.CheckForUpdatesAsync();
-                });
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Update check failed: {ex.Message}");
-            }
+                await Task.Delay(15000);
+                await ModUpdater.CheckForUpdatesAsync();
+            });
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"Update check failed: {ex.Message}");
+        }
 
             Harmony harmony = new Harmony("com.SpiderSurge.Mod");
             harmony.PatchAll();
