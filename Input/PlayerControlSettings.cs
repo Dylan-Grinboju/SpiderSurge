@@ -60,7 +60,7 @@ public class PlayerControlSettings : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance is null)
+        if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
@@ -252,7 +252,7 @@ public class PlayerControlSettings : MonoBehaviour
 
         foreach (var playerInput in playerInputs)
         {
-            if (playerInput is null) continue;
+            if (playerInput == null) continue;
 
             foreach (var assignedDevice in playerInput.devices)
             {
@@ -345,7 +345,7 @@ public class PlayerControlSettings : MonoBehaviour
 
     public static void Initialize()
     {
-        if (Instance is not null) return;
+        if (Instance != null) return;
 
         var go = new GameObject("PlayerControlSettings");
         go.AddComponent<PlayerControlSettings>();

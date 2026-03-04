@@ -53,7 +53,7 @@ public class PulseAbility : BaseAbility
     {
         float strength;
         int biggerBoom = 0;
-        if (ModifierManager.instance is not null)
+        if (ModifierManager.instance != null)
         {
             biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
         }
@@ -81,7 +81,7 @@ public class PulseAbility : BaseAbility
 
         float deathRadius = Consts.Values.Pulse.UltimateBaseDeathRadius;
 
-        if (ModifierManager.instance is not null)
+        if (ModifierManager.instance != null)
         {
             int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
             deathRadius += Consts.Values.Pulse.UltimateDeathRadiusIncreasePerLevel * tooCool;
@@ -101,7 +101,7 @@ public class PulseAbility : BaseAbility
     protected override void Awake()
     {
         base.Awake();
-        if (playerInput is not null)
+        if (playerInput != null)
         {
             playerPulseAbilities[playerInput] = this;
         }
@@ -155,7 +155,7 @@ public class PulseAbility : BaseAbility
 
     private void TriggerPulse(bool deadly)
     {
-        if (playerController is null || spiderHealthSystem is null)
+        if (playerController == null || spiderHealthSystem == null)
         {
             Logger.LogWarning($"PulseAbility: Missing playerController or spiderHealthSystem for player {playerInput?.playerIndex}");
             return;
@@ -214,7 +214,7 @@ public class PulseAbility : BaseAbility
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D collider = _pulseResults[i];
-            if (collider is null) continue;
+            if (collider == null) continue;
             if (collider.gameObject == gameObject) continue;
 
             // Optimization: TryGetComponent on the object first (common case), fallback to Parent
@@ -223,7 +223,7 @@ public class PulseAbility : BaseAbility
                 damageable = collider.GetComponentInParent<IDamageable>();
             }
 
-            if (damageable is null) continue;
+            if (damageable == null) continue;
 
             Vector2 closestPoint = collider.ClosestPoint(p.Position);
             float distance = Vector2.Distance(p.Position, closestPoint);
@@ -237,7 +237,7 @@ public class PulseAbility : BaseAbility
             if (collider.CompareTag("PlayerRigidbody"))
             {
                 PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
-                if (hitPlayerController is not null && hitPlayerController.playerID.Value == playerID)
+                if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
                 {
                     continue;
                 }
@@ -279,13 +279,13 @@ public class PulseAbility : BaseAbility
         for (int i = 0; i < railShots.Count; i++)
         {
             RailShot railShot = railShots[i];
-            if (railShot is null || !railShot.gameObject.activeInHierarchy)
+            if (railShot == null || !railShot.gameObject.activeInHierarchy)
             {
                 continue;
             }
 
             Rigidbody2D rb = railShot.GetComponent<Rigidbody2D>();
-            if (rb is null)
+            if (rb == null)
             {
                 continue;
             }
@@ -406,7 +406,7 @@ public class PulseAbility : BaseAbility
         try
         {
             GameObject explosionPrefab = GetExplosionPrefab();
-            if (explosionPrefab is null)
+            if (explosionPrefab == null)
             {
                 Logger.LogWarning("PulseAbility: Could not get pulse prefab");
                 return;
@@ -416,7 +416,7 @@ public class PulseAbility : BaseAbility
             float vfxScale = Mathf.Clamp(radius / Consts.Values.Pulse.UltimateBaseDeathRadius, 0.5f, 2f);
             explosionVFX.transform.localScale *= vfxScale;
 
-            if (playerController is not null)
+            if (playerController != null)
             {
                 try
                 {
@@ -440,19 +440,22 @@ public class PulseAbility : BaseAbility
 
     private GameObject GetExplosionPrefab()
     {
-        if (cachedExplosionPrefab is not null) return cachedExplosionPrefab;
+        if (cachedExplosionPrefab != null) return cachedExplosionPrefab;
 
-        if (spiderHealthSystem is not null)
+        if (spiderHealthSystem != null)
         {
             try
             {
-                _deadExplosionPrefabField ??= typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
+                if (_deadExplosionPrefabField == null)
+                {
+                    _deadExplosionPrefabField = typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+                }
 
-                if (_deadExplosionPrefabField is not null)
+                if (_deadExplosionPrefabField != null)
                 {
                     cachedExplosionPrefab = _deadExplosionPrefabField.GetValue(spiderHealthSystem) as GameObject;
-                    if (cachedExplosionPrefab is not null)
+                    if (cachedExplosionPrefab != null)
                     {
                         return cachedExplosionPrefab;
                     }
@@ -470,7 +473,7 @@ public class PulseAbility : BaseAbility
     {
         base.OnDestroy();
 
-        if (playerInput is not null && playerPulseAbilities.ContainsKey(playerInput))
+        if (playerInput != null && playerPulseAbilities.ContainsKey(playerInput))
         {
             playerPulseAbilities.Remove(playerInput);
         }

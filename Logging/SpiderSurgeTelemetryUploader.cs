@@ -52,7 +52,7 @@ public class SpiderSurgeTelemetryUploader
 
     public void QueueAndSendSnapshot(SpiderSurgeStatsSnapshot snapshot)
     {
-        if (snapshot is null) return;
+        if (snapshot == null) return;
         if (!ModConfig.TelemetryEnabled) return;
 
         string relayUrl = GetRelayUrl();

@@ -14,7 +14,7 @@ public class InputInterceptor : MonoBehaviour
     private readonly Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = [];
     private readonly Dictionary<string, InputAction> customActions = [];
     private readonly Dictionary<string, BaseAbility> registeredAbilities = [];
-    public static IEnumerable<PlayerInput> ActivePlayerInputs => playerInterceptors.Keys.Where(p => p is not null);
+    public static IEnumerable<PlayerInput> ActivePlayerInputs => playerInterceptors.Keys.Where(p => p != null);
 
     // Store original bindings to restore them later
     private struct BindingRestoreInfo
@@ -32,7 +32,7 @@ public class InputInterceptor : MonoBehaviour
     {
         playerInput = GetComponentInParent<PlayerInput>();
 
-        if (playerInput is not null)
+        if (playerInput != null)
         {
             playerInterceptors[playerInput] = this;
         }
@@ -40,7 +40,7 @@ public class InputInterceptor : MonoBehaviour
 
     private void Start()
     {
-        if (playerInput is not null && playerInput.actions is not null && _instantiatedActions is null)
+        if (playerInput != null && playerInput.actions != null && _instantiatedActions == null)
         {
             // Capture current state before swapping
             var currentScheme = playerInput.currentControlScheme;
@@ -76,7 +76,7 @@ public class InputInterceptor : MonoBehaviour
     /// <param name="bindingPath">The input binding path for this ability</param>
     public void RegisterAbility(BaseAbility ability, string bindingPath)
     {
-        if (ability is null) return;
+        if (ability == null) return;
 
         try
         {
@@ -156,7 +156,7 @@ public class InputInterceptor : MonoBehaviour
     /// <param name="bindingPath">The binding path to unregister</param>
     public void UnregisterAbility(BaseAbility ability, string bindingPath)
     {
-        if (ability is null) return;
+        if (ability == null) return;
 
         try
         {
@@ -194,7 +194,7 @@ public class InputInterceptor : MonoBehaviour
                     if (customActions.ContainsKey(key))
                     {
                         var customAction = customActions[key];
-                        if (customAction is not null)
+                        if (customAction != null)
                         {
                             customAction.performed -= overriddenActions[key];
                             customAction.Disable();
@@ -251,7 +251,7 @@ public class InputInterceptor : MonoBehaviour
         {
             // Always disable any original binding that matches this bindingPath, regardless of actionName
             var allActions = playerInput.actions;
-            if (allActions is not null)
+            if (allActions != null)
             {
                 // Prepare list to store restore info for this binding path
                 if (!restoredBindings.ContainsKey(bindingPath))
@@ -316,7 +316,7 @@ public class InputInterceptor : MonoBehaviour
         var abilitiesSnapshot = registeredAbilities.ToList();
         foreach (var kvp in abilitiesSnapshot)
         {
-            if (kvp.Value is not null)
+            if (kvp.Value != null)
             {
                 UnregisterAbility(kvp.Value, kvp.Key);
             }
@@ -326,7 +326,7 @@ public class InputInterceptor : MonoBehaviour
         // Clean up any other overridden actions
         foreach (var kvp in customActions)
         {
-            if (kvp.Value is not null)
+            if (kvp.Value != null)
             {
                 if (overriddenActions.ContainsKey(kvp.Key))
                 {
@@ -342,12 +342,12 @@ public class InputInterceptor : MonoBehaviour
         overriddenActions.Clear();
         customActions.Clear();
 
-        if (playerInput is not null && playerInterceptors.ContainsKey(playerInput))
+        if (playerInput != null && playerInterceptors.ContainsKey(playerInput))
         {
             playerInterceptors.Remove(playerInput);
         }
 
-        if (playerInput is not null && _originalActions is not null)
+        if (playerInput != null && _originalActions != null)
         {
             var currentScheme = playerInput.currentControlScheme;
             var currentDevices = playerInput.devices.ToArray();
@@ -364,7 +364,7 @@ public class InputInterceptor : MonoBehaviour
             }
         }
 
-        if (_instantiatedActions is not null)
+        if (_instantiatedActions != null)
         {
             Destroy(_instantiatedActions);
             _instantiatedActions = null;

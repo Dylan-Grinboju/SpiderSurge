@@ -21,7 +21,7 @@ public class SpiderSurgeMod : SilkMod
     {
         get
         {
-            if (_version is null)
+            if (_version == null)
             {
                 var version = Assembly.GetExecutingAssembly().GetName().Version;
                 _version = $"{version.Major}.{version.Minor}.{version.Build}";
@@ -110,31 +110,31 @@ public class SpiderSurgeMod : SilkMod
         harmony.UnpatchSelf();
 
         var surgeInfo = GameObject.Find("SurgeGameModeManager");
-        if (surgeInfo is not null)
+        if (surgeInfo != null)
             Destroy(surgeInfo);
 
         var perksInfo = GameObject.Find("PerksManager");
-        if (perksInfo is not null)
+        if (perksInfo != null)
             Destroy(perksInfo);
 
         var cheatInfo = GameObject.Find("CheatsModCheatManager");
-        if (cheatInfo is not null)
+        if (cheatInfo != null)
             Destroy(cheatInfo);
 
         var soundInfo = GameObject.Find("SoundManager");
-        if (soundInfo is not null)
+        if (soundInfo != null)
             Destroy(soundInfo);
 
         var soundTesterInfo = GameObject.Find("SoundTester");
-        if (soundTesterInfo is not null)
+        if (soundTesterInfo != null)
             Destroy(soundTesterInfo);
 
         var playerControlSettings = GameObject.Find("PlayerControlSettings");
-        if (playerControlSettings is not null)
+        if (playerControlSettings != null)
             Destroy(playerControlSettings);
 
         var telemetryConsentUi = GameObject.Find("TelemetryConsentUI");
-        if (telemetryConsentUi is not null)
+        if (telemetryConsentUi != null)
             Destroy(telemetryConsentUi);
 
         TelemetryConsentUI.ResetInstance();

@@ -7,7 +7,7 @@ public class SurvivalConfig_GetHighScore_Patch
 {
     internal static bool UseSurgeHighScore(SurvivalConfig config)
     {
-        return config is not null
+        return config != null
             && (config.name.Contains("_Surge")
                 || (ModConfig.enableSurgeMode && config.type == SurvivalConfig.Type.EndlessSurvival));
     }

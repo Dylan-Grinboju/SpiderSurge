@@ -50,7 +50,7 @@ public static class PerkRegistrar
             var modifiersList = ReflectionHelper.GetPrivateField<List<Modifier>>(manager, "_modifiers") ?? [];
             var currModsState = ReflectionHelper.GetPrivateField<ModifierManager.NetworkModifier[]>(manager, "_currModsState");
 
-            if (currModsState is not null)
+            if (currModsState != null)
             {
                 int startIndex = currModsState.Length;
                 Array.Resize(ref currModsState, startIndex + allPerks.Length);

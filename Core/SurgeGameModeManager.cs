@@ -10,11 +10,11 @@ public class SurgeGameModeManager : MonoBehaviour
 
     public static bool IsModeEnabled => ModConfig.enableSurgeMode;
 
-    public static bool IsSurgeRunActive => IsModeEnabled && Instance is not null && Instance.IsActive;
+    public static bool IsSurgeRunActive => IsModeEnabled && Instance != null && Instance.IsActive;
 
     private void Awake()
     {
-        if (Instance is null)
+        if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);

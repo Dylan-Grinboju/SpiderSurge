@@ -48,7 +48,7 @@ public class PulseRingEffect : MonoBehaviour
 
     private void DrawRing()
     {
-        if (lineRenderer is null) return;
+        if (lineRenderer == null) return;
 
         float angle = 0f;
         for (int i = 0; i < segments; i++)

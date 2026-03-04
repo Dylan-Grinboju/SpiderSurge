@@ -11,7 +11,7 @@ public static class RailShotTracker
 
     public static void Register(RailShot railShot)
     {
-        if (railShot is null)
+        if (railShot == null)
         {
             return;
         }
@@ -24,7 +24,7 @@ public static class RailShotTracker
 
     public static void Unregister(RailShot railShot)
     {
-        if (railShot is null)
+        if (railShot == null)
         {
             return;
         }

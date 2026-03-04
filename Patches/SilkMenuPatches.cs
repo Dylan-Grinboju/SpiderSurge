@@ -7,7 +7,7 @@ public static class SilkMenuPatches
 {
     public static void Postfix(string title, ref ModsMenuPopup __result)
     {
-        if (title == "SpiderSurge" && __result is not null)
+        if (title == "SpiderSurge" && __result != null)
         {
             AddSpiderSurgeInfo(__result);
         }
@@ -22,7 +22,7 @@ public static class SilkMenuPatches
         menu.CreateParagraph("<size=95%><color=#AAAAAA>Changes apply to the next run.</color></size>");
         if (canToggle)
         {
-            int childCountBefore = menu.objectParent is not null ? menu.objectParent.childCount : 0;
+            int childCountBefore = menu.objectParent != null ? menu.objectParent.childCount : 0;
             menu.CreateButton(ModConfig.enableSurgeMode ? "Disable Surge Mode" : "Enable Surge Mode", () => ToggleSurgeMode(menu));
             ResizeLastCreatedButton(menu, childCountBefore);
         }
@@ -59,11 +59,11 @@ public static class SilkMenuPatches
         RefreshMenu(menu);
     }
 
-    private static bool IsAnySurvivalSessionActive() => SurvivalMode.instance is not null && SurvivalMode.instance.GameModeActive();
+    private static bool IsAnySurvivalSessionActive() => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive();
 
     private static void RefreshMenu(ModsMenuPopup menu)
     {
-        if (menu is null || menu.objectParent is null)
+        if (menu == null || menu.objectParent == null)
         {
             return;
         }
@@ -71,7 +71,7 @@ public static class SilkMenuPatches
         for (int i = menu.objectParent.childCount - 1; i >= 0; i--)
         {
             var child = menu.objectParent.GetChild(i);
-            if (child is not null)
+            if (child != null)
             {
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
@@ -82,7 +82,7 @@ public static class SilkMenuPatches
 
     private static void ResizeLastCreatedButton(ModsMenuPopup menu, int childCountBefore)
     {
-        if (menu is null || menu.objectParent is null)
+        if (menu == null || menu.objectParent == null)
         {
             return;
         }
@@ -93,13 +93,13 @@ public static class SilkMenuPatches
         }
 
         var buttonTransform = menu.objectParent.GetChild(menu.objectParent.childCount - 1);
-        if (buttonTransform is null)
+        if (buttonTransform == null)
         {
             return;
         }
 
         var button = buttonTransform.GetComponent<UnityEngine.UI.Button>();
-        if (button is null)
+        if (button == null)
         {
             return;
         }
@@ -108,7 +108,7 @@ public static class SilkMenuPatches
         rect?.sizeDelta = new UnityEngine.Vector2(rect.sizeDelta.x * 1.1f, rect.sizeDelta.y * 1.45f);
 
         var label = button.GetComponentInChildren<TMPro.TMP_Text>();
-        if (label is not null)
+        if (label != null)
         {
             label.fontSize *= 1.2f;
         }

@@ -12,7 +12,7 @@ public class SurvivalMode_StopGameMode_Patch
     [HarmonyPostfix]
     public static void Postfix()
     {
-        if (SurgeGameModeManager.Instance is not null && SurgeGameModeManager.Instance.IsActive)
+        if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
         {
             SurgeGameModeManager.Instance.SetActive(false);
 
@@ -31,7 +31,7 @@ public class LobbyController_OnSceneLoaded_Patch
     {
         if (scene.name == "Lobby")
         {
-            if (SurgeGameModeManager.Instance is not null && SurgeGameModeManager.Instance.IsActive)
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
             {
                 SurgeGameModeManager.Instance.SetActive(false);
 
@@ -58,7 +58,7 @@ public class PainLevelsScreen_RefreshScreen_Patch
     [HarmonyPostfix]
     public static void Postfix(PainLevelsScreen __instance)
     {
-        if (__instance is not null)
+        if (__instance != null)
         {
             GameModePatches.UpdateSurgeSurvivalText(__instance.gameObject);
         }
@@ -71,7 +71,7 @@ public class HudController_ShowSurvivalStartPrompt_Patch
     [HarmonyPostfix]
     public static void Postfix(HudController __instance)
     {
-        if (__instance is not null)
+        if (__instance != null)
         {
             GameModePatches.UpdateSurgeSurvivalText(__instance.gameObject);
         }
@@ -86,7 +86,7 @@ public static class GameModePatches
     {
         const string path = "Level/SurvivalStartPlatform/Text/Survival Mode Text/ModeText";
         var modeTextObj = GameObject.Find(path) ?? GameObject.Find("ModeText");
-        if (modeTextObj is not null)
+        if (modeTextObj != null)
         {
             UpdateSurgeSurvivalText(modeTextObj);
         }
@@ -94,7 +94,7 @@ public static class GameModePatches
 
     public static void UpdateSurgeSurvivalText(GameObject root)
     {
-        if (root is null)
+        if (root == null)
         {
             return;
         }
@@ -102,7 +102,7 @@ public static class GameModePatches
         var textElements = root.GetComponentsInChildren<TMP_Text>(true);
         foreach (var tmp in textElements)
         {
-            if (tmp is null || string.IsNullOrWhiteSpace(tmp.text))
+            if (tmp == null || string.IsNullOrWhiteSpace(tmp.text))
             {
                 continue;
             }

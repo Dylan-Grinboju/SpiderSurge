@@ -19,7 +19,7 @@ public static class SpiderHealthSystemPatches
     {
         // If immune, prevent explosion/death
         var ability = GetAbilitySafe(__instance);
-        if (ability is not null && ability.IsImmune)
+        if (ability != null && ability.IsImmune)
         {
             return false;
         }
@@ -30,10 +30,10 @@ public static class SpiderHealthSystemPatches
 
     private static void NotifyStorageAbilityOfDeath(SpiderHealthSystem healthSystem)
     {
-        if (healthSystem is null) return;
+        if (healthSystem == null) return;
 
         var storageAbility = StorageAbility.GetByHealthSystem(healthSystem);
-        if (storageAbility is null && healthSystem.rootObject is not null)
+        if (storageAbility == null && healthSystem.rootObject != null)
         {
             storageAbility = healthSystem.rootObject.GetComponent<StorageAbility>();
         }
@@ -49,18 +49,21 @@ public static class SpiderHealthSystemPatches
 
     private static ImmuneAbility GetAbilitySafe(SpiderHealthSystem healthSystem)
     {
-        if (healthSystem is null) return null;
+        if (healthSystem == null) return null;
 
         var ability = ImmuneAbility.GetByHealthSystem(healthSystem);
 
-        if (ability is null)
+        if (ability == null)
         {
             ability = healthSystem.GetComponent<ImmuneAbility>();
 
-            if (ability is null && healthSystem.rootObject is not null)
+            if (ability == null && healthSystem.rootObject != null)
             {
                 ability = healthSystem.rootObject.GetComponentInChildren<ImmuneAbility>();
-                ability ??= healthSystem.rootObject.GetComponentInParent<ImmuneAbility>();
+                if (ability == null)
+                {
+                    ability = healthSystem.rootObject.GetComponentInParent<ImmuneAbility>();
+                }
             }
         }
         return ability;

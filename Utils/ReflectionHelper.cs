@@ -18,7 +18,7 @@ public static class ReflectionHelper
         }
 
         field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-        if (field is not null)
+        if (field != null)
         {
             _fieldCache[key] = field;
         }
@@ -27,11 +27,11 @@ public static class ReflectionHelper
 
     public static T GetPrivateField<T>(object instance, string fieldName) where T : class
     {
-        if (instance is null) return null;
+        if (instance == null) return null;
 
         var field = GetFieldInfo(instance.GetType(), fieldName);
 
-        if (field is null)
+        if (field == null)
         {
             Logger.LogWarning($"[ReflectionHelper] Field '{fieldName}' not found on type '{instance.GetType().Name}'");
             return null;
@@ -41,11 +41,11 @@ public static class ReflectionHelper
 
     public static void SetPrivateField(object instance, string fieldName, object value)
     {
-        if (instance is null) return;
+        if (instance == null) return;
 
         var field = GetFieldInfo(instance.GetType(), fieldName);
 
-        if (field is not null)
+        if (field != null)
         {
             field.SetValue(instance, value);
         }
