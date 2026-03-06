@@ -74,8 +74,7 @@ namespace SpiderSurge.Integration
 
                 foreach (var ps in snapshot.PlayerStats)
                 {
-                    var playerInput = PlayerInput.all.FirstOrDefault(p => p.playerIndex == ps.PlayerIndex);
-                    string playerName = playerInput != null ? $"Player {ps.PlayerIndex + 1}" : $"Player {ps.PlayerIndex + 1}";
+                    string playerName = $"Player {ps.PlayerIndex + 1}";
                     lines.Add($"  {playerName}:");
                     lines.Add($"    Ability Activations: {ps.AbilityActivationCount}");
                     lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");

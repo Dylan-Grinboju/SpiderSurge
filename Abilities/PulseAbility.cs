@@ -211,6 +211,8 @@ namespace SpiderSurge
         {
             int playerID = playerController.playerID.Value;
 
+            bool _attemptedLethalExplosion = false;
+
             // Use NonAlloc to avoid allocating new array every time
             int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _pulseResults, pulseLayers);
 
@@ -250,25 +252,30 @@ namespace SpiderSurge
             // (the stats mod tracks kills from Explosion.KnockBack automatically)
             if (deadly && distance <= p.DeathRadius)
             {
+                if (_canUseExplosion && !_attemptedLethalExplosion)
+                {
+                    _attemptedLethalExplosion = true;
+                    if (!SpawnLethalExplosion(p))
+                    {
+                        _canUseExplosion = false;
+                    }
+                }
+
                 if (!_canUseExplosion)
                 {
                     // Fallback: apply damage directly if Explosion reflection not available
-                    rb?.velocity = Vector2.zero;
+                    if (rb != null)
+                        rb.velocity = Vector2.zero;
                     damageable.Damage(force, closestPoint, true);
                 }
                 continue;
             }
-
-            rb?.velocity = Vector2.zero;
+            if (rb != null)
+                rb.velocity = Vector2.zero;
             damageable.Impact(force, closestPoint, true, true);
         }
 
         ApplyPulseToRailShotsWithoutColliders(p);
-
-        if (deadly && _canUseExplosion)
-        {
-            SpawnLethalExplosion(p);
-        }
     }
 
         private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
@@ -344,10 +351,14 @@ namespace SpiderSurge
             _expOwnerId = AccessTools.Field(typeof(Explosion), "explosionOwnerId");
             _expKnockBack = AccessTools.Method(typeof(Explosion), "KnockBack");
 
-            _canUseExplosion = _expKnockBack is not null
-                && _expKnockBackRadius is not null
-                && _expDeathRadius is not null
-                && _expOwnerId is not null;
+            _canUseExplosion = _expKnockBack != null
+                && _expKnockBackRadius != null
+                && _expDeathRadius != null
+                && _expOwnerId != null
+                && _expLayers != null
+                && _expPlayerDeathRadius != null
+                && _expIsBoomSpear != null
+                && _expPlayerExplosionID != null;
 
             if (!_canUseExplosion)
                 Logger.LogWarning("PulseAbility: Explosion reflection incomplete — pulse ult kills will use fallback (not tracked)");
@@ -359,11 +370,11 @@ namespace SpiderSurge
         }
     }
 
-    private void SpawnLethalExplosion(PulseParams p)
+    private bool SpawnLethalExplosion(PulseParams p)
     {
         try
         {
-            GameObject tempObj = new("PulseExplosion");
+            GameObject tempObj = new GameObject("PulseExplosion");
             tempObj.transform.position = p.Position;
 
             var explosion = tempObj.AddComponent<Explosion>();
@@ -381,10 +392,12 @@ namespace SpiderSurge
             _expKnockBack.Invoke(explosion, null);
 
             Destroy(tempObj);
+            return true;
         }
         catch (System.Exception ex)
         {
             Logger.LogError($"PulseAbility: Failed to spawn lethal explosion for stats tracking: {ex.Message}");
+            return false;
         }
     }
 

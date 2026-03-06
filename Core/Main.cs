@@ -55,18 +55,18 @@ namespace SpiderSurge
         // Initialize per-player control settings
         PlayerControlSettings.Initialize();
         // Check for updates asynchronously
-        try
+        _ = Task.Run(async () =>
         {
-            _ = Task.Run(async () =>
+            try
             {
                 await Task.Delay(15000);
                 await ModUpdater.CheckForUpdatesAsync();
-            });
-        }
-        catch (System.Exception ex)
-        {
-            Logger.LogError($"Update check failed: {ex.Message}");
-        }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Update check failed: {ex.Message}");
+            }
+        });
 
             Harmony harmony = new Harmony("com.SpiderSurge.Mod");
             harmony.PatchAll();
