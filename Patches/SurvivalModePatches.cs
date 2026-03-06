@@ -161,10 +161,19 @@ namespace SpiderSurge
             {
                 if (SurgeGameModeManager.Instance == null) return;
                 SurgeGameModeManager.Instance.SetActive(true);
-                PerksManager.Instance.ResetPerks();
-                PlayerAbilityHandler.ResetSpawnTracking();
+                
+                if (PerksManager.Instance != null)
+                {
+                    PerksManager.Instance.ResetPerks();
+                }
+
+                if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                {
+                    PlayerAbilityHandler.ResetSpawnTracking();
+                }
+
                 var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
-                if (eventField != null)
+                if (eventField != null && SurvivalMode.instance != null)
                 {
                     var action = (Action<int>)eventField.GetValue(null);
                     action?.Invoke(SurvivalMode.instance.GetHighScore());
@@ -209,13 +218,19 @@ namespace SpiderSurge
                 // At wave 30 (Ult Upgrade), set flag for special perk selection
                 if (value == Consts.Values.Waves.UltUpgradeWave)
                 {
-                    PerksManager.Instance.IsUltUpgradePerkSelection = true;
+                    if (PerksManager.Instance != null)
+                    {
+                        PerksManager.Instance.IsUltUpgradePerkSelection = true;
+                    }
                 }
 
                 // At wave 60 (Ult Switch), set flag for special perk selection
                 if (value == Consts.Values.Waves.UltSwapWave)
                 {
-                    PerksManager.Instance.IsUltSwapPerkSelection = true;
+                    if (PerksManager.Instance != null)
+                    {
+                        PerksManager.Instance.IsUltSwapPerkSelection = true;
+                    }
                 }
 
                 // Update StorageAbility cache

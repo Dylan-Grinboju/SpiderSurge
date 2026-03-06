@@ -464,7 +464,10 @@ namespace SpiderSurge
             var netObj = spawnedObj.GetComponent<NetworkObject>();
             if (netObj != null)
             {
-                netObj.Spawn(true);
+                if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
+                {
+                    netObj.Spawn(true);
+                }
                 netObj.DestroyWithScene = true;
             }
             else

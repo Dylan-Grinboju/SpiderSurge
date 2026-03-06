@@ -50,7 +50,14 @@ namespace SpiderSurge
                         {
                             if (stream != null)
                             {
-                                byte[] wavData = new byte[stream.Length];
+                                long length = stream.Length;
+                                if (length > int.MaxValue)
+                                {
+                                    Logger.LogWarning($"[SoundManager] Resource {resourceName} is too large.");
+                                    continue;
+                                }
+
+                                byte[] wavData = new byte[(int)length];
                                 int totalRead = 0;
                                 while (totalRead < wavData.Length)
                                 {
@@ -63,10 +70,17 @@ namespace SpiderSurge
                                     totalRead += bytesRead;
                                 }
 
-                                AudioClip clip = ParseWavFile(wavData, soundName);
-                                if (clip != null)
+                                if (totalRead == wavData.Length)
                                 {
-                                    _loadedClips[soundName] = clip;
+                                    AudioClip clip = ParseWavFile(wavData, soundName);
+                                    if (clip != null)
+                                    {
+                                        _loadedClips[soundName] = clip;
+                                    }
+                                }
+                                else
+                                {
+                                    Logger.LogWarning($"[SoundManager] Incomplete read for resource: {resourceName}. Skipping ParseWavFile.");
                                 }
                             }
                             else

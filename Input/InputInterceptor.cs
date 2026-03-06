@@ -269,7 +269,7 @@ namespace SpiderSurge
                             string path = binding.path ?? "";
 
                             // Check if this binding matches the key we are overriding
-                            if (effectivePath.ToLower().Contains(bindingPath.ToLower()) || path.ToLower().Contains(bindingPath.ToLower()))
+                            if (string.Equals(effectivePath, bindingPath, System.StringComparison.OrdinalIgnoreCase) || string.Equals(path, bindingPath, System.StringComparison.OrdinalIgnoreCase))
                             {
                                 // Only backup if we haven't already backed it up (avoid backing up empty string if called twice)
                                 if (!string.IsNullOrEmpty(path))
