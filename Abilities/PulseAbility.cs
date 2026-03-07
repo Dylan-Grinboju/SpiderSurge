@@ -372,12 +372,14 @@ namespace SpiderSurge
 
     private bool SpawnLethalExplosion(PulseParams p)
     {
+        GameObject tempObj = null;
         try
         {
-            GameObject tempObj = new GameObject("PulseExplosion");
+            tempObj = new GameObject("PulseExplosion");
             tempObj.transform.position = p.Position;
 
             var explosion = tempObj.AddComponent<Explosion>();
+            explosion.enabled = false;
 
             int playerID = playerController.playerID.Value;
 
@@ -389,15 +391,22 @@ namespace SpiderSurge
             _expPlayerExplosionID?.SetValue(explosion, playerID);
             _expOwnerId.SetValue(explosion, (ulong)playerID);
 
+            explosion.enabled = true;
             _expKnockBack.Invoke(explosion, null);
 
-            Destroy(tempObj);
             return true;
         }
         catch (System.Exception ex)
         {
             Logger.LogError($"PulseAbility: Failed to spawn lethal explosion for stats tracking: {ex.Message}");
             return false;
+        }
+        finally
+        {
+            if (tempObj != null)
+            {
+                Destroy(tempObj);
+            }
         }
     }
 
