@@ -125,6 +125,12 @@ namespace SpiderSurge.Integration
             public string Description;
         }
 
+        private class TitleRequirement
+        {
+            public LeaderInfo Leader;
+            public string ReqName;
+        }
+
         public static void SendSurgeTitles(Logging.SpiderSurgeStatsSnapshot snapshot)
         {
             Initialize();
@@ -133,32 +139,32 @@ namespace SpiderSurge.Integration
 
             try
             {
-                var mostAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true);
-                var leastAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false);
-                var mostUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true);
-                var leastUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false);
+                var mostAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true, "Ability Activations");
+                var leastAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false, "Ability Activations");
+                var mostUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations");
+                var leastUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations");
 
-                TryRegisterTitle("Enhanced", (mostAbility, ReqMostAbility));
-                TryRegisterTitle("Ultimate Form", (mostUlt, ReqMostUlt));
+                TryRegisterTitle("Enhanced", LeaderReq(mostAbility, ReqMostAbility));
+                TryRegisterTitle("Ultimate Form", LeaderReq(mostUlt, ReqMostUlt));
 
-                TryRegisterTitle("Powered Up", (mostUlt, ReqMostUlt), (mostAbility, ReqMostAbility));
-                TryRegisterTitle("Maximum Power", (mostUlt, ReqMostUlt), (leastAbility, ReqLeastAbility));
-                TryRegisterTitle("Simple is Better", (mostAbility, ReqMostAbility), (leastUlt, ReqLeastUlt));
-                TryRegisterTitle("Vanilla", (leastUlt, ReqLeastUlt), (leastAbility, ReqLeastAbility));
+                TryRegisterTitle("Powered Up", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(mostAbility, ReqMostAbility));
+                TryRegisterTitle("Maximum Power", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(leastAbility, ReqLeastAbility));
+                TryRegisterTitle("Simple is Better", LeaderReq(mostAbility, ReqMostAbility), LeaderReq(leastUlt, ReqLeastUlt));
+                TryRegisterTitle("Vanilla", LeaderReq(leastUlt, ReqLeastUlt), LeaderReq(leastAbility, ReqLeastAbility));
+                TryRegisterTitle("Ability Destroyer", LeaderReq(mostAbility, ReqMostAbility), ExternalReq("MostOffense"));
 
                 string abilityType = GetActiveAbilityType();
                 string ultType = GetActiveUltType();
 
-                TryRegisterTitle("Ability Destroyer", (mostAbility, ReqMostAbility), (null, "MostOffense"));
 
                 if (abilityType == "Immune")
-                    TryRegisterTitle("Cautious", (mostAbility, ReqMostImmuneAbility), (null, "MostDamageTaken"));
+                    TryRegisterTitle("Wasn't Fast Enough", LeaderReq(mostAbility, ReqMostImmuneAbility), ExternalReq("MostDamageTaken"));
                 if (abilityType == "Pulse")
-                    TryRegisterTitle("Down with the Ship", (mostAbility, ReqMostPulseAbility), (null, "MostLavaDeaths"));
+                    TryRegisterTitle("Down with the Ship", 10, LeaderReq(mostAbility, ReqMostPulseAbility), ExternalReq("MostLavaDeaths"));
                 if (ultType == "Pulse")
-                    TryRegisterTitle("Boom Boom", (mostUlt, ReqMostPulseUlt), (null, "MostExplosionsKills"));
+                    TryRegisterTitle("Boom Boom", LeaderReq(mostUlt, ReqMostPulseUlt), ExternalReq("MostExplosionsKills"));
                 if (ultType == "Immune")
-                    TryRegisterTitle("Self Sacrifice", (mostUlt, ReqMostImmuneUlt), (null, "MostDamageTaken"));
+                    TryRegisterTitle("Self Sacrifice", 20, LeaderReq(mostUlt, ReqMostImmuneUlt), ExternalReq("MostDamageTaken"));
             }
             catch (Exception ex)
             {
@@ -167,7 +173,7 @@ namespace SpiderSurge.Integration
         }
 
         private static LeaderInfo GetLeader(Logging.SpiderSurgeStatsSnapshot snapshot,
-            Func<Logging.PlayerStats, int> selector, bool descending)
+            Func<Logging.PlayerStats, int> selector, bool descending, string statLabel)
         {
             var ranked = descending
                 ? snapshot.PlayerStats.OrderByDescending(selector).ToList()
@@ -184,23 +190,46 @@ namespace SpiderSurge.Integration
                 Player = player,
                 Value = topValue,
                 HasStat = descending ? topValue > 0 : true,
-                Description = $"{label} ({topValue})"
+                Description = $"{label} {statLabel} ({topValue})"
             };
         }
 
-        private static void TryRegisterTitle(string titleName, params (LeaderInfo Leader, string ReqName)[] requirements)
+        private static TitleRequirement LeaderReq(LeaderInfo leader, string reqName)
+        {
+            return new TitleRequirement
+            {
+                Leader = leader,
+                ReqName = reqName
+            };
+        }
+
+        private static TitleRequirement ExternalReq(string reqName)
+        {
+            return new TitleRequirement
+            {
+                Leader = null,
+                ReqName = reqName
+            };
+        }
+
+        private static void TryRegisterTitle(string titleName, params TitleRequirement[] requirements)
+        {
+            TryRegisterTitle(titleName, 10, requirements);
+        }
+
+        private static void TryRegisterTitle(string titleName, int bonusPriority, params TitleRequirement[] requirements)
         {
             if (requirements.Length == 0) return;
 
             var leaderReqs = new List<(LeaderInfo Leader, string ReqName)>();
             var externalReqs = new List<string>();
 
-            foreach (var (leader, reqName) in requirements)
+            foreach (var requirement in requirements)
             {
-                if (leader == null)
-                    externalReqs.Add(reqName);
+                if (requirement.Leader == null)
+                    externalReqs.Add(requirement.ReqName);
                 else
-                    leaderReqs.Add((leader, reqName));
+                    leaderReqs.Add((requirement.Leader, requirement.ReqName));
             }
 
             PlayerInput primaryPlayer = null;
@@ -236,7 +265,7 @@ namespace SpiderSurge.Integration
                 allReqNames.ToArray(),
                 primaryPlayer,
                 true,
-                0
+                bonusPriority
             });
         }
     }
