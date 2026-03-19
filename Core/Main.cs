@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.2.2", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.3.0", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -48,25 +48,25 @@ namespace SpiderSurge
             TutorialUI.Initialize();
             TelemetryConsentUI.Initialize();
 
-        // Initialize CheatManager
-        CheatManager.Initialize();
-        // Initialize SoundTester for testing sounds without playing the game
-        // SoundTester.Initialize();
-        // Initialize per-player control settings
-        PlayerControlSettings.Initialize();
-        // Check for updates asynchronously
-        _ = Task.Run(async () =>
-        {
-            try
+            // Initialize CheatManager
+            CheatManager.Initialize();
+            // Initialize SoundTester for testing sounds without playing the game
+            // SoundTester.Initialize();
+            // Initialize per-player control settings
+            PlayerControlSettings.Initialize();
+            // Check for updates asynchronously
+            _ = Task.Run(async () =>
             {
-                await Task.Delay(15000);
-                await ModUpdater.CheckForUpdatesAsync();
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Update check failed: {ex.Message}");
-            }
-        });
+                try
+                {
+                    await Task.Delay(15000);
+                    await ModUpdater.CheckForUpdatesAsync();
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.LogError($"Update check failed: {ex.Message}");
+                }
+            });
 
             Harmony harmony = new Harmony("com.SpiderSurge.Mod");
             harmony.PatchAll();
