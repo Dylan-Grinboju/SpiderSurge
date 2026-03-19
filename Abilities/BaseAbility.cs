@@ -680,7 +680,7 @@ namespace SpiderSurge
         protected void StartCooldown(bool wasUltimate = false)
         {
             UpdatePerkModifiers();
-            
+
             if (skipNextCooldown)
             {
                 skipNextCooldown = false;
