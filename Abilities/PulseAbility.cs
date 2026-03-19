@@ -106,7 +106,7 @@ namespace SpiderSurge
                 playerPulseAbilities[playerInput] = this;
             }
 
-            pulseLayers = LayerMask.GetMask("Player", "Item", "Enemy", "EnemyWeapon", "DynamicWorld");
+            pulseLayers = LayerMask.GetMask("Player", "Item", "Weapon", "Enemy", "EnemyWeapon", "DynamicWorld");
 
             if (pulseLayers == 0)
             {
