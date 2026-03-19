@@ -17,7 +17,7 @@ namespace SpiderSurge.Integration
         private static MethodInfo _registerCustomStats;
         private static MethodInfo _registerCustomTitle;
 
-        private static void Initialize()
+        public static void Initialize()
         {
             if (_initialized) return;
             _initialized = true;

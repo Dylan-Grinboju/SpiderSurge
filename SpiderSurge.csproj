@@ -51,7 +51,7 @@
     <PackageReference Include="MonoMod.Backports" Version="1.1.2" />
   </ItemGroup>
 
-  <Import Project="ILRepack.targets" />
+
 
   <!-- Exclude Sourcecode folder from compilation (decompiled game source for reference only) -->
   <ItemGroup>
