@@ -94,6 +94,22 @@ When `EnableStatsLogging` is enabled, per-match text reports are written to:
 `...\Silk\Logs\SpiderSurge\SpiderSurge_Match_YYYY-MM-DD_HH-mm-ss.txt`
 
 
+## SpiderStats Integration
+
+When the [SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod) mod is also installed, SpiderSurge automatically sends ability and ultimate activation data to the stats log and registers custom player titles.
+
+### Custom Stats
+
+At the end of each Surge Survival match, the following per-player stats are appended to the SpiderStats log file:
+- **Ability Activations** — how many times each player activated their ability
+- **Ultimate Activations** — how many times each player activated their ultimate
+
+### Custom Titles
+
+SpiderSurge registers the following titles via the SpiderStats title system. Titles require **2+ players** and a **clear leader** (no ties):
+
+Some titles combine SpiderSurge data (e.g. most ability activations) with SpiderStats native requirements (e.g. most damage taken), creating **cross-mod titles** that reflect both mods' tracked stats.
+
 ## Notes and disclaimers
 
 - This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Turning off the mod will restore your highscores. BACK UP YOUR SAVE FILES JUST IN CASE.
