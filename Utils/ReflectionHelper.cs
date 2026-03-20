@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Logger = Silk.Logger;
@@ -7,7 +8,7 @@ namespace SpiderSurge
 {
     public static class ReflectionHelper
     {
-        private static readonly Dictionary<(Type, string), FieldInfo> _fieldCache = new Dictionary<(Type, string), FieldInfo>();
+        private static readonly ConcurrentDictionary<(Type, string), FieldInfo> _fieldCache = new ConcurrentDictionary<(Type, string), FieldInfo>();
 
         private static FieldInfo GetFieldInfo(Type type, string fieldName)
         {
@@ -20,7 +21,7 @@ namespace SpiderSurge
             field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
             if (field != null)
             {
-                _fieldCache[key] = field;
+                _fieldCache.TryAdd(key, field);
             }
             return field;
         }

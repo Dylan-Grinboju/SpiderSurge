@@ -217,6 +217,12 @@ namespace SpiderSurge
             // Find all abilities for this player and re-register them
             // Use PlayerInput to be consistent with detection logic
             var playerInputs = InputInterceptor.ActivePlayerInputs;
+            if (playerInputs == null)
+            {
+                Logger.LogWarning($"[PlayerControlSettings] ActivePlayerInputs is null when trying to notify abilities for player {playerIndex}");
+                return;
+            }
+
             bool matchedPlayer = false;
 
             foreach (var input in playerInputs)
@@ -256,6 +262,11 @@ namespace SpiderSurge
             // Find which player this device belongs to by searching PlayerInput directly
             // This is safer than searching for PlayerController as PlayerInput exists in Lobby too
             var playerInputs = InputInterceptor.ActivePlayerInputs;
+            if (playerInputs == null)
+            {
+                Logger.LogWarning("[PlayerControlSettings] ActivePlayerInputs is null when trying to get player index from device");
+                return -1;
+            }
 
             foreach (var playerInput in playerInputs)
             {
@@ -332,6 +343,7 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
+            if (Instance != this) return;
             // Clean up input actions
             menuButtonAction?.Disable();
             menuButtonAction?.Dispose();

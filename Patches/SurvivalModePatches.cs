@@ -157,75 +157,98 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(bool __result, SurvivalConfig survivalConfig)
         {
-            if (__result && ShouldApplySurge(survivalConfig))
+            if (__result)
             {
-                if (SurgeGameModeManager.Instance == null) return;
-                SurgeGameModeManager.Instance.SetActive(true);
-                PerksManager.Instance.ResetPerks();
-                PlayerAbilityHandler.ResetSpawnTracking();
-                var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
-                if (eventField != null)
+                if (SurgeGameModeManager.Instance != null)
                 {
-                    var action = (Action<int>)eventField.GetValue(null);
-                    action?.Invoke(SurvivalMode.instance.GetHighScore());
+                    SurgeGameModeManager.Instance.ResetRun();
                 }
-            }
-        }
-    }
 
-    [HarmonyPatch(typeof(SurvivalMode), "set_CurrentWave")]
-    public class SurvivalMode_set_CurrentWave_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(int value)
-        {
-            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
-            {
-                // Reset cooldowns for all abilities for all active players
-                if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                if (ShouldApplySurge(survivalConfig))
                 {
-                    for (int i = PlayerAbilityHandler.ActiveSpiderControllers.Count - 1; i >= 0; i--)
-                    {
-                        var controller = PlayerAbilityHandler.ActiveSpiderControllers[i];
-                        if (controller == null)
-                        {
-                            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAt(i);
-                            continue;
-                        }
+                    if (SurgeGameModeManager.Instance == null) return;
+                    SurgeGameModeManager.Instance.SetActive(true);
 
-                        var playerAbilities = controller.GetComponents<BaseAbility>();
-                        foreach (var ability in playerAbilities)
-                        {
-                            if (ability is ImmuneAbility)
-                            {
-                                ability.ReduceCooldown(Consts.Values.Immune.AbilityBaseCooldown);
-                                continue;
-                            }
-                            ability.SetCooldownToZero();
-                        }
+                    if (PerksManager.Instance != null)
+                    {
+                        PerksManager.Instance.ResetPerks();
+                    }
+
+                    if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                    {
+                        PlayerAbilityHandler.ResetSpawnTracking();
+                    }
+
+                    var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
+                    if (eventField != null && SurvivalMode.instance != null)
+                    {
+                        var action = (Action<int>)eventField.GetValue(null);
+                        action?.Invoke(SurvivalMode.instance.GetHighScore());
                     }
                 }
+            }
+        }
 
-                // At wave 30 (Ult Upgrade), set flag for special perk selection
-                if (value == Consts.Values.Waves.UltUpgradeWave)
+        [HarmonyPatch(typeof(SurvivalMode), "set_CurrentWave")]
+        public class SurvivalMode_set_CurrentWave_Patch
+        {
+            [HarmonyPostfix]
+            public static void Postfix(int value)
+            {
+                if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
                 {
-                    PerksManager.Instance.IsUltUpgradePerkSelection = true;
-                }
+                    // Reset cooldowns for all abilities for all active players
+                    if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                    {
+                        for (int i = PlayerAbilityHandler.ActiveSpiderControllers.Count - 1; i >= 0; i--)
+                        {
+                            var controller = PlayerAbilityHandler.ActiveSpiderControllers[i];
+                            if (controller == null)
+                            {
+                                PlayerAbilityHandler.ActiveSpiderControllers.RemoveAt(i);
+                                continue;
+                            }
 
-                // At wave 60 (Ult Switch), set flag for special perk selection
-                if (value == Consts.Values.Waves.UltSwapWave)
-                {
-                    PerksManager.Instance.IsUltSwapPerkSelection = true;
-                }
+                            var playerAbilities = controller.GetComponents<BaseAbility>();
+                            foreach (var ability in playerAbilities)
+                            {
+                                if (ability is ImmuneAbility)
+                                {
+                                    ability.ReduceCooldown(Consts.Values.Immune.AbilityBaseCooldown);
+                                    continue;
+                                }
+                                ability.SetCooldownToZero();
+                            }
+                        }
+                    }
 
-                // Update StorageAbility cache
-                var abilities = UnityEngine.Object.FindObjectsOfType<StorageAbility>();
-                foreach (var ab in abilities)
-                {
-                    ab.UpdateCachedModifierLevels();
+                    // At wave 30 (Ult Upgrade), set flag for special perk selection
+                    if (value == Consts.Values.Waves.UltUpgradeWave)
+                    {
+                        if (PerksManager.Instance != null)
+                        {
+                            PerksManager.Instance.IsUltUpgradePerkSelection = true;
+                        }
+                    }
+
+                    // At wave 60 (Ult Switch), set flag for special perk selection
+                    if (value == Consts.Values.Waves.UltSwapWave)
+                    {
+                        if (PerksManager.Instance != null)
+                        {
+                            PerksManager.Instance.IsUltSwapPerkSelection = true;
+                        }
+                    }
+
+                    // Update StorageAbility cache
+                    var abilities = UnityEngine.Object.FindObjectsOfType<StorageAbility>();
+                    foreach (var ab in abilities)
+                    {
+                        ab.UpdateCachedModifierLevels();
+                    }
                 }
             }
         }
-    }
 
+    }
 }

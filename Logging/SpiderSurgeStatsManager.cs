@@ -87,6 +87,9 @@ namespace SpiderSurge.Logging
 
             SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
 
+            Integration.StatsModBridge.SendSurgeStats(snapshot);
+            Integration.StatsModBridge.SendSurgeTitles(snapshot);
+
             if (ShouldUploadTelemetryFromThisClient())
             {
                 Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");

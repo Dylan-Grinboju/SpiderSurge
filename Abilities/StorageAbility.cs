@@ -149,7 +149,7 @@ namespace SpiderSurge
                 WeaponRef = val,
                 Name = val.serializationWeaponName,
                 Ammo = val.ammo,
-                Types = new List<Weapon.WeaponType>(val.type)
+                Types = val.type != null ? new List<Weapon.WeaponType>(val.type) : new List<Weapon.WeaponType>()
             };
         }
 
@@ -364,7 +364,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = new List<Weapon.WeaponType>(newWeapon.type)
+                            Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
                         };
                     else
                         _storedWeaponData = new RuntimeStoredWeapon
@@ -372,7 +372,7 @@ namespace SpiderSurge
                             WeaponRef = newWeapon,
                             Name = newWeapon.serializationWeaponName,
                             Ammo = newWeapon.ammo,
-                            Types = new List<Weapon.WeaponType>(newWeapon.type)
+                            Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
                         };
                 }
                 else

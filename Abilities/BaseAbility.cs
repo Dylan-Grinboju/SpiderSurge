@@ -81,77 +81,60 @@ namespace SpiderSurge
         public virtual float UltimateDurationPerPerkLevel => 0f;
         public virtual float UltimateCooldownPerPerkLevel => 0f;
 
-        public virtual float AbilityDuration
+        private float _cachedAbilityDuration;
+        private float _cachedAbilityCooldownTime;
+        private float _cachedUltimateDuration;
+        private float _cachedUltimateCooldownTime;
+
+        public virtual void UpdatePerkModifiers()
         {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+            int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
+            int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+            int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
 
-                float duration = AbilityBaseDuration;
-                if (durationLevel >= 1) duration += AbilityDurationPerPerkLevel;
-                if (shortTermLevel > 0) duration += AbilityDurationPerPerkLevel;
-                if (longTermLevel > 0) duration -= AbilityDurationPerPerkLevel;
+            float duration = AbilityBaseDuration;
+            if (durationLevel >= 1) duration += AbilityDurationPerPerkLevel;
+            if (shortTermLevel > 0) duration += AbilityDurationPerPerkLevel;
+            if (longTermLevel > 0) duration -= AbilityDurationPerPerkLevel;
+            _cachedAbilityDuration = duration;
 
-                return duration;
-            }
+            float cooldown = AbilityBaseCooldown;
+            if (cooldownLevel >= 1) cooldown -= AbilityCooldownPerPerkLevel;
+            if (shortTermLevel > 0) cooldown -= AbilityCooldownPerPerkLevel;
+            if (longTermLevel > 0) cooldown += AbilityCooldownPerPerkLevel;
+            _cachedAbilityCooldownTime = cooldown;
+
+            float uDuration = UltimateBaseDuration;
+            if (durationLevel == 2) uDuration += UltimateDurationPerPerkLevel;
+            if (shortTermLevel > 0) uDuration -= UltimateDurationPerPerkLevel;
+            if (longTermLevel > 0) uDuration += UltimateDurationPerPerkLevel;
+            _cachedUltimateDuration = uDuration;
+
+            float uCooldown = UltimateBaseCooldown;
+            if (cooldownLevel == 2) uCooldown -= UltimateCooldownPerPerkLevel;
+            if (shortTermLevel > 0) uCooldown += UltimateCooldownPerPerkLevel;
+            if (longTermLevel > 0) uCooldown -= UltimateCooldownPerPerkLevel;
+            _cachedUltimateCooldownTime = uCooldown;
         }
 
-        public virtual float AbilityCooldownTime
-        {
-            get
-            {
-                int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+        public virtual float AbilityDuration => _cachedAbilityDuration;
 
-                float cooldown = AbilityBaseCooldown;
-                if (cooldownLevel >= 1) cooldown -= AbilityCooldownPerPerkLevel;
-                if (shortTermLevel > 0) cooldown -= AbilityCooldownPerPerkLevel;
-                if (longTermLevel > 0) cooldown += AbilityCooldownPerPerkLevel;
+        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime;
 
-                return cooldown;
-            }
-        }
+        public virtual float UltimateDuration => _cachedUltimateDuration;
 
-        public virtual float UltimateDuration
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-
-                float duration = UltimateBaseDuration;
-                if (durationLevel == 2) duration += UltimateDurationPerPerkLevel;
-                if (shortTermLevel > 0) duration -= UltimateDurationPerPerkLevel;
-                if (longTermLevel > 0) duration += UltimateDurationPerPerkLevel;
-
-                return duration;
-            }
-        }
-
-        public virtual float UltimateCooldownTime
-        {
-            get
-            {
-                int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-
-                float cooldown = UltimateBaseCooldown;
-                if (cooldownLevel == 2) cooldown -= UltimateCooldownPerPerkLevel;
-                if (shortTermLevel > 0) cooldown += UltimateCooldownPerPerkLevel;
-                if (longTermLevel > 0) cooldown -= UltimateCooldownPerPerkLevel;
-
-                return cooldown;
-            }
-        }
+        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime;
 
         protected virtual void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
+            UpdatePerkModifiers();
+        }
+
+        protected virtual void OnEnable()
+        {
+            UpdatePerkModifiers();
         }
 
         protected virtual void Start()
@@ -367,6 +350,8 @@ namespace SpiderSurge
 
         public virtual void Activate()
         {
+            UpdatePerkModifiers();
+
             if (!IsUnlocked())
             {
                 return;
@@ -422,6 +407,8 @@ namespace SpiderSurge
 
         public virtual void ActivateUltimate()
         {
+            UpdatePerkModifiers();
+
             if (!IsUnlocked())
             {
                 return;
@@ -531,6 +518,7 @@ namespace SpiderSurge
 
         public void ForceStartCooldown(bool wasUltimate = false)
         {
+            UpdatePerkModifiers();
             skipNextCooldown = false;
 
             if (cooldownCoroutine != null)
@@ -691,6 +679,8 @@ namespace SpiderSurge
 
         protected void StartCooldown(bool wasUltimate = false)
         {
+            UpdatePerkModifiers();
+
             if (skipNextCooldown)
             {
                 skipNextCooldown = false;
