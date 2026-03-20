@@ -175,6 +175,32 @@ namespace SpiderSurge.Logging
                 "}";
         }
 
+        public string GetAnonymousIdOrNull()
+        {
+            if (!string.IsNullOrEmpty(_anonymousId))
+            {
+                return _anonymousId;
+            }
+
+            try
+            {
+                if (File.Exists(_anonymousIdPath))
+                {
+                    string existing = File.ReadAllText(_anonymousIdPath).Trim();
+                    if (!string.IsNullOrEmpty(existing))
+                    {
+                        _anonymousId = existing;
+                        return _anonymousId;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to read telemetry anonymous ID: {ex.Message}");
+            }
+            return null;
+        }
+
         public string GetOrCreateAnonymousId()
         {
             if (!string.IsNullOrEmpty(_anonymousId))

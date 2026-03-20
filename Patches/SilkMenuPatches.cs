@@ -41,7 +41,7 @@ namespace SpiderSurge.Patches
 
             menu.CreateParagraph("<size=100%>\n </size>");
 
-            string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetOrCreateAnonymousId();
+            string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetAnonymousIdOrNull() ?? "<not set>";
             menu.CreateParagraph($"<size=100%><b>Anonymous ID:</b> {anonId}</size>");
             int childCountBeforeReset = menu.objectParent != null ? menu.objectParent.childCount : 0;
             menu.CreateButton("Reset Telemetry ID", () => ResetTelemetryId(menu));

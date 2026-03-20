@@ -214,7 +214,7 @@ namespace SpiderSurge.Integration
 
         private static void TryRegisterTitle(string titleName, params TitleRequirement[] requirements)
         {
-            TryRegisterTitle(titleName, 10, requirements);
+            TryRegisterTitle(titleName, 20, requirements);
         }
 
         private static void TryRegisterTitle(string titleName, int bonusPriority, params TitleRequirement[] requirements)
