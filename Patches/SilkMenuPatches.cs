@@ -32,12 +32,20 @@ namespace SpiderSurge.Patches
             }
 
             menu.CreateParagraph("<size=100%>\n </size>");
-            
+
             menu.CreateParagraph($"<size=115%><b>Telemetry Status:</b> {(ModConfig.TelemetryEnabled ? "<color=#00FF00>Enabled</color>" : "<color=#FF5555>Disabled</color>")}</size>");
             menu.CreateParagraph("<size=95%><color=#AAAAAA>Help improve the mod by sharing anonymous run stats.</color></size>");
             int childCountBeforeTelemetry = menu.objectParent != null ? menu.objectParent.childCount : 0;
             menu.CreateButton(ModConfig.TelemetryEnabled ? "Disable Telemetry" : "Enable Telemetry", () => ToggleTelemetry(menu));
             ResizeLastCreatedButton(menu, childCountBeforeTelemetry);
+
+            menu.CreateParagraph("<size=100%>\n </size>");
+
+            string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetOrCreateAnonymousId();
+            menu.CreateParagraph($"<size=100%><b>Anonymous ID:</b> {anonId}</size>");
+            int childCountBeforeReset = menu.objectParent != null ? menu.objectParent.childCount : 0;
+            menu.CreateButton("Reset Telemetry ID", () => ResetTelemetryId(menu));
+            ResizeLastCreatedButton(menu, childCountBeforeReset);
 
             // Custom thin divider with more space
             menu.CreateParagraph("<size=100%>\n </size>");
@@ -71,6 +79,12 @@ namespace SpiderSurge.Patches
         {
             bool newValue = !ModConfig.TelemetryEnabled;
             ModConfig.SetTelemetryEnabled(newValue);
+            RefreshMenu(menu);
+        }
+
+        private static void ResetTelemetryId(ModsMenuPopup menu)
+        {
+            Logging.SpiderSurgeTelemetryUploader.Instance.ResetAnonymousId();
             RefreshMenu(menu);
         }
 

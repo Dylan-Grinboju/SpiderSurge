@@ -35,7 +35,6 @@ namespace SpiderSurge
         {
             Instance = this;
             Logger.LogInfo("Initializing SpiderSurge Mod...");
-            Integration.StatsModBridge.Initialize();
             // Initialize configuration with default values first
             SetupConfiguration();
             Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();

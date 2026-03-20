@@ -258,15 +258,27 @@ namespace SpiderSurge.Integration
 
             allReqNames.AddRange(externalReqs);
 
-            _registerCustomTitle.Invoke(null, new object[]
+            try
             {
-                titleName,
-                descriptions.Count > 0 ? string.Join("\n", descriptions) : "",
-                allReqNames.ToArray(),
-                primaryPlayer,
-                true,
-                bonusPriority
-            });
+                bool success = (bool)_registerCustomTitle.Invoke(null, new object[]
+                {
+                    titleName,
+                    descriptions.Count > 0 ? string.Join("\n", descriptions) : "",
+                    allReqNames.ToArray(),
+                    primaryPlayer,
+                    true,
+                    bonusPriority
+                });
+
+                if (!success)
+                {
+                    Logger.LogWarning($"StatsModBridge: Failed to register title '{titleName}'.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"StatsModBridge: Error invoking RegisterCustomTitle for '{titleName}': {ex.Message}");
+            }
         }
     }
 }

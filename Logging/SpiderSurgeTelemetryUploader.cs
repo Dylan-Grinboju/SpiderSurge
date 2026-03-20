@@ -175,7 +175,7 @@ namespace SpiderSurge.Logging
                 "}";
         }
 
-        private string GetOrCreateAnonymousId()
+        public string GetOrCreateAnonymousId()
         {
             if (!string.IsNullOrEmpty(_anonymousId))
             {
@@ -194,6 +194,20 @@ namespace SpiderSurge.Logging
                     }
                 }
 
+                return ResetAnonymousId();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to create/load telemetry anonymous ID: {ex.Message}");
+                _anonymousId = "unknown";
+                return _anonymousId;
+            }
+        }
+
+        public string ResetAnonymousId()
+        {
+            try
+            {
                 byte[] bytes = new byte[Consts.Telemetry.AnonymousIdBytes];
                 using (var random = RandomNumberGenerator.Create())
                 {
@@ -210,9 +224,8 @@ namespace SpiderSurge.Logging
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed to create/load telemetry anonymous ID: {ex.Message}");
-                _anonymousId = "unknown";
-                return _anonymousId;
+                Logger.LogError($"Failed to reset telemetry anonymous ID: {ex.Message}");
+                return _anonymousId; // Returns the old one or "unknown" if it fails
             }
         }
 
