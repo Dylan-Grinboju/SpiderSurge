@@ -13,6 +13,19 @@ namespace SpiderSurge
     {
         public static Dictionary<PlayerInput, AmmoAbility> playerAmmoAbilities = new Dictionary<PlayerInput, AmmoAbility>();
 
+        public static float GetWeaponAmmoFloor(Weapon weapon)
+        {
+            if (weapon == null || !weapon.equipped || weapon.owner == null) return -1f;
+
+            PlayerInput pi = weapon.owner.GetComponentInParent<PlayerInput>();
+            if (pi == null) return -1f;
+
+            if (!playerAmmoAbilities.TryGetValue(pi, out AmmoAbility ability) || ability == null || !ability.isActive)
+                return -1f;
+
+            return ability.GetHeldWeaponFloorAmmo(weapon);
+        }
+
         public override string PerkName => Consts.PerkNames.AmmoAbility;
 
         public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
@@ -83,17 +96,6 @@ namespace SpiderSurge
                     }
                 }
             }
-
-            if (isActive && weaponManager != null && weaponManager.equippedWeapon != null)
-            {
-                var weapon = weaponManager.equippedWeapon;
-                float currentAmmoFloor = GetHeldWeaponFloorAmmo(weapon);
-
-                if (weapon.ammo < currentAmmoFloor)
-                {
-                    SetWeaponAmmo(weapon, currentAmmoFloor);
-                }
-            }
         }
 
         private float GetHeldWeaponFloorAmmo(Weapon weapon)
@@ -160,20 +162,22 @@ namespace SpiderSurge
             return Mathf.Max(originalAmmo, halfMax);
         }
 
+        private static readonly HashSet<SerializationWeaponName> nonDisintegrateWeapons = new HashSet<SerializationWeaponName>
+        {
+            SerializationWeaponName.Grenade,
+            SerializationWeaponName.BigGrenade,
+            SerializationWeaponName.PerArmedGrenade,
+            SerializationWeaponName.GravityGrenade,
+            SerializationWeaponName.Mine,
+            SerializationWeaponName.BoomStick,
+            SerializationWeaponName.LaserCube,
+            SerializationWeaponName.DeathCube
+        };
+
         private bool ShouldDisintegrateOnRemoval(Weapon weapon)
         {
-            if (weapon == null)
-            {
-                return false;
-            }
-
-            if (weapon.type == null)
-            {
-                return true;
-            }
-
-            return !weapon.type.Contains(Weapon.WeaponType.Explosive)
-                && !weapon.type.Contains(Weapon.WeaponType.Mine);
+            if (weapon == null) return false;
+            return !nonDisintegrateWeapons.Contains(weapon.serializationWeaponName);
         }
 
         private void SetWeaponAmmo(Weapon weapon, float value)
@@ -200,7 +204,6 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            // Play ammo ability sound
             if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlaySound(
@@ -225,9 +228,16 @@ namespace SpiderSurge
 
         protected override void OnDeactivate()
         {
-            if (weaponManager != null && weaponManager.equippedWeapon != null)
+            Weapon equippedWeapon = weaponManager?.equippedWeapon;
+
+            if (equippedWeapon != null)
             {
-                ResolveWeaponAmmoOnAbilityRemoval(weaponManager.equippedWeapon, false);
+                ResolveWeaponAmmoOnAbilityRemoval(equippedWeapon, false);
+            }
+
+            if (trackedWeapon != null && trackedWeapon != equippedWeapon)
+            {
+                ResolveWeaponAmmoOnAbilityRemoval(trackedWeapon, false);
             }
 
             trackedWeapon = null;
@@ -262,6 +272,7 @@ namespace SpiderSurge
             if (weapon == lastResolvedWeapon && Time.frameCount == lastResolvedFrame) return;
 
             int efficiencyLevel = GetEfficiencyLevel();
+
             if (efficiencyLevel <= 0)
             {
                 lastResolvedWeapon = weapon;
@@ -270,10 +281,6 @@ namespace SpiderSurge
                 if (ShouldDisintegrateOnRemoval(weapon))
                 {
                     weapon.Disintegrate();
-                }
-                else
-                {
-                    //for explosives, nothing
                 }
 
                 if (weapon == trackedWeapon)

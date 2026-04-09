@@ -50,4 +50,18 @@ namespace SpiderSurge
             AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
         }
     }
+
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.ammo), MethodType.Setter)]
+    public class Weapon_AmmoSetter_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(Weapon __instance, ref float value)
+        {
+            float floor = AmmoAbility.GetWeaponAmmoFloor(__instance);
+            if (floor >= 0f && value < floor)
+            {
+                value = floor;
+            }
+        }
+    }
 }

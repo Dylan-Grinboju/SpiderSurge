@@ -28,6 +28,8 @@ namespace SpiderSurge
 
         private InputActionAsset _instantiatedActions;
 
+        private bool _started = false;
+
         private void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
@@ -67,7 +69,10 @@ namespace SpiderSurge
                     }
                 }
             }
+            _started = true;
         }
+
+        public bool IsReady => _started && _instantiatedActions != null;
 
         /// <summary>
         /// Register an ability with its activation button. This will override the original input binding.
@@ -160,57 +165,94 @@ namespace SpiderSurge
 
             try
             {
-                string abilityName = ability.GetType().Name;
-
-                if (registeredAbilities.ContainsKey(bindingPath))
+                if (registeredAbilities.TryGetValue(bindingPath, out BaseAbility registered) && registered == ability)
                 {
                     registeredAbilities.Remove(bindingPath);
+                }
 
-                    // Restore original bindings if any were overridden
-                    if (restoredBindings.ContainsKey(bindingPath))
-                    {
-                        var backups = restoredBindings[bindingPath];
-                        foreach (var backup in backups)
-                        {
-                            try
-                            {
-                                // Restore the original path
-                                backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
-                            }
-                            catch (System.Exception restoreEx)
-                            {
-                                Logger.LogError($"Failed to restore binding for {backup.Action.name}: {restoreEx.Message}");
-                            }
-                        }
-                        restoredBindings.Remove(bindingPath);
-                    }
+                RestoreBindingsForPath(bindingPath);
 
-                    // Get the correct action name for this binding
-                    string actionName = GetActionNameFromBindingPath(bindingPath);
-                    if (!string.IsNullOrEmpty(actionName))
-                    {
-                        // Clean up the custom action
-                        string key = actionName + bindingPath;
-                        if (customActions.ContainsKey(key))
-                        {
-                            var customAction = customActions[key];
-                            if (customAction != null)
-                            {
-                                customAction.performed -= overriddenActions[key];
-                                customAction.Disable();
-                                customAction.Dispose();
-                            }
-                            customActions.Remove(key);
-                            overriddenActions.Remove(key);
-                        }
-                    }
-
+                string actionName = GetActionNameFromBindingPath(bindingPath);
+                if (!string.IsNullOrEmpty(actionName))
+                {
+                    DisposeCustomAction(actionName + bindingPath);
                 }
             }
             catch (System.Exception ex)
             {
                 Logger.LogError($"Error unregistering ability: {ex.Message}");
             }
+        }
+
+        private void RestoreBindingsForPath(string bindingPath)
+        {
+            if (!restoredBindings.TryGetValue(bindingPath, out List<BindingRestoreInfo> backups))
+                return;
+
+            foreach (var backup in backups)
+            {
+                try
+                {
+                    if (backup.Action != null && IsActionFromCurrentAsset(backup.Action))
+                    {
+                        backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                    }
+                    else if (playerInput?.actions != null)
+                    {
+                        RestoreBindingOnCurrentAsset(backup);
+                    }
+                }
+                catch (System.Exception restoreEx)
+                {
+                    Logger.LogError($"Failed to restore binding: {restoreEx.Message}");
+                }
+            }
+            restoredBindings.Remove(bindingPath);
+        }
+
+        private bool IsActionFromCurrentAsset(InputAction action)
+        {
+            if (playerInput?.actions == null) return false;
+            foreach (var a in playerInput.actions)
+            {
+                if (a == action) return true;
+            }
+            return false;
+        }
+
+        // Fallback: find the matching action in the current asset and restore it
+        private void RestoreBindingOnCurrentAsset(BindingRestoreInfo backup)
+        {
+            foreach (var action in playerInput.actions)
+            {
+                if (action.name == backup.Action.name)
+                {
+                    var bindings = action.bindings;
+                    if (backup.BindingIndex < bindings.Count)
+                    {
+                        action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                    }
+                    break;
+                }
+            }
+        }
+
+        private void DisposeCustomAction(string key)
+        {
+            if (!customActions.TryGetValue(key, out InputAction customAction))
+                return;
+
+            if (customAction != null)
+            {
+                if (overriddenActions.TryGetValue(key, out var callback))
+                {
+                    customAction.performed -= callback;
+                }
+                customAction.Disable();
+                customAction.Dispose();
+            }
+            customActions.Remove(key);
+            overriddenActions.Remove(key);
         }
 
         private void OnAbilityButtonPressed(InputAction.CallbackContext context, BaseAbility ability)
@@ -249,11 +291,14 @@ namespace SpiderSurge
         {
             try
             {
-                // Always disable any original binding that matches this bindingPath, regardless of actionName
+                string key = actionName + bindingPath;
+
+                // Dispose any existing custom action with this key before creating a new one
+                DisposeCustomAction(key);
+
                 var allActions = playerInput.actions;
                 if (allActions != null)
                 {
-                    // Prepare list to store restore info for this binding path
                     if (!restoredBindings.ContainsKey(bindingPath))
                     {
                         restoredBindings[bindingPath] = new List<BindingRestoreInfo>();
@@ -268,10 +313,8 @@ namespace SpiderSurge
                             string effectivePath = binding.effectivePath ?? "";
                             string path = binding.path ?? "";
 
-                            // Check if this binding matches the key we are overriding
                             if (string.Equals(effectivePath, bindingPath, System.StringComparison.OrdinalIgnoreCase) || string.Equals(path, bindingPath, System.StringComparison.OrdinalIgnoreCase))
                             {
-                                // Only backup if we haven't already backed it up (avoid backing up empty string if called twice)
                                 if (!string.IsNullOrEmpty(path))
                                 {
                                     restoredBindings[bindingPath].Add(new BindingRestoreInfo
@@ -288,7 +331,6 @@ namespace SpiderSurge
                     }
                 }
 
-                // Create new custom action
                 var customAction = new InputAction(
                     name: actionName == "CustomAbility" ? $"CustomAbility{bindingPath.Replace("/", "").Replace("<", "").Replace(">", "")}" : $"Custom{actionName}",
                     type: InputActionType.Button,
@@ -298,8 +340,6 @@ namespace SpiderSurge
                 customAction.performed += callback;
                 customAction.Enable();
 
-                // Store the override and action for cleanup
-                string key = actionName + bindingPath;
                 overriddenActions[key] = callback;
                 customActions[key] = customAction;
 
