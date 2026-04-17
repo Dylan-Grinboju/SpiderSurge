@@ -17,9 +17,23 @@ namespace SpiderSurge
                 && survivalConfig.type == SurvivalConfig.Type.EndlessSurvival;
         }
 
+        private static SurvivalConfig _originalConfig;
+
         [HarmonyPrefix]
         public static void Prefix(ref SurvivalConfig survivalConfig)
         {
+            if (survivalConfig != null && survivalConfig.name.EndsWith("_Surge"))
+            {
+                if (_originalConfig != null)
+                {
+                    survivalConfig = _originalConfig;
+                }
+            }
+            else
+            {
+                _originalConfig = survivalConfig;
+            }
+
             if (ShouldApplySurge(survivalConfig))
             {
                 // Find templates
@@ -164,15 +178,17 @@ namespace SpiderSurge
                     SurgeGameModeManager.Instance.ResetRun();
                 }
 
+                if (PerksManager.Instance != null)
+                {
+                    PerksManager.Instance.ResetPerks();
+                }
+
+                StoragePersistenceManager.ClearAllStoredWeapons();
+
                 if (ShouldApplySurge(survivalConfig))
                 {
                     if (SurgeGameModeManager.Instance == null) return;
                     SurgeGameModeManager.Instance.SetActive(true);
-
-                    if (PerksManager.Instance != null)
-                    {
-                        PerksManager.Instance.ResetPerks();
-                    }
 
                     if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                     {

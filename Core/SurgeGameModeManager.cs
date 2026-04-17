@@ -40,6 +40,7 @@ namespace SpiderSurge
 
         public void ResetRun()
         {
+            SetActive(false);
             RunUsedSurge = false;
         }
 
