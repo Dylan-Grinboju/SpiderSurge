@@ -31,6 +31,19 @@ namespace SpiderSurge
         }
     }
 
+    [HarmonyPatch(typeof(SpiderWeaponManager), "OnEquipWeapon")]
+    public class SpiderWeaponManager_OnEquipWeapon_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(SpiderWeaponManager __instance, Weapon weapon)
+        {
+            if (weapon != null)
+            {
+                AmmoAbility.HandleWeaponEquipped(__instance, weapon);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(SpiderWeaponManager), nameof(SpiderWeaponManager.UnEquipWeapon))]
     public class SpiderWeaponManager_UnEquipWeapon_Patch
     {

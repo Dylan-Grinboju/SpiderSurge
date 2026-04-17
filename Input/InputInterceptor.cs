@@ -223,16 +223,21 @@ namespace SpiderSurge
         // Fallback: find the matching action in the current asset and restore it
         private void RestoreBindingOnCurrentAsset(BindingRestoreInfo backup)
         {
+            var actionName = backup.Action?.name;
+            if (string.IsNullOrEmpty(actionName)) return;
+
             foreach (var action in playerInput.actions)
             {
-                if (action.name == backup.Action.name)
+                if (action.name == actionName)
                 {
                     var bindings = action.bindings;
-                    if (backup.BindingIndex < bindings.Count)
+                    for (int i = 0; i < bindings.Count; i++)
                     {
-                        action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                        if (i == backup.BindingIndex || bindings[i].path == backup.OriginalPath)
+                        {
+                            action.ChangeBinding(i).WithPath(backup.OriginalPath);
+                        }
                     }
-                    break;
                 }
             }
         }

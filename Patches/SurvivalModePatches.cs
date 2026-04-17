@@ -173,6 +173,20 @@ namespace SpiderSurge
         {
             if (__result)
             {
+                if (survivalConfig != null)
+                {
+                    Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
+                    Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
+                    Logger.LogInfo($"Budget - Start: {survivalConfig.startingBudget}, PerWave: {survivalConfig.budgetPerWave}, PerPlayer: {survivalConfig.budgetPerPlayer}");
+                    Logger.LogInfo($"Enemies:");
+                    foreach (var enemy in survivalConfig.enemies)
+                    {
+                        var name = enemy.enemyObject != null ? enemy.enemyObject.name : "Null";
+                        Logger.LogInfo($" - {name} | Cost: {enemy.cost} | Waves: {enemy.minWave}-{enemy.maxWave}");
+                    }
+                    Logger.LogInfo($"=====================================");
+                }
+
                 if (SurgeGameModeManager.Instance != null)
                 {
                     SurgeGameModeManager.Instance.ResetRun();
@@ -211,6 +225,30 @@ namespace SpiderSurge
             [HarmonyPostfix]
             public static void Postfix(int value)
             {
+                if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && value > 0)
+                {
+                    var config = SurvivalMode.instance.GetSurvivalConfig(-1);
+                    if (config != null)
+                    {
+                        float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;
+                        int minPotential = 0, maxPotential = 0;
+                        float minCost = float.MaxValue, maxCost = 0f;
+                        foreach (var e in config.enemies)
+                        {
+                            if (e.minWave <= value && (e.maxWave == 0 || e.maxWave >= value))
+                            {
+                                if (e.cost < minCost) minCost = e.cost;
+                                if (e.cost > maxCost) maxCost = e.cost;
+                            }
+                        }
+                        if (minCost != float.MaxValue && minCost > 0f) maxPotential = (int)(budget / minCost);
+                        if (maxCost > 0f) minPotential = (int)(budget / maxCost);
+
+                        Logger.LogInfo($"[SpiderSurge] --- Wave {value} Started ---");
+                        Logger.LogInfo($"[SpiderSurge] Budget: {budget} | Estimated amount of enemies that will spawn: {minPotential} to {maxPotential}");
+                    }
+                }
+
                 if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
                 {
                     // Reset cooldowns for all abilities for all active players

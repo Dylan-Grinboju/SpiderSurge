@@ -137,7 +137,6 @@ namespace SpiderSurge
         private float GetTrackedOriginalAmmo(Weapon weapon)
         {
             if (weapon == null) return 0f;
-            EnsureTrackedWeapon(weapon);
             return weapon == trackedWeapon ? trackedOriginalAmmo : 0f;
         }
 
@@ -244,6 +243,22 @@ namespace SpiderSurge
             trackedOriginalAmmo = 0f;
             lastResolvedWeapon = null;
             lastResolvedFrame = -1;
+        }
+
+        public static void HandleWeaponEquipped(SpiderWeaponManager manager, Weapon weapon)
+        {
+            if (manager == null || weapon == null) return;
+
+            PlayerInput playerInput = manager.GetComponentInParent<PlayerInput>();
+            if (playerInput == null) return;
+
+            if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability == null)
+                return;
+
+            if (!ability.isActive)
+                return;
+
+            ability.EnsureTrackedWeapon(weapon);
         }
 
         public static void HandleWeaponRemoved(SpiderWeaponManager manager, Weapon weapon)
