@@ -5,7 +5,10 @@
 
 *.instructions.md
 *.agent
-LocalTools/
+.agents
+.claude
+skills-lock.json
+Scripts/
 __pycache__/
 # User-specific files
 *.rsuser

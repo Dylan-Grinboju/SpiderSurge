@@ -31,6 +31,19 @@ namespace SpiderSurge
         }
     }
 
+    [HarmonyPatch(typeof(SpiderWeaponManager), "OnEquipWeapon")]
+    public class SpiderWeaponManager_OnEquipWeapon_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(SpiderWeaponManager __instance, Weapon weapon)
+        {
+            if (weapon != null)
+            {
+                AmmoAbility.HandleWeaponEquipped(__instance, weapon);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(SpiderWeaponManager), nameof(SpiderWeaponManager.UnEquipWeapon))]
     public class SpiderWeaponManager_UnEquipWeapon_Patch
     {
@@ -48,6 +61,20 @@ namespace SpiderSurge
         public static void Prefix(SpiderWeaponManager __instance)
         {
             AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.ammo), MethodType.Setter)]
+    public class Weapon_AmmoSetter_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(Weapon __instance, ref float value)
+        {
+            float floor = AmmoAbility.GetWeaponAmmoFloor(__instance);
+            if (floor >= 0f && value < floor)
+            {
+                value = floor;
+            }
         }
     }
 }

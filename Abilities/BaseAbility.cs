@@ -157,8 +157,7 @@ namespace SpiderSurge
 
         private IEnumerator WaitForInit()
         {
-            // Wait for components to be available
-            while (spiderHealthSystem == null || inputInterceptor == null)
+            while (spiderHealthSystem == null || inputInterceptor == null || !inputInterceptor.IsReady)
             {
                 if (playerController != null && spiderHealthSystem == null)
                 {
@@ -170,8 +169,7 @@ namespace SpiderSurge
                     inputInterceptor = GetComponentInParent<InputInterceptor>();
                 }
 
-                // If we have everything we need, we can stop waiting
-                if (spiderHealthSystem != null && inputInterceptor != null)
+                if (spiderHealthSystem != null && inputInterceptor != null && inputInterceptor.IsReady)
                 {
                     break;
                 }

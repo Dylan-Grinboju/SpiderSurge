@@ -58,6 +58,8 @@ namespace SpiderSurge.Patches
             menu.CreateParagraph(" • lorc\n");
             menu.CreateParagraph(" • pierre-leducq\n");
             menu.CreateParagraph("Licence CC BY 3.0 for the icons can be found here: https://creativecommons.org/licenses/by/3.0/");
+            menu.CreateParagraph("<size=120%>Special thanks to all the people that helped me test the mod a thousand times\n</size>");
+            menu.CreateParagraph("Adam, Eitan, Guy, Tal, Yoav and everyone else\n");
         }
 
         private static void ToggleSurgeMode(ModsMenuPopup menu)
