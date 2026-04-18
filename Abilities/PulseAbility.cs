@@ -222,7 +222,12 @@ namespace SpiderSurge
                 if (collider == null) continue;
                 if (collider.gameObject == gameObject) continue;
 
-                // Optimization: TryGetComponent on the object first (common case), fallback to Parent
+                PlayerController hitPlayerController = collider.GetComponentInParent<PlayerController>();
+                if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
+                {
+                    continue;
+                }
+
                 if (!collider.TryGetComponent<IDamageable>(out var damageable))
                 {
                     damageable = collider.GetComponentInParent<IDamageable>();
@@ -237,16 +242,12 @@ namespace SpiderSurge
                 Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
                 Vector2 force = direction * p.KnockBackStrength;
 
-                Rigidbody2D rb = collider.attachedRigidbody;
-
-                if (collider.CompareTag("PlayerRigidbody"))
+                if (collider.CompareTag("EnemyRigidbody") || collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
                 {
-                    PlayerController hitPlayerController = collider.transform.parent?.parent?.GetComponent<PlayerController>();
-                    if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
-                    {
-                        continue;
-                    }
+                    force *= Consts.Values.Pulse.EnemyKnockbackMultiplier;
                 }
+
+                Rigidbody2D rb = collider.attachedRigidbody;
 
                 // When deadly and within death radius, let the Explosion component handle damage
                 // (the stats mod tracks kills from Explosion.KnockBack automatically)

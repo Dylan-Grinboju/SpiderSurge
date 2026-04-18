@@ -149,6 +149,8 @@ namespace SpiderSurge
                 public const float UltimateBaseKnockbackStrength = 1200f;
                 public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
 
+                public const float EnemyKnockbackMultiplier = 2f;
+
                 //too cool perk
                 public const float UltimateBaseDeathRadius = 100f;
                 public const float UltimateDeathRadiusIncreasePerLevel = 30f;
