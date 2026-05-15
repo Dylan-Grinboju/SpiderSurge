@@ -69,10 +69,6 @@ namespace SpiderSurge
                 string key = modifier.data.key;
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
                 {
-                    if (value == 2 && PerksManager.Instance.GetPerkLevel(key) == 0)
-                    {
-                        PerksManager.Instance.SetPerkLevel(key, 1);
-                    }
                     PerksManager.Instance.SetPerkLevel(key, value);
                     PerksManager.Instance.OnSelected(key);
 

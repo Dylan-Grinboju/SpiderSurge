@@ -139,6 +139,14 @@ namespace SpiderSurge
 
             TelemetryConsentUI.ResetInstance();
 
+            var tutorialUi = GameObject.Find("TutorialUI");
+            if (tutorialUi != null)
+                Destroy(tutorialUi);
+
+            TutorialUI.ResetInstance();
+
+            InputInterceptor.ResetStaticState();
+
             Instance = null;
         }
     }

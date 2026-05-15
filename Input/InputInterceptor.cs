@@ -405,7 +405,10 @@ namespace SpiderSurge
                     {
                         playerInput.SwitchCurrentControlScheme(currentScheme, currentDevices);
                     }
-                    catch { }
+                    catch (System.Exception ex)
+                    {
+                        Logger.LogDebug($"[InputInterceptor] Restoring control scheme failed: {ex.Message}");
+                    }
                 }
             }
 
@@ -420,6 +423,11 @@ namespace SpiderSurge
         {
             playerInterceptors.TryGetValue(playerInput, out InputInterceptor interceptor);
             return interceptor;
+        }
+
+        public static void ResetStaticState()
+        {
+            playerInterceptors.Clear();
         }
     }
 }
