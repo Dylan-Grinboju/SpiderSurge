@@ -31,6 +31,7 @@ namespace SpiderSurge.Logging
         private DateTime _matchStartTime;
         private bool _isTracking = false;
         private int _currentWave = 0;
+        private static System.Reflection.FieldInfo[] _modifierManagerFields;
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -191,8 +192,11 @@ namespace SpiderSurge.Logging
             var modManager = FindObjectOfType<ModifierManager>();
             if (modManager != null)
             {
-                var fields = typeof(ModifierManager).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                foreach (var field in fields)
+                if (_modifierManagerFields == null)
+                {
+                    _modifierManagerFields = typeof(ModifierManager).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                }
+                foreach (var field in _modifierManagerFields)
                 {
                     if (typeof(List<Modifier>).IsAssignableFrom(field.FieldType) || typeof(Modifier[]).IsAssignableFrom(field.FieldType))
                     {

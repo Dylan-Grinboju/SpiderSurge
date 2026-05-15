@@ -214,17 +214,20 @@ namespace SpiderSurge
 
         public int GetPerkLevel(string perkName)
         {
-            return perkLevels.ContainsKey(perkName) ? perkLevels[perkName] : 0;
+            return perkLevels.TryGetValue(perkName, out int level) ? level : 0;
         }
 
         public bool IsAvailable(string perkName)
         {
-            if (!maxLevels.ContainsKey(perkName)) return false;
+            if (!maxLevels.TryGetValue(perkName, out int maxLevel)) return false;
             int level = GetPerkLevel(perkName);
-            if (level >= maxLevels[perkName]) return false;
-            foreach (var dep in dependencies[perkName])
+            if (level >= maxLevel) return false;
+            if (dependencies.TryGetValue(perkName, out var deps))
             {
-                if (GetPerkLevel(dep) == 0) return false;
+                foreach (var dep in deps)
+                {
+                    if (GetPerkLevel(dep) == 0) return false;
+                }
             }
 
             if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
@@ -268,7 +271,7 @@ namespace SpiderSurge
         public string GetDescription(string name) => Consts.Descriptions.GetDescription(name, this);
 
         public string GetUpgradeDescription(string name) => Consts.Descriptions.GetUpgradeDescription(name, this);
-        public int GetMaxLevel(string name) => maxLevels.ContainsKey(name) ? maxLevels[name] : 1;
+        public int GetMaxLevel(string name) => maxLevels.TryGetValue(name, out int level) ? level : 1;
 
         public void SetPerkLevel(string perkKey, int level)
         {
