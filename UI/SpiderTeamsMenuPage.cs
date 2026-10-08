@@ -132,6 +132,8 @@ namespace SpiderTeams
                 AddRoster(manager, locked);
             }
 
+            AddSurge();
+
             AddSpacer();
             AddCheckbox("Check for updates", ModConfig.CheckForUpdates, ModConfig.SetCheckForUpdates);
             AddButton("Reload from file", ModConfig.ReloadFromFile);
@@ -179,6 +181,72 @@ namespace SpiderTeams
                 AddButton("Shuffle teams", () => manager.Shuffle());
                 AddButton("Balance teams", () => manager.Balance());
             }
+        }
+
+        private void AddSurge()
+        {
+            AddSpacer();
+            AddParagraph("<size=130%><b>SpiderSurge abilities</b></size>");
+            if (!SurgeBridge.Installed)
+            {
+                AddParagraph(Note("Install SpiderSurge to give everyone one of its abilities in versus."));
+                return;
+            }
+            if (!SurgeBridge.Available)
+            {
+                AddParagraph(Warning("This SpiderSurge version can't be used, so its abilities stay off in versus."));
+                return;
+            }
+
+            AddCheckbox("Surge abilities in versus", ModConfig.SurgeEnabled, ModConfig.SetSurgeEnabled);
+            if (!ModConfig.SurgeEnabled)
+            {
+                AddParagraph(Note("Turn this on to give every player the same Surge ability in versus."));
+                return;
+            }
+
+            int ability = (int)ModConfig.SurgeAbility;
+            bool random = ModConfig.SurgeAbility == SurgeAbility.Random;
+            AddButton($"Ability: {Consts.Surge.AbilityNames[ability]}", CycleSurgeAbility);
+            AddParagraph(Note(random ? Consts.Surge.AbilityDescriptions[ability] : Consts.Surge.AbilityDescriptions[ability] + " Everyone gets it."));
+            if (random && SurgeVersus.RoundActive && SurgeVersus.CurrentAbility >= 0)
+            {
+                AddParagraph(Note($"This round: {Consts.Surge.AbilityNames[SurgeVersus.CurrentAbility]}"));
+            }
+
+            AddCheckbox(random ? "Ultimates" : $"Ultimate: {Consts.Surge.UltimateNames[ability]}", ModConfig.SurgeUltimate, ModConfig.SetSurgeUltimate);
+            if (ModConfig.SurgeUltimate && !random)
+            {
+                AddParagraph(Note(Consts.Surge.UltimateDescriptions[ability]));
+            }
+
+            AddButton($"{Consts.Surge.CooldownName}: {PerkLevel(ModConfig.SurgeCooldown)}", () => ModConfig.SetSurgeCooldown(NextPerkLevel(ModConfig.SurgeCooldown)));
+            AddParagraph(Note(Consts.Surge.CooldownDescription));
+            AddButton($"{Consts.Surge.DurationNames[ability]}: {PerkLevel(ModConfig.SurgeDuration)}", () => ModConfig.SetSurgeDuration(NextPerkLevel(ModConfig.SurgeDuration)));
+            AddParagraph(Note(Consts.Surge.DurationDescription));
+            AddCheckbox(Consts.Surge.ShortTermName, ModConfig.SurgeShortTerm, ModConfig.SetSurgeShortTerm);
+            AddParagraph(Note(Consts.Surge.ShortTermDescription));
+            AddCheckbox(Consts.Surge.LongTermName, ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
+            AddParagraph(Note(Consts.Surge.LongTermDescription));
+
+            AddParagraph(Note("Ability: Q or L1 (hold Start and double-tap a button to remap it). Ultimate: C, or L3 and R3 together. Changes apply from the next round."));
+            AddParagraph(Note("Abilities only work for players on the host's machine, so a match with anyone online plays without them."));
+        }
+
+        private static void CycleSurgeAbility()
+        {
+            int next = ((int)ModConfig.SurgeAbility + 1) % Consts.Surge.AbilityConfigNames.Length;
+            ModConfig.SetSurgeAbility((SurgeAbility)next);
+        }
+
+        private static string PerkLevel(int level)
+        {
+            return level == 0 ? "Off" : "Level " + level;
+        }
+
+        private static int NextPerkLevel(int level)
+        {
+            return (level + 1) % (Consts.Surge.MaxPerkLevel + 1);
         }
 
         private static void MovePlayer(PlayerController player)

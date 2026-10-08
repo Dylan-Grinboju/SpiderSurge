@@ -18,7 +18,14 @@ namespace SpiderTeams
             public bool Important;
         }
 
+        private struct Delayed
+        {
+            public float Due;
+            public Pending Item;
+        }
+
         private static readonly Queue<Pending> _queue = new Queue<Pending>();
+        private static readonly List<Delayed> _delayed = new List<Delayed>();
         private static readonly Dictionary<int, float> _pickDue = new Dictionary<int, float>();
         private static readonly List<int> _duePicks = new List<int>();
         private static float _nextSend;
@@ -34,6 +41,14 @@ namespace SpiderTeams
             Enqueue(term, args, color, important);
         }
 
+        public static void BroadcastLater(string text, Color color, bool important, float delay)
+        {
+            if (!string.IsNullOrEmpty(text))
+            {
+                _delayed.Add(new Delayed { Due = Time.unscaledTime + delay, Item = new Pending { Text = text, Color = color, Important = important } });
+            }
+        }
+
         public static void QueuePick(int playerId)
         {
             _pickDue[playerId] = Time.unscaledTime + Consts.Timing.PickAnnounceDebounce;
@@ -47,6 +62,7 @@ namespace SpiderTeams
         public static void Clear()
         {
             _queue.Clear();
+            _delayed.Clear();
             _pickDue.Clear();
         }
 
@@ -58,6 +74,10 @@ namespace SpiderTeams
                 if (_pickDue.Count > 0)
                 {
                     FlushPicks(now);
+                }
+                if (_delayed.Count > 0)
+                {
+                    FlushDelayed(now);
                 }
 
                 if (_queue.Count == 0 || now < _nextSend)
@@ -111,6 +131,19 @@ namespace SpiderTeams
 
                 int team = manager.GetTeam(player);
                 Broadcast($"{TeamManager.RichName(player)} joined {TeamPalette.TeamName(team)}", TeamPalette.TeamColor(team), false);
+            }
+        }
+
+        private static void FlushDelayed(float now)
+        {
+            for (int i = 0; i < _delayed.Count; i++)
+            {
+                if (now >= _delayed[i].Due)
+                {
+                    Pending item = _delayed[i].Item;
+                    _delayed.RemoveAt(i--);
+                    Enqueue(item.Text, item.Args, item.Color, item.Important);
+                }
             }
         }
 

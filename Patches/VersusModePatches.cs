@@ -18,6 +18,7 @@ namespace SpiderTeams
                 {
                     manager.BeginMatch();
                 }
+                SurgeVersus.OnMatchStarted();
             }
             catch (Exception ex)
             {
@@ -41,10 +42,12 @@ namespace SpiderTeams
                 }
 
                 manager.OnRoundStarting();
-                if (TeamVisuals.Instance != null && !ReflectionCache.IsWaitingRoom(__instance))
+                bool waitingRoom = ReflectionCache.IsWaitingRoom(__instance);
+                if (TeamVisuals.Instance != null && !waitingRoom)
                 {
                     TeamVisuals.Instance.ApplyBeforeSpawn();
                 }
+                SurgeVersus.OnRoundStarting(__instance, waitingRoom);
             }
             catch (Exception ex)
             {
@@ -170,6 +173,7 @@ namespace SpiderTeams
                 {
                     TeamVisuals.Instance.RestoreAll();
                 }
+                SurgeVersus.Stop();
             }
             catch (Exception ex)
             {

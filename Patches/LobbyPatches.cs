@@ -24,6 +24,7 @@ namespace SpiderTeams
                     return;
                 }
 
+                SurgeVersus.Stop();
                 var manager = TeamManager.Instance;
                 if (manager != null)
                 {

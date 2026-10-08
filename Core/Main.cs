@@ -7,7 +7,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderTeams
 {
-    [SilkMod(SpiderTeamsMod.ModName, new string[] { "Dylan" }, "0.1.0", "0.7.0", SpiderTeamsMod.ModId, 1)]
+    [SilkMod(SpiderTeamsMod.ModName, new string[] { "Dylan" }, "0.2.0", "0.7.0", SpiderTeamsMod.ModId, 1)]
     public class SpiderTeamsMod : SilkMod
     {
         public const string ModName = "SpiderTeams";
@@ -29,7 +29,9 @@ namespace SpiderTeams
             }
         }
 
-        private Harmony _harmony;
+        private static Harmony _harmony;
+
+        public static Harmony Harmony => _harmony;
 
         public override void Initialize()
         {
@@ -54,6 +56,7 @@ namespace SpiderTeams
                     TeamVisuals.Instance.RestoreAll();
                 }
                 LobbyLabel.Restore();
+                SurgeVersus.Stop();
             }
             catch (Exception ex)
             {
@@ -62,6 +65,7 @@ namespace SpiderTeams
 
             (_harmony ?? new Harmony(Consts.HarmonyId)).UnpatchSelf();
             _harmony = null;
+            SurgeBridge.Reset();
 
             GameObject manager = TeamManager.Instance != null ? TeamManager.Instance.gameObject : GameObject.Find(Consts.ManagerObjectName);
             if (manager != null)
@@ -98,6 +102,11 @@ namespace SpiderTeams
             _harmony = new Harmony(Consts.HarmonyId);
             foreach (Type type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
             {
+                if (Array.IndexOf(SurgePatches.Classes, type) >= 0)
+                {
+                    continue;
+                }
+
                 try
                 {
                     _harmony.CreateClassProcessor(type).Patch();
