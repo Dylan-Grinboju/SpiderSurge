@@ -1,0 +1,225 @@
+using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using Logger = Silk.Logger;
+
+namespace SpiderTeams
+{
+    // Global actions on the configured buttons; the pressing device tells which local player picked.
+    public class LobbyTeamPicker : MonoBehaviour
+    {
+        private InputAction _gamepadAction;
+        private InputAction _keyboardAction;
+        private string _gamepadPath;
+        private string _keyboardPath;
+        private bool _active;
+        private bool _checkedBindings;
+
+        private void OnEnable()
+        {
+            ModConfig.Changed += Rebuild;
+            Rebuild();
+        }
+
+        private void OnDisable()
+        {
+            ModConfig.Changed -= Rebuild;
+            DisposeActions();
+        }
+
+        private void Update()
+        {
+            var manager = TeamManager.Instance;
+            bool wanted = manager != null && !manager.MatchLocked && ModConfig.TeamsEnabled && LobbyController.inLobby && TeamManager.IsHost;
+            if (wanted == _active)
+            {
+                return;
+            }
+
+            _active = wanted;
+            SetEnabled(_gamepadAction, wanted);
+            SetEnabled(_keyboardAction, wanted);
+            if (wanted && !_checkedBindings)
+            {
+                CheckBindings();
+            }
+        }
+
+        // Warns when a team button is also one of the game's own bindings, and lists them all at debug level.
+        private void CheckBindings()
+        {
+            try
+            {
+                foreach (PlayerInput input in PlayerInput.all)
+                {
+                    if (input == null || input.actions == null)
+                    {
+                        continue;
+                    }
+
+                    _checkedBindings = true;
+                    foreach (InputAction action in input.actions)
+                    {
+                        foreach (InputBinding binding in action.bindings)
+                        {
+                            string path = binding.effectivePath;
+                            if (string.IsNullOrEmpty(path))
+                            {
+                                continue;
+                            }
+
+                            Logger.LogDebug($"SpiderTeams: game binding {action.name} = {path}");
+                            if (SamePath(path, _gamepadPath) || SamePath(path, _keyboardPath))
+                            {
+                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button on the Mods page if they clash");
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _checkedBindings = true;
+                Logger.LogWarning($"SpiderTeams could not read the game's bindings: {ex.Message}");
+            }
+        }
+
+        private static bool SamePath(string a, string b)
+        {
+            return !string.IsNullOrEmpty(b) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void Rebuild()
+        {
+            if (_gamepadPath == ModConfig.CycleTeamGamepad && _keyboardPath == ModConfig.CycleTeamKeyboard)
+            {
+                return;
+            }
+
+            DisposeActions();
+            _gamepadPath = ModConfig.CycleTeamGamepad;
+            _keyboardPath = ModConfig.CycleTeamKeyboard;
+            _gamepadAction = CreateAction("SpiderTeamsCycleGamepad", _gamepadPath);
+            _keyboardAction = CreateAction("SpiderTeamsCycleKeyboard", _keyboardPath);
+            _active = false;
+            _checkedBindings = false;
+        }
+
+        private InputAction CreateAction(string name, string path)
+        {
+            if (string.IsNullOrEmpty(path) || path == Consts.Bindings.None)
+            {
+                return null;
+            }
+
+            try
+            {
+                var action = new InputAction(name, InputActionType.Button, path);
+                action.performed += OnPerformed;
+                return action;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"SpiderTeams could not bind '{path}': {ex.Message}");
+                return null;
+            }
+        }
+
+        private void DisposeActions()
+        {
+            DisposeAction(_gamepadAction);
+            DisposeAction(_keyboardAction);
+            _gamepadAction = null;
+            _keyboardAction = null;
+            _gamepadPath = null;
+            _keyboardPath = null;
+            _active = false;
+        }
+
+        private void DisposeAction(InputAction action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            try
+            {
+                action.performed -= OnPerformed;
+                action.Disable();
+                action.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"SpiderTeams could not release an input action: {ex.Message}");
+            }
+        }
+
+        private static void SetEnabled(InputAction action, bool enabled)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                action.Enable();
+            }
+            else
+            {
+                action.Disable();
+            }
+        }
+
+        private static void OnPerformed(InputAction.CallbackContext context)
+        {
+            try
+            {
+                var game = GameController.instance;
+                var manager = TeamManager.Instance;
+                if (manager == null || manager.MatchLocked || (game != null && !game.acceptingInputs))
+                {
+                    return;
+                }
+
+                InputDevice device = context.control != null ? context.control.device : null;
+                PlayerController player = FindLocalPlayer(device);
+                if (player != null && manager.CycleTeam(player))
+                {
+                    Announcements.QueuePick(player.playerID.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams team pick failed: {ex}");
+            }
+        }
+
+        private static PlayerController FindLocalPlayer(InputDevice device)
+        {
+            if (device == null)
+            {
+                return null;
+            }
+
+            foreach (PlayerInput input in PlayerInput.all)
+            {
+                if (input == null)
+                {
+                    continue;
+                }
+
+                foreach (InputDevice owned in input.devices)
+                {
+                    if (owned == device)
+                    {
+                        return input.GetComponentInChildren<PlayerController>();
+                    }
+                }
+            }
+            return null;
+        }
+    }
+}
