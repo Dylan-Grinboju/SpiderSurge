@@ -80,11 +80,16 @@ namespace SpiderTeams
     [HarmonyPatch(typeof(Explosion), "KnockBack")]
     public static class Explosion_KnockBack_Patch
     {
+        // An explosion set off inside another attack, like the Pulse ultimate's, belongs to that attacker.
         [HarmonyPrefix]
         [HarmonyPriority(Priority.First)]
         public static void Prefix(Explosion __instance, out bool __state)
         {
-            __state = PatchScopes.EnterAttack(__instance, explosion => ExplosionOwners.Resolve(explosion));
+            __state = PatchScopes.EnterAttack(__instance, explosion =>
+            {
+                int owner = ExplosionOwners.Resolve(explosion);
+                return owner != OwnerRegistry.Unknown ? owner : DamageContext.Current;
+            });
         }
 
         [HarmonyFinalizer]

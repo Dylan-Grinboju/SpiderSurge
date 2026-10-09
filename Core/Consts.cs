@@ -20,6 +20,13 @@ namespace SpiderTeams
             public const string CycleTeamGamepad = "input.cycleTeamGamepad";
             public const string CycleTeamKeyboard = "input.cycleTeamKeyboard";
             public const string CheckForUpdates = "updater.checkForUpdates";
+            public const string SurgeEnabled = "surge.enabled";
+            public const string SurgeAbility = "surge.ability";
+            public const string SurgeUltimate = "surge.ultimate";
+            public const string SurgeCooldown = "surge.abilityCooldown";
+            public const string SurgeDuration = "surge.abilityDuration";
+            public const string SurgeShortTerm = "surge.shortTermInvestment";
+            public const string SurgeLongTerm = "surge.longTermInvestment";
         }
 
         public static class Defaults
@@ -33,6 +40,13 @@ namespace SpiderTeams
             public const string CycleTeamGamepad = "<Gamepad>/buttonNorth";
             public const string CycleTeamKeyboard = "<Keyboard>/t";
             public const bool CheckForUpdates = true;
+            public const bool SurgeEnabled = false;
+            public const string SurgeAbility = "pulse";
+            public const bool SurgeUltimate = false;
+            public const int SurgeCooldown = 0;
+            public const int SurgeDuration = 0;
+            public const bool SurgeShortTerm = false;
+            public const bool SurgeLongTerm = false;
 
             public static readonly KeyValuePair<string, object>[] Flat =
             {
@@ -45,6 +59,13 @@ namespace SpiderTeams
                 new KeyValuePair<string, object>(Keys.CycleTeamGamepad, CycleTeamGamepad),
                 new KeyValuePair<string, object>(Keys.CycleTeamKeyboard, CycleTeamKeyboard),
                 new KeyValuePair<string, object>(Keys.CheckForUpdates, CheckForUpdates),
+                new KeyValuePair<string, object>(Keys.SurgeEnabled, SurgeEnabled),
+                new KeyValuePair<string, object>(Keys.SurgeAbility, SurgeAbility),
+                new KeyValuePair<string, object>(Keys.SurgeUltimate, SurgeUltimate),
+                new KeyValuePair<string, object>(Keys.SurgeCooldown, SurgeCooldown),
+                new KeyValuePair<string, object>(Keys.SurgeDuration, SurgeDuration),
+                new KeyValuePair<string, object>(Keys.SurgeShortTerm, SurgeShortTerm),
+                new KeyValuePair<string, object>(Keys.SurgeLongTerm, SurgeLongTerm),
             };
 
             // Silk copies defaults shallowly and edits nested maps in place, so every load needs fresh dictionaries.
@@ -69,6 +90,53 @@ namespace SpiderTeams
                 }
                 return root;
             }
+        }
+
+        public static class Surge
+        {
+            public const int MaxPerkLevel = 2;
+            public const float AnnounceDelay = 2.5f;
+            public const string Color = "#00FFFF";
+
+            // Index order matches SurgeAbility.
+            public static readonly string[] AbilityConfigNames = { "immune", "ammo", "pulse", "storage", "random" };
+            public static readonly string[] AbilityPerks = { "immune", "ammo", "pulse", "storage" };
+            public static readonly string[] UltimatePerks = { "immuneUltimate", "ammoUltimate", "pulseUltimate", "storageUltimate" };
+            public static readonly string[] AbilityNames = { "Null Field", "Bottomless Clip", "Kinetic Pulse", "Pocket Dimension", "Random" };
+            public static readonly string[] UltimateNames = { "Neural Backup", "Care Package", "Thermal Detonation", "Pocket Dimension^2" };
+
+            public static readonly string[] AbilityDescriptions =
+            {
+                "Become immune to all damage for a short time.",
+                "Shooting uses no ammo for a short time.",
+                "Release a pulse that knocks back everyone nearby.",
+                "Store your weapon and swap it back later.",
+                "A new ability every round, the same for everyone.",
+            };
+
+            public static readonly string[] UltimateDescriptions =
+            {
+                "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
+                "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
+                "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
+                "Adds a second storage slot (3x cooldown).",
+            };
+
+            public const string CooldownPerk = "abilityCooldown";
+            public const string DurationPerk = "abilityDuration";
+            public const string ShortTermPerk = "shortTermInvestment";
+            public const string LongTermPerk = "longTermInvestment";
+            public const string CooldownName = "Ability Cooldown";
+            public const string ShortTermName = "Short Term Investment";
+            public const string LongTermName = "Long Term Investment";
+
+            // The Duration perk is renamed for the abilities where it changes something other than time.
+            public static readonly string[] DurationNames = { "Ability Duration", "Ability Duration", "Bigger Pulse", "Faster Retrieval", "Ability Duration" };
+
+            public const string CooldownDescription = "Level 1 shortens the ability's cooldown, level 2 also the ultimate's.";
+            public const string DurationDescription = "Level 1 strengthens the ability, level 2 also the ultimate.";
+            public const string ShortTermDescription = "Buffs the ability's duration and cooldown, but nerfs the ultimate's.";
+            public const string LongTermDescription = "Buffs the ultimate's duration and cooldown, but nerfs the ability's.";
         }
 
         public static class Bindings

@@ -13,6 +13,15 @@ namespace SpiderTeams
         Damage
     }
 
+    public enum SurgeAbility
+    {
+        Immune,
+        Ammo,
+        Pulse,
+        Storage,
+        Random
+    }
+
     public static class ModConfig
     {
         private const string ModId = SpiderTeamsMod.ModId;
@@ -29,6 +38,13 @@ namespace SpiderTeams
         public static string CycleTeamGamepad { get; private set; } = Consts.Defaults.CycleTeamGamepad;
         public static string CycleTeamKeyboard { get; private set; } = Consts.Defaults.CycleTeamKeyboard;
         public static bool CheckForUpdates { get; private set; } = Consts.Defaults.CheckForUpdates;
+        public static bool SurgeEnabled { get; private set; } = Consts.Defaults.SurgeEnabled;
+        public static SurgeAbility SurgeAbility { get; private set; } = DefaultSurgeAbility;
+        public static bool SurgeUltimate { get; private set; } = Consts.Defaults.SurgeUltimate;
+        public static int SurgeCooldown { get; private set; } = Consts.Defaults.SurgeCooldown;
+        public static int SurgeDuration { get; private set; } = Consts.Defaults.SurgeDuration;
+        public static bool SurgeShortTerm { get; private set; } = Consts.Defaults.SurgeShortTerm;
+        public static bool SurgeLongTerm { get; private set; } = Consts.Defaults.SurgeLongTerm;
 
         public static string ConfigPath => Config.GetModConfigPath(ModId);
 
@@ -65,6 +81,48 @@ namespace SpiderTeams
         public static void SetCycleTeamGamepad(string path) => Set(Consts.Keys.CycleTeamGamepad, path);
         public static void SetCycleTeamKeyboard(string path) => Set(Consts.Keys.CycleTeamKeyboard, path);
         public static void SetCheckForUpdates(bool value) => Set(Consts.Keys.CheckForUpdates, value);
+        public static void SetSurgeEnabled(bool value) => Set(Consts.Keys.SurgeEnabled, value);
+        public static void SetSurgeAbility(SurgeAbility value) => Set(Consts.Keys.SurgeAbility, SurgeAbilityName(value));
+        public static void SetSurgeUltimate(bool value) => Set(Consts.Keys.SurgeUltimate, value);
+        public static void SetSurgeCooldown(int value) => Set(Consts.Keys.SurgeCooldown, ClampPerk(value));
+        public static void SetSurgeDuration(int value) => Set(Consts.Keys.SurgeDuration, ClampPerk(value));
+        public static void SetSurgeShortTerm(bool value) => Set(Consts.Keys.SurgeShortTerm, value);
+        public static void SetSurgeLongTerm(bool value) => Set(Consts.Keys.SurgeLongTerm, value);
+
+        public static int ClampPerk(int value)
+        {
+            return Math.Max(0, Math.Min(Consts.Surge.MaxPerkLevel, value));
+        }
+
+        public static string SurgeAbilityName(SurgeAbility ability)
+        {
+            return Consts.Surge.AbilityConfigNames[(int)ability];
+        }
+
+        public static bool TryParseSurgeAbility(string raw, out SurgeAbility ability)
+        {
+            string name = (raw ?? string.Empty).Trim();
+            for (int i = 0; i < Consts.Surge.AbilityConfigNames.Length; i++)
+            {
+                if (name.Equals(Consts.Surge.AbilityConfigNames[i], StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals(Consts.Surge.AbilityNames[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    ability = (SurgeAbility)i;
+                    return true;
+                }
+            }
+            ability = default(SurgeAbility);
+            return false;
+        }
+
+        private static SurgeAbility DefaultSurgeAbility
+        {
+            get
+            {
+                int index = Array.IndexOf(Consts.Surge.AbilityConfigNames, Consts.Defaults.SurgeAbility);
+                return index >= 0 ? (SurgeAbility)index : SurgeAbility.Random;
+            }
+        }
 
         public static int ClampTeams(int value)
         {
@@ -120,6 +178,13 @@ namespace SpiderTeams
             CycleTeamGamepad = ReadBinding(Consts.Keys.CycleTeamGamepad, Consts.Defaults.CycleTeamGamepad);
             CycleTeamKeyboard = ReadBinding(Consts.Keys.CycleTeamKeyboard, Consts.Defaults.CycleTeamKeyboard);
             CheckForUpdates = ReadBool(Consts.Keys.CheckForUpdates, Consts.Defaults.CheckForUpdates);
+            SurgeEnabled = ReadBool(Consts.Keys.SurgeEnabled, Consts.Defaults.SurgeEnabled);
+            SurgeAbility = ReadSurgeAbility();
+            SurgeUltimate = ReadBool(Consts.Keys.SurgeUltimate, Consts.Defaults.SurgeUltimate);
+            SurgeCooldown = ReadPerkLevel(Consts.Keys.SurgeCooldown, Consts.Defaults.SurgeCooldown);
+            SurgeDuration = ReadPerkLevel(Consts.Keys.SurgeDuration, Consts.Defaults.SurgeDuration);
+            SurgeShortTerm = ReadBool(Consts.Keys.SurgeShortTerm, Consts.Defaults.SurgeShortTerm);
+            SurgeLongTerm = ReadBool(Consts.Keys.SurgeLongTerm, Consts.Defaults.SurgeLongTerm);
             RaiseChanged();
         }
 
@@ -214,6 +279,46 @@ namespace SpiderTeams
                 Warn(Consts.Keys.FriendlyFire, raw, "is not push, ignore or damage, using push");
             }
             return mode;
+        }
+
+        private static SurgeAbility ReadSurgeAbility()
+        {
+            string raw = ReadRaw(Consts.Keys.SurgeAbility);
+            if (raw == null)
+            {
+                return DefaultSurgeAbility;
+            }
+
+            SurgeAbility ability;
+            if (!TryParseSurgeAbility(raw, out ability))
+            {
+                Warn(Consts.Keys.SurgeAbility, raw, $"is not {string.Join(", ", Consts.Surge.AbilityConfigNames)}, using {Consts.Defaults.SurgeAbility}");
+                return DefaultSurgeAbility;
+            }
+            return ability;
+        }
+
+        private static int ReadPerkLevel(string key, int fallback)
+        {
+            string raw = ReadRaw(key);
+            if (raw == null)
+            {
+                return fallback;
+            }
+
+            int value;
+            if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            {
+                Warn(key, raw, $"is not a whole number, using {fallback}");
+                return fallback;
+            }
+
+            int clamped = ClampPerk(value);
+            if (clamped != value)
+            {
+                Warn(key, raw, $"must be 0-{Consts.Surge.MaxPerkLevel}, using {clamped}");
+            }
+            return clamped;
         }
 
         private static string ReadBinding(string key, string fallback)

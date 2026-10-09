@@ -13,6 +13,7 @@ A team versus mod for Spiderheck. Split the lobby into teams and fight it out: a
 - **Team Visuals**: Recolor spiders in their team's color, show a team marker above each spider, both, or neither.
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
 - **Team Win Screen**: The win screen and the lobby summary show each team's score and members.
+- **SpiderSurge Abilities**: With [SpiderSurge](https://github.com/Dylan-Grinboju/SpiderSurge) installed, give every spider the same Surge ability in versus, with its ultimate and perks if you like.
 - **In-Game Settings**: Every setting can be changed from the Mods menu, including moving players between teams.
 - **Automation**: Includes an integrated mod updater to notify you when a new version is available.
 
@@ -48,6 +49,32 @@ Team versus is on as soon as the mod is installed. You can turn it off from the 
 - Hitting yourself always works as normal, so your own grenade can still kill you.
 - If the mod can't tell who caused a hit, the hit works as normal. A gap in the tracking will never save someone from a real kill.
 
+## SpiderSurge Abilities
+
+If [SpiderSurge](https://github.com/Dylan-Grinboju/SpiderSurge) is installed, versus can use its abilities. Turn on **Surge abilities in versus** on the mod's page; it is off by default. It works in normal free-for-all versus too, not only with teams.
+
+- Everyone gets the same ability. Pick one, or **Random** for a new one every round, never the same one twice in a row. The ability is announced at the start of the match, and every round in Random mode.
+- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in SpiderSurge. To move your ability to another button, hold **Start** and double-tap that button.
+- Each round starts fresh, so stored weapons don't carry over.
+- Changes on the mod's page apply from the next round.
+
+| Ability | What it does | Ultimate |
+|---|---|---|
+| Null Field | Become immune to all damage for a short time | **Neural Backup**: After a cast time, revive a dead teammate next to you. With nobody to revive, it summons friendly wasps, which only chase AI enemies |
+| Bottomless Clip | Shooting uses no ammo for a short time | **Care Package**: Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2 |
+| Kinetic Pulse | Release a pulse that knocks back everyone nearby | **Thermal Detonation**: The pulse kills anyone close to you. Teammates follow the friendly fire rule |
+| Pocket Dimension | Store your weapon and swap it back later | **Pocket Dimension^2**: Adds a second storage slot (3x cooldown) |
+
+The perks work like in SpiderSurge, and everyone gets the same ones:
+
+- **Ultimate**: Everyone also gets the ability's ultimate.
+- **Ability Cooldown**: Level 1 shortens the ability's cooldown, level 2 also the ultimate's.
+- **Ability Duration**: Level 1 strengthens the ability, level 2 also the ultimate. With Kinetic Pulse it's called **Bigger Pulse**, and with Pocket Dimension **Faster Retrieval**.
+- **Short Term Investment**: Buffs the ability's duration and cooldown, but nerfs the ultimate's.
+- **Long Term Investment**: Buffs the ultimate's duration and cooldown, but nerfs the ability's.
+
+SpiderSurge only runs abilities for players on the host's PC, so a match with an online player plays without them, and a message says so when it starts.
+
 ## How to configure the Mod
 
 ### From the Mods menu:
@@ -58,7 +85,7 @@ Open the **Mods** menu and pick **SpiderTeams**. The page has every setting from
 - **Reload from file**, to pick up edits to the Yaml file without restarting the game.
 - **Reset to defaults**.
 
-Changes apply right away and are saved to the Yaml file. Team versus, the team count and the team list are locked while a match is running.
+Changes apply right away and are saved to the Yaml file. Team versus, the team count and the team list are locked while a match is running. The SpiderSurge settings only show when SpiderSurge is installed.
 
 ### Using the Yaml file:
 
@@ -94,6 +121,23 @@ You can use both, one, or neither. With both off, teams only show in the announc
 
 The Mods menu cycles through a few presets: Y, L3, R3 or Select on a controller, and T, G, R or Tab on the keyboard. In the file you can use any Unity Input System path, such as `<Keyboard>/y`, or `none` to turn the button off.
 
+### SpiderSurge:
+These only matter when SpiderSurge is installed. See [SpiderSurge Abilities](#spidersurge-abilities).
+
+`surge.enabled`: Gives every spider the same SpiderSurge ability in versus. Default: `false`.
+
+`surge.ability`: The ability everyone gets: `immune` (Null Field), `ammo` (Bottomless Clip), `pulse` (Kinetic Pulse), `storage` (Pocket Dimension), or `random` for a new one every round. The ability's name works too, such as `Null Field`. Default: `pulse`.
+
+`surge.ultimate`: Also gives everyone the ability's ultimate. Default: `false`.
+
+`surge.abilityCooldown`: The Ability Cooldown perk level, from `0` (off) to `2`. Default: `0`.
+
+`surge.abilityDuration`: The Ability Duration perk level, from `0` (off) to `2`. Default: `0`.
+
+`surge.shortTermInvestment`: Gives everyone the Short Term Investment perk. Default: `false`.
+
+`surge.longTermInvestment`: Gives everyone the Long Term Investment perk. Default: `false`.
+
 ### Updater:
 `updater.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
@@ -106,12 +150,13 @@ SpiderTeams runs on the host. Couch games on one PC always count as hosting, so 
 - **You host with the mod**: The team rules, friendly fire and team spawns apply to everyone. Players without the mod still see the team colors, the announcements and the right scores, but their win screen may name only one player from the winning team. For now, the team marker only shows on the host's PC.
 - **Someone else hosts**: The mod does nothing. When a match starts, it shows a one-time message that teams only apply when you host.
 - Online players can't use the team button yet. The host picks their team from the Mods menu.
+- SpiderSurge abilities only work for players on the host's PC, so they are off for any match with an online player.
 - Like other gameplay mods, SpiderTeams makes Silk turn off leaderboard score uploads for the session.
 
 ## Compatibility
 
 - **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Supported. Nothing in SpiderTeams assumes 4 players, and team spawns use the extra spawn points it adds.
-- **[SpiderSurge](https://github.com/Dylan-Grinboju/SpiderSurge)**: Can be installed alongside. SpiderTeams only changes versus and SpiderSurge only changes survival, so they stay out of each other's way. Proper support is planned.
+- **[SpiderSurge](https://github.com/Dylan-Grinboju/SpiderSurge)**: Supported. Its abilities can be used in versus, see [SpiderSurge Abilities](#spidersurge-abilities). Survival with SpiderSurge is unchanged. Built for SpiderSurge 0.3.2.
 - **[SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod)**: Can be installed alongside. SpiderStats doesn't know about teams yet, so it counts every kill on another player as a friendly kill, and it may count a teammate's hit as a kill even when SpiderTeams turned it into a push.
 
 ## Notes and disclaimers
@@ -124,7 +169,7 @@ SpiderTeams runs on the host. Couch games on one PC always count as hosting, so 
 
 ## The Future
 
-- SpiderSurge support
+- SpiderSurge abilities for online players
 - Sharing the teams with online players who have the mod, so they can pick their own team and see the markers and the team win screen
 - Giving a player who joins in the middle of a match their team's score
 - SpiderStats integration, so it can tell teammate kills from enemy kills
