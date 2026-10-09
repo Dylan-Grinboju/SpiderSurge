@@ -119,7 +119,7 @@ namespace SpiderTeams
                 "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
                 "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
                 "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
-                "Adds a second storage slot.",
+                "Adds a second storage slot (3x cooldown).",
             };
 
             public const string CooldownPerk = "abilityCooldown";
