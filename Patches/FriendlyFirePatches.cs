@@ -176,7 +176,7 @@ namespace SpiderTeams
         }
 
         // The ignore list holds the shooter, or the force field that reflected the shot.
-        private static int Owner(RailShot shot)
+        internal static int Owner(RailShot shot)
         {
             List<GameObject> ignore = shot.ignore;
             if (ignore != null)
