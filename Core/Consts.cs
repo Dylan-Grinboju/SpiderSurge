@@ -159,6 +159,7 @@ namespace SpiderTeams
             public const float RecolorSendCooldown = 1f;
             public const float MarkerSyncInterval = 0.25f;
             public const float PickAnnounceDebounce = 0.6f;
+            public const float PickAnnounceMaxWait = 2f;
             public const float AnnounceSpacing = 0.1f;
             public const float LobbyLabelInterval = 1f;
             public const float ExplosionMatchWindow = 2f;
