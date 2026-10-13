@@ -14,6 +14,7 @@ namespace SpiderSurge
         private readonly Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = new Dictionary<string, System.Action<InputAction.CallbackContext>>();
         private readonly Dictionary<string, InputAction> customActions = new Dictionary<string, InputAction>();
         private readonly Dictionary<string, BaseAbility> registeredAbilities = new Dictionary<string, BaseAbility>();
+        private readonly HashSet<InputControl> heldControls = new HashSet<InputControl>();
         public static IEnumerable<PlayerInput> ActivePlayerInputs => playerInterceptors.Keys.Where(p => p != null);
 
         // Store original bindings to restore them later
@@ -252,12 +253,35 @@ namespace SpiderSurge
                 if (overriddenActions.TryGetValue(key, out var callback))
                 {
                     customAction.performed -= callback;
+                    customAction.canceled -= callback;
                 }
                 customAction.Disable();
                 customAction.Dispose();
             }
             customActions.Remove(key);
             overriddenActions.Remove(key);
+            heldControls.Clear();
+        }
+
+        // Pass-through reports every change from every pad, so the callback runs once on each control's press.
+        private void OnButtonChanged(InputAction.CallbackContext context, System.Action<InputAction.CallbackContext> callback)
+        {
+            InputControl control = context.control;
+            if (control == null)
+            {
+                return;
+            }
+
+            if (!context.ReadValueAsButton())
+            {
+                heldControls.Remove(control);
+                return;
+            }
+
+            if (heldControls.Add(control))
+            {
+                callback(context);
+            }
         }
 
         private void OnAbilityButtonPressed(InputAction.CallbackContext context, BaseAbility ability)
@@ -336,16 +360,19 @@ namespace SpiderSurge
                     }
                 }
 
+                // A Button action bound to every pad ignores one pad's press while another pad holds the same button.
                 var customAction = new InputAction(
                     name: actionName == "CustomAbility" ? $"CustomAbility{bindingPath.Replace("/", "").Replace("<", "").Replace(">", "")}" : $"Custom{actionName}",
-                    type: InputActionType.Button,
+                    type: InputActionType.PassThrough,
                     binding: bindingPath
                 );
 
-                customAction.performed += callback;
+                System.Action<InputAction.CallbackContext> onChange = context => OnButtonChanged(context, callback);
+                customAction.performed += onChange;
+                customAction.canceled += onChange;
                 customAction.Enable();
 
-                overriddenActions[key] = callback;
+                overriddenActions[key] = onChange;
                 customActions[key] = customAction;
 
             }
@@ -376,6 +403,7 @@ namespace SpiderSurge
                     if (overriddenActions.ContainsKey(kvp.Key))
                     {
                         kvp.Value.performed -= overriddenActions[kvp.Key];
+                        kvp.Value.canceled -= overriddenActions[kvp.Key];
                     }
                     kvp.Value.Disable();
                     kvp.Value.Dispose();

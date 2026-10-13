@@ -57,6 +57,8 @@ namespace SpiderSurge
         // Input actions for detection
         private InputAction menuButtonAction;
         private readonly Dictionary<string, InputAction> buttonActions = new Dictionary<string, InputAction>();
+        private readonly HashSet<InputControl> heldMenuControls = new HashSet<InputControl>();
+        private readonly HashSet<InputControl> heldButtonControls = new HashSet<InputControl>();
 
         private void Awake()
         {
@@ -72,6 +74,7 @@ namespace SpiderSurge
             }
         }
 
+        // The actions are pass-through: a Button action shared by every pad ignores one pad's press while another pad holds the same button.
         private void SetupInputActions()
         {
             Logger.LogInfo("[PlayerControlSettings] Setting up input actions...");
@@ -79,12 +82,12 @@ namespace SpiderSurge
             // Menu/Start button for holding
             menuButtonAction = new InputAction(
                 name: "MenuButton",
-                type: InputActionType.Button
+                type: InputActionType.PassThrough
             );
             menuButtonAction.AddBinding("<Gamepad>/start");
             menuButtonAction.AddBinding("<Gamepad>/select");
-            menuButtonAction.performed += OnMenuButtonPressed;
-            menuButtonAction.canceled += OnMenuButtonReleased;
+            menuButtonAction.performed += OnMenuButtonChanged;
+            menuButtonAction.canceled += OnMenuButtonChanged;
             menuButtonAction.Enable();
 
             Logger.LogInfo("[PlayerControlSettings] Menu button action enabled");
@@ -95,37 +98,85 @@ namespace SpiderSurge
                 string actionName = $"ControlSwitch_{buttonPath.Replace("/", "_").Replace("<", "").Replace(">", "")}";
                 var action = new InputAction(
                     name: actionName,
-                    type: InputActionType.Button,
+                    type: InputActionType.PassThrough,
                     binding: buttonPath
                 );
-                action.performed += ctx => OnButtonPressed(ctx, buttonPath);
+                action.performed += ctx => OnButtonChanged(ctx, buttonPath);
+                action.canceled += ctx => OnButtonChanged(ctx, buttonPath);
                 action.Enable();
                 buttonActions[buttonPath] = action;
             }
 
         }
 
-        private void OnMenuButtonPressed(InputAction.CallbackContext context)
+        // A player holds the menu button while Start or Select is down on their pad.
+        private void OnMenuButtonChanged(InputAction.CallbackContext context)
         {
+            InputControl control = context.control;
+            if (control == null) return;
 
-            int playerIndex = GetPlayerIndexFromDevice(context.control.device);
+            bool pressed = context.ReadValueAsButton();
+            int playerIndex = GetPlayerIndexFromDevice(control.device);
             if (playerIndex < 0)
             {
-                Logger.LogWarning($"[PlayerControlSettings] Could not find player for device: {context.control.device.name}");
+                if (pressed)
+                {
+                    Logger.LogWarning($"[PlayerControlSettings] Could not find player for device: {control.device.name}");
+                }
                 return;
             }
 
-            menuButtonHeld[playerIndex] = true;
-            menuButtonHoldStartTime[playerIndex] = Time.time;
+            if (pressed)
+            {
+                heldMenuControls.Add(control);
+            }
+            else
+            {
+                heldMenuControls.Remove(control);
+            }
+
+            bool wasHeld = menuButtonHeld.TryGetValue(playerIndex, out bool held) && held;
+            bool nowHeld = IsMenuHeldOn(control.device);
+            if (nowHeld == wasHeld) return;
+
+            menuButtonHeld[playerIndex] = nowHeld;
+            if (nowHeld)
+            {
+                menuButtonHoldStartTime[playerIndex] = Time.time;
+            }
+            else
+            {
+                menuButtonHoldStartTime.Remove(playerIndex);
+            }
         }
 
-        private void OnMenuButtonReleased(InputAction.CallbackContext context)
+        private bool IsMenuHeldOn(InputDevice device)
         {
-            int playerIndex = GetPlayerIndexFromDevice(context.control.device);
-            if (playerIndex < 0) return;
+            foreach (var control in heldMenuControls)
+            {
+                if (control.device == device)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
-            menuButtonHeld[playerIndex] = false;
-            menuButtonHoldStartTime.Remove(playerIndex);
+        private void OnButtonChanged(InputAction.CallbackContext context, string buttonPath)
+        {
+            InputControl control = context.control;
+            if (control == null) return;
+
+            if (!context.ReadValueAsButton())
+            {
+                heldButtonControls.Remove(control);
+                return;
+            }
+
+            if (heldButtonControls.Add(control))
+            {
+                OnButtonPressed(context, buttonPath);
+            }
         }
 
         private void OnButtonPressed(InputAction.CallbackContext context, string buttonPath)

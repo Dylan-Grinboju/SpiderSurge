@@ -39,6 +39,7 @@ namespace SpiderSurge
         private InputAction rightStickPressAction;
         private InputAction ultimateButtonAction;
         private InputAction dpadActivationAction;
+        private readonly HashSet<InputControl> heldDpadControls = new HashSet<InputControl>();
         private bool leftStickPressed = false;
         private bool rightStickPressed = false;
         private float lastLeftStickPressTime = 0f;
@@ -193,6 +194,7 @@ namespace SpiderSurge
             }
         }
 
+        // The gamepad actions are pass-through: a Button action bound to every pad ignores one pad's press while another pad holds the same button.
         private void SetupUltimateInputs()
         {
             try
@@ -204,13 +206,14 @@ namespace SpiderSurge
                     // D-pad activation: any D-pad direction activates the Ultimate
                     dpadActivationAction = new InputAction(
                         name: $"{GetType().Name}_DpadActivation",
-                        type: InputActionType.Button
+                        type: InputActionType.PassThrough
                     );
                     dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadUp);
                     dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadDown);
                     dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadLeft);
                     dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadRight);
-                    dpadActivationAction.performed += OnDpadPressed;
+                    dpadActivationAction.performed += OnDpadChanged;
+                    dpadActivationAction.canceled += OnDpadChanged;
                     dpadActivationAction.Enable();
                 }
                 else
@@ -218,21 +221,21 @@ namespace SpiderSurge
                     // Dual stick combo: left stick press
                     leftStickPressAction = new InputAction(
                         name: $"{GetType().Name}_LeftStickPress",
-                        type: InputActionType.Button,
+                        type: InputActionType.PassThrough,
                         binding: Consts.Values.Inputs.GamepadLeftStickPress
                     );
-                    leftStickPressAction.performed += OnLeftStickPressed;
-                    leftStickPressAction.canceled += OnLeftStickReleased;
+                    leftStickPressAction.performed += OnLeftStickChanged;
+                    leftStickPressAction.canceled += OnLeftStickChanged;
                     leftStickPressAction.Enable();
 
                     // Dual stick combo: right stick press
                     rightStickPressAction = new InputAction(
                         name: $"{GetType().Name}_RightStickPress",
-                        type: InputActionType.Button,
+                        type: InputActionType.PassThrough,
                         binding: Consts.Values.Inputs.GamepadRightStickPress
                     );
-                    rightStickPressAction.performed += OnRightStickPressed;
-                    rightStickPressAction.canceled += OnRightStickReleased;
+                    rightStickPressAction.performed += OnRightStickChanged;
+                    rightStickPressAction.canceled += OnRightStickChanged;
                     rightStickPressAction.Enable();
                 }
 
@@ -254,38 +257,52 @@ namespace SpiderSurge
             }
         }
 
-        private void OnDpadPressed(InputAction.CallbackContext context)
+        // Fires on the first D-pad direction pressed, like a button would.
+        private void OnDpadChanged(InputAction.CallbackContext context)
         {
-            if (!IsDeviceAssigned(context.control.device)) return;
-            ActivateUltimate();
+            if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
+            bool wasHeld = heldDpadControls.Count > 0;
+            if (context.ReadValueAsButton())
+            {
+                heldDpadControls.Add(context.control);
+            }
+            else
+            {
+                heldDpadControls.Remove(context.control);
+            }
+
+            if (!wasHeld && heldDpadControls.Count > 0)
+            {
+                ActivateUltimate();
+            }
         }
 
-        private void OnLeftStickPressed(InputAction.CallbackContext context)
+        private void OnLeftStickChanged(InputAction.CallbackContext context)
         {
-            if (!IsDeviceAssigned(context.control.device)) return;
-            leftStickPressed = true;
-            lastLeftStickPressTime = Time.time;
-            CheckStickCombo();
+            if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
+            bool pressed = context.ReadValueAsButton();
+            if (pressed == leftStickPressed) return;
+
+            leftStickPressed = pressed;
+            if (pressed)
+            {
+                lastLeftStickPressTime = Time.time;
+                CheckStickCombo();
+            }
         }
 
-        private void OnLeftStickReleased(InputAction.CallbackContext context)
+        private void OnRightStickChanged(InputAction.CallbackContext context)
         {
-            if (!IsDeviceAssigned(context.control.device)) return;
-            leftStickPressed = false;
-        }
+            if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
+            bool pressed = context.ReadValueAsButton();
+            if (pressed == rightStickPressed) return;
 
-        private void OnRightStickPressed(InputAction.CallbackContext context)
-        {
-            if (!IsDeviceAssigned(context.control.device)) return;
-            rightStickPressed = true;
-            lastRightStickPressTime = Time.time;
-            CheckStickCombo();
-        }
-
-        private void OnRightStickReleased(InputAction.CallbackContext context)
-        {
-            if (!IsDeviceAssigned(context.control.device)) return;
-            rightStickPressed = false;
+            rightStickPressed = pressed;
+            if (pressed)
+            {
+                lastRightStickPressTime = Time.time;
+                CheckStickCombo();
+            }
         }
 
         private void CheckStickCombo()
@@ -731,15 +748,15 @@ namespace SpiderSurge
             // Clean up Ultimate input actions
             if (leftStickPressAction != null)
             {
-                leftStickPressAction.performed -= OnLeftStickPressed;
-                leftStickPressAction.canceled -= OnLeftStickReleased;
+                leftStickPressAction.performed -= OnLeftStickChanged;
+                leftStickPressAction.canceled -= OnLeftStickChanged;
                 leftStickPressAction.Disable();
                 leftStickPressAction.Dispose();
             }
             if (rightStickPressAction != null)
             {
-                rightStickPressAction.performed -= OnRightStickPressed;
-                rightStickPressAction.canceled -= OnRightStickReleased;
+                rightStickPressAction.performed -= OnRightStickChanged;
+                rightStickPressAction.canceled -= OnRightStickChanged;
                 rightStickPressAction.Disable();
                 rightStickPressAction.Dispose();
             }
@@ -751,7 +768,8 @@ namespace SpiderSurge
             }
             if (dpadActivationAction != null)
             {
-                dpadActivationAction.performed -= OnDpadPressed;
+                dpadActivationAction.performed -= OnDpadChanged;
+                dpadActivationAction.canceled -= OnDpadChanged;
                 dpadActivationAction.Disable();
                 dpadActivationAction.Dispose();
             }
