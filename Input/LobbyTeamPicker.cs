@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
@@ -8,6 +9,8 @@ namespace SpiderTeams
     // Global actions on the configured buttons; the pressing device tells which local player picked.
     public class LobbyTeamPicker : MonoBehaviour
     {
+        private static readonly HashSet<InputDevice> _held = new HashSet<InputDevice>();
+
         private InputAction _gamepadAction;
         private InputAction _keyboardAction;
         private string _gamepadPath;
@@ -37,6 +40,7 @@ namespace SpiderTeams
             }
 
             _active = wanted;
+            _held.Clear();
             SetEnabled(_gamepadAction, wanted);
             SetEnabled(_keyboardAction, wanted);
             if (wanted && !_checkedBindings)
@@ -106,6 +110,7 @@ namespace SpiderTeams
             _checkedBindings = false;
         }
 
+        // Pass-through skips the conflict resolution that drops a second pad's press while another pad holds the button.
         private InputAction CreateAction(string name, string path)
         {
             if (string.IsNullOrEmpty(path) || path == Consts.Bindings.None)
@@ -115,7 +120,7 @@ namespace SpiderTeams
 
             try
             {
-                var action = new InputAction(name, InputActionType.Button, path);
+                var action = new InputAction(name, InputActionType.PassThrough, path);
                 action.performed += OnPerformed;
                 return action;
             }
@@ -135,6 +140,7 @@ namespace SpiderTeams
             _gamepadPath = null;
             _keyboardPath = null;
             _active = false;
+            _held.Clear();
         }
 
         private void DisposeAction(InputAction action)
@@ -173,10 +179,26 @@ namespace SpiderTeams
             }
         }
 
+        // Pass-through reports every change, so each device switches once per press and not again until it lets go.
         private static void OnPerformed(InputAction.CallbackContext context)
         {
             try
             {
+                InputDevice device = context.control != null ? context.control.device : null;
+                if (device == null)
+                {
+                    return;
+                }
+                if (!context.ReadValueAsButton())
+                {
+                    _held.Remove(device);
+                    return;
+                }
+                if (!_held.Add(device))
+                {
+                    return;
+                }
+
                 var game = GameController.instance;
                 var manager = TeamManager.Instance;
                 if (manager == null || manager.MatchLocked || (game != null && !game.acceptingInputs))
@@ -184,7 +206,6 @@ namespace SpiderTeams
                     return;
                 }
 
-                InputDevice device = context.control != null ? context.control.device : null;
                 PlayerController player = FindLocalPlayer(device);
                 if (player != null && manager.CycleTeam(player))
                 {
