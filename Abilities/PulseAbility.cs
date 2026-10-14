@@ -420,7 +420,7 @@ namespace SpiderSurge
                 _expPlayerDeathRadius?.SetValue(explosion, p.DeathRadius);
                 _expIsBoomSpear?.SetValue(explosion, true);
                 _expPlayerExplosionID?.SetValue(explosion, playerID);
-                _expOwnerId.SetValue(explosion, (ulong)playerID);
+                _expOwnerId.SetValue(explosion, playerController.OwnerClientId);
 
                 explosion.enabled = true;
                 _expKnockBack.Invoke(explosion, null);
