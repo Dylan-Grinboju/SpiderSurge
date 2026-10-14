@@ -1,6 +1,10 @@
 using Silk;
 using Logger = Silk.Logger;
+using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using UnityEngine;
 
 namespace SpiderSurge
@@ -49,6 +53,52 @@ namespace SpiderSurge
         public static void SetShowTelemetryConsentPrompt(bool value)
         {
             Config.SetModConfigValue(ModId, "display.showTelemetryConsentPrompt", value);
+        }
+
+        // Silk reads "a.b" keys as nested sections, so the flat "a.b" entries older versions wrote were never read
+        public static void MigrateFlatKeys(Dictionary<string, object> defaults)
+        {
+            try
+            {
+                var configs = AccessTools.Field(typeof(Config), "_modConfigs")?.GetValue(null) as Dictionary<string, Dictionary<string, object>>;
+                if (configs == null || !configs.TryGetValue(ModId, out var config)) return;
+
+                List<string> flatKeys = config.Keys.Where(key => key.Contains(".")).ToList();
+                if (flatKeys.Count == 0) return;
+
+                foreach (string key in flatKeys)
+                {
+                    object flatValue = config[key];
+                    config.Remove(key);
+                    if (!TryGetPath(defaults, key, out object defaultValue) || !TryGetPath(config, key, out object current)) continue;
+
+                    // A value the player already set in the section wins over the old flat one
+                    bool setInSection = !string.Equals(Convert.ToString(current, CultureInfo.InvariantCulture),
+                        Convert.ToString(defaultValue, CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
+                    Config.SetModConfigValue(ModId, key, setInSection ? current : flatValue);
+                }
+
+                AccessTools.Method(typeof(Config), "SaveModConfig")?.Invoke(null, new object[] { ModId });
+                Logger.LogInfo($"Moved {flatKeys.Count} old config keys into their sections");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Could not migrate old config keys: {ex.Message}");
+            }
+        }
+
+        private static bool TryGetPath(Dictionary<string, object> root, string key, out object value)
+        {
+            value = root;
+            foreach (string part in key.Split('.'))
+            {
+                if (!(value is Dictionary<string, object> section) || !section.TryGetValue(part, out value))
+                {
+                    value = null;
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static float ValidateIndicatorRadius(float value)

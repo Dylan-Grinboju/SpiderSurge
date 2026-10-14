@@ -81,24 +81,37 @@ namespace SpiderSurge
             {
                 { "EnableSurgeMode", true },
                 // Ability indicator defaults
-                { "indicator.radius", 1.5f },
-                { "indicator.offset.x", 3f },
-                { "indicator.offset.y", 8f },
-                { "indicator.availableColor", "#00FF00" },
-                { "indicator.cooldownColor", "#FF0000" },
-                { "indicator.activeColor", "#87CEEB" },
-                { "indicator.showOnlyWhenReady", false },
+                { "indicator", new Dictionary<string, object>
+                    {
+                        { "radius", 1.5f },
+                        { "offset", new Dictionary<string, object>
+                            {
+                                { "x", 3f },
+                                { "y", 8f }
+                            }
+                        },
+                        { "availableColor", "#00FF00" },
+                        { "cooldownColor", "#FF0000" },
+                        { "activeColor", "#87CEEB" },
+                        { "showOnlyWhenReady", false }
+                    }
+                },
                 // Upgrade activation
                 { "UseDpadForUltimate", false },
                 { "UnlimitedPerkChoosingTime", true },
                 { "EnableStatsLogging", true },
                 { "TelemetryEnabled", false },
-                { "display.showTutorial", true },
-                { "display.showTelemetryConsentPrompt", true },
+                { "display", new Dictionary<string, object>
+                    {
+                        { "showTutorial", true },
+                        { "showTelemetryConsentPrompt", true }
+                    }
+                },
             };
 
             // Load the configuration (this will create the YAML file if it doesn't exist)
             Config.LoadModConfig(ModId, defaultConfig);
+            ModConfig.MigrateFlatKeys(defaultConfig);
             Logger.LogInfo("Configuration loaded");
         }
 
