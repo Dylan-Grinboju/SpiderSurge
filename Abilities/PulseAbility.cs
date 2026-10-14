@@ -222,11 +222,7 @@ namespace SpiderSurge
                 if (collider == null) continue;
                 if (collider.gameObject == gameObject) continue;
 
-                PlayerController hitPlayerController = collider.GetComponentInParent<PlayerController>();
-                if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
-                {
-                    continue;
-                }
+                if (BelongsToActivator(collider, playerID)) continue;
 
                 if (!collider.TryGetComponent<IDamageable>(out var damageable))
                 {
@@ -280,6 +276,37 @@ namespace SpiderSurge
             }
 
             ApplyPulseToRailShotsWithoutColliders(p);
+        }
+
+        // The activating player must never be affected by their own pulse.
+        // Their spider parts resolve through the PlayerController in the parent chain, but an
+        // equipped weapon is a separate network object that is only linked back through
+        // Weapon.owner - knocking it back pushes the holder via WeaponManager.AbsorbImpact.
+        private bool BelongsToActivator(Collider2D collider, int playerID)
+        {
+            PlayerController hitPlayerController = collider.GetComponentInParent<PlayerController>();
+            if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
+            {
+                return true;
+            }
+
+            SpiderHealthSystem hitHealthSystem = collider.GetComponentInParent<SpiderHealthSystem>();
+            if (hitHealthSystem != null && hitHealthSystem == spiderHealthSystem)
+            {
+                return true;
+            }
+
+            if (!collider.TryGetComponent<Weapon>(out var weapon))
+            {
+                weapon = collider.GetComponentInParent<Weapon>();
+            }
+
+            if (weapon != null && weapon.equipped && weapon.owner != null && weapon.owner.healthSystem == spiderHealthSystem)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)

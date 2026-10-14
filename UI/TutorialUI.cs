@@ -49,6 +49,11 @@ namespace SpiderSurge
             }
         }
 
+        public static void ResetInstance()
+        {
+            _instance = null;
+        }
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -334,10 +339,10 @@ namespace SpiderSurge
                     // Only split if it's a simple key:value without rich text tags in the key part
                     if (line.Contains(":") && !line.Contains("<"))
                     {
-                        var parts = line.Split(':');
+                        var parts = line.Split(new[] { ':' }, 2);
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(parts[0] + ":", keyStyle, GUILayout.Width(350));
-                        GUILayout.Label(parts[1].Trim(), labelStyle);
+                        GUILayout.Label(parts.Length > 1 ? parts[1].Trim() : string.Empty, labelStyle);
                         GUILayout.EndHorizontal();
                     }
                     else
