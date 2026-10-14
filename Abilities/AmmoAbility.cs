@@ -335,8 +335,23 @@ namespace SpiderSurge
             StartCooldown(wasUltimate: true);
         }
 
+        private static bool IsServerAuthority()
+        {
+            if (NetworkManager.Singleton == null)
+            {
+                return true;
+            }
+            return NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost;
+        }
+
         private void SpawnWeaponsAtSpawnPoints()
         {
+            if (!IsServerAuthority())
+            {
+                Logger.LogDebug("Care Package: Skipping spawn on non-server client.");
+                return;
+            }
+
             try
             {
                 string currentScene = SceneManager.GetActiveScene().name;

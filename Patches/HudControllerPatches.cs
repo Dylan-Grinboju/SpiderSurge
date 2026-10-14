@@ -10,7 +10,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(HudController __instance)
         {
-            if (!NetworkManager.Singleton.IsHost)
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost)
             {
                 return true;
             }
