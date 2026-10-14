@@ -159,6 +159,7 @@ namespace SpiderTeams
             public const float RecolorSendCooldown = 1f;
             public const float MarkerSyncInterval = 0.25f;
             public const float PickAnnounceDebounce = 0.6f;
+            public const float PickAnnounceMaxWait = 2f;
             public const float AnnounceSpacing = 0.1f;
             public const float LobbyLabelInterval = 1f;
             public const float ExplosionMatchWindow = 2f;
@@ -180,8 +181,8 @@ namespace SpiderTeams
             public const int TextureSize = 64;
             public const float PixelsPerUnit = 100f;
             public const int OutlinePixels = 5;
-            public const float Width = 3f;
-            public const float HeightOffset = 10f;
+            public const float Width = 5f;
+            public const float HeightOffset = 13f;
             public const string SortingLayer = "Foreground";
             public const int SortingOrder = 32765;
         }

@@ -7,7 +7,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderTeams
 {
-    [SilkMod(SpiderTeamsMod.ModName, new string[] { "Dylan" }, "0.2.0", "0.7.0", SpiderTeamsMod.ModId, 1)]
+    [SilkMod(SpiderTeamsMod.ModName, new string[] { "Dylan" }, "0.3.0", "0.7.0", SpiderTeamsMod.ModId, 1)]
     public class SpiderTeamsMod : SilkMod
     {
         public const string ModName = "SpiderTeams";

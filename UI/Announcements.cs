@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -9,6 +10,7 @@ namespace SpiderTeams
     internal static class Announcements
     {
         private const int MaxQueued = 40;
+        private const int MaxBannerBytes = 480;
 
         private struct Pending
         {
@@ -26,8 +28,14 @@ namespace SpiderTeams
 
         private static readonly Queue<Pending> _queue = new Queue<Pending>();
         private static readonly List<Delayed> _delayed = new List<Delayed>();
-        private static readonly Dictionary<int, float> _pickDue = new Dictionary<int, float>();
-        private static readonly List<int> _duePicks = new List<int>();
+        private static readonly List<int> _picks = new List<int>();
+        private static readonly List<int> _pickTeams = new List<int>();
+        private static readonly List<string> _pickNames = new List<string>();
+        private static readonly List<string> _lineNames = new List<string>();
+        private static readonly StringBuilder _banner = new StringBuilder();
+        private static int _bannerBytes;
+        private static float _picksFirst;
+        private static float _picksDue;
         private static float _nextSend;
         private static bool _loggedError;
 
@@ -49,21 +57,31 @@ namespace SpiderTeams
             }
         }
 
+        // Picks made close together share one banner, and a steady stream of picks still shows one every PickAnnounceMaxWait.
         public static void QueuePick(int playerId)
         {
-            _pickDue[playerId] = Time.unscaledTime + Consts.Timing.PickAnnounceDebounce;
+            float now = Time.unscaledTime;
+            if (_picks.Count == 0)
+            {
+                _picksFirst = now;
+            }
+            if (!_picks.Contains(playerId))
+            {
+                _picks.Add(playerId);
+            }
+            _picksDue = Mathf.Min(now + Consts.Timing.PickAnnounceDebounce, _picksFirst + Consts.Timing.PickAnnounceMaxWait);
         }
 
         public static void ClearPicks()
         {
-            _pickDue.Clear();
+            _picks.Clear();
         }
 
         public static void Clear()
         {
             _queue.Clear();
             _delayed.Clear();
-            _pickDue.Clear();
+            _picks.Clear();
         }
 
         public static void Tick()
@@ -71,9 +89,9 @@ namespace SpiderTeams
             try
             {
                 float now = Time.unscaledTime;
-                if (_pickDue.Count > 0)
+                if (_picks.Count > 0 && now >= _picksDue)
                 {
-                    FlushPicks(now);
+                    FlushPicks();
                 }
                 if (_delayed.Count > 0)
                 {
@@ -106,32 +124,109 @@ namespace SpiderTeams
             }
         }
 
-        private static void FlushPicks(float now)
+        // One line per team, tinted when the banner names more than one team.
+        private static void FlushPicks()
         {
-            _duePicks.Clear();
-            foreach (var pair in _pickDue)
+            var manager = TeamManager.Instance;
+            _pickTeams.Clear();
+            _pickNames.Clear();
+            for (int i = 0; i < _picks.Count && manager != null; i++)
             {
-                if (now >= pair.Value)
+                var player = TeamManager.FindPlayer(_picks[i]);
+                if (player != null)
                 {
-                    _duePicks.Add(pair.Key);
+                    _pickTeams.Add(manager.GetTeam(player));
+                    _pickNames.Add(TeamManager.RichName(player));
                 }
             }
-
-            var manager = TeamManager.Instance;
-            for (int i = 0; i < _duePicks.Count; i++)
+            _picks.Clear();
+            if (_pickTeams.Count == 0)
             {
-                int playerId = _duePicks[i];
-                _pickDue.Remove(playerId);
+                return;
+            }
 
-                var player = TeamManager.FindPlayer(playerId);
-                if (manager == null || player == null)
+            int firstTeam = _pickTeams[0];
+            bool oneTeam = _pickTeams.TrueForAll(team => team == firstTeam);
+            Color color = oneTeam ? TeamPalette.TeamColor(firstTeam) : Color.white;
+            for (int i = 0; i < _pickTeams.Count; i++)
+            {
+                if (_pickTeams.IndexOf(_pickTeams[i]) == i)
+                {
+                    AddTeamLines(_pickTeams[i], !oneTeam, color);
+                }
+            }
+            SendBanner(color);
+        }
+
+        // Announcements travel as 512-byte network strings, so a long list of names wraps onto more lines and banners.
+        private static void AddTeamLines(int team, bool tinted, Color color)
+        {
+            string prefix = tinted ? "<color=#" + TeamPalette.Hex(TeamPalette.TeamColor(team)) + ">" : string.Empty;
+            string suffix = " joined " + TeamPalette.TeamName(team) + (tinted ? "</color>" : string.Empty);
+            int budget = MaxBannerBytes - Bytes(prefix) - Bytes(suffix);
+            int used = 0;
+            _lineNames.Clear();
+            for (int i = 0; i < _pickTeams.Count; i++)
+            {
+                if (_pickTeams[i] != team)
                 {
                     continue;
                 }
 
-                int team = manager.GetTeam(player);
-                Broadcast($"{TeamManager.RichName(player)} joined {TeamPalette.TeamName(team)}", TeamPalette.TeamColor(team), false);
+                int cost = Bytes(_pickNames[i]) + 5;
+                if (_lineNames.Count > 0 && used + cost > budget)
+                {
+                    AddLine(prefix, suffix, color);
+                    used = 0;
+                }
+                _lineNames.Add(_pickNames[i]);
+                used += cost;
             }
+            AddLine(prefix, suffix, color);
+        }
+
+        private static void AddLine(string prefix, string suffix, Color color)
+        {
+            var line = new StringBuilder(prefix);
+            for (int i = 0; i < _lineNames.Count; i++)
+            {
+                if (i > 0)
+                {
+                    line.Append(i == _lineNames.Count - 1 ? " and " : ", ");
+                }
+                line.Append(_lineNames[i]);
+            }
+            line.Append(suffix);
+            _lineNames.Clear();
+
+            string text = line.ToString();
+            int bytes = Bytes(text);
+            if (_banner.Length > 0 && _bannerBytes + 1 + bytes > MaxBannerBytes)
+            {
+                SendBanner(color);
+            }
+            if (_banner.Length > 0)
+            {
+                _banner.Append('\n');
+                _bannerBytes++;
+            }
+            _banner.Append(text);
+            _bannerBytes += bytes;
+        }
+
+        private static void SendBanner(Color color)
+        {
+            if (_banner.Length > 0)
+            {
+                Broadcast(_banner.ToString(), color, false);
+            }
+            _banner.Length = 0;
+            _bannerBytes = 0;
+        }
+
+        private static int Bytes(string text)
+        {
+            return Encoding.UTF8.GetByteCount(text);
         }
 
         private static void FlushDelayed(float now)
