@@ -1,7 +1,7 @@
 using HarmonyLib;
 using UnityEngine;
 
-namespace OffScreenIndicatorFix
+namespace SpiderSurge.Fixes
 {
     [HarmonyPatch(typeof(OffScreenIndicator), "FollowTarget")]
     public class OffScreenIndicatorFollowTargetPatch

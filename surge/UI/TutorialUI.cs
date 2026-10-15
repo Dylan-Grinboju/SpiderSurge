@@ -206,7 +206,7 @@ namespace SpiderSurge
             DrawSection("General Information", new string[] {
                 "• This mod overrides the standard Survival Mode with new wave logic and enemies.",
                 "• Highscores are kept separately from the vanilla game. It is still recommended to backup your save files.",
-                "• <b>To Disable:</b> Delete the SpiderSurge.dll or set 'EnableSurgeMode' to false in the config."
+                "• <b>To Disable:</b> Turn off Surge Mode in the Mods menu (Mods > SpiderSurge > Surge settings)."
             });
 
             DrawSection("ABILITIES", new string[] {

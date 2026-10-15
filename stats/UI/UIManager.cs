@@ -2,6 +2,7 @@ using UnityEngine;
 using Logger = Silk.Logger;
 using UnityEngine.InputSystem;
 using System.Collections;
+using SpiderSurge.Common;
 
 namespace StatsMod
 {
@@ -17,7 +18,16 @@ namespace StatsMod
     {
         private void Awake()
         {
-            cycleInput = ModConfig.CycleInput;
+            Settings.Changed += OnSettingsChanged;
+        }
+
+        private static void OnSettingsChanged(string key)
+        {
+            if (key == null || ModConfig.AutoScaleKey.StartsWith(key) || ModConfig.UIScaleKey.StartsWith(key))
+            {
+                _scalingInitialized = false;
+                StyleVersion++;
+            }
         }
 
         #region Singleton
@@ -32,7 +42,6 @@ namespace StatsMod
 
         #region Controller Cycling State
         private UIState currentUIState = UIState.Off;
-        private string cycleInput;
         private Coroutine delayedPauseCoroutine;
         #endregion
 
@@ -65,6 +74,7 @@ namespace StatsMod
         #region UI Scaling
         private static float _uiScaleFactor = 1.0f;
         private static bool _scalingInitialized = false;
+        public static int StyleVersion { get; private set; }
 
         public static float UIScaleFactor
         {
@@ -198,7 +208,7 @@ namespace StatsMod
             bool dpadPressed = gamepad.dpad.up.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame ||
                                gamepad.dpad.left.wasPressedThisFrame || gamepad.dpad.right.wasPressedThisFrame;
             bool joystickPressed = gamepad.leftStickButton.wasPressedThisFrame || gamepad.rightStickButton.wasPressedThisFrame;
-            switch (cycleInput)
+            switch (ModConfig.CycleInput)
             {
                 case "dpad":
                     cyclePressed = dpadPressed;
@@ -517,6 +527,7 @@ namespace StatsMod
         #region Cleanup
         private void OnDestroy()
         {
+            Settings.Changed -= OnSettingsChanged;
             if (darkTexture != null) Destroy(darkTexture);
             if (mediumTexture != null) Destroy(mediumTexture);
             if (lightTexture != null) Destroy(lightTexture);

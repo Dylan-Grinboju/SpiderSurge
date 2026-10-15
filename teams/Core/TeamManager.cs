@@ -98,7 +98,6 @@ namespace SpiderTeams
 
         private void Update()
         {
-            MainThread.Drain();
             Announcements.Tick();
 
             if (_rosterDirty)

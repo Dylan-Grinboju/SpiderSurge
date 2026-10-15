@@ -56,6 +56,7 @@ namespace StatsMod
             Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerInput>());
             Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer);
             Add<WhispBrain>("ProcessCollision", null, whisp => null);
+            Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", "Pulse", SpiderSurge.PulseAbility.CasterOf);
         }
 
         private static void Add<T>(string method, string weapon, Func<T, PlayerInput> owner)
@@ -113,35 +114,6 @@ namespace StatsMod
             PlayerInput owner = HitLogic.GetExplosionOwner(explosion);
             return owner != null ? owner : HitLogic.EnclosingAttacker;
         }
-
-        public static void PatchSpiderSurgePulse(Harmony harmony)
-        {
-            try
-            {
-                Type pulse = AppDomain.CurrentDomain.GetAssemblies()
-                    .Select(assembly => assembly.GetType("SpiderSurge.PulseAbility", false))
-                    .FirstOrDefault(type => type != null);
-                if (pulse == null) return;
-
-                MethodInfo method = AccessTools.Method(pulse, "ApplyPulsePhysics");
-                FieldInfo playerInput = AccessTools.Field(pulse, "playerInput");
-                if (method == null || playerInput == null)
-                {
-                    Logger.LogWarning("SpiderSurge's PulseAbility changed, Pulse hits are not tracked");
-                    return;
-                }
-
-                attacks[method] = new Attack { Weapon = "Pulse", Owner = ability => playerInput.GetValue(ability) as PlayerInput };
-                harmony.Patch(method,
-                    prefix: new HarmonyMethod(typeof(AttackScopePatch), nameof(Prefix)),
-                    finalizer: new HarmonyMethod(typeof(AttackScopePatch), nameof(Finalizer)));
-                Logger.LogInfo("Patched SpiderSurge's Pulse");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error patching SpiderSurge's Pulse: {ex.Message}");
-            }
-        }
     }
 
     // Receivers. Enemy stingers, blades, roller struts and Khepri armor pass their hits on to EnemyHealthSystem,
@@ -198,13 +170,14 @@ namespace StatsMod
     }
 
     [HarmonyPatch(typeof(SpiderHealthSystem), "Damage")]
+    [HarmonyAfter("com.SpiderSurge.surge", "com.SpiderSurge.teams")]
     class SpiderDamageReceiverPatch
     {
         static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
         {
             try
             {
-                // SpiderTeams cancels friendly fire
+                // Surge immunity and Teams friendly fire can cancel the hit
                 if (!__runOriginal || Time.time < ReflectionCache.SpiderImmuneTill(__instance)) return;
                 HitLogic.OnPlayerHit(__instance, damage: true, stun);
             }

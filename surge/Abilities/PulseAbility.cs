@@ -207,6 +207,8 @@ namespace SpiderSurge
             }
         }
 
+        internal static PlayerInput CasterOf(PulseAbility ability) => ability.playerInput;
+
         private void ApplyPulsePhysics(PulseParams p, bool deadly)
         {
             int playerID = playerController.playerID.Value;
@@ -420,7 +422,7 @@ namespace SpiderSurge
                 _expPlayerDeathRadius?.SetValue(explosion, p.DeathRadius);
                 _expIsBoomSpear?.SetValue(explosion, true);
                 _expPlayerExplosionID?.SetValue(explosion, playerID);
-                _expOwnerId.SetValue(explosion, Integration.StatsModBridge.ReadsExplosionOwnerAsPlayerId ? (ulong)playerID : playerController.OwnerClientId);
+                _expOwnerId.SetValue(explosion, playerController.OwnerClientId);
 
                 explosion.enabled = true;
                 _expKnockBack.Invoke(explosion, null);

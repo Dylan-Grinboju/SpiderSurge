@@ -4,7 +4,7 @@ using System;
 using UnityEngine;
 using System.Reflection;
 
-namespace WhispCooldownFix
+namespace SpiderSurge.Fixes
 {
     [HarmonyPatch(typeof(WhispBrain), "Start")]
     public class WhispCooldownStartPatch

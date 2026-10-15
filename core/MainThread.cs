@@ -2,9 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using Logger = Silk.Logger;
 
-namespace SpiderTeams
+namespace SpiderSurge.Common
 {
-    internal static class MainThread
+    public static class MainThread
     {
         private static readonly ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
 
@@ -27,7 +27,7 @@ namespace SpiderTeams
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"SpiderTeams main-thread task failed: {ex}");
+                    Logger.LogError($"Main-thread task failed: {ex}");
                 }
             }
         }

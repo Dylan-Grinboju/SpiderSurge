@@ -1,247 +1,106 @@
-using Silk;
-using Logger = Silk.Logger;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
+using SpiderSurge.Common;
 using UnityEngine;
-using YamlDotNet.Serialization;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
     public static class ModConfig
     {
-        private const string ModId = SpiderSurgeMod.ModId;
-        private static readonly HashSet<string> _warned = new HashSet<string>();
+        public const string SurgeModeKey = "surge.surgeMode";
+        public const string DpadUltimateKey = "surge.dpadUltimate";
+        public const string UnlimitedPerkTimeKey = "surge.unlimitedPerkTime";
+        public const string ShowTutorialKey = "surge.showTutorial";
+        public const string ShowTelemetryPromptKey = "surge.showTelemetryPrompt";
+        public const string StatsLoggingKey = "surge.statsLogging";
+        public const string TelemetryKey = "surge.telemetry";
+        public const string IndicatorRadiusKey = "surge.indicator.radius";
+        public const string IndicatorOffsetXKey = "surge.indicator.offset.x";
+        public const string IndicatorOffsetYKey = "surge.indicator.offset.y";
+        public const string IndicatorAvailableColorKey = "surge.indicator.availableColor";
+        public const string IndicatorCooldownColorKey = "surge.indicator.cooldownColor";
+        public const string IndicatorActiveColorKey = "surge.indicator.activeColor";
+        public const string IndicatorShowOnlyWhenReadyKey = "surge.indicator.showOnlyWhenReady";
 
-        private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
+        public const float MinIndicatorRadius = 0.5f;
+        public const float MaxIndicatorRadius = 10f;
+
+        public static readonly KeyValuePair<string, object>[] Defaults =
         {
-            { "EnableSurgeMode", true },
-            { "indicator.radius", 1.5f },
-            { "indicator.offset.x", 3f },
-            { "indicator.offset.y", 8f },
-            { "indicator.availableColor", "#00FF00" },
-            { "indicator.cooldownColor", "#FF0000" },
-            { "indicator.activeColor", "#87CEEB" },
-            { "indicator.showOnlyWhenReady", false },
-            { "UseDpadForUltimate", false },
-            { "UnlimitedPerkChoosingTime", true },
-            { "EnableStatsLogging", true },
-            { "TelemetryEnabled", false },
-            { "display.showTutorial", true },
-            { "display.showTelemetryConsentPrompt", true },
+            new KeyValuePair<string, object>(SurgeModeKey, true),
+            new KeyValuePair<string, object>(DpadUltimateKey, false),
+            new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
+            new KeyValuePair<string, object>(ShowTutorialKey, true),
+            new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
+            new KeyValuePair<string, object>(StatsLoggingKey, true),
+            new KeyValuePair<string, object>(TelemetryKey, false),
+            new KeyValuePair<string, object>(IndicatorRadiusKey, 1.5f),
+            new KeyValuePair<string, object>(IndicatorOffsetXKey, 3f),
+            new KeyValuePair<string, object>(IndicatorOffsetYKey, 8f),
+            new KeyValuePair<string, object>(IndicatorAvailableColorKey, "#00FF00"),
+            new KeyValuePair<string, object>(IndicatorCooldownColorKey, "#FF0000"),
+            new KeyValuePair<string, object>(IndicatorActiveColorKey, "#87CEEB"),
+            new KeyValuePair<string, object>(IndicatorShowOnlyWhenReadyKey, false),
         };
 
+        private static readonly Dictionary<string, Color> _colors = new Dictionary<string, Color>();
+        private static readonly HashSet<string> _warned = new HashSet<string>();
+
         // Surge mode settings
-        public static bool enableSurgeMode => ReadBool("EnableSurgeMode");
+        public static bool enableSurgeMode => Settings.GetBool(SurgeModeKey);
 
         // Ability indicator configuration
-        public static float IndicatorRadius => ValidateIndicatorRadius(ReadFloat("indicator.radius"));
-        public static float IndicatorOffsetX => ReadFloat("indicator.offset.x");
-        public static float IndicatorOffsetY => ReadFloat("indicator.offset.y");
-        public static Color IndicatorAvailableColor => ReadColor("indicator.availableColor");
-        public static Color IndicatorCooldownColor => ReadColor("indicator.cooldownColor");
-        public static Color IndicatorActiveColor => ReadColor("indicator.activeColor");
-        public static bool IndicatorShowOnlyWhenReady => ReadBool("indicator.showOnlyWhenReady");
+        public static float IndicatorRadius => Mathf.Clamp(Settings.GetFloat(IndicatorRadiusKey), MinIndicatorRadius, MaxIndicatorRadius);
+        public static float IndicatorOffsetX => Settings.GetFloat(IndicatorOffsetXKey);
+        public static float IndicatorOffsetY => Settings.GetFloat(IndicatorOffsetYKey);
+        public static Color IndicatorAvailableColor => ReadColor(IndicatorAvailableColorKey);
+        public static Color IndicatorCooldownColor => ReadColor(IndicatorCooldownColorKey);
+        public static Color IndicatorActiveColor => ReadColor(IndicatorActiveColorKey);
+        public static bool IndicatorShowOnlyWhenReady => Settings.GetBool(IndicatorShowOnlyWhenReadyKey);
 
         // Ultimate activation configuration
-        public static bool UltimateUseDpadActivation => ReadBool("UseDpadForUltimate");
+        public static bool UltimateUseDpadActivation => Settings.GetBool(DpadUltimateKey);
 
-        public static bool UnlimitedPerkChoosingTime => ReadBool("UnlimitedPerkChoosingTime");
+        public static bool UnlimitedPerkChoosingTime => Settings.GetBool(UnlimitedPerkTimeKey);
 
-        public static bool EnableStatsLogging => ReadBool("EnableStatsLogging");
-        public static bool TelemetryEnabled => ReadBool("TelemetryEnabled");
-        public static bool ShowTutorial => ReadBool("display.showTutorial");
-        public static bool ShowTelemetryConsentPrompt => ReadBool("display.showTelemetryConsentPrompt");
+        public static bool EnableStatsLogging => Settings.GetBool(StatsLoggingKey);
+        public static bool TelemetryEnabled => Settings.GetBool(TelemetryKey);
+        public static bool ShowTutorial => Settings.GetBool(ShowTutorialKey);
+        public static bool ShowTelemetryConsentPrompt => Settings.GetBool(ShowTelemetryPromptKey);
 
-        public static void SetEnableSurgeMode(bool value)
-        {
-            Config.SetModConfigValue(ModId, "EnableSurgeMode", value);
-        }
+        public static void SetEnableSurgeMode(bool value) => Settings.Set(SurgeModeKey, value);
 
-        public static void SetShowTutorial(bool value)
-        {
-            Config.SetModConfigValue(ModId, "display.showTutorial", value);
-        }
+        public static void SetShowTutorial(bool value) => Settings.Set(ShowTutorialKey, value);
 
-        public static void SetTelemetryEnabled(bool value)
-        {
-            Config.SetModConfigValue(ModId, "TelemetryEnabled", value);
-        }
+        public static void SetTelemetryEnabled(bool value) => Settings.Set(TelemetryKey, value);
 
-        public static void SetShowTelemetryConsentPrompt(bool value)
-        {
-            Config.SetModConfigValue(ModId, "display.showTelemetryConsentPrompt", value);
-        }
-
-        // Silk splits keys on dots into sections and keeps the sections it is given, so each load gets fresh ones
-        public static Dictionary<string, object> BuildDefaults()
-        {
-            var root = new Dictionary<string, object>();
-            foreach (var pair in Defaults)
-            {
-                SetPath(root, pair.Key, pair.Value);
-            }
-            return root;
-        }
-
-        // Older versions wrote "a.b" keys flat, where Silk never reads them; this nests them in the file before Silk loads it
-        public static void MigrateFlatKeys()
-        {
-            string path = Config.GetModConfigPath(ModId);
-            try
-            {
-                if (!File.Exists(path)) return;
-                if (!(Normalize(new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(path))) is Dictionary<string, object> root)) return;
-
-                List<string> flatKeys = root.Keys.Where(key => key.Contains(".")).ToList();
-                if (flatKeys.Count == 0) return;
-
-                int moved = 0;
-                int kept = 0;
-                var dropped = new List<string>();
-                foreach (string key in flatKeys)
-                {
-                    object flatValue = root[key];
-                    root.Remove(key);
-                    if (!Defaults.ContainsKey(key))
-                    {
-                        dropped.Add(key);
-                    }
-                    // Older versions read the section, so a value there is the one in effect and stays
-                    else if (flatValue == null || TryGetPath(root, key, out object current) && current != null)
-                    {
-                        kept++;
-                    }
-                    else
-                    {
-                        SetPath(root, key, flatValue);
-                        moved++;
-                    }
-                }
-
-                File.WriteAllText(path, new SerializerBuilder().Build().Serialize(root));
-                string droppedText = dropped.Count > 0 ? $", dropped unused {string.Join(", ", dropped)}" : "";
-                Logger.LogInfo($"Moved {moved} old config keys into their sections, kept {kept} section values{droppedText}");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning($"Could not move the old config keys in {path} into their sections: {ex.Message}");
-            }
-        }
-
-        private static object Normalize(object node)
-        {
-            if (node is IDictionary<object, object> map)
-            {
-                return map.ToDictionary(pair => pair.Key.ToString(), pair => Normalize(pair.Value));
-            }
-            if (node is IList<object> list)
-            {
-                return list.Select(Normalize).ToList();
-            }
-            return node;
-        }
-
-        private static bool TryGetPath(Dictionary<string, object> root, string key, out object value)
-        {
-            value = root;
-            foreach (string part in key.Split('.'))
-            {
-                if (!(value is Dictionary<string, object> section) || !section.TryGetValue(part, out value))
-                {
-                    value = null;
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static void SetPath(Dictionary<string, object> root, string key, object value)
-        {
-            string[] parts = key.Split('.');
-            Dictionary<string, object> section = root;
-            for (int i = 0; i < parts.Length - 1; i++)
-            {
-                if (!section.TryGetValue(parts[i], out object next) || !(next is Dictionary<string, object>))
-                {
-                    next = new Dictionary<string, object>();
-                    section[parts[i]] = next;
-                }
-                section = (Dictionary<string, object>)next;
-            }
-            section[parts[parts.Length - 1]] = value;
-        }
-
-        // Values come back from the file as text, and Silk's typed read would parse them in the player's culture
-        private static string ReadRaw(string key)
-        {
-            object raw = Config.GetModConfigValue<object>(ModId, key, null);
-            return raw == null ? null : Convert.ToString(raw, CultureInfo.InvariantCulture).Trim();
-        }
-
-        private static bool ReadBool(string key)
-        {
-            bool fallback = (bool)Defaults[key];
-            string raw = ReadRaw(key);
-            if (raw == null) return fallback;
-            if (bool.TryParse(raw, out bool value)) return value;
-
-            Warn(key, raw, fallback);
-            return fallback;
-        }
-
-        private static float ReadFloat(string key)
-        {
-            float fallback = (float)Defaults[key];
-            string raw = ReadRaw(key);
-            if (raw == null) return fallback;
-            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)) return value;
-
-            Warn(key, raw, fallback);
-            return fallback;
-        }
+        public static void SetShowTelemetryConsentPrompt(bool value) => Settings.Set(ShowTelemetryPromptKey, value);
 
         private static Color ReadColor(string key)
         {
-            string fallback = (string)Defaults[key];
-            string raw = ReadRaw(key);
-            if (!string.IsNullOrEmpty(raw))
+            string raw = Settings.GetString(key);
+            if (_colors.TryGetValue(raw, out Color color))
             {
-                if (TryParseColor(raw, out Color color)) return color;
-                Warn(key, raw, fallback);
+                return color;
             }
 
-            TryParseColor(fallback, out Color defaultColor);
-            return defaultColor;
-        }
-
-        private static void Warn(string key, string raw, object fallback)
-        {
-            if (_warned.Add(key + "=" + raw))
+            if (!TryParseColor(raw, out color))
             {
-                Logger.LogWarning($"Config {key} '{raw}' is not valid, using {Convert.ToString(fallback, CultureInfo.InvariantCulture)}");
+                string fallback = (string)Settings.Default(key);
+                if (_warned.Add(key + "=" + raw))
+                {
+                    Logger.LogWarning($"Setting {key} '{raw}' is not a color, using {fallback}");
+                }
+                TryParseColor(fallback, out color);
             }
-        }
-
-        private static float ValidateIndicatorRadius(float value)
-        {
-            if (value < 0.5f)
-            {
-                Logger.LogWarning($"Indicator radius {value} is too small, clamping to 0.5");
-                return 0.5f;
-            }
-            if (value > 10f)
-            {
-                Logger.LogWarning($"Indicator radius {value} is too large, clamping to 10");
-                return 10f;
-            }
-            return value;
+            _colors[raw] = color;
+            return color;
         }
 
         // HTML colors (#RRGGBB, #RRGGBBAA, names) or "r,g,b" / "r,g,b,a" with channels from 0 to 1
-        private static bool TryParseColor(string s, out Color color)
+        public static bool TryParseColor(string s, out Color color)
         {
             if (ColorUtility.TryParseHtmlString(s, out color)) return true;
 
@@ -256,6 +115,5 @@ namespace SpiderSurge
             color = new Color(channels[0], channels[1], channels[2], channels[3]);
             return true;
         }
-
     }
 }

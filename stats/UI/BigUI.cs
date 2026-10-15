@@ -134,7 +134,7 @@ namespace StatsMod
 
         #region UI State
         private bool isDisplayVisible = false;
-        private bool isDisplayVisibleAtAll = true;
+        private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         #endregion
 
         #region GUI Styles
@@ -155,13 +155,12 @@ namespace StatsMod
         private GUIStyle centeredWhiteStyle;
         private GUIStyle dynamicPlayerNameStyle;
 
-        private bool stylesInitialized = false;
+        private int stylesVersion = -1;
         #endregion
 
         #region Initialization
         public void Initialize()
         {
-            isDisplayVisibleAtAll = ModConfig.ShowStatsWindow;
             Logger.LogInfo("BigUI initialized");
         }
         #endregion
@@ -190,7 +189,7 @@ namespace StatsMod
 
         private void InitializeStyles()
         {
-            if (stylesInitialized) return;
+            if (stylesVersion == UIManager.StyleVersion) return;
 
             backgroundStyle = new GUIStyle()
             {
@@ -218,7 +217,7 @@ namespace StatsMod
             dynamicPlayerNameStyle = new GUIStyle(valueStyle) { alignment = TextAnchor.MiddleCenter };
 
 
-            stylesInitialized = true;
+            stylesVersion = UIManager.StyleVersion;
         }
 
 

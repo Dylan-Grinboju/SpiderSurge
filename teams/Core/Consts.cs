@@ -4,7 +4,6 @@ namespace SpiderTeams
 {
     public static class Consts
     {
-        public const string HarmonyId = "com.SpiderTeams.Mod";
         public const string ManagerObjectName = "SpiderTeamsManager";
         public const int MinTeams = 2;
         public const int MaxTeams = 32;
@@ -13,20 +12,19 @@ namespace SpiderTeams
         {
             public const string TeamsEnabled = "teams.enabled";
             public const string TeamCount = "teams.count";
-            public const string FriendlyFire = "friendlyFire.mode";
-            public const string RecolorSpiders = "visuals.recolorSpiders";
-            public const string ShowMarker = "visuals.showMarker";
-            public const string GroupTeammates = "spawns.groupTeammates";
-            public const string CycleTeamGamepad = "input.cycleTeamGamepad";
-            public const string CycleTeamKeyboard = "input.cycleTeamKeyboard";
-            public const string CheckForUpdates = "updater.checkForUpdates";
-            public const string SurgeEnabled = "surge.enabled";
-            public const string SurgeAbility = "surge.ability";
-            public const string SurgeUltimate = "surge.ultimate";
-            public const string SurgeCooldown = "surge.abilityCooldown";
-            public const string SurgeDuration = "surge.abilityDuration";
-            public const string SurgeShortTerm = "surge.shortTermInvestment";
-            public const string SurgeLongTerm = "surge.longTermInvestment";
+            public const string FriendlyFire = "teams.friendlyFire";
+            public const string RecolorSpiders = "teams.recolorSpiders";
+            public const string ShowMarker = "teams.showMarker";
+            public const string GroupTeammates = "teams.groupTeammates";
+            public const string CycleTeamGamepad = "teams.buttonGamepad";
+            public const string CycleTeamKeyboard = "teams.buttonKeyboard";
+            public const string SurgeEnabled = "teams.surge.enabled";
+            public const string SurgeAbility = "teams.surge.ability";
+            public const string SurgeUltimate = "teams.surge.ultimate";
+            public const string SurgeCooldown = "teams.surge.abilityCooldown";
+            public const string SurgeDuration = "teams.surge.abilityDuration";
+            public const string SurgeShortTerm = "teams.surge.shortTermInvestment";
+            public const string SurgeLongTerm = "teams.surge.longTermInvestment";
         }
 
         public static class Defaults
@@ -39,7 +37,6 @@ namespace SpiderTeams
             public const bool GroupTeammates = true;
             public const string CycleTeamGamepad = "<Gamepad>/buttonNorth";
             public const string CycleTeamKeyboard = "<Keyboard>/t";
-            public const bool CheckForUpdates = true;
             public const bool SurgeEnabled = false;
             public const string SurgeAbility = "pulse";
             public const bool SurgeUltimate = false;
@@ -58,7 +55,6 @@ namespace SpiderTeams
                 new KeyValuePair<string, object>(Keys.GroupTeammates, GroupTeammates),
                 new KeyValuePair<string, object>(Keys.CycleTeamGamepad, CycleTeamGamepad),
                 new KeyValuePair<string, object>(Keys.CycleTeamKeyboard, CycleTeamKeyboard),
-                new KeyValuePair<string, object>(Keys.CheckForUpdates, CheckForUpdates),
                 new KeyValuePair<string, object>(Keys.SurgeEnabled, SurgeEnabled),
                 new KeyValuePair<string, object>(Keys.SurgeAbility, SurgeAbility),
                 new KeyValuePair<string, object>(Keys.SurgeUltimate, SurgeUltimate),
@@ -67,29 +63,6 @@ namespace SpiderTeams
                 new KeyValuePair<string, object>(Keys.SurgeShortTerm, SurgeShortTerm),
                 new KeyValuePair<string, object>(Keys.SurgeLongTerm, SurgeLongTerm),
             };
-
-            // Silk copies defaults shallowly and edits nested maps in place, so every load needs fresh dictionaries.
-            public static Dictionary<string, object> BuildNested()
-            {
-                var root = new Dictionary<string, object>();
-                foreach (var pair in Flat)
-                {
-                    string[] parts = pair.Key.Split('.');
-                    Dictionary<string, object> node = root;
-                    for (int i = 0; i < parts.Length - 1; i++)
-                    {
-                        object next;
-                        if (!node.TryGetValue(parts[i], out next) || !(next is Dictionary<string, object>))
-                        {
-                            next = new Dictionary<string, object>();
-                            node[parts[i]] = next;
-                        }
-                        node = (Dictionary<string, object>)next;
-                    }
-                    node[parts[parts.Length - 1]] = pair.Value;
-                }
-                return root;
-            }
         }
 
         public static class Surge
@@ -204,13 +177,5 @@ namespace SpiderTeams
             public const string Orange = "#FFAA66";
         }
 
-        public static class ModUpdater
-        {
-            public const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderTeams/main/version.txt";
-            public const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderTeams/releases/tag/v{0}";
-            public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderTeams/releases";
-            public const int StartDelayMs = 15000;
-            public const int RequestTimeoutMs = 5000;
-        }
     }
 }

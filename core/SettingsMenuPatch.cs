@@ -2,7 +2,7 @@ using System;
 using HarmonyLib;
 using Logger = Silk.Logger;
 
-namespace SpiderTeams
+namespace SpiderSurge.Common
 {
     [HarmonyPatch(typeof(Announcer), nameof(Announcer.ModsPopup))]
     public static class Announcer_ModsPopup_Patch
@@ -12,21 +12,30 @@ namespace SpiderTeams
         {
             try
             {
-                if (title != SpiderTeamsMod.ModName || __result == null)
+                if (__result == null)
                 {
                     return;
                 }
 
-                SpiderTeamsMenuPage page = __result.GetComponent<SpiderTeamsMenuPage>();
+                SettingsPage page = __result.GetComponent<SettingsPage>();
+                if (title != SpiderSurgeMod.ModName)
+                {
+                    if (page != null)
+                    {
+                        page.Clear();
+                    }
+                    return;
+                }
+
                 if (page == null)
                 {
-                    page = __result.gameObject.AddComponent<SpiderTeamsMenuPage>();
+                    page = __result.gameObject.AddComponent<SettingsPage>();
                 }
                 page.Build(__result);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"SpiderTeams could not build its Mods page: {ex}");
+                Logger.LogError($"SpiderSurge could not build its Mods page: {ex}");
             }
         }
     }

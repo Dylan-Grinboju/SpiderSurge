@@ -38,6 +38,11 @@ namespace SpiderSurge
             }
         }
 
+        internal void ForceActive(bool active)
+        {
+            IsActive = active;
+        }
+
         public void ResetRun()
         {
             SetActive(false);

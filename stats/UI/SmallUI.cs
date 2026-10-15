@@ -38,7 +38,7 @@ namespace StatsMod
 
         #region UI State
         private bool isDisplayVisible = false;
-        private bool isDisplayVisibleAtAll = true;
+        private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
         #endregion
 
@@ -49,7 +49,7 @@ namespace StatsMod
         private GUIStyle headerCenteredStyle;
         private GUIStyle labelStyle;
         private GUIStyle playerColorCenteredStyle;
-        private bool stylesInitialized = false;
+        private int stylesVersion = -1;
         #endregion
 
         #region Initialization
@@ -59,7 +59,6 @@ namespace StatsMod
             float yPos = ModConfig.DisplayPositionY;
 
             windowRect = new Rect(xPos, yPos, WindowWidth, 100f);
-            isDisplayVisibleAtAll = ModConfig.ShowStatsWindow;
             UpdateWindowSize();
             isDisplayVisible = isDisplayVisibleAtAll;
 
@@ -92,7 +91,7 @@ namespace StatsMod
         #region Style Management
         private void InitializeStyles()
         {
-            if (stylesInitialized) return;
+            if (stylesVersion == UIManager.StyleVersion) return;
 
             windowStyle = UIManager.Instance.CreateWindowStyle(UIManager.Instance.GetDarkTexture());
             
@@ -108,7 +107,7 @@ namespace StatsMod
             labelStyle = UIManager.Instance.CreateLabelStyle();
             playerColorCenteredStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleCenter };
 
-            stylesInitialized = true;
+            stylesVersion = UIManager.StyleVersion;
         }
         #endregion
 

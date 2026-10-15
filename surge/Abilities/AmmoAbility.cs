@@ -51,6 +51,11 @@ namespace SpiderSurge
         private static WeaponSpawner[] cachedWeaponSpawners;
         private static string cachedSceneName;
 
+        internal static void ForgetWeaponSpawners()
+        {
+            cachedWeaponSpawners = null;
+        }
+
         protected override void Awake()
         {
             base.Awake();

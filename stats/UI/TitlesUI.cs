@@ -55,7 +55,7 @@ namespace StatsMod
         private GUIStyle dynamicPlayerNameStyle; // Reused for dynamic player colors
         private GUIStyle noTitlesStyle;
 
-        private bool stylesInitialized = false;
+        private int stylesVersion = -1;
         private Texture2D whiteTexture;
         #endregion
 
@@ -213,7 +213,7 @@ namespace StatsMod
         #region Style Management
         private void InitializeStyles()
         {
-            if (stylesInitialized) return;
+            if (stylesVersion == UIManager.StyleVersion) return;
 
             backgroundStyle = new GUIStyle()
             {
@@ -242,7 +242,7 @@ namespace StatsMod
             noTitlesStyle = new GUIStyle(cardPlayerNameStyle) { normal = { textColor = UIManager.Gray } };
 
 
-            stylesInitialized = true;
+            stylesVersion = UIManager.StyleVersion;
         }
         #endregion
 

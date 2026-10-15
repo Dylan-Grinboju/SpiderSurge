@@ -1,89 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using SpiderSurge.Common;
+using StatsMod;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge.Integration
 {
-    /// <summary>
-    /// Reflection-based bridge to the Stats Mod API. Gracefully no-ops if the stats mod isn't loaded.
-    /// </summary>
+    // Hands Surge's activations to the Stats part's end screen and titles; does nothing while Stats is off
     public static class StatsModBridge
     {
-        private static bool _initialized = false;
-        private static bool _statsModAvailable = false;
-        private static MethodInfo _registerCustomStats;
-        private static MethodInfo _registerCustomTitle;
-
-        public static void Initialize()
-        {
-            if (_initialized) return;
-            _initialized = true;
-
-            try
-            {
-                Type apiType = FindType("StatsMod.StatsModApi");
-                if (apiType == null)
-                {
-                    Logger.LogInfo("StatsModBridge: Stats Mod not detected, integration disabled.");
-                    return;
-                }
-
-                _registerCustomStats = apiType.GetMethod("RegisterCustomStats", BindingFlags.Public | BindingFlags.Static);
-                _registerCustomTitle = apiType.GetMethod("RegisterCustomTitle", BindingFlags.Public | BindingFlags.Static);
-
-                _statsModAvailable = _registerCustomStats != null && _registerCustomTitle != null;
-
-                if (_statsModAvailable)
-                    Logger.LogInfo("StatsModBridge: Stats Mod API found, integration enabled.");
-                else
-                    Logger.LogWarning("StatsModBridge: Stats Mod found but API methods missing. Integration disabled.");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"StatsModBridge: Error during initialization: {ex.Message}");
-                _statsModAvailable = false;
-            }
-        }
-
-        private static bool? _readsExplosionOwnerAsPlayerId;
-
-        // Stats mod 2.3.0 and older credit an explosion to the player whose playerID equals its explosionOwnerId
-        public static bool ReadsExplosionOwnerAsPlayerId
-        {
-            get
-            {
-                if (_readsExplosionOwnerAsPlayerId == null)
-                {
-                    Type cache = FindType("StatsMod.EnemyReflectionCache");
-                    _readsExplosionOwnerAsPlayerId = cache?.GetField("ExplosionOwnerId", BindingFlags.Public | BindingFlags.Static) != null;
-                }
-                return _readsExplosionOwnerAsPlayerId.Value;
-            }
-        }
-
-        private static Type FindType(string name)
-        {
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try
-                {
-                    Type type = assembly.GetType(name);
-                    if (type != null) return type;
-                }
-                catch
-                {
-                }
-            }
-            return null;
-        }
+        private static bool StatsRunning => Parts.Stats.Running;
 
         public static void SendSurgeStats(Logging.SpiderSurgeStatsSnapshot snapshot)
         {
-            Initialize();
-            if (!_statsModAvailable || snapshot == null) return;
+            if (!StatsRunning || snapshot == null) return;
 
             try
             {
@@ -100,7 +32,7 @@ namespace SpiderSurge.Integration
                     lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");
                 }
 
-                _registerCustomStats.Invoke(null, new object[] { lines });
+                StatsModApi.RegisterCustomStats(lines);
             }
             catch (Exception ex)
             {
@@ -153,8 +85,7 @@ namespace SpiderSurge.Integration
 
         public static void SendSurgeTitles(Logging.SpiderSurgeStatsSnapshot snapshot)
         {
-            Initialize();
-            if (!_statsModAvailable || snapshot == null) return;
+            if (!StatsRunning || snapshot == null) return;
             if (snapshot.PlayerStats.Count < 2) return;
 
             try
@@ -280,15 +211,13 @@ namespace SpiderSurge.Integration
 
             try
             {
-                bool success = (bool)_registerCustomTitle.Invoke(null, new object[]
-                {
+                bool success = StatsModApi.RegisterCustomTitle(
                     titleName,
                     descriptions.Count > 0 ? string.Join("\n", descriptions) : "",
                     allReqNames.ToArray(),
                     primaryPlayer,
                     true,
-                    bonusPriority
-                });
+                    bonusPriority);
 
                 if (!success)
                 {

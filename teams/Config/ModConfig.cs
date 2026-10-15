@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using Silk;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderTeams
@@ -24,7 +23,6 @@ namespace SpiderTeams
 
     public static class ModConfig
     {
-        private const string ModId = SpiderTeamsMod.ModId;
         private static readonly HashSet<string> _warned = new HashSet<string>();
 
         public static event Action Changed;
@@ -37,7 +35,6 @@ namespace SpiderTeams
         public static bool GroupTeammates { get; private set; } = Consts.Defaults.GroupTeammates;
         public static string CycleTeamGamepad { get; private set; } = Consts.Defaults.CycleTeamGamepad;
         public static string CycleTeamKeyboard { get; private set; } = Consts.Defaults.CycleTeamKeyboard;
-        public static bool CheckForUpdates { get; private set; } = Consts.Defaults.CheckForUpdates;
         public static bool SurgeEnabled { get; private set; } = Consts.Defaults.SurgeEnabled;
         public static SurgeAbility SurgeAbility { get; private set; } = DefaultSurgeAbility;
         public static bool SurgeUltimate { get; private set; } = Consts.Defaults.SurgeUltimate;
@@ -46,30 +43,31 @@ namespace SpiderTeams
         public static bool SurgeShortTerm { get; private set; } = Consts.Defaults.SurgeShortTerm;
         public static bool SurgeLongTerm { get; private set; } = Consts.Defaults.SurgeLongTerm;
 
-        public static string ConfigPath => Config.GetModConfigPath(ModId);
+        public static KeyValuePair<string, object>[] Defaults => Consts.Defaults.Flat;
 
-        public static void Load()
+        public static void Initialize()
         {
-            Config.LoadModConfig(ModId, Consts.Defaults.BuildNested());
+            Settings.Changed += OnSettingsChanged;
             Refresh();
-            Logger.LogInfo($"SpiderTeams config loaded from {ConfigPath}");
         }
 
-        public static void ReloadFromFile()
+        public static void Shutdown()
         {
-            _warned.Clear();
-            Load();
+            Settings.Changed -= OnSettingsChanged;
         }
 
         public static void ResetToDefaults()
         {
-            foreach (var pair in Consts.Defaults.Flat)
+            Settings.Reset("teams");
+            Logger.LogInfo("Teams settings reset to defaults");
+        }
+
+        private static void OnSettingsChanged(string key)
+        {
+            if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal))
             {
-                Config.SetModConfigValue(ModId, pair.Key, pair.Value);
+                Refresh();
             }
-            _warned.Clear();
-            Refresh();
-            Logger.LogInfo("SpiderTeams config reset to defaults");
         }
 
         public static void SetTeamsEnabled(bool value) => Set(Consts.Keys.TeamsEnabled, value);
@@ -80,7 +78,6 @@ namespace SpiderTeams
         public static void SetGroupTeammates(bool value) => Set(Consts.Keys.GroupTeammates, value);
         public static void SetCycleTeamGamepad(string path) => Set(Consts.Keys.CycleTeamGamepad, path);
         public static void SetCycleTeamKeyboard(string path) => Set(Consts.Keys.CycleTeamKeyboard, path);
-        public static void SetCheckForUpdates(bool value) => Set(Consts.Keys.CheckForUpdates, value);
         public static void SetSurgeEnabled(bool value) => Set(Consts.Keys.SurgeEnabled, value);
         public static void SetSurgeAbility(SurgeAbility value) => Set(Consts.Keys.SurgeAbility, SurgeAbilityName(value));
         public static void SetSurgeUltimate(bool value) => Set(Consts.Keys.SurgeUltimate, value);
@@ -163,8 +160,7 @@ namespace SpiderTeams
 
         private static void Set(string key, object value)
         {
-            Config.SetModConfigValue(ModId, key, value);
-            Refresh();
+            Settings.Set(key, value);
         }
 
         private static void Refresh()
@@ -177,7 +173,6 @@ namespace SpiderTeams
             GroupTeammates = ReadBool(Consts.Keys.GroupTeammates, Consts.Defaults.GroupTeammates);
             CycleTeamGamepad = ReadBinding(Consts.Keys.CycleTeamGamepad, Consts.Defaults.CycleTeamGamepad);
             CycleTeamKeyboard = ReadBinding(Consts.Keys.CycleTeamKeyboard, Consts.Defaults.CycleTeamKeyboard);
-            CheckForUpdates = ReadBool(Consts.Keys.CheckForUpdates, Consts.Defaults.CheckForUpdates);
             SurgeEnabled = ReadBool(Consts.Keys.SurgeEnabled, Consts.Defaults.SurgeEnabled);
             SurgeAbility = ReadSurgeAbility();
             SurgeUltimate = ReadBool(Consts.Keys.SurgeUltimate, Consts.Defaults.SurgeUltimate);
@@ -204,63 +199,29 @@ namespace SpiderTeams
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"SpiderTeams config listener failed: {ex}");
+                    Logger.LogError($"Teams settings listener failed: {ex}");
                 }
             }
         }
 
-        // Read as raw text so a hand-edited value never trips Silk's typed conversion.
+        // The shared settings parse the text; values outside a setting's range are pulled back in here
         private static string ReadRaw(string key)
         {
-            object raw = Config.GetModConfigValue<object>(ModId, key, null);
-            return raw == null ? null : Convert.ToString(raw, CultureInfo.InvariantCulture).Trim();
+            return Settings.GetString(key);
         }
 
         private static bool ReadBool(string key, bool fallback)
         {
-            string raw = ReadRaw(key);
-            if (raw == null)
-            {
-                return fallback;
-            }
-
-            switch (raw.ToLowerInvariant())
-            {
-                case "true":
-                case "yes":
-                case "on":
-                case "1":
-                    return true;
-                case "false":
-                case "no":
-                case "off":
-                case "0":
-                    return false;
-            }
-
-            Warn(key, raw, $"is not true or false, using {(fallback ? "true" : "false")}");
-            return fallback;
+            return Settings.GetBool(key);
         }
 
         private static int ReadTeamCount()
         {
-            string raw = ReadRaw(Consts.Keys.TeamCount);
-            if (raw == null)
-            {
-                return Consts.Defaults.TeamCount;
-            }
-
-            int value;
-            if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
-            {
-                Warn(Consts.Keys.TeamCount, raw, $"is not a whole number, using {Consts.Defaults.TeamCount}");
-                return Consts.Defaults.TeamCount;
-            }
-
+            int value = Settings.GetInt(Consts.Keys.TeamCount);
             int clamped = ClampTeams(value);
             if (clamped != value)
             {
-                Warn(Consts.Keys.TeamCount, raw, $"must be {Consts.MinTeams}-{Consts.MaxTeams}, using {clamped}");
+                Warn(Consts.Keys.TeamCount, value.ToString(), $"must be {Consts.MinTeams}-{Consts.MaxTeams}, using {clamped}");
             }
             return clamped;
         }
@@ -300,23 +261,11 @@ namespace SpiderTeams
 
         private static int ReadPerkLevel(string key, int fallback)
         {
-            string raw = ReadRaw(key);
-            if (raw == null)
-            {
-                return fallback;
-            }
-
-            int value;
-            if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
-            {
-                Warn(key, raw, $"is not a whole number, using {fallback}");
-                return fallback;
-            }
-
+            int value = Settings.GetInt(key);
             int clamped = ClampPerk(value);
             if (clamped != value)
             {
-                Warn(key, raw, $"must be 0-{Consts.Surge.MaxPerkLevel}, using {clamped}");
+                Warn(key, value.ToString(), $"must be 0-{Consts.Surge.MaxPerkLevel}, using {clamped}");
             }
             return clamped;
         }
@@ -344,7 +293,7 @@ namespace SpiderTeams
         {
             if (_warned.Add(key + "=" + value))
             {
-                Logger.LogWarning($"SpiderTeams config: {key} '{value}' {problem}");
+                Logger.LogWarning($"Teams setting {key} '{value}' {problem}");
             }
         }
     }

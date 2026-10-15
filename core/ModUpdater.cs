@@ -1,21 +1,38 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Logger = Silk.Logger;
 
-namespace SpiderTeams
+namespace SpiderSurge.Common
 {
     public static class ModUpdater
     {
-        private static string CurrentVersion => SpiderTeamsMod.Version;
+        public const string CheckForUpdatesKey = "general.checkForUpdates";
+        public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
+
+        private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
+        private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
+        private const int StartDelayMs = 15000;
+        private const int RequestTimeoutMs = 5000;
+
         private static readonly HttpClient _httpClient = new HttpClient();
+
+        private static string CurrentVersion => SpiderSurgeMod.Version;
+
+        public static bool CheckForUpdates => Settings.GetBool(CheckForUpdatesKey);
+
+        public static IEnumerable<KeyValuePair<string, object>> Defaults => new[]
+        {
+            new KeyValuePair<string, object>(CheckForUpdatesKey, true),
+        };
 
         public static void ScheduleCheck()
         {
-            if (!ModConfig.CheckForUpdates)
+            if (!CheckForUpdates)
             {
-                Logger.LogInfo("SpiderTeams update check is turned off in the config");
+                Logger.LogInfo("Update checking is turned off in the settings");
                 return;
             }
 
@@ -23,40 +40,40 @@ namespace SpiderTeams
             {
                 try
                 {
-                    await Task.Delay(Consts.ModUpdater.StartDelayMs);
+                    await Task.Delay(StartDelayMs);
                     await CheckForUpdatesAsync();
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"SpiderTeams update check failed: {ex.Message}");
+                    Logger.LogError($"Update check failed: {ex.Message}");
                 }
             });
         }
 
-        public static async Task CheckForUpdatesAsync()
+        private static async Task CheckForUpdatesAsync()
         {
             try
             {
                 var latestVersion = await GetLatestVersionAsync();
-                Logger.LogInfo($"SpiderTeams latest version: {latestVersion}, current version: {CurrentVersion}");
+                Logger.LogInfo($"Latest version: {latestVersion}, current version: {CurrentVersion}");
 
                 if (IsNewerVersion(latestVersion, CurrentVersion))
                 {
-                    Logger.LogInfo("A new version of SpiderTeams is available!");
+                    Logger.LogInfo("A new version of SpiderSurge is available!");
                     MainThread.Enqueue(() => ShowUpdatePrompt(latestVersion));
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed to check for SpiderTeams updates: {ex.Message}");
+                Logger.LogError($"Failed to check for SpiderSurge updates: {ex.Message}");
             }
         }
 
         private static async Task<string> GetLatestVersionAsync()
         {
-            using (var timeout = new CancellationTokenSource(Consts.ModUpdater.RequestTimeoutMs))
+            using (var timeout = new CancellationTokenSource(RequestTimeoutMs))
             {
-                using (var response = await _httpClient.GetAsync(Consts.ModUpdater.LatestVersionUrl, timeout.Token))
+                using (var response = await _httpClient.GetAsync(LatestVersionUrl, timeout.Token))
                 {
                     response.EnsureSuccessStatusCode();
                     var content = await response.Content.ReadAsStringAsync();
@@ -73,29 +90,29 @@ namespace SpiderTeams
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed to compare SpiderTeams versions: {ex.Message}");
+                Logger.LogError($"Failed to compare versions: {ex.Message}");
                 return false;
             }
         }
 
         private static void ShowUpdatePrompt(string latestVersion)
         {
-            if (!ModConfig.CheckForUpdates)
+            if (!CheckForUpdates)
             {
                 return;
             }
 
-            var downloadUrl = string.Format(Consts.ModUpdater.DownloadUrl, latestVersion);
-            Logger.LogInfo($"SpiderTeams download URL: {downloadUrl}");
+            var downloadUrl = string.Format(DownloadUrl, latestVersion);
+            Logger.LogInfo($"Download URL: {downloadUrl}");
 
             Announcer.TwoOptionsPopup(
-                $"SpiderTeams v{latestVersion} is available!\nCurrent version: {CurrentVersion}\nWould you like to open the download page?",
+                $"SpiderSurge v{latestVersion} is available!\nCurrent version: {CurrentVersion}\nWould you like to open the download page?",
                 "Yes", "No",
                 () =>
                 {
                     try
                     {
-                        Logger.LogInfo("Opening SpiderTeams download page...");
+                        Logger.LogInfo("Opening SpiderSurge download page...");
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                         {
                             FileName = downloadUrl,
@@ -104,20 +121,20 @@ namespace SpiderTeams
 
                         Announcer.InformationPopup(
                             "To update:\n" +
-                            "1. Download the new SpiderTeams.dll\n" +
+                            "1. Download the new SpiderSurge.dll\n" +
                             "2. Replace the old file in your <Game_Path>/Silk/Mods folder\n" +
                             "3. Restart SpiderHeck"
                         );
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError($"Failed to open SpiderTeams download page: {ex.Message}");
-                        Announcer.InformationPopup("Could not open the download page automatically. Please visit:\n" + Consts.ModUpdater.ReleasesUrl);
+                        Logger.LogError($"Failed to open download page: {ex.Message}");
+                        Announcer.InformationPopup("Could not open the download page automatically. Please visit:\n" + ReleasesUrl);
                     }
                 },
                 () =>
                 {
-                    Logger.LogInfo("SpiderTeams update declined by user.");
+                    Logger.LogInfo("Update declined by user.");
                 },
                 null
             );
