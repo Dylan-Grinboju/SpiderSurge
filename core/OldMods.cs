@@ -67,7 +67,7 @@ namespace SpiderSurge.Common
             }
 
             string list = string.Join("\n", found);
-            string off = blocked.Count > 0 ? $"\nUntil then, SpiderSurge's {string.Join(" and ", blocked)} stay off." : "";
+            string off = blocked.Count > 0 ? $"\nUntil then, SpiderSurge's {string.Join(" and ", blocked)} {(blocked.Count == 1 ? "stays" : "stay")} off." : "";
             Logger.LogWarning($"Old mod files in the Mods folder, delete them and restart the game:\n{list}");
             _ = Task.Run(async () =>
             {
