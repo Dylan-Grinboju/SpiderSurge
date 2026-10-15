@@ -8,7 +8,7 @@ using System.Reflection;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.3.3", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.3.4", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -47,8 +47,6 @@ namespace SpiderSurge
             TutorialUI.Initialize();
             TelemetryConsentUI.Initialize();
 
-            // Initialize CheatManager
-            // CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
             // SoundTester.Initialize();
             // Initialize per-player control settings
@@ -95,10 +93,6 @@ namespace SpiderSurge
             var perksInfo = GameObject.Find("PerksManager");
             if (perksInfo != null)
                 Destroy(perksInfo);
-
-            var cheatInfo = GameObject.Find("CheatsModCheatManager");
-            if (cheatInfo != null)
-                Destroy(cheatInfo);
 
             var soundInfo = GameObject.Find("SoundManager");
             if (soundInfo != null)
