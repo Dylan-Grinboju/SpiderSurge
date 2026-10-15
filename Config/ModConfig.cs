@@ -1,39 +1,59 @@
 using Silk;
 using Logger = Silk.Logger;
-using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using UnityEngine;
+using YamlDotNet.Serialization;
 
 namespace SpiderSurge
 {
     public static class ModConfig
     {
         private const string ModId = SpiderSurgeMod.ModId;
+        private static readonly HashSet<string> _warned = new HashSet<string>();
+
+        private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
+        {
+            { "EnableSurgeMode", true },
+            { "indicator.radius", 1.5f },
+            { "indicator.offset.x", 3f },
+            { "indicator.offset.y", 8f },
+            { "indicator.availableColor", "#00FF00" },
+            { "indicator.cooldownColor", "#FF0000" },
+            { "indicator.activeColor", "#87CEEB" },
+            { "indicator.showOnlyWhenReady", false },
+            { "UseDpadForUltimate", false },
+            { "UnlimitedPerkChoosingTime", true },
+            { "EnableStatsLogging", true },
+            { "TelemetryEnabled", false },
+            { "display.showTutorial", true },
+            { "display.showTelemetryConsentPrompt", true },
+        };
 
         // Surge mode settings
-        public static bool enableSurgeMode => Config.GetModConfigValue(ModId, "EnableSurgeMode", true);
+        public static bool enableSurgeMode => ReadBool("EnableSurgeMode");
 
         // Ability indicator configuration
-        public static float IndicatorRadius => ValidateIndicatorRadius(Config.GetModConfigValue(ModId, "indicator.radius", 1.5f));
-        public static float IndicatorOffsetX => Config.GetModConfigValue(ModId, "indicator.offset.x", 3f);
-        public static float IndicatorOffsetY => Config.GetModConfigValue(ModId, "indicator.offset.y", 8f);
-        public static Color IndicatorAvailableColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.availableColor", "#00FF00"), Color.green);
-        public static Color IndicatorCooldownColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.cooldownColor", "#FF0000"), Color.red);
-        public static Color IndicatorActiveColor => ParseColor(Config.GetModConfigValue(ModId, "indicator.activeColor", "#87CEEB"), Color.blue);
-        public static bool IndicatorShowOnlyWhenReady => Config.GetModConfigValue(ModId, "indicator.showOnlyWhenReady", false);
+        public static float IndicatorRadius => ValidateIndicatorRadius(ReadFloat("indicator.radius"));
+        public static float IndicatorOffsetX => ReadFloat("indicator.offset.x");
+        public static float IndicatorOffsetY => ReadFloat("indicator.offset.y");
+        public static Color IndicatorAvailableColor => ReadColor("indicator.availableColor");
+        public static Color IndicatorCooldownColor => ReadColor("indicator.cooldownColor");
+        public static Color IndicatorActiveColor => ReadColor("indicator.activeColor");
+        public static bool IndicatorShowOnlyWhenReady => ReadBool("indicator.showOnlyWhenReady");
 
         // Ultimate activation configuration
-        public static bool UltimateUseDpadActivation => Config.GetModConfigValue(ModId, "UseDpadForUltimate", false);
+        public static bool UltimateUseDpadActivation => ReadBool("UseDpadForUltimate");
 
-        public static bool UnlimitedPerkChoosingTime => Config.GetModConfigValue(ModId, "UnlimitedPerkChoosingTime", false);
+        public static bool UnlimitedPerkChoosingTime => ReadBool("UnlimitedPerkChoosingTime");
 
-        public static bool EnableStatsLogging => Config.GetModConfigValue(ModId, "EnableStatsLogging", true);
-        public static bool TelemetryEnabled => Config.GetModConfigValue(ModId, "TelemetryEnabled", false);
-        public static bool ShowTutorial => Config.GetModConfigValue(ModId, "display.showTutorial", true);
-        public static bool ShowTelemetryConsentPrompt => Config.GetModConfigValue(ModId, "display.showTelemetryConsentPrompt", true);
+        public static bool EnableStatsLogging => ReadBool("EnableStatsLogging");
+        public static bool TelemetryEnabled => ReadBool("TelemetryEnabled");
+        public static bool ShowTutorial => ReadBool("display.showTutorial");
+        public static bool ShowTelemetryConsentPrompt => ReadBool("display.showTelemetryConsentPrompt");
 
         public static void SetEnableSurgeMode(bool value)
         {
@@ -55,36 +75,73 @@ namespace SpiderSurge
             Config.SetModConfigValue(ModId, "display.showTelemetryConsentPrompt", value);
         }
 
-        // Silk reads "a.b" keys as nested sections, so the flat "a.b" entries older versions wrote were never read
-        public static void MigrateFlatKeys(Dictionary<string, object> defaults)
+        // Silk splits keys on dots into sections and keeps the sections it is given, so each load gets fresh ones
+        public static Dictionary<string, object> BuildDefaults()
         {
+            var root = new Dictionary<string, object>();
+            foreach (var pair in Defaults)
+            {
+                SetPath(root, pair.Key, pair.Value);
+            }
+            return root;
+        }
+
+        // Older versions wrote "a.b" keys flat, where Silk never reads them; this nests them in the file before Silk loads it
+        public static void MigrateFlatKeys()
+        {
+            string path = Config.GetModConfigPath(ModId);
             try
             {
-                var configs = AccessTools.Field(typeof(Config), "_modConfigs")?.GetValue(null) as Dictionary<string, Dictionary<string, object>>;
-                if (configs == null || !configs.TryGetValue(ModId, out var config)) return;
+                if (!File.Exists(path)) return;
+                if (!(Normalize(new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(path))) is Dictionary<string, object> root)) return;
 
-                List<string> flatKeys = config.Keys.Where(key => key.Contains(".")).ToList();
+                List<string> flatKeys = root.Keys.Where(key => key.Contains(".")).ToList();
                 if (flatKeys.Count == 0) return;
 
+                int moved = 0;
+                int kept = 0;
+                var dropped = new List<string>();
                 foreach (string key in flatKeys)
                 {
-                    object flatValue = config[key];
-                    config.Remove(key);
-                    if (!TryGetPath(defaults, key, out object defaultValue) || !TryGetPath(config, key, out object current)) continue;
-
-                    // A value the player already set in the section wins over the old flat one
-                    bool setInSection = !string.Equals(Convert.ToString(current, CultureInfo.InvariantCulture),
-                        Convert.ToString(defaultValue, CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
-                    Config.SetModConfigValue(ModId, key, setInSection ? current : flatValue);
+                    object flatValue = root[key];
+                    root.Remove(key);
+                    if (!Defaults.ContainsKey(key))
+                    {
+                        dropped.Add(key);
+                    }
+                    // Older versions read the section, so a value there is the one in effect and stays
+                    else if (flatValue == null || TryGetPath(root, key, out object current) && current != null)
+                    {
+                        kept++;
+                    }
+                    else
+                    {
+                        SetPath(root, key, flatValue);
+                        moved++;
+                    }
                 }
 
-                AccessTools.Method(typeof(Config), "SaveModConfig")?.Invoke(null, new object[] { ModId });
-                Logger.LogInfo($"Moved {flatKeys.Count} old config keys into their sections");
+                File.WriteAllText(path, new SerializerBuilder().Build().Serialize(root));
+                string droppedText = dropped.Count > 0 ? $", dropped unused {string.Join(", ", dropped)}" : "";
+                Logger.LogInfo($"Moved {moved} old config keys into their sections, kept {kept} section values{droppedText}");
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"Could not migrate old config keys: {ex.Message}");
+                Logger.LogWarning($"Could not move the old config keys in {path} into their sections: {ex.Message}");
             }
+        }
+
+        private static object Normalize(object node)
+        {
+            if (node is IDictionary<object, object> map)
+            {
+                return map.ToDictionary(pair => pair.Key.ToString(), pair => Normalize(pair.Value));
+            }
+            if (node is IList<object> list)
+            {
+                return list.Select(Normalize).ToList();
+            }
+            return node;
         }
 
         private static bool TryGetPath(Dictionary<string, object> root, string key, out object value)
@@ -99,6 +156,73 @@ namespace SpiderSurge
                 }
             }
             return true;
+        }
+
+        private static void SetPath(Dictionary<string, object> root, string key, object value)
+        {
+            string[] parts = key.Split('.');
+            Dictionary<string, object> section = root;
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                if (!section.TryGetValue(parts[i], out object next) || !(next is Dictionary<string, object>))
+                {
+                    next = new Dictionary<string, object>();
+                    section[parts[i]] = next;
+                }
+                section = (Dictionary<string, object>)next;
+            }
+            section[parts[parts.Length - 1]] = value;
+        }
+
+        // Values come back from the file as text, and Silk's typed read would parse them in the player's culture
+        private static string ReadRaw(string key)
+        {
+            object raw = Config.GetModConfigValue<object>(ModId, key, null);
+            return raw == null ? null : Convert.ToString(raw, CultureInfo.InvariantCulture).Trim();
+        }
+
+        private static bool ReadBool(string key)
+        {
+            bool fallback = (bool)Defaults[key];
+            string raw = ReadRaw(key);
+            if (raw == null) return fallback;
+            if (bool.TryParse(raw, out bool value)) return value;
+
+            Warn(key, raw, fallback);
+            return fallback;
+        }
+
+        private static float ReadFloat(string key)
+        {
+            float fallback = (float)Defaults[key];
+            string raw = ReadRaw(key);
+            if (raw == null) return fallback;
+            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)) return value;
+
+            Warn(key, raw, fallback);
+            return fallback;
+        }
+
+        private static Color ReadColor(string key)
+        {
+            string fallback = (string)Defaults[key];
+            string raw = ReadRaw(key);
+            if (!string.IsNullOrEmpty(raw))
+            {
+                if (TryParseColor(raw, out Color color)) return color;
+                Warn(key, raw, fallback);
+            }
+
+            TryParseColor(fallback, out Color defaultColor);
+            return defaultColor;
+        }
+
+        private static void Warn(string key, string raw, object fallback)
+        {
+            if (_warned.Add(key + "=" + raw))
+            {
+                Logger.LogWarning($"Config {key} '{raw}' is not valid, using {Convert.ToString(fallback, CultureInfo.InvariantCulture)}");
+            }
         }
 
         private static float ValidateIndicatorRadius(float value)
@@ -116,44 +240,21 @@ namespace SpiderSurge
             return value;
         }
 
-        private static Color ParseColor(object raw, Color defaultColor)
+        // HTML colors (#RRGGBB, #RRGGBBAA, names) or "r,g,b" / "r,g,b,a" with channels from 0 to 1
+        private static bool TryParseColor(string s, out Color color)
         {
-            if (raw is Color c)
-            {
-                return c;
-            }
-            string s = raw as string;
-            if (string.IsNullOrEmpty(s)) return defaultColor;
+            if (ColorUtility.TryParseHtmlString(s, out color)) return true;
 
-            // Try HTML hex first (#RRGGBB or #RRGGBBAA)
-            if (ColorUtility.TryParseHtmlString(s, out c))
-            {
-                return c;
-            }
+            string[] parts = s.Split(',');
+            if (parts.Length < 3) return false;
 
-            // Try comma separated floats "r,g,b" or "r,g,b,a"
-            var parts = s.Split(',');
-            try
+            float[] channels = { 0f, 0f, 0f, 1f };
+            for (int i = 0; i < Math.Min(parts.Length, 4); i++)
             {
-                if (parts.Length >= 3)
-                {
-                    float r = float.Parse(parts[0].Trim());
-                    float g = float.Parse(parts[1].Trim());
-                    float b = float.Parse(parts[2].Trim());
-                    float a = 1f;
-                    if (parts.Length >= 4)
-                    {
-                        a = float.Parse(parts[3].Trim());
-                    }
-                    return new Color(r, g, b, a);
-                }
+                if (!float.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out channels[i])) return false;
             }
-            catch (Exception ex)
-            {
-                Logger.LogWarning($"Failed to parse color '{s}': {ex.Message}");
-            }
-
-            return defaultColor;
+            color = new Color(channels[0], channels[1], channels[2], channels[3]);
+            return true;
         }
 
     }

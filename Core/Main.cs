@@ -2,7 +2,6 @@
 using Logger = Silk.Logger;
 using HarmonyLib;
 using UnityEngine;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Reflection;
 
@@ -76,42 +75,9 @@ namespace SpiderSurge
 
         private void SetupConfiguration()
         {
-            // Define default configuration values
-            var defaultConfig = new Dictionary<string, object>
-            {
-                { "EnableSurgeMode", true },
-                // Ability indicator defaults
-                { "indicator", new Dictionary<string, object>
-                    {
-                        { "radius", 1.5f },
-                        { "offset", new Dictionary<string, object>
-                            {
-                                { "x", 3f },
-                                { "y", 8f }
-                            }
-                        },
-                        { "availableColor", "#00FF00" },
-                        { "cooldownColor", "#FF0000" },
-                        { "activeColor", "#87CEEB" },
-                        { "showOnlyWhenReady", false }
-                    }
-                },
-                // Upgrade activation
-                { "UseDpadForUltimate", false },
-                { "UnlimitedPerkChoosingTime", true },
-                { "EnableStatsLogging", true },
-                { "TelemetryEnabled", false },
-                { "display", new Dictionary<string, object>
-                    {
-                        { "showTutorial", true },
-                        { "showTelemetryConsentPrompt", true }
-                    }
-                },
-            };
-
+            ModConfig.MigrateFlatKeys();
             // Load the configuration (this will create the YAML file if it doesn't exist)
-            Config.LoadModConfig(ModId, defaultConfig);
-            ModConfig.MigrateFlatKeys(defaultConfig);
+            Config.LoadModConfig(ModId, ModConfig.BuildDefaults());
             Logger.LogInfo("Configuration loaded");
         }
 

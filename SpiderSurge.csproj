@@ -205,6 +205,10 @@
     <HintPath>./lib/UnityEngine.TextRenderingModule.dll</HintPath>
     <Private>false</Private>
   </Reference>
+  <Reference Include="YamlDotNet">
+    <HintPath>./lib/YamlDotNet.dll</HintPath>
+    <Private>false</Private>
+  </Reference>
 </ItemGroup>
 
   <!-- Auto-generate version.txt before build -->
