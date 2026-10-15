@@ -6,7 +6,7 @@
     <Title>SpiderSurge Mod</Title>
 
     <!-- Version -->
-    <Version>0.3.3</Version>
+    <Version>0.4.0</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
 
@@ -203,6 +203,10 @@
   <ItemGroup>
   <Reference Include="UnityEngine.TextRenderingModule">
     <HintPath>./lib/UnityEngine.TextRenderingModule.dll</HintPath>
+    <Private>false</Private>
+  </Reference>
+  <Reference Include="YamlDotNet">
+    <HintPath>./lib/YamlDotNet.dll</HintPath>
     <Private>false</Private>
   </Reference>
 </ItemGroup>

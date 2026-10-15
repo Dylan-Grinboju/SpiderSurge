@@ -76,7 +76,7 @@ namespace SpiderSurge.Enemies
                 }
             }
 
-            RegisterEnemyForCheats(newEnemyObj);
+            AddToEnemyList(newEnemyObj);
             return newEnemyObj;
         }
 
@@ -229,7 +229,7 @@ namespace SpiderSurge.Enemies
             return newEnemyObj;
         }
 
-        private static void RegisterEnemyForCheats(GameObject enemyObj)
+        private static void AddToEnemyList(GameObject enemyObj)
         {
             var healthSystem = enemyObj.GetComponent<EnemyHealthSystem>();
             if (healthSystem == null)
@@ -261,7 +261,7 @@ namespace SpiderSurge.Enemies
 
             if (!registered)
             {
-                Logger.LogWarning($"[SpiderSurge] Could not register {enemyObj.name} for cheats: CustomTiersScreen unavailable.");
+                Logger.LogWarning($"[SpiderSurge] Could not add {enemyObj.name} to the enemy list: CustomTiersScreen unavailable.");
             }
         }
 

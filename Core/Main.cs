@@ -2,14 +2,13 @@
 using Logger = Silk.Logger;
 using HarmonyLib;
 using UnityEngine;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Reflection;
 
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.3.3", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod("SpiderSurge", new string[] { "Dylan" }, "0.4.0", "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public static SpiderSurgeMod Instance { get; private set; }
@@ -48,8 +47,6 @@ namespace SpiderSurge
             TutorialUI.Initialize();
             TelemetryConsentUI.Initialize();
 
-            // Initialize CheatManager
-            // CheatManager.Initialize();
             // Initialize SoundTester for testing sounds without playing the game
             // SoundTester.Initialize();
             // Initialize per-player control settings
@@ -76,29 +73,9 @@ namespace SpiderSurge
 
         private void SetupConfiguration()
         {
-            // Define default configuration values
-            var defaultConfig = new Dictionary<string, object>
-            {
-                { "EnableSurgeMode", true },
-                // Ability indicator defaults
-                { "indicator.radius", 1.5f },
-                { "indicator.offset.x", 3f },
-                { "indicator.offset.y", 8f },
-                { "indicator.availableColor", "#00FF00" },
-                { "indicator.cooldownColor", "#FF0000" },
-                { "indicator.activeColor", "#87CEEB" },
-                { "indicator.showOnlyWhenReady", false },
-                // Upgrade activation
-                { "UseDpadForUltimate", false },
-                { "UnlimitedPerkChoosingTime", true },
-                { "EnableStatsLogging", true },
-                { "TelemetryEnabled", false },
-                { "display.showTutorial", true },
-                { "display.showTelemetryConsentPrompt", true },
-            };
-
+            ModConfig.MigrateFlatKeys();
             // Load the configuration (this will create the YAML file if it doesn't exist)
-            Config.LoadModConfig(ModId, defaultConfig);
+            Config.LoadModConfig(ModId, ModConfig.BuildDefaults());
             Logger.LogInfo("Configuration loaded");
         }
 
@@ -116,10 +93,6 @@ namespace SpiderSurge
             var perksInfo = GameObject.Find("PerksManager");
             if (perksInfo != null)
                 Destroy(perksInfo);
-
-            var cheatInfo = GameObject.Find("CheatsModCheatManager");
-            if (cheatInfo != null)
-                Destroy(cheatInfo);
 
             var soundInfo = GameObject.Find("SoundManager");
             if (soundInfo != null)
