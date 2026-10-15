@@ -1,6 +1,8 @@
-# SpiderStats
+# Stats
 
-A statistics tracking mod for Spiderheck that monitors player performance and game events.
+The Stats part of [SpiderSurge](../README.md): statistics tracking that monitors player performance and game events. It used to be a separate mod, SpiderStats.
+
+Stats is on after installing SpiderSurge. You can turn it off from the pause menu, under **Mods** > **SpiderSurge**.
 
 
 ## Features
@@ -11,10 +13,9 @@ A statistics tracking mod for Spiderheck that monitors player performance and ga
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
   - Press **F3** to view player titles (only after the game ends)
-  - Press **D-pad** on a controller to cycle the UIs
+  - Press **D-pad** on a controller to cycle the UIs. You can switch to a stick press instead. While Surge's ultimate is on the D-pad, only the stick press works
 - **Log File**: All the stats are saved to a local txt file when the game ends 
-- **Configurable**: Using the Yaml file, various aspects of the mod can be changed
-- **Updater**: The mod will automatically check for updates when the game starts
+- **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
 - **Versus Mode Support**: The mod will track stats in versus mode, but as this was developed with the survival mode in mind, some features (such as the titles) may not work as intended
 
 
@@ -27,60 +28,56 @@ A statistics tracking mod for Spiderheck that monitors player performance and ga
 ### Big version:
 <img width="2547" height="1422" alt="image" src="https://github.com/user-attachments/assets/42ea27ef-9450-4cae-ae46-3f1befbe0d6a" />
 
-## Installation
+## How to configure Stats
 
-1. Install Silk Mod Loader: https://github.com/SilkModding/Silk
-2. Download the mod dll file from [here](https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases) or from the sidebar in the Github page, or build the project yourself from this repo
-3. Place the mod file in your Silk mods folder
-4. Launch the game
+### From the Mods menu:
 
-## How to configure the Mod using the Yaml file:
-The first time after launching the game with the mod installed, the following file will be created at this path: `...\Silk\Config\Mods\Stats_Mod.yaml`
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats settings**. Changes apply right away. The page has every setting below, the big window's columns on their own page, and **Reset Stats settings to defaults**, which keeps the small window's position.
 
-After every change to the file, you need to relaunch the game for it to take effect. If you enter an incorrect value, for example 5 to a boolean field, the mod will throw a bunch of errors at you. You can change it back or just delete the file and it will be created again with the next game launch. 
+### Using the Yaml file:
+
+Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See [Settings](../README.md#settings) for how the file works.
 
 <details>
 <summary>Explanation of the fields</summary>
 
 ### UI:
-`showStatsWindow`: shows the mod UI. If false then pressing F1, F2, or F3 will do nothing. Note that the tracking will still work, it will just not show you anything.
+`stats.display.showStatsWindow`: shows the mod UI. If false then pressing F1, F2, or F3 will do nothing. Note that the tracking will still work, it will just not show you anything.
 
-`showPlayers`, `showPlayTime` and `showEnemyDeaths`: Exactly what this sounds. Will hide/show the corresponding parts of the Big UI.
+`stats.display.showPlayers`, `stats.display.showPlayTime` and `stats.display.showEnemyDeaths`: Exactly what this sounds. Will hide/show the corresponding parts of the Big UI.
 
-`autoScale`: If true, the mod will automatically scale the UI based on your screen resolution.
+`stats.display.autoScale`: If true, the mod will automatically scale the UI based on your screen resolution.
 
-`uiScale`: You can use this to manually scale the UI. 1 is normal size, 2 is double size, 0.5 is half size and so on. You can use this with conjunction with autoScale or by itself.
+`stats.display.uiScale`: You can use this to manually scale the UI, from 0.5 to 3. 1 is normal size, 2 is double size, 0.5 is half size and so on. You can use this with conjunction with autoScale or by itself.
 
-`bigUIOpacity`: Controls the transparency of the Big UI overlay (F2). Values range from 0 (fully transparent) to 100 (fully opaque). Default is 100. 
+`stats.display.bigUIOpacity`: Controls the transparency of the Big UI overlay (F2). Values range from 0 (fully transparent) to 100 (fully opaque). Default is 100. 
 
-`position`: You can use this to manually set the position of the Small UI. The coordinates are in pixels, with 0,0 being the top left corner of the screen. This value will be saved every time you click and drag the UI. If the UI doesn't show up on your screen, you can try setting the x and y values to 10 again.
+`stats.display.smallUIShowBackground`: Shows a background behind the Small UI. Default is false.
 
-`columns`: Setting a column to true will display it in the Big UI. I don't limit you but the elements can be cut off if there are too many. 
+`stats.display.position`: You can use this to manually set the position of the Small UI. The coordinates are in pixels, with 0,0 being the top left corner of the screen. This value will be saved every time you click and drag the UI. If the UI doesn't show up on your screen, you can try setting the x and y values to 10 again.
+
+`stats.display.bigUI.columns`: Setting a column to true will display it in the Big UI. I don't limit you but the elements can be cut off if there are too many. 
 
 ### tracking:
-`enabled`: If false, the mod will not track any stats. This is as if the mod is not installed at all.
+`stats.tracking.saveStatsToFile`: If true, the stats will be saved to a local txt file.
 
-`saveStatsToFile`: If true, the stats will be saved to a local txt file.
-
-### Updater:
-
-`checkForUpdates`: If true, the mod will automatically check for updates when the game starts.
+To stop tracking altogether, turn off the Stats part (`parts.stats`).
 
 ### Titles:
 
-`enabled`: If true, player titles will be calculated and displayed at the end of each game. Press F3 to view them.
+`stats.titles.enabled`: If true, player titles will be calculated and displayed at the end of each game. Press F3 to view them.
 
-`revealDelaySeconds`: Controls the delay between revealing each title card in the titles screen animation. Default is 2.0 seconds. Set to 0 for instant reveal.
+`stats.titles.revealDelaySeconds`: Controls the delay between revealing each title card in the titles screen animation, from 0 to 10. Default is 2.0 seconds. Set to 0 for instant reveal.
 
 ### Input:
-`cycleInput`: Controls which input on a controller cycles the UI. Options are `dpad`, `joystick`, `both`, or `none`. The joystick input refers to pressing down either joystick. The default and recommended is `dpad`.
+`stats.input.cycleInput`: Controls which input on a controller cycles the UI. Options are `dpad`, `joystick`, `both`, or `none`. The joystick input refers to pressing down either joystick. The default and recommended is `dpad`. While Surge's ultimate is on the D-pad (`surge.dpadUltimate`), `dpad` works like `none` and `both` like `joystick`.
 
 </details>
 
 
 ## Cross-Mod Integration API
 
-SpiderStats exposes a public API that other mods can call at runtime to inject custom stats and titles into the end-of-game screen and log files. Since mods are separate DLLs, communication happens via **reflection** — the calling mod discovers `StatsMod.StatsModApi` from the loaded assemblies and invokes its static methods.
+Stats exposes a public API that other mods can call at runtime to inject custom stats and titles into the end-of-game screen and log files. The Surge part calls it directly. Other mods are separate DLLs, so they use **reflection**: discover `StatsMod.StatsModApi` in the loaded `SpiderSurge` assembly and invoke its static methods.
 
 #### `RegisterCustomStats(List<string> lines)`
 
@@ -108,13 +105,14 @@ Registers a custom title that participates in the native title pipeline (dominat
 - **Data is cleared** at the start of each game session — external mods should re-register their stats and titles after each game ends.
 - **Titles require 2+ players** — they are meaningless in solo play and will not be displayed.
 - **Thread safety**: All API methods are synchronized internally. Safe to call from any thread.
-- **Graceful degradation**: If SpiderStats is not installed, calling mods should handle the case where the API type is not found.
+- **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part is off, registered stats and titles are never shown.
 
 ## Notes and disclaimers
 - Stats reset when starting a new game. After the game ending you can return to the lobby and the overlay will show the last game's stats
-- By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/Spiderheck_stats_<Current_Date>.txt`
+- By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/SpiderStats/Spiderheck_stats_<Current_Date>.txt`
 - There are some kills that won't register such as activating a weapon with another (hitting a grenade with a particle blade). This just complicates the logic and is up to interpretation of who gets the kill in difficult scenarios. Also, this is just very complicated to track, and I wasn't feeling like coding it
 - This probably won't work with multiplayer, you are welcome to try and send me feedback, but I don't plan to support it anytime soon
+- Stats doesn't know about teams yet. In team versus, it counts every kill on another spider as a friendly kill
 
 ## The Future
 - I plan to continue expanding this mod with more fun titles and statistics

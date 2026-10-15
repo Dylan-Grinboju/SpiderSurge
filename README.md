@@ -1,32 +1,18 @@
 # SpiderSurge
 
-A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
+A mod for Spiderheck that brings together four parts in one file. Each part can be turned on or off from the game's Mods menu.
+
+| Part | What it does | On after installing |
+|---|---|---|
+| [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival, with live stats windows and fun titles at the end of each run | Yes |
+| [Surge](surge/README.md) | Surge Mode for Survival: new abilities, ultimates, perks and custom enemies | No |
+| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
+| [Game fixes](#game-fixes) | Fixes two bugs in the base game | Yes |
+
+Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
 
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
-
-## Features
-
-- **Surge Mode**: A high-intensity survival mode overhaul that increases enemy spawn rates and introduces unique wave-based progression.
-- **New Abilities**:
-    - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
-    - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
-    - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
-    - **Null Field**: Deploys a temporary protective energy barrier.
-- **Custom Enemies**:
-    - **Twin Whisp**: Fires dual projectiles simultaneously.
-    - **Missile Whisp**: Launches rockets that deal devastating damage.
-    - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
-- **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
-- **Ultimate Upgrades**: Special perk selection phases at waves 30 and 60 for powerful "Ultimate" variants and ability swaps.
-- **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
-- **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
-- **Custom Controls**:
-    - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key.
-    - **Reset**: Hold **Start/Menu** for 3 seconds to reset to default (L1).
-- **Automation**: Includes an integrated mod updater to notify you when a new version is available.
-
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
 ## Installation
 
@@ -34,96 +20,43 @@ A comprehensive gameplay overhaul mod for Spiderheck that introduces "Surge Mode
 2. Download the `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or build it from the source.
 3. Place the `SpiderSurge.dll` into your Silk `mods` folder.
 4. Launch the game.
+5. To turn on Surge or Teams, open the pause menu, pick **Mods** > **SpiderSurge**, check the part, and restart the game.
 
-## How to configure the Mod using the Yaml file:
+## Updating from SpiderStats or SpiderTeams
 
-The first time you launch the game with the mod installed, a configuration file will be created at: `...\Silk\Config\Mods\SpiderSurge_Mod.yaml`
+1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
+2. Launch the game.
 
-Changes to this file require a game restart to take effect. If invalid values are entered, the mod may default to its original settings or report errors in the log.
+On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
 
-<details>
-<summary>Explanation of the fields</summary>
+If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once. A popup lists the files to delete.
 
-### Gameplay:
-`EnableSurgeMode`: Toggles the Surge Mode overhaul features.
+## Settings
 
-`UseDpadForUltimate`: If true, pressing the D-pad on a controller will trigger ultimate abilities.
+### From the Mods menu:
 
-`UnlimitedPerkChoosingTime`: Disables the timer on the perk selection screen.
+Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
-### UI:
-`display.showTutorial`: Toggles the visibility of the instruction overlay.
+- A switch for each part. Turning a part on or off takes effect after restarting the game.
+- A settings page for each running part. Changes there apply right away and are saved to the file.
+- **Check for updates**: when the game starts, checks whether a new version is out.
+- **Reload the settings file**: picks up edits to the file without restarting the game.
 
-`indicator.radius`: Adjusts the size of the ability indicator UI.
+### Using the Yaml file:
 
-`indicator.showOnlyWhenReady`: If true, the ability indicator will only appear when the ability is off cooldown.
+All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
 
-`indicator.availableColor`, `indicator.cooldownColor`, `indicator.activeColor`: Customizes the colors for different ability states using hex codes.
+`parts.stats`, `parts.surge`, `parts.teams`, `parts.fixes`: Turns each part on or off. Takes effect after restarting the game.
 
-### Logging:
-`EnableStatsLogging`: Enables or disables the recording of mod-specific events to the Silk logs.
+`general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
-`TelemetryEnabled`: Enables or disables anonymous telemetry uploads for completed SpiderSurge Survival matches.
+Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
 
-</details>
+## Game fixes
 
-## Telemetry
-
-SpiderSurge supports optional telemetry to help track balancing and gameplay trends in Surge matches.
-
-### How to enable
-
-In `...\Silk\Config\Mods\SpiderSurge_Mod.yaml`:
-
-- Set `EnableStatsLogging: true` to keep local match stat files.
-- Set `TelemetryEnabled: true` to allow telemetry upload.
-
-**Telemetry is disabled by default.**
-
-### Privacy and identity
-
-- Telemetry uses an anonymous random ID, not player names.
-- The anonymous ID is generated locally and stored in:
-    `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
-
-
-### Local log files (non-telemetry)
-
-When `EnableStatsLogging` is enabled, per-match text reports are written to:
-
-`...\Silk\Logs\SpiderSurge\SpiderSurge_Match_YYYY-MM-DD_HH-mm-ss.txt`
-
-
-## SpiderStats Integration
-
-When the [SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod) mod is also installed, SpiderSurge automatically sends ability and ultimate activation data to the stats log and registers custom player titles.
-
-### Custom Stats
-
-At the end of each Surge Survival match, the following per-player stats are appended to the SpiderStats log file:
-- **Ability Activations** — how many times each player activated their ability
-- **Ultimate Activations** — how many times each player activated their ultimate
-
-### Custom Titles
-
-SpiderSurge registers the following titles via the SpiderStats title system. Titles require **2+ players** and a **clear leader** (no ties):
-
-Some titles combine SpiderSurge data (e.g. most ability activations) with SpiderStats native requirements (e.g. most damage taken), creating **cross-mod titles** that reflect both mods' tracked stats.
-
-## Notes and disclaimers
-
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Turning off the mod will restore your highscores. BACK UP YOUR SAVE FILES JUST IN CASE.
-- This mod is designed for Survival Mode. While it may load in other modes, it won't do anything in them.
-- You can reset your configuration at any time by deleting the YAML file; it will be recreated with default values on the next launch.
-
-## The Future
-
-- More abilities and ults
-- More enemies
-- Even harder mode?
+- Whisps no longer shoot the moment they spawn.
+- Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
 
 ## Other Mods
 
-If you enjoy SpiderSurge, check out my other mod:
-
-- **SpiderStats**: A statistics tracking mod for Spiderheck that monitors player performance, game events, and awards fun titles at the end of each game. You can find it here: https://github.com/Dylan-Grinboju/spiderheck_stats_mod
+- **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Raises the player limit to 32. Teams works with it.
