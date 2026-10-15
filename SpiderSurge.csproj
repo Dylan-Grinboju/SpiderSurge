@@ -61,8 +61,8 @@
 
   <!-- Embed sound files as resources in the DLL -->
   <ItemGroup>
-    <EmbeddedResource Include="Sounds\*.wav" />
-    <EmbeddedResource Include="Icons\*.png" />
+    <EmbeddedResource Include="surge\Sounds\*.wav" />
+    <EmbeddedResource Include="surge\Icons\*.png" />
   </ItemGroup>
 
   <!-- Assembly References -->
