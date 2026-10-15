@@ -63,10 +63,11 @@ namespace SpiderSurge.Common
             {
                 Dictionary<string, object> current = Read(path);
                 bool upgraded = current != null && IsCurrent(current);
-                Dictionary<string, object> surge = current != null && !upgraded && SurgeKeys.Keys.Any(key => Find(current, key) != null) ? current : null;
+                bool legacySurge = current != null && SurgeKeys.Keys.Any(key => Find(current, key) != null);
+                Dictionary<string, object> surge = legacySurge && Parts.Surge.BlockedBy == null ? current : null;
                 Dictionary<string, object> stats = Parts.Stats.BlockedBy == null ? Read(statsPath) : null;
                 Dictionary<string, object> teams = Parts.Teams.BlockedBy == null ? Read(teamsPath) : null;
-                if (surge == null && stats == null && teams == null)
+                if (!legacySurge && stats == null && teams == null)
                 {
                     return;
                 }
@@ -89,7 +90,7 @@ namespace SpiderSurge.Common
                 if (!upgraded)
                 {
                     values["parts.fixes"] = true;
-                    values["parts.surge"] = surge != null;
+                    values["parts.surge"] = legacySurge;
                 }
                 if (stats != null || !upgraded)
                 {
@@ -105,21 +106,28 @@ namespace SpiderSurge.Common
                     values[ModUpdater.CheckForUpdatesKey] = updates;
                 }
 
-                Dictionary<string, object> tree = upgraded ? current : Settings.BuildTree(Settings.Keys.Select(key => new KeyValuePair<string, object>(key, Settings.Default(key))));
+                Dictionary<string, object> tree = current ?? Settings.BuildTree(Settings.Keys.Select(key => new KeyValuePair<string, object>(key, Settings.Default(key))));
                 foreach (var pair in values)
                 {
                     Settings.SetPath(tree, pair.Key, pair.Value);
                 }
+                if (surge != null)
+                {
+                    foreach (string key in SurgeKeys.Keys)
+                    {
+                        Remove(tree, key);
+                    }
+                }
                 string yaml = new SerializerBuilder().Build().Serialize(tree);
 
                 var sources = new List<string>();
-                if (current != null && !upgraded)
+                if (current != null && (!upgraded || surge != null))
                 {
                     Backup(path);
-                    if (surge != null)
-                    {
-                        sources.Add(Path.GetFileName(path));
-                    }
+                }
+                if (surge != null)
+                {
+                    sources.Add(Path.GetFileName(path));
                 }
                 File.WriteAllText(path, yaml);
                 if (stats != null)
@@ -133,8 +141,15 @@ namespace SpiderSurge.Common
                     sources.Add(Path.GetFileName(teamsPath));
                 }
 
-                string on = string.Join(", ", PartKeys.Where(part => Settings.TryParseBool(Find(tree, "parts." + part) ?? "", out bool enabled) && enabled));
-                Logger.LogInfo($"Moved {moved} settings from {string.Join(", ", sources)} into {Path.GetFileName(path)}; parts on: {on}. The old files are kept with {BackupSuffix} added");
+                if (sources.Count > 0)
+                {
+                    string on = string.Join(", ", PartKeys.Where(part => Settings.TryParseBool(Find(tree, "parts." + part) ?? "", out bool enabled) && enabled));
+                    Logger.LogInfo($"Moved {moved} settings from {string.Join(", ", sources)} into {Path.GetFileName(path)}; parts on: {on}. The old files are kept with {BackupSuffix} added");
+                }
+                if (legacySurge && surge == null)
+                {
+                    Logger.LogInfo($"Kept the legacy Surge settings because {Parts.Surge.BlockedBy} is still in the Mods folder");
+                }
             }
             catch (Exception ex)
             {
@@ -222,6 +237,26 @@ namespace SpiderSurge.Common
         private static string Scalar(object node)
         {
             return node == null || node is Dictionary<string, object> ? null : Convert.ToString(node, CultureInfo.InvariantCulture).Trim();
+        }
+
+        private static void Remove(Dictionary<string, object> root, string key)
+        {
+            root.Remove(key);
+            int dot = key.IndexOf('.');
+            if (dot < 0)
+            {
+                return;
+            }
+
+            string name = key.Substring(0, dot);
+            if (root.TryGetValue(name, out object node) && node is Dictionary<string, object> section)
+            {
+                Remove(section, key.Substring(dot + 1));
+                if (section.Count == 0)
+                {
+                    root.Remove(name);
+                }
+            }
         }
 
         private static Dictionary<string, object> Read(string path)

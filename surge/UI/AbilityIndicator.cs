@@ -1,3 +1,4 @@
+using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderSurge
@@ -57,6 +58,7 @@ namespace SpiderSurge
         private void Awake()
         {
             _activeInstanceCount++;
+            Settings.Changed += OnSettingsChanged;
         }
 
         public void Initialize(BaseAbility ability, Transform followTarget)
@@ -65,6 +67,25 @@ namespace SpiderSurge
             targetTransform = followTarget;
 
             CreateIndicatorVisual();
+            ApplySettings();
+        }
+
+        private void OnSettingsChanged(string key)
+        {
+            if (Settings.Affects(key, "surge.indicator") || key.StartsWith("surge.indicator.", System.StringComparison.Ordinal))
+            {
+                ApplySettings();
+            }
+        }
+
+        private void ApplySettings()
+        {
+            SetRadius(ModConfig.IndicatorRadius);
+            SetOffset(new Vector3(ModConfig.IndicatorOffsetX, ModConfig.IndicatorOffsetY, 0f));
+            SetAvailableColor(ModConfig.IndicatorAvailableColor);
+            SetCooldownColor(ModConfig.IndicatorCooldownColor);
+            SetActiveColor(ModConfig.IndicatorActiveColor);
+            SetShowOnlyWhenReady(ModConfig.IndicatorShowOnlyWhenReady);
             UpdateIndicatorState();
         }
 
@@ -317,6 +338,7 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
+            Settings.Changed -= OnSettingsChanged;
             _activeInstanceCount--;
             if (_activeInstanceCount <= 0)
             {

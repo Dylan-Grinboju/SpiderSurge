@@ -52,7 +52,7 @@ namespace SpiderSurge
         // Silk adds the mod as a component once every mod is loaded; this instance runs the shared per-frame work
         private void Update()
         {
-            if (Instance == null)
+            if (Instance is null)
             {
                 return;
             }
@@ -62,7 +62,7 @@ namespace SpiderSurge
 
         private void OnApplicationQuit()
         {
-            if (Instance != null)
+            if (Instance is not null)
             {
                 Settings.Flush();
             }
@@ -70,7 +70,7 @@ namespace SpiderSurge
 
         public override void Unload()
         {
-            if (Instance == null)
+            if (Instance is null)
             {
                 return;
             }
