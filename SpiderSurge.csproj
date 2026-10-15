@@ -212,10 +212,4 @@
   </Reference>
 </ItemGroup>
 
-  <!-- Auto-generate version.txt before build -->
-  <Target Name="GenerateVersionFile" BeforeTargets="BeforeBuild">
-    <WriteLinesToFile File="$(MSBuildProjectDirectory)\version.txt" Lines="$(Version)" Overwrite="true" />
-    <Message Text="Generated version.txt with version $(Version)" Importance="high" />
-  </Target>
-
 </Project>
