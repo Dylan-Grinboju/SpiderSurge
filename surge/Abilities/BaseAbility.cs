@@ -40,6 +40,9 @@ namespace SpiderSurge
         private InputAction ultimateButtonAction;
         private InputAction dpadActivationAction;
         private readonly HashSet<InputControl> heldDpadControls = new HashSet<InputControl>();
+        private bool? ultimateOnDpad;
+        private static int dpadUltimates;
+        private static int stickUltimates;
         private bool leftStickPressed = false;
         private bool rightStickPressed = false;
         private float lastLeftStickPressTime = 0f;
@@ -194,6 +197,20 @@ namespace SpiderSurge
             }
         }
 
+        public static bool? DpadUltimateBound => dpadUltimates + stickUltimates == 0 ? (bool?)null : dpadUltimates > 0;
+
+        private static void CountUltimateInput(bool dpad, int change)
+        {
+            if (dpad)
+            {
+                dpadUltimates += change;
+            }
+            else
+            {
+                stickUltimates += change;
+            }
+        }
+
         // The gamepad actions are pass-through: a Button action bound to every pad ignores one pad's press while another pad holds the same button.
         private void SetupUltimateInputs()
         {
@@ -238,6 +255,8 @@ namespace SpiderSurge
                     rightStickPressAction.canceled += OnRightStickChanged;
                     rightStickPressAction.Enable();
                 }
+                CountUltimateInput(useDpad, 1);
+                ultimateOnDpad = useDpad;
 
                 // Keyboard Ultimate button (always available)
                 if (!string.IsNullOrEmpty(UltimateActivationButton))
@@ -734,6 +753,12 @@ namespace SpiderSurge
 
         protected virtual void OnDestroy()
         {
+            if (ultimateOnDpad.HasValue)
+            {
+                CountUltimateInput(ultimateOnDpad.Value, -1);
+                ultimateOnDpad = null;
+            }
+
             if (inputInterceptor != null && _cachedActivationButtons != null)
             {
                 foreach (string button in _cachedActivationButtons)

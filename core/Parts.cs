@@ -19,6 +19,7 @@ namespace SpiderSurge.Common
         public string SettingKey => "parts." + Key;
         public bool Enabled => Settings.GetBool(SettingKey);
         public bool Running { get; internal set; }
+        public bool Failed { get; internal set; }
         public string BlockedBy { get; internal set; }
         public Harmony Harmony { get; internal set; }
 
@@ -37,7 +38,6 @@ namespace SpiderSurge.Common
         }
     }
 
-    // Each part owns the patch classes in its namespace and is turned on or off for the whole game session
     public static class Parts
     {
         private const string CoreNamespace = "SpiderSurge.Common";
@@ -48,7 +48,6 @@ namespace SpiderSurge.Common
         public static readonly Part Teams = new global::SpiderTeams.TeamsPart();
         public static readonly Part Stats = new global::StatsMod.StatsPart();
 
-        // Start order; stops run in reverse. Patches on one method run in this order too
         public static readonly Part[] All = { Fixes, Surge, Teams, Stats };
 
         private static Harmony _core;
@@ -93,7 +92,6 @@ namespace SpiderSurge.Common
             }
 
             Logger.LogInfo($"Starting {part.Title}...");
-            part.Running = true;
             part.Harmony = new Harmony(part.HarmonyId);
             try
             {
@@ -101,14 +99,18 @@ namespace SpiderSurge.Common
             }
             catch (Exception ex)
             {
-                Logger.LogError($"{part.Title} failed to start: {ex}");
+                Logger.LogError($"{part.Title} failed to start, so it stays off: {ex}");
+                part.Failed = true;
+                Stop(part);
+                return;
             }
             Patch(part.Harmony, types.Where(type => OwnerOf(type) == part), part.Title);
+            part.Running = true;
         }
 
         private static void Stop(Part part)
         {
-            if (!part.Running)
+            if (part.Harmony == null)
             {
                 return;
             }

@@ -23,10 +23,14 @@ namespace StatsMod
 
         private static void OnSettingsChanged(string key)
         {
-            if (key == null || ModConfig.AutoScaleKey.StartsWith(key) || ModConfig.UIScaleKey.StartsWith(key))
+            if (Settings.Affects(key, ModConfig.AutoScaleKey) || Settings.Affects(key, ModConfig.UIScaleKey))
             {
                 _scalingInitialized = false;
                 StyleVersion++;
+            }
+            if (Settings.Affects(key, ModConfig.CycleInputKey))
+            {
+                _configuredCycleInput = null;
             }
         }
 
@@ -43,6 +47,7 @@ namespace StatsMod
         #region Controller Cycling State
         private UIState currentUIState = UIState.Off;
         private Coroutine delayedPauseCoroutine;
+        private static string _configuredCycleInput;
         #endregion
 
         #region Shared Constants
@@ -74,6 +79,7 @@ namespace StatsMod
         #region UI Scaling
         private static float _uiScaleFactor = 1.0f;
         private static bool _scalingInitialized = false;
+        private static bool _scalingLogged;
         public static int StyleVersion { get; private set; }
 
         public static float UIScaleFactor
@@ -108,15 +114,16 @@ namespace StatsMod
                 // Clamp to reasonable values
                 _uiScaleFactor = Mathf.Clamp(_uiScaleFactor, 0.5f, 3.0f);
 
-                Logger.LogInfo($"UI Auto-scaling initialized: Screen {currentWidth}x{currentHeight}, Scale factor: {_uiScaleFactor:F2}");
+                if (!_scalingLogged) Logger.LogInfo($"UI Auto-scaling initialized: Screen {currentWidth}x{currentHeight}, Scale factor: {_uiScaleFactor:F2}");
             }
             else
             {
                 _uiScaleFactor = ModConfig.UIScale;
-                Logger.LogInfo($"UI Manual scaling: Scale factor: {_uiScaleFactor:F2}");
+                if (!_scalingLogged) Logger.LogInfo($"UI Manual scaling: Scale factor: {_uiScaleFactor:F2}");
             }
 
             _scalingInitialized = true;
+            _scalingLogged = true;
         }
 
         public static float ScaleValue(float value)
@@ -208,7 +215,7 @@ namespace StatsMod
             bool dpadPressed = gamepad.dpad.up.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame ||
                                gamepad.dpad.left.wasPressedThisFrame || gamepad.dpad.right.wasPressedThisFrame;
             bool joystickPressed = gamepad.leftStickButton.wasPressedThisFrame || gamepad.rightStickButton.wasPressedThisFrame;
-            switch (ModConfig.CycleInput)
+            switch (ModConfig.CycleInputFor(_configuredCycleInput ??= ModConfig.ConfiguredCycleInput))
             {
                 case "dpad":
                     cyclePressed = dpadPressed;

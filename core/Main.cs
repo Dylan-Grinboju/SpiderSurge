@@ -30,17 +30,21 @@ namespace SpiderSurge
         // Called by Silk when Unity loads this mod
         public override void Initialize()
         {
-            Instance = this;
             Logger.LogInfo($"Initializing SpiderSurge {Version}...");
+            if (!OldMods.Claim())
+            {
+                return;
+            }
+            Instance = this;
 
             Settings.Define(Parts.Defaults);
             Settings.Define(ModUpdater.Defaults);
             Settings.Define(ModConfig.Defaults);
             Settings.Define(StatsMod.ModConfig.Defaults);
             Settings.Define(SpiderTeams.ModConfig.Defaults);
-            Settings.Load();
 
             OldMods.Check();
+            Settings.Load();
             Parts.StartAll();
             ModUpdater.ScheduleCheck();
         }
@@ -48,20 +52,32 @@ namespace SpiderSurge
         // Silk adds the mod as a component once every mod is loaded; this instance runs the shared per-frame work
         private void Update()
         {
+            if (Instance == null)
+            {
+                return;
+            }
             MainThread.Drain();
             Settings.Tick();
         }
 
         private void OnApplicationQuit()
         {
-            Settings.Flush();
+            if (Instance != null)
+            {
+                Settings.Flush();
+            }
         }
 
         public override void Unload()
         {
+            if (Instance == null)
+            {
+                return;
+            }
             Logger.LogInfo("Unloading SpiderSurge...");
             Parts.StopAll();
             Settings.Flush();
+            OldMods.Release();
             Instance = null;
         }
     }

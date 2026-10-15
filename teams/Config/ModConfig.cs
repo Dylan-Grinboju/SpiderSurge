@@ -64,6 +64,10 @@ namespace SpiderTeams
 
         private static void OnSettingsChanged(string key)
         {
+            if (key == null || key == "teams")
+            {
+                _warned.Clear();
+            }
             if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal))
             {
                 Refresh();
@@ -165,21 +169,21 @@ namespace SpiderTeams
 
         private static void Refresh()
         {
-            TeamsEnabled = ReadBool(Consts.Keys.TeamsEnabled, Consts.Defaults.TeamsEnabled);
+            TeamsEnabled = Settings.GetBool(Consts.Keys.TeamsEnabled);
             TeamCount = ReadTeamCount();
             FriendlyFire = ReadFriendlyFire();
-            RecolorSpiders = ReadBool(Consts.Keys.RecolorSpiders, Consts.Defaults.RecolorSpiders);
-            ShowMarker = ReadBool(Consts.Keys.ShowMarker, Consts.Defaults.ShowMarker);
-            GroupTeammates = ReadBool(Consts.Keys.GroupTeammates, Consts.Defaults.GroupTeammates);
+            RecolorSpiders = Settings.GetBool(Consts.Keys.RecolorSpiders);
+            ShowMarker = Settings.GetBool(Consts.Keys.ShowMarker);
+            GroupTeammates = Settings.GetBool(Consts.Keys.GroupTeammates);
             CycleTeamGamepad = ReadBinding(Consts.Keys.CycleTeamGamepad, Consts.Defaults.CycleTeamGamepad);
             CycleTeamKeyboard = ReadBinding(Consts.Keys.CycleTeamKeyboard, Consts.Defaults.CycleTeamKeyboard);
-            SurgeEnabled = ReadBool(Consts.Keys.SurgeEnabled, Consts.Defaults.SurgeEnabled);
+            SurgeEnabled = Settings.GetBool(Consts.Keys.SurgeEnabled);
             SurgeAbility = ReadSurgeAbility();
-            SurgeUltimate = ReadBool(Consts.Keys.SurgeUltimate, Consts.Defaults.SurgeUltimate);
-            SurgeCooldown = ReadPerkLevel(Consts.Keys.SurgeCooldown, Consts.Defaults.SurgeCooldown);
-            SurgeDuration = ReadPerkLevel(Consts.Keys.SurgeDuration, Consts.Defaults.SurgeDuration);
-            SurgeShortTerm = ReadBool(Consts.Keys.SurgeShortTerm, Consts.Defaults.SurgeShortTerm);
-            SurgeLongTerm = ReadBool(Consts.Keys.SurgeLongTerm, Consts.Defaults.SurgeLongTerm);
+            SurgeUltimate = Settings.GetBool(Consts.Keys.SurgeUltimate);
+            SurgeCooldown = ReadPerkLevel(Consts.Keys.SurgeCooldown);
+            SurgeDuration = ReadPerkLevel(Consts.Keys.SurgeDuration);
+            SurgeShortTerm = Settings.GetBool(Consts.Keys.SurgeShortTerm);
+            SurgeLongTerm = Settings.GetBool(Consts.Keys.SurgeLongTerm);
             RaiseChanged();
         }
 
@@ -204,17 +208,6 @@ namespace SpiderTeams
             }
         }
 
-        // The shared settings parse the text; values outside a setting's range are pulled back in here
-        private static string ReadRaw(string key)
-        {
-            return Settings.GetString(key);
-        }
-
-        private static bool ReadBool(string key, bool fallback)
-        {
-            return Settings.GetBool(key);
-        }
-
         private static int ReadTeamCount()
         {
             int value = Settings.GetInt(Consts.Keys.TeamCount);
@@ -228,14 +221,8 @@ namespace SpiderTeams
 
         private static FriendlyFireMode ReadFriendlyFire()
         {
-            string raw = ReadRaw(Consts.Keys.FriendlyFire);
-            if (raw == null)
-            {
-                return FriendlyFireMode.Push;
-            }
-
-            FriendlyFireMode mode;
-            if (!TryParseFriendlyFire(raw, out mode))
+            string raw = Settings.GetString(Consts.Keys.FriendlyFire);
+            if (!TryParseFriendlyFire(raw, out FriendlyFireMode mode))
             {
                 Warn(Consts.Keys.FriendlyFire, raw, "is not push, ignore or damage, using push");
             }
@@ -244,22 +231,16 @@ namespace SpiderTeams
 
         private static SurgeAbility ReadSurgeAbility()
         {
-            string raw = ReadRaw(Consts.Keys.SurgeAbility);
-            if (raw == null)
+            string raw = Settings.GetString(Consts.Keys.SurgeAbility);
+            if (TryParseSurgeAbility(raw, out SurgeAbility ability))
             {
-                return DefaultSurgeAbility;
+                return ability;
             }
-
-            SurgeAbility ability;
-            if (!TryParseSurgeAbility(raw, out ability))
-            {
-                Warn(Consts.Keys.SurgeAbility, raw, $"is not {string.Join(", ", Consts.Surge.AbilityConfigNames)}, using {Consts.Defaults.SurgeAbility}");
-                return DefaultSurgeAbility;
-            }
-            return ability;
+            Warn(Consts.Keys.SurgeAbility, raw, $"is not {string.Join(", ", Consts.Surge.AbilityConfigNames)}, using {Consts.Defaults.SurgeAbility}");
+            return DefaultSurgeAbility;
         }
 
-        private static int ReadPerkLevel(string key, int fallback)
+        private static int ReadPerkLevel(string key)
         {
             int value = Settings.GetInt(key);
             int clamped = ClampPerk(value);
@@ -272,11 +253,7 @@ namespace SpiderTeams
 
         private static string ReadBinding(string key, string fallback)
         {
-            string raw = ReadRaw(key);
-            if (raw == null)
-            {
-                return fallback;
-            }
+            string raw = Settings.GetString(key);
             if (raw.Length == 0 || raw.Equals(Consts.Bindings.None, StringComparison.OrdinalIgnoreCase))
             {
                 return Consts.Bindings.None;

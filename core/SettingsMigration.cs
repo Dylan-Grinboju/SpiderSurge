@@ -9,12 +9,12 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Common
 {
-    // Builds the one settings file from the separate SpiderSurge, Stats and SpiderTeams files of earlier versions
     internal static class SettingsMigration
     {
         private const string OldStatsId = "Stats_Mod";
         private const string OldTeamsId = "SpiderTeams";
         private const string BackupSuffix = ".old";
+        private static readonly string[] PartKeys = { "fixes", "surge", "stats", "teams" };
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
         {
@@ -53,6 +53,7 @@ namespace SpiderSurge.Common
             { "surge.longTermInvestment", "teams.surge.longTermInvestment" },
         };
 
+        // Merges the files of earlier versions into the one settings file; a file whose old DLL is still installed stays where it is
         public static void Run()
         {
             string path = Settings.FilePath;
@@ -60,14 +61,11 @@ namespace SpiderSurge.Common
             string teamsPath = Config.GetModConfigPath(OldTeamsId);
             try
             {
-                Dictionary<string, object> surge = Read(path);
-                if (surge != null && surge.ContainsKey("parts"))
-                {
-                    return;
-                }
-
-                Dictionary<string, object> stats = Read(statsPath);
-                Dictionary<string, object> teams = Read(teamsPath);
+                Dictionary<string, object> current = Read(path);
+                bool upgraded = current != null && IsCurrent(current);
+                Dictionary<string, object> surge = current != null && !upgraded && SurgeKeys.Keys.Any(key => Find(current, key) != null) ? current : null;
+                Dictionary<string, object> stats = Parts.Stats.BlockedBy == null ? Read(statsPath) : null;
+                Dictionary<string, object> teams = Parts.Teams.BlockedBy == null ? Read(teamsPath) : null;
                 if (surge == null && stats == null && teams == null)
                 {
                     return;
@@ -88,20 +86,40 @@ namespace SpiderSurge.Common
                     moved += Map(teams, TeamsKeys, values);
                 }
 
-                values["parts.fixes"] = true;
-                values["parts.surge"] = surge != null;
-                values["parts.stats"] = stats != null && !IsFalse(Find(stats, "tracking.enabled"));
-                values["parts.teams"] = teams != null;
-                values["general.checkForUpdates"] = !IsFalse(Find(stats, "updater.checkForUpdates")) && !IsFalse(Find(teams, "updater.checkForUpdates"));
+                if (!upgraded)
+                {
+                    values["parts.fixes"] = true;
+                    values["parts.surge"] = surge != null;
+                }
+                if (stats != null || !upgraded)
+                {
+                    values["parts.stats"] = stats != null && !IsFalse(Find(stats, "tracking.enabled"));
+                }
+                if (teams != null || !upgraded)
+                {
+                    values["parts.teams"] = teams != null;
+                }
+                bool updates = !IsFalse(Find(stats, "updater.checkForUpdates")) && !IsFalse(Find(teams, "updater.checkForUpdates"));
+                if (!upgraded || !updates)
+                {
+                    values[ModUpdater.CheckForUpdatesKey] = updates;
+                }
 
-                var merged = Settings.Keys.Select(key => new KeyValuePair<string, object>(key, values.TryGetValue(key, out object value) ? value : Settings.Default(key)));
-                string yaml = new SerializerBuilder().Build().Serialize(Settings.BuildTree(merged));
+                Dictionary<string, object> tree = upgraded ? current : Settings.BuildTree(Settings.Keys.Select(key => new KeyValuePair<string, object>(key, Settings.Default(key))));
+                foreach (var pair in values)
+                {
+                    Settings.SetPath(tree, pair.Key, pair.Value);
+                }
+                string yaml = new SerializerBuilder().Build().Serialize(tree);
 
                 var sources = new List<string>();
-                if (surge != null)
+                if (current != null && !upgraded)
                 {
-                    File.Copy(path, path + BackupSuffix, true);
-                    sources.Add(Path.GetFileName(path));
+                    Backup(path);
+                    if (surge != null)
+                    {
+                        sources.Add(Path.GetFileName(path));
+                    }
                 }
                 File.WriteAllText(path, yaml);
                 if (stats != null)
@@ -115,13 +133,18 @@ namespace SpiderSurge.Common
                     sources.Add(Path.GetFileName(teamsPath));
                 }
 
-                string on = string.Join(", ", new[] { "fixes", "surge", "stats", "teams" }.Where(part => values["parts." + part] is bool enabled && enabled));
+                string on = string.Join(", ", PartKeys.Where(part => Settings.TryParseBool(Find(tree, "parts." + part) ?? "", out bool enabled) && enabled));
                 Logger.LogInfo($"Moved {moved} settings from {string.Join(", ", sources)} into {Path.GetFileName(path)}; parts on: {on}. The old files are kept with {BackupSuffix} added");
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Could not move the old settings files into {path}: {ex.Message}");
             }
+        }
+
+        private static bool IsCurrent(Dictionary<string, object> root)
+        {
+            return Settings.Keys.Select(key => key.Split('.')[0]).Distinct().Any(section => root.TryGetValue(section, out object node) && node is Dictionary<string, object>);
         }
 
         private static int Map(Dictionary<string, object> source, Dictionary<string, string> keys, Dictionary<string, object> values)
@@ -151,7 +174,7 @@ namespace SpiderSurge.Common
             switch (fallback)
             {
                 case bool _:
-                    if (bool.TryParse(raw, out bool flag))
+                    if (Settings.TryParseBool(raw, out bool flag))
                     {
                         value = flag;
                     }
@@ -177,10 +200,10 @@ namespace SpiderSurge.Common
 
         private static bool IsFalse(string raw)
         {
-            return raw != null && bool.TryParse(raw, out bool value) && !value;
+            return raw != null && Settings.TryParseBool(raw, out bool value) && !value;
         }
 
-        // Older SpiderSurge versions wrote some keys flat ("indicator.radius") instead of in sections
+        // Older SpiderSurge versions also wrote some keys flat ("indicator.radius") but read only the section, so its value wins
         private static string Find(Dictionary<string, object> root, string key)
         {
             if (root == null)
@@ -188,24 +211,17 @@ namespace SpiderSurge.Common
                 return null;
             }
 
-            object node = null;
-            if (!root.TryGetValue(key, out node))
+            object node = root;
+            foreach (string part in key.Split('.'))
             {
-                node = root;
-                foreach (string part in key.Split('.'))
-                {
-                    if (!(node is Dictionary<string, object> section) || !section.TryGetValue(part, out node))
-                    {
-                        return null;
-                    }
-                }
+                node = node is Dictionary<string, object> section && section.TryGetValue(part, out object next) ? next : null;
             }
+            return Scalar(node) ?? (root.TryGetValue(key, out object flat) ? Scalar(flat) : null);
+        }
 
-            if (node == null || node is Dictionary<string, object>)
-            {
-                return null;
-            }
-            return Convert.ToString(node, CultureInfo.InvariantCulture).Trim();
+        private static string Scalar(object node)
+        {
+            return node == null || node is Dictionary<string, object> ? null : Convert.ToString(node, CultureInfo.InvariantCulture).Trim();
         }
 
         private static Dictionary<string, object> Read(string path)
@@ -214,8 +230,16 @@ namespace SpiderSurge.Common
             {
                 return null;
             }
-            object raw = new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(path));
-            return Normalize(raw) as Dictionary<string, object> ?? new Dictionary<string, object>();
+            try
+            {
+                object raw = new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(path));
+                return Normalize(raw) as Dictionary<string, object> ?? new Dictionary<string, object>();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Could not read {path}, so its settings were not moved: {ex.Message}");
+                return null;
+            }
         }
 
         private static object Normalize(object node)
@@ -229,6 +253,16 @@ namespace SpiderSurge.Common
                 return list.Select(Normalize).ToList();
             }
             return node;
+        }
+
+        // The first backup is the file as the old version left it, so a later one doesn't replace it
+        private static void Backup(string path)
+        {
+            string backup = path + BackupSuffix;
+            if (!File.Exists(backup))
+            {
+                File.Copy(path, backup);
+            }
         }
 
         private static void MoveAside(string path)

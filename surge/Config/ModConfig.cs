@@ -45,8 +45,7 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(IndicatorShowOnlyWhenReadyKey, false),
         };
 
-        private static readonly Dictionary<string, Color> _colors = new Dictionary<string, Color>();
-        private static readonly HashSet<string> _warned = new HashSet<string>();
+        private static readonly Dictionary<string, (string raw, Color color)> _colors = new Dictionary<string, (string raw, Color color)>();
 
         // Surge mode settings
         public static bool enableSurgeMode => Settings.GetBool(SurgeModeKey);
@@ -78,24 +77,24 @@ namespace SpiderSurge
 
         public static void SetShowTelemetryConsentPrompt(bool value) => Settings.Set(ShowTelemetryPromptKey, value);
 
+        public static void ForgetColors() => _colors.Clear();
+
+        // Cached per key with the text it was read from, so a bad value warns once until it changes or the file is reloaded
         private static Color ReadColor(string key)
         {
             string raw = Settings.GetString(key);
-            if (_colors.TryGetValue(raw, out Color color))
+            if (_colors.TryGetValue(key, out var cached) && cached.raw == raw)
             {
-                return color;
+                return cached.color;
             }
 
-            if (!TryParseColor(raw, out color))
+            if (!TryParseColor(raw, out Color color))
             {
                 string fallback = (string)Settings.Default(key);
-                if (_warned.Add(key + "=" + raw))
-                {
-                    Logger.LogWarning($"Setting {key} '{raw}' is not a color, using {fallback}");
-                }
+                Logger.LogWarning($"Setting {key} '{raw}' is not a color, using {fallback}");
                 TryParseColor(fallback, out color);
             }
-            _colors[raw] = color;
+            _colors[key] = (raw, color);
             return color;
         }
 

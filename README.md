@@ -29,7 +29,7 @@ Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are 
 
 On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
 
-If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once. A popup lists the files to delete.
+If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge 1.0.0, only the first one runs. A popup lists the files to delete.
 
 ## Settings
 
@@ -50,7 +50,7 @@ All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It ha
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
-Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
+Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. Surge Mode can't change during a Survival run, so a reload or reset keeps it until the run ends. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
 
 ## Game fixes
 

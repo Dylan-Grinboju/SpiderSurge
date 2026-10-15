@@ -3,7 +3,6 @@ using SpiderSurge.Common;
 
 namespace SpiderTeams
 {
-    // Surge's abilities in versus need the Surge part running
     internal static class SurgeBridge
     {
         public static bool Available => Parts.Surge.Running;

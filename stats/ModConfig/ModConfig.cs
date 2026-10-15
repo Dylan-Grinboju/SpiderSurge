@@ -11,6 +11,7 @@ namespace StatsMod
         public const string ColumnsPrefix = Prefix + "display.bigUI.columns.";
         public const string AutoScaleKey = Prefix + "display.autoScale";
         public const string UIScaleKey = Prefix + "display.uiScale";
+        public const string CycleInputKey = Prefix + "input.cycleInput";
         public const float MinScale = 0.5f;
         public const float MaxScale = 3f;
         public const float MaxRevealDelay = 10f;
@@ -148,30 +149,28 @@ namespace StatsMod
         public static bool TitlesEnabled => Bool("titles.enabled");
         public static float TitlesRevealDelaySeconds => Mathf.Clamp(Settings.GetFloat(Prefix + "titles.revealDelaySeconds"), 0f, MaxRevealDelay);
 
-        // Input settings; Surge's D-pad ultimate takes the D-pad over
         public static string ConfiguredCycleInput
         {
             get
             {
-                string value = Settings.GetString(Prefix + "input.cycleInput").ToLowerInvariant();
+                string value = Settings.GetString(CycleInputKey).ToLowerInvariant();
                 return System.Array.IndexOf(CycleInputs, value) >= 0 ? value : "dpad";
             }
         }
 
-        public static bool DpadTakenBySurge => Parts.Surge.Running && SpiderSurge.ModConfig.UltimateUseDpadActivation;
+        public static bool DpadTakenBySurge => Parts.Surge.Running && (SpiderSurge.BaseAbility.DpadUltimateBound ?? SpiderSurge.ModConfig.UltimateUseDpadActivation);
 
-        public static string CycleInput
+        public static string CycleInput => CycleInputFor(ConfiguredCycleInput);
+
+        // Surge's ultimate on the D-pad takes the D-pad over
+        public static string CycleInputFor(string configured)
         {
-            get
+            if (DpadTakenBySurge)
             {
-                string value = ConfiguredCycleInput;
-                if (DpadTakenBySurge)
-                {
-                    if (value == "dpad") return "none";
-                    if (value == "both") return "joystick";
-                }
-                return value;
+                if (configured == "dpad") return "none";
+                if (configured == "both") return "joystick";
             }
+            return configured;
         }
 
         // The small window is dragged with the mouse, so its position is saved once it stops moving

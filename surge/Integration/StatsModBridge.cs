@@ -8,7 +8,6 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Integration
 {
-    // Hands Surge's activations to the Stats part's end screen and titles; does nothing while Stats is off
     public static class StatsModBridge
     {
         private static bool StatsRunning => Parts.Stats.Running;

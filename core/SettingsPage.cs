@@ -11,7 +11,6 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Common
 {
-    // Lives on the Mods popup and rebuilds only the objects it created, so Silk's own lines below it survive
     public class SettingsPage : MonoBehaviour
     {
         public const string MainPage = "main";
@@ -199,6 +198,10 @@ namespace SpiderSurge.Common
                 {
                     Warning($"Off because the old {part.BlockedBy} is still in the Mods folder. Delete it and restart the game.");
                 }
+                else if (part.Failed)
+                {
+                    Warning("Failed to start. The Silk log has the error.");
+                }
                 else if (part.Enabled != part.Running)
                 {
                     Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
@@ -212,7 +215,7 @@ namespace SpiderSurge.Common
             Spacer();
             Header("General");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
-            Button("Reload the settings file", Settings.Reload);
+            Button("Reload the settings file", ReloadFile);
             Note($"Settings file: <noparse>{Settings.FilePath}</noparse>");
 
             Spacer();
@@ -221,6 +224,15 @@ namespace SpiderSurge.Common
             Note("Icons licensed under CC BY 3.0: https://creativecommons.org/licenses/by/3.0/");
             Paragraph("Special thanks to everyone who helped test the mod a thousand times: Adam, Eitan, Guy, Tal, Yoav and everyone else");
             Spacer();
+        }
+
+        private static void ReloadFile()
+        {
+            string problem = Settings.Reload();
+            if (problem != null)
+            {
+                Announcer.InformationPopup(problem);
+            }
         }
 
         public void Header(string text)

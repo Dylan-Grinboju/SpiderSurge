@@ -27,10 +27,16 @@ namespace SpiderSurge
             TutorialUI.Initialize();
             TelemetryConsentUI.Initialize();
             PlayerControlSettings.Initialize();
+
+            Settings.Lock(ModConfig.SurgeModeKey, () => SurgeSettingsPage.RunActive, "Surge Mode can't change while a Survival run is active, so it kept its value.");
+            Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
+            Settings.Changed -= OnSettingsChanged;
+            Settings.Unlock(ModConfig.SurgeModeKey);
+
             foreach (string name in Objects)
             {
                 GameObject found = GameObject.Find(name);
@@ -48,6 +54,18 @@ namespace SpiderSurge
         public override void BuildSettings(SettingsPage page)
         {
             SurgeSettingsPage.Build(page);
+        }
+
+        private static void OnSettingsChanged(string key)
+        {
+            if (key == null)
+            {
+                ModConfig.ForgetColors();
+            }
+            if (Settings.Affects(key, ModConfig.SurgeModeKey))
+            {
+                GameModePatches.UpdateSurgeSurvivalText();
+            }
         }
     }
 }

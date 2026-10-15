@@ -1,16 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using Silk;
 using UnityEngine;
+using YamlDotNet.Core;
+using YamlDotNet.Serialization;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge.Common
 {
-    // Every part's settings live in one Silk config file; values are parsed in the invariant culture and cached until changed
     public static class Settings
     {
         public const string FileId = "SpiderSurge";
+        private const string BrokenSuffix = ".broken";
         private const float SaveDelay = 0.75f;
 
         private static readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
@@ -18,6 +22,7 @@ namespace SpiderSurge.Common
         private static readonly Dictionary<string, object> _cache = new Dictionary<string, object>();
         private static readonly Dictionary<string, object> _unsaved = new Dictionary<string, object>();
         private static readonly HashSet<string> _warned = new HashSet<string>();
+        private static readonly Dictionary<string, (Func<bool> locked, string reason)> _locks = new Dictionary<string, (Func<bool> locked, string reason)>();
         private static float _saveAt = -1f;
 
         private delegate bool Parser<T>(string raw, out T value);
@@ -44,22 +49,72 @@ namespace SpiderSurge.Common
 
         public static object Default(string key) => _defaults.TryGetValue(key, out object value) ? value : null;
 
-        public static void Load()
+        public static bool Affects(string changed, string key)
         {
-            SettingsMigration.Run();
-            Config.LoadModConfig(FileId, BuildTree(_defaults));
-            _cache.Clear();
-            Logger.LogInfo($"SpiderSurge settings loaded from {FilePath}");
+            return changed == null || key == changed || key.StartsWith(changed + ".", StringComparison.Ordinal);
         }
 
-        public static void Reload()
+        // While locked returns true, Reset and Reload leave the key as it is
+        public static void Lock(string key, Func<bool> locked, string reason)
         {
+            _locks[key] = (locked, reason);
+        }
+
+        public static void Unlock(string key)
+        {
+            _locks.Remove(key);
+        }
+
+        // Silk replaces a file it can't parse with the defaults on the next save, so a broken file is copied aside first
+        public static void Load()
+        {
+            string problem = FileProblem();
+            if (problem == null)
+            {
+                SettingsMigration.Run();
+            }
+            else
+            {
+                KeepBrokenFile(problem);
+            }
+
+            Config.LoadModConfig(FileId, BuildTree(_defaults));
+            _cache.Clear();
+            if (problem == null)
+            {
+                Logger.LogInfo($"SpiderSurge settings loaded from {FilePath}");
+            }
+        }
+
+        // Returns why the file was not taken as it is, or null
+        public static string Reload()
+        {
+            string problem = FileProblem();
+            if (problem != null)
+            {
+                Logger.LogWarning($"{FilePath} was not reloaded because it has an error: {problem}");
+                return $"The settings file has an error, so nothing was reloaded:\n{problem}";
+            }
+
+            var held = _locks.Where(pair => pair.Value.locked()).Select(pair => (key: pair.Key, value: Typed(pair.Key), pair.Value.reason)).ToList();
             _unsaved.Clear();
             _saveAt = -1f;
             _warned.Clear();
             Config.LoadModConfig(FileId, BuildTree(_defaults));
             _cache.Clear();
+
+            var reasons = new List<string>();
+            foreach (var hold in held)
+            {
+                if (!Equals(Typed(hold.key), hold.value))
+                {
+                    Config.SetModConfigValue(FileId, hold.key, hold.value);
+                    _cache.Remove(hold.key);
+                    reasons.Add(hold.reason);
+                }
+            }
             Raise(null);
+            return reasons.Count > 0 ? string.Join("\n", reasons) : null;
         }
 
         public static bool GetBool(string key) => Get<bool>(key, TryParseBool);
@@ -89,14 +144,16 @@ namespace SpiderSurge.Common
 
         public static void Reset(string prefix, params string[] keep)
         {
+            var values = new List<KeyValuePair<string, object>>();
             foreach (string key in _keys)
             {
-                if ((key == prefix || key.StartsWith(prefix + ".", StringComparison.Ordinal)) && Array.IndexOf(keep, key) < 0)
+                if (Affects(prefix, key) && Array.IndexOf(keep, key) < 0 && !IsLocked(key))
                 {
                     _unsaved.Remove(key);
-                    Config.SetModConfigValue(FileId, key, _defaults[key]);
+                    values.Add(new KeyValuePair<string, object>(key, _defaults[key]));
                 }
             }
+            Save(values);
             _cache.Clear();
             _warned.Clear();
             Raise(prefix);
@@ -118,12 +175,9 @@ namespace SpiderSurge.Common
                 return;
             }
 
-            var pending = new List<KeyValuePair<string, object>>(_unsaved);
+            var pending = _unsaved.ToList();
             _unsaved.Clear();
-            foreach (var pair in pending)
-            {
-                Config.SetModConfigValue(FileId, pair.Key, pair.Value);
-            }
+            Save(pending);
         }
 
         // Silk keeps the nested maps it is given and edits them in place, so every load gets fresh ones
@@ -151,6 +205,105 @@ namespace SpiderSurge.Common
                 section = (Dictionary<string, object>)next;
             }
             section[parts[parts.Length - 1]] = value;
+        }
+
+        internal static bool TryParseBool(string raw, out bool value)
+        {
+            switch (raw.ToLowerInvariant())
+            {
+                case "true":
+                case "yes":
+                case "on":
+                case "1":
+                    value = true;
+                    return true;
+                case "false":
+                case "no":
+                case "off":
+                case "0":
+                    value = false;
+                    return true;
+                default:
+                    value = false;
+                    return false;
+            }
+        }
+
+        // Silk writes the whole file on every set, so all values but the last go straight into the sections it holds
+        private static void Save(IList<KeyValuePair<string, object>> values)
+        {
+            for (int i = 0; i < values.Count; i++)
+            {
+                string key = values[i].Key;
+                int dot = key.LastIndexOf('.');
+                var section = i < values.Count - 1 && dot > 0 ? Config.GetModConfigValue<Dictionary<string, object>>(FileId, key.Substring(0, dot), null) : null;
+                if (section != null)
+                {
+                    section[key.Substring(dot + 1)] = values[i].Value;
+                }
+                else
+                {
+                    Config.SetModConfigValue(FileId, key, values[i].Value);
+                }
+            }
+        }
+
+        private static bool IsLocked(string key)
+        {
+            return _locks.TryGetValue(key, out var entry) && entry.locked();
+        }
+
+        private static object Typed(string key)
+        {
+            switch (Default(key))
+            {
+                case bool _:
+                    return GetBool(key);
+                case int _:
+                    return GetInt(key);
+                case float _:
+                    return GetFloat(key);
+                default:
+                    return GetString(key);
+            }
+        }
+
+        private static string FileProblem()
+        {
+            try
+            {
+                if (!File.Exists(FilePath))
+                {
+                    return null;
+                }
+                object root = new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(FilePath));
+                return root == null || root is IDictionary<object, object> ? null : "it holds no settings";
+            }
+            catch (YamlException ex)
+            {
+                string message = ex.Message;
+                int cut = message.IndexOf("): ", StringComparison.Ordinal);
+                return $"line {ex.Start.Line}: {(cut >= 0 ? message.Substring(cut + 3) : message)}";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
+        private static void KeepBrokenFile(string problem)
+        {
+            string backup = FilePath + BrokenSuffix;
+            try
+            {
+                File.Copy(FilePath, backup, true);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Could not copy {FilePath} to {backup}: {ex.Message}");
+            }
+            Logger.LogError($"{FilePath} has an error ({problem}), so every setting starts at its default. The file was copied to {backup}");
+            MainThread.PopupLater($"SpiderSurge's settings file has an error, so every setting starts at its default:\n{problem}\nYour file was copied to {Path.GetFileName(backup)} in Silk/Config/Mods.");
         }
 
         private static T Get<T>(string key, Parser<T> parse)
@@ -188,28 +341,6 @@ namespace SpiderSurge.Common
                 return null;
             }
             return Convert.ToString(raw, CultureInfo.InvariantCulture).Trim();
-        }
-
-        private static bool TryParseBool(string raw, out bool value)
-        {
-            switch (raw.ToLowerInvariant())
-            {
-                case "true":
-                case "yes":
-                case "on":
-                case "1":
-                    value = true;
-                    return true;
-                case "false":
-                case "no":
-                case "off":
-                case "0":
-                    value = false;
-                    return true;
-                default:
-                    value = false;
-                    return false;
-            }
         }
 
         private static bool TryParseInt(string raw, out int value)
