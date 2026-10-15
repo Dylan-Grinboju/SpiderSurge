@@ -24,19 +24,7 @@ namespace SpiderSurge.Integration
 
             try
             {
-                Type apiType = null;
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    try
-                    {
-                        apiType = assembly.GetType("StatsMod.StatsModApi");
-                        if (apiType != null) break;
-                    }
-                    catch
-                    {
-                    }
-                }
-
+                Type apiType = FindType("StatsMod.StatsModApi");
                 if (apiType == null)
                 {
                     Logger.LogInfo("StatsModBridge: Stats Mod not detected, integration disabled.");
@@ -58,6 +46,38 @@ namespace SpiderSurge.Integration
                 Logger.LogError($"StatsModBridge: Error during initialization: {ex.Message}");
                 _statsModAvailable = false;
             }
+        }
+
+        private static bool? _readsExplosionOwnerAsPlayerId;
+
+        // Stats mod 2.3.0 and older credit an explosion to the player whose playerID equals its explosionOwnerId
+        public static bool ReadsExplosionOwnerAsPlayerId
+        {
+            get
+            {
+                if (_readsExplosionOwnerAsPlayerId == null)
+                {
+                    Type cache = FindType("StatsMod.EnemyReflectionCache");
+                    _readsExplosionOwnerAsPlayerId = cache?.GetField("ExplosionOwnerId", BindingFlags.Public | BindingFlags.Static) != null;
+                }
+                return _readsExplosionOwnerAsPlayerId.Value;
+            }
+        }
+
+        private static Type FindType(string name)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    Type type = assembly.GetType(name);
+                    if (type != null) return type;
+                }
+                catch
+                {
+                }
+            }
+            return null;
         }
 
         public static void SendSurgeStats(Logging.SpiderSurgeStatsSnapshot snapshot)
