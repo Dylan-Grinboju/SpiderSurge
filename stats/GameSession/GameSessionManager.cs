@@ -70,10 +70,16 @@ namespace StatsMod
             currentGameMode = mode;
             sessionStartTime = DateTime.Now;
 
-        playerTracker.ResetPlayerStats();
-        enemiesTracker.ResetEnemiesKilled();
-        playerTracker.StartAllAliveTimers();
-        StatsModApi.ClearExternalData();
+            HitLogic.Clear();
+            playerTracker.ResetPlayerStats();
+            enemiesTracker.ResetEnemiesKilled();
+            playerTracker.StartAllAliveTimers();
+            StatsModApi.ClearExternalData();
+
+            if (mode == GameMode.Versus)
+            {
+                TitlesManager.Instance.ClearTitles();
+            }
 
             lastGameTitles.Clear();
             mapsPlayed.Clear();

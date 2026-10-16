@@ -12,7 +12,7 @@ SpiderSurge is made of four parts. Each one can be turned on or off from the gam
 
 | Part | What it does | On after installing |
 |---|---|---|
-| [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival, with live stats windows and fun titles at the end of each run | Yes |
+| [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival and Versus, with live stats windows and fun titles after Survival runs | Yes |
 | [Surge](surge/README.md) | Surge Mode for Survival: new abilities, ultimates, perks and custom enemies | No |
 | [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
 | [Game fixes](#game-fixes) | Fixes two bugs in the base game | Yes |
