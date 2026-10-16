@@ -15,9 +15,10 @@ namespace SpiderSurge.Enemies
 
         public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
         {
-            if (TwinWhispPrefab != null) return;
-
-            TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
+            if (TwinWhispPrefab == null)
+            {
+                TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
+            }
 
             // Create Shielded Variant if source is provided
             if (shieldSourceEnemy != null && ShieldedTwinWhispPrefab == null)
@@ -203,12 +204,14 @@ namespace SpiderSurge.Enemies
 
             if (sourceHealth != null && sourceHealth.shield != null)
             {
-                // Clone Shield
-                GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
-                newShield.name = sourceHealth.shield.name;
-                newShield.transform.localPosition = sourceHealth.shield.transform.localPosition;
-                newShield.transform.localRotation = sourceHealth.shield.transform.localRotation;
-                newShield.transform.localScale = sourceHealth.shield.transform.localScale;
+                GameObject newShield = new GameObject(sourceHealth.shield.name);
+                newShield.SetActive(false);
+                newShield.transform.SetParent(newEnemyObj.transform, false);
+
+                var shieldRenderer = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
+                Color shieldColor = shieldRenderer != null ? shieldRenderer.color : Color.magenta;
+                newShield.AddComponent<ShieldedEnemyVisuals>().Initialize(
+                    newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true), shieldColor);
 
                 healthSystem.shield = newShield;
                 newShield.SetActive(true);
