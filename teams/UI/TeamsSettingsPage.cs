@@ -57,7 +57,7 @@ namespace SpiderTeams
             AddSurge(page);
 
             page.Spacer();
-            page.Button("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
+            page.ConfirmButton("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
         }
 
         private static void AddRoster(SettingsPage page, TeamManager manager, bool locked)

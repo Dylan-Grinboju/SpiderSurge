@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using DG.Tweening;
 using Doozy.Engine.UI;
+using Doozy.Engine.UI.Input;
+using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -25,8 +27,9 @@ namespace SpiderSurge.Common
         private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade" };
 
         private static readonly Part[] MenuOrder = { Parts.Stats, Parts.Surge, Parts.Teams, Parts.Fixes };
+        private static readonly AccessTools.FieldRef<ModsMenu, UIButton> BackButtonOf = AccessTools.FieldRefAccess<ModsMenu, UIButton>("backButton");
         private static SettingsPage _open;
-        private static int _handledBackFrame = -1;
+        private static int _backFrame = -1;
 
         private ModsMenu _menu;
         private UIView _view;
@@ -42,7 +45,6 @@ namespace SpiderSurge.Common
         private string _originalTitle;
         private I2.Loc.Localize _titleLocalization;
         private bool _localizationEnabled;
-        private int _backFrame = -1;
         private GameObject _lastSelected;
         private Action _confirmation;
         private string _confirmationLabel;
@@ -52,6 +54,7 @@ namespace SpiderSurge.Common
         private bool _subscribed;
         private bool _quiet;
         private Coroutine _pending;
+        private bool _pagePending;
 
         public string Current { get; private set; } = MainPage;
 
@@ -77,57 +80,90 @@ namespace SpiderSurge.Common
         private void BuildMenu(ModsMenu menu, Button entry)
         {
             if (_menu != null) return;
-            _menu = menu;
-            _entry = entry;
-            _view = menu.GetComponent<UIView>();
-            _view.HideBehavior.OnStart.Event.AddListener(Clear);
-            _originalContent = (RectTransform)menu.objectParent;
-            _scroll = _originalContent.GetComponentInParent<ScrollRect>();
-            _originalScroll = _scroll.verticalNormalizedPosition;
-            _originalSelection = _view.SelectedButton;
-            _back = menu.transform.Find("Back").GetComponent<Selectable>();
-            _backNavigation = _back.navigation;
-            _title = menu.transform.Find("Text (TMP)").GetComponent<TMP_Text>();
-            _originalTitle = _title.text;
-            _titleLocalization = _title.GetComponent<I2.Loc.Localize>();
-            if (_titleLocalization != null)
+            var view = menu.GetComponent<UIView>();
+            var original = menu.objectParent as RectTransform;
+            var scroll = original != null ? original.GetComponentInParent<ScrollRect>() : null;
+            UIButton backButton = BackButtonOf(menu);
+            var back = backButton != null ? backButton.GetComponent<Selectable>() : null;
+            if (view == null || scroll == null || back == null)
             {
-                _localizationEnabled = _titleLocalization.enabled;
-                _titleLocalization.enabled = false;
+                Logger.LogError("SpiderSurge settings page: the Mods menu has no view, scroll list or Back button.");
+                return;
             }
-            _content = new GameObject("SpiderSurge settings", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
-            _content.SetParent(_originalContent.parent, false);
-            _content.anchorMin = new Vector2(0f, 1f);
-            _content.anchorMax = Vector2.one;
-            _content.pivot = new Vector2(0.5f, 1f);
-            _content.sizeDelta = Vector2.zero;
-            var layout = _content.GetComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.UpperCenter;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.spacing = 8f;
-            layout.padding = new RectOffset(18, 32, 8, 16);
-            _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            _originalContent.gameObject.SetActive(false);
-            _scroll.content = _content;
-            _scroll.StopMovement();
-            menu.objectParent = _content;
-            _open = this;
-            _history.Clear();
-            Current = MainPage;
-            if (!_subscribed)
+
+            try
             {
-                Settings.Changed += RequestRebuild;
-                _subscribed = true;
+                _menu = menu;
+                _entry = entry;
+                _view = view;
+                _originalContent = original;
+                _scroll = scroll;
+                _back = back;
+                _originalScroll = scroll.verticalNormalizedPosition;
+                _originalSelection = view.SelectedButton;
+                _backNavigation = back.navigation;
+                Transform title = menu.transform.Find("Text (TMP)");
+                _title = title != null ? title.GetComponent<TMP_Text>() : null;
+                if (_title != null)
+                {
+                    _originalTitle = _title.text;
+                    _titleLocalization = _title.GetComponent<I2.Loc.Localize>();
+                    if (_titleLocalization != null)
+                    {
+                        _localizationEnabled = _titleLocalization.enabled;
+                        _titleLocalization.enabled = false;
+                    }
+                }
+                view.HideBehavior.OnStart.Event.AddListener(Clear);
+                _content = new GameObject("SpiderSurge settings", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
+                _content.SetParent(_originalContent.parent, false);
+                _content.anchorMin = new Vector2(0f, 1f);
+                _content.anchorMax = Vector2.one;
+                _content.pivot = new Vector2(0.5f, 1f);
+                _content.sizeDelta = Vector2.zero;
+                var layout = _content.GetComponent<VerticalLayoutGroup>();
+                layout.childAlignment = TextAnchor.UpperCenter;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = true;
+                layout.childForceExpandHeight = false;
+                layout.spacing = 8f;
+                layout.padding = new RectOffset(18, 32, 8, 16);
+                _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                _originalContent.gameObject.SetActive(false);
+                _scroll.content = _content;
+                _scroll.StopMovement();
+                menu.objectParent = _content;
+                _open = this;
+                _history.Clear();
+                Current = MainPage;
+                if (!_subscribed)
+                {
+                    Settings.Changed += RequestRebuild;
+                    _subscribed = true;
+                }
+                Rebuild(0, 1f);
             }
-            Rebuild(0, true);
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderSurge settings page failed to open: {ex}");
+                Clear();
+            }
         }
 
+        // Also runs while the menu is being turned off, where Unity refuses DestroyImmediate, so the page goes at the end of the frame
         public void Clear()
         {
-            DestroyCreated();
+            StopAllCoroutines();
+            _pending = null;
+            _pagePending = false;
+            foreach (GameObject created in _created)
+            {
+                if (created != null) StopClickAnimations(created);
+            }
+            _created.Clear();
+            _controls.Clear();
+            _lastSelected = null;
             if (_menu != null)
             {
                 _view.HideBehavior.OnStart.Event.RemoveListener(Clear);
@@ -138,11 +174,13 @@ namespace SpiderSurge.Common
                 _scroll.verticalNormalizedPosition = _originalScroll;
                 _back.navigation = _backNavigation;
                 _view.SelectedButton = _originalSelection;
-                _title.text = _originalTitle;
+                if (_title != null) _title.text = _originalTitle;
                 if (_titleLocalization != null) _titleLocalization.enabled = _localizationEnabled;
             }
             if (_content != null) Destroy(_content.gameObject);
             _content = null;
+            _title = null;
+            _titleLocalization = null;
             _history.Clear();
             Settings.Flush();
             _menu = null;
@@ -154,13 +192,14 @@ namespace SpiderSurge.Common
 
         public void Open(string page)
         {
+            if (_menu == null || _pagePending) return;
             _history.Push((Current, SelectedIndex(), _scroll.verticalNormalizedPosition));
-            Show(page);
+            Show(page, 0, 1f);
         }
 
         public void Back()
         {
-            if (_pending != null || _backFrame == Time.frameCount) return;
+            if (_menu == null || _backFrame == Time.frameCount) return;
             _backFrame = Time.frameCount;
             if (_history.Count == 0)
             {
@@ -169,39 +208,37 @@ namespace SpiderSurge.Common
                 return;
             }
             var previous = _history.Pop();
-            Current = previous.page;
-            _pending = StartCoroutine(ShowNextFrame(previous.selection, previous.scroll));
+            Show(previous.page, previous.selection, previous.scroll);
         }
 
-        public static bool HandleBack(UIButton button = null)
+        // Every back input ends here; one key can reach several of them in the same frame, so only the first counts
+        public static bool HandleBack()
         {
-            if (button == null && _handledBackFrame == Time.frameCount) return true;
+            if (_backFrame == Time.frameCount) return true;
             if (_open == null || _open._menu == null || !_open._view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null)
                 return false;
-            if (button != null && button.gameObject != _open._back.gameObject) return false;
-            _handledBackFrame = Time.frameCount;
             _open.Back();
             return true;
         }
 
         // The clicked button is still handling its click, so the page changes on the next frame
-        private void Show(string page)
+        private void Show(string page, int selection, float scroll)
         {
             Current = page;
             if (_pending != null)
             {
                 StopCoroutine(_pending);
             }
-            _pending = StartCoroutine(ShowNextFrame(0, 1f));
+            _pagePending = true;
+            _pending = StartCoroutine(ShowNextFrame(selection, scroll));
         }
 
         private IEnumerator ShowNextFrame(int selection, float scroll)
         {
             yield return null;
             _pending = null;
-            Rebuild(selection);
-            _scroll.verticalNormalizedPosition = scroll;
-            KeepSelectionVisible();
+            _pagePending = false;
+            Rebuild(selection, scroll);
         }
 
         private void OnDisable()
@@ -238,7 +275,7 @@ namespace SpiderSurge.Common
             Rebuild(SelectedIndex());
         }
 
-        private void Rebuild(int selectIndex, bool toTop = false)
+        private void Rebuild(int selectIndex, float? scroll = null)
         {
             try
             {
@@ -252,10 +289,13 @@ namespace SpiderSurge.Common
                 ConfigureNavigation();
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
                 Select(selectIndex);
-                if (toTop)
+                if (scroll.HasValue)
                 {
-                    ScrollToTop();
+                    _scroll.StopMovement();
+                    _scroll.verticalNormalizedPosition = scroll.Value;
                 }
+                KeepSelectionVisible();
+                _lastSelected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             }
             catch (Exception ex)
             {
@@ -265,7 +305,7 @@ namespace SpiderSurge.Common
 
         private void AddContent()
         {
-            _title.text = "SPIDERSURGE";
+            SetTitle("SPIDERSURGE");
             if (Current == MainPage)
             {
                 AddMain();
@@ -377,7 +417,12 @@ namespace SpiderSurge.Common
 
         public void Title(string text)
         {
-            _title.text = "SPIDERSURGE / " + text.ToUpperInvariant();
+            SetTitle("SPIDERSURGE / " + text.ToUpperInvariant());
+        }
+
+        private void SetTitle(string text)
+        {
+            if (_title != null) _title.text = text;
         }
 
         public void Note(string text)
@@ -425,7 +470,7 @@ namespace SpiderSurge.Common
                 SetText(checkbox.label, label);
                 StyleRow(checkbox.gameObject);
                 StyleLabel(checkbox.label, -1f, 1f);
-                SetLayout(checkbox.toggle.gameObject, 30f, RowHeight);
+                SetLayout(checkbox.toggle.gameObject, 30f, RowHeight, 0f, RowHeight);
                 Register(checkbox.toggle);
             }
         }
@@ -450,6 +495,12 @@ namespace SpiderSurge.Common
 
             _created.Add(button.gameObject);
             StyleRow(button.gameObject);
+            var padding = button.gameObject.AddComponent<HorizontalLayoutGroup>();
+            padding.padding = new RectOffset(16, 16, 4, 4);
+            padding.childControlWidth = true;
+            padding.childControlHeight = true;
+            padding.childForceExpandWidth = true;
+            padding.childForceExpandHeight = true;
             var text = button.GetComponentInChildren<TMP_Text>();
             SetText(text, label);
             text.fontSize = FontSize;
@@ -457,10 +508,6 @@ namespace SpiderSurge.Common
             text.enableWordWrapping = true;
             text.alignment = TextAlignmentOptions.MidlineLeft;
             text.margin = Vector4.zero;
-            text.rectTransform.anchorMin = Vector2.zero;
-            text.rectTransform.anchorMax = Vector2.one;
-            text.rectTransform.offsetMin = new Vector2(16f, 0f);
-            text.rectTransform.offsetMax = new Vector2(-16f, 0f);
             Register(button);
         }
 
@@ -518,18 +565,19 @@ namespace SpiderSurge.Common
             StyleRow(slider.gameObject);
             StyleLabel(slider.sliderDescription, -1f, 1f);
             StyleLabel(slider.sliderValueText, 78f, 0f);
-            SetLayout(slider.slider.gameObject, 180f, RowHeight);
+            SetLayout(slider.slider.gameObject, 180f, RowHeight, 0f, RowHeight);
             Register(slider.slider);
             _created.Add(slider.gameObject);
         }
 
-        private static void SetLayout(GameObject target, float width, float height, float flexibleWidth = 0f)
+        // A preferred height of -1 lets the row's layout group or the label's text decide, so wrapped labels get taller rows
+        private static void SetLayout(GameObject target, float width, float minHeight, float flexibleWidth = 0f, float preferredHeight = -1f)
         {
             var layout = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
             layout.minWidth = width;
             layout.preferredWidth = width;
-            layout.minHeight = height;
-            layout.preferredHeight = height;
+            layout.minHeight = minHeight;
+            layout.preferredHeight = preferredHeight;
             layout.flexibleWidth = flexibleWidth;
         }
 
@@ -561,16 +609,17 @@ namespace SpiderSurge.Common
         private void Register(Selectable control)
         {
             _controls.Add(control);
-            var cancel = control.gameObject.AddComponent<SettingsControl>();
+            var settingsControl = control.gameObject.AddComponent<SettingsControl>();
             if (!(control is UnityEngine.UI.Button))
             {
                 var row = control.transform.parent.gameObject;
-                cancel.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
-                cancel.Highlight.raycastTarget = false;
-                cancel.Highlight.color = Color.clear;
+                settingsControl.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
+                settingsControl.Highlight.raycastTarget = false;
+                settingsControl.Highlight.color = Color.clear;
             }
             var button = control.GetComponent<UIButton>();
             if (button != null) button.DeselectButtonAfterClick = false;
+            settingsControl.ForwardCancel = button == null;
         }
 
         private void ConfigureNavigation()
@@ -593,6 +642,7 @@ namespace SpiderSurge.Common
             _view.SelectedButton = _controls.Count > 0 ? _controls[0].gameObject : _back.gameObject;
         }
 
+        // Keeps a control focused; clicks on empty space and the game's select-on-hover buttons must not scroll the list
         private void LateUpdate()
         {
             if (_menu == null || !_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null) return;
@@ -604,17 +654,18 @@ namespace SpiderSurge.Common
                     return;
                 }
             }
-            var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            var events = EventSystem.current;
+            if (events == null) return;
+            var selected = events.currentSelectedGameObject;
             if (selected == null)
             {
-                Select(0);
-                selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+                if (_lastSelected != null && _lastSelected.activeInHierarchy) events.SetSelectedGameObject(_lastSelected);
+                else Select(0);
+                selected = events.currentSelectedGameObject;
             }
-            if (selected != _lastSelected)
-            {
-                _lastSelected = selected;
-                KeepSelectionVisible();
-            }
+            if (selected == _lastSelected) return;
+            _lastSelected = selected;
+            if (selected != SettingsControl.Hovered) KeepSelectionVisible();
         }
 
         // Scroll only when focus moves, so the mouse wheel remains independent of selection.
@@ -672,11 +723,6 @@ namespace SpiderSurge.Common
 
         private void DestroyCreated()
         {
-            if (_pending != null)
-            {
-                StopCoroutine(_pending);
-                _pending = null;
-            }
             for (int i = 0; i < _created.Count; i++)
             {
                 if (_created[i] != null)
@@ -690,7 +736,7 @@ namespace SpiderSurge.Common
             _lastSelected = null;
         }
 
-        // Doozy's click animations are DOTween sequences named after the button's RectTransform; left running, they fail once it is gone
+        // Doozy's click animations are DOTween sequences named after the button's RectTransform, and a finished punch starts an unnamed tween on it; left running, they fail once it is gone
         private static void StopClickAnimations(GameObject created)
         {
             foreach (RectTransform rect in created.GetComponentsInChildren<RectTransform>(true))
@@ -699,25 +745,7 @@ namespace SpiderSurge.Common
                 {
                     DOTween.Kill($"{rect.GetInstanceID()}-{animation}");
                 }
-            }
-        }
-
-        private void ScrollToTop()
-        {
-            ScrollRect scroll = _scroll;
-            if (scroll != null)
-            {
-                scroll.verticalNormalizedPosition = 1f;
-                StartCoroutine(ScrollToTopAfterLayout(scroll));
-            }
-        }
-
-        private static IEnumerator ScrollToTopAfterLayout(ScrollRect scroll)
-        {
-            yield return null;
-            if (scroll != null)
-            {
-                scroll.verticalNormalizedPosition = 1f;
+                DOTween.Kill(rect);
             }
         }
 
@@ -779,9 +807,26 @@ namespace SpiderSurge.Common
         }
     }
 
-    public class SettingsControl : MonoBehaviour, ICancelHandler, ISelectHandler, IDeselectHandler
+    public class SettingsControl : MonoBehaviour, ICancelHandler, ISelectHandler, IDeselectHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        public static GameObject Hovered;
         public Image Highlight;
+        public bool ForwardCancel;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            Hovered = gameObject;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (Hovered == gameObject) Hovered = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (Hovered == gameObject) Hovered = null;
+        }
 
         public void OnSelect(BaseEventData eventData)
         {
@@ -793,9 +838,10 @@ namespace SpiderSurge.Common
             if (Highlight != null) Highlight.color = Color.clear;
         }
 
+        // Doozy's UIButton already sends cancel to the BackButton; toggles and sliders do the same through this
         public void OnCancel(BaseEventData eventData)
         {
-            if (SettingsPage.HandleBack()) eventData.Use();
+            if (ForwardCancel) BackButton.Instance.Execute();
         }
     }
 }

@@ -1,4 +1,3 @@
-using Doozy.Engine.UI;
 using Doozy.Engine.UI.Input;
 using HarmonyLib;
 using UnityEngine.UI;
@@ -24,13 +23,7 @@ namespace SpiderSurge.Common
         }
     }
 
-    [HarmonyPatch(typeof(UIButton), nameof(UIButton.ExecuteClick))]
-    public static class Settings_BackClick_Patch
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(UIButton __instance) => !SettingsPage.HandleBack(__instance);
-    }
-
+    // The Back button, and cancel on any UIButton, both call BackButton.Execute
     [HarmonyPatch(typeof(BackButton), nameof(BackButton.Execute))]
     public static class Settings_BackInput_Patch
     {
