@@ -7,6 +7,8 @@ namespace StatsMod
     internal static class StatsSettingsPage
     {
         private const string ColumnsPage = "stats.columns";
+        private const string AccuracyPrefix = "accuracy.";
+        private const string OverallAccuracy = AccuracyPrefix + "overall";
         private static readonly string[] CycleInputNames = { "D-pad", "Stick press (L3 or R3)", "D-pad or stick press", "Nothing" };
 
         private static readonly (string title, string prefix)[] ColumnGroups =
@@ -14,13 +16,13 @@ namespace StatsMod
             ("Totals", "total"),
             ("Enemy kills", "enemyKills."),
             ("Weapon kills", "weaponKills."),
-            ("Shooting accuracy", "accuracy."),
+            ("Shooting accuracy", AccuracyPrefix),
             ("Player stats", ""),
         };
 
         public static void Build(SettingsPage page)
         {
-            if (page.Current == ColumnsPage)
+            if (page.Current == ColumnsPage || page.Current.StartsWith(ColumnsPage + ".", System.StringComparison.Ordinal))
             {
                 BuildColumns(page);
                 return;
@@ -54,38 +56,61 @@ namespace StatsMod
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
 
             page.Spacer();
-            page.Button("Reset Stats settings to defaults", () => Settings.Reset("stats", Key("display.position.x"), Key("display.position.y")));
+            page.ConfirmButton("Reset Stats settings to defaults", () => Settings.Reset("stats", Key("display.position.x"), Key("display.position.y")));
         }
 
         private static void BuildColumns(SettingsPage page)
         {
             page.Title("Player table columns");
+            if (page.Current == ColumnsPage)
+            {
+                page.Note("Choose a group of columns. The player's name is always shown.");
+                for (int i = 0; i < ColumnGroups.Length; i++)
+                {
+                    string destination = ColumnsPage + "." + i;
+                    page.Button(ColumnGroups[i].title, () => page.Open(destination));
+                }
+                page.Spacer();
+                page.ConfirmButton("Reset the columns to defaults", () => Settings.Reset(ModConfig.ColumnsPrefix.TrimEnd('.')));
+                return;
+            }
             page.Note("The player's name is always shown.");
-            page.Note("Accuracy is the percentage of shots that hit an enemy or a versus opponent. Each shot counts once; shields, armor and knockback count. Friendly fire does not.");
 
             var columns = Settings.Keys.Where(key => key.StartsWith(ModConfig.ColumnsPrefix)).Select(key => key.Substring(ModConfig.ColumnsPrefix.Length)).ToList();
-            foreach (var (title, prefix) in ColumnGroups)
+            for (int i = 0; i < ColumnGroups.Length; i++)
             {
-                var group = columns.Where(column => column.StartsWith(prefix)).ToList();
+                var (title, prefix) = ColumnGroups[i];
+                var group = columns.Where(column => column.StartsWith(prefix))
+                    .OrderBy(column => column != OverallAccuracy)
+                    .ThenBy(ColumnLabel, System.StringComparer.OrdinalIgnoreCase).ToList();
                 columns.RemoveAll(group.Contains);
+                if (page.Current != ColumnsPage + "." + i) continue;
 
-                page.Spacer();
-                page.Header(title);
+                page.Title(title + " columns");
+                if (prefix == AccuracyPrefix)
+                {
+                    page.Note("Accuracy is the percentage of shots that hit an enemy or a versus opponent. Each shot counts once; shields, armor and knockback count. Friendly fire does not.");
+                }
                 foreach (string column in group)
                 {
-                    string name = column.Substring(column.LastIndexOf('.') + 1);
-                    string label = prefix == "accuracy."
-                        ? (name == "overall" ? "Overall accuracy" : WeaponAccuracy.Weapons.FirstOrDefault(weapon => weapon.Key == name).Label)
-                        : null;
-                    page.Toggle(label ?? Words(name), ModConfig.ColumnsPrefix + column);
+                    page.Toggle(ColumnLabel(column), ModConfig.ColumnsPrefix + column);
                 }
             }
-
-            page.Spacer();
-            page.Button("Reset the columns to defaults", () => Settings.Reset(ModConfig.ColumnsPrefix.TrimEnd('.')));
         }
 
         private static string Key(string key) => ModConfig.Prefix + key;
+
+        private static string ColumnLabel(string column)
+        {
+            string name = column.Substring(column.LastIndexOf('.') + 1);
+            if (column == OverallAccuracy) return "Overall accuracy";
+            if (column.StartsWith(AccuracyPrefix))
+            {
+                string label = WeaponAccuracy.Weapons.FirstOrDefault(weapon => weapon.Key == name).Label;
+                if (label != null) return label;
+            }
+            return Words(name);
+        }
 
         // "maxSoloKillStreak" -> "Max solo kill streak"
         private static string Words(string camel)

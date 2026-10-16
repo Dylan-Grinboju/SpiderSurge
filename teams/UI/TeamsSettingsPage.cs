@@ -57,7 +57,7 @@ namespace SpiderTeams
             AddSurge(page);
 
             page.Spacer();
-            page.Button("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
+            page.ConfirmButton("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
         }
 
         private static void AddRoster(SettingsPage page, TeamManager manager, bool locked)
@@ -107,7 +107,7 @@ namespace SpiderTeams
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. The main page shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. The Enable or disable parts page shows why.");
                 return;
             }
 
