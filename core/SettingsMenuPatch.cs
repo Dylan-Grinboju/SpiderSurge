@@ -1,42 +1,47 @@
-using System;
+using Doozy.Engine.UI;
+using Doozy.Engine.UI.Input;
 using HarmonyLib;
-using Logger = Silk.Logger;
+using UnityEngine.UI;
 
 namespace SpiderSurge.Common
 {
-    [HarmonyPatch(typeof(Announcer), nameof(Announcer.ModsPopup))]
-    public static class Announcer_ModsPopup_Patch
+    [HarmonyPatch(typeof(ModsMenu), nameof(ModsMenu.CreateButton))]
+    public static class ModsMenu_SettingsButton_Patch
     {
         [HarmonyPostfix]
-        public static void Postfix(string title, ModsMenuPopup __result)
+        public static void Postfix(ModsMenu __instance, string buttonName, Button __result)
         {
-            try
+            if (__instance is ModsMenuPopup || buttonName != SpiderSurgeMod.ModName || __result == null)
             {
-                if (__result == null)
-                {
-                    return;
-                }
-
-                SettingsPage page = __result.GetComponent<SettingsPage>();
-                if (title != SpiderSurgeMod.ModName)
-                {
-                    if (page != null)
-                    {
-                        page.Clear();
-                    }
-                    return;
-                }
-
-                if (page == null)
-                {
-                    page = __result.gameObject.AddComponent<SettingsPage>();
-                }
-                page.Build(__result);
+                return;
             }
-            catch (Exception ex)
+            __result.onClick.RemoveAllListeners();
+            __result.onClick.AddListener(() =>
             {
-                Logger.LogError($"SpiderSurge could not build its Mods page: {ex}");
-            }
+                var page = __instance.GetComponent<SettingsPage>() ?? __instance.gameObject.AddComponent<SettingsPage>();
+                page.Build(__instance, __result);
+            });
         }
+    }
+
+    [HarmonyPatch(typeof(UIButton), nameof(UIButton.ExecuteClick))]
+    public static class Settings_BackClick_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(UIButton __instance) => !SettingsPage.HandleBack(__instance);
+    }
+
+    [HarmonyPatch(typeof(BackButton), nameof(BackButton.Execute))]
+    public static class Settings_BackInput_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix() => !SettingsPage.HandleBack();
+    }
+
+    [HarmonyPatch(typeof(HudController), nameof(HudController.Pause))]
+    public static class Settings_PauseInput_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix() => !SettingsPage.HandleBack();
     }
 }

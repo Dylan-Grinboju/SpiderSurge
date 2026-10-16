@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using DG.Tweening;
+using Doozy.Engine.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Logger = Silk.Logger;
 
@@ -18,21 +20,35 @@ namespace SpiderSurge.Common
         public const string Red = "#FF5555";
         public const string Gray = "#AAAAAA";
         public const string Orange = "#FFAA66";
-        private const float CheckboxLabelWidth = 330f;
-        private const float ButtonWidth = 300f;
-        private const float MaxButtonWidth = 700f;
-        private const float ButtonPadding = 60f;
-        private const float SliderLabelWidth = 200f;
-        private const float SliderBarWidth = 150f;
+        private const float FontSize = 19f;
+        private const float RowHeight = 38f;
         private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade" };
 
         private static readonly Part[] MenuOrder = { Parts.Stats, Parts.Surge, Parts.Teams, Parts.Fixes };
         private static SettingsPage _open;
+        private static int _handledBackFrame = -1;
 
-        private ModsMenuPopup _menu;
+        private ModsMenu _menu;
+        private UIView _view;
+        private ScrollRect _scroll;
+        private RectTransform _originalContent;
+        private RectTransform _content;
+        private Button _entry;
+        private Selectable _back;
+        private Navigation _backNavigation;
+        private GameObject _originalSelection;
+        private float _originalScroll;
+        private TMP_Text _title;
+        private string _originalTitle;
+        private I2.Loc.Localize _titleLocalization;
+        private bool _localizationEnabled;
+        private int _backFrame = -1;
+        private GameObject _lastSelected;
+        private Action _confirmation;
+        private string _confirmationLabel;
+        private readonly List<Selectable> _controls = new List<Selectable>();
         private readonly List<GameObject> _created = new List<GameObject>();
-        private readonly Stack<string> _history = new Stack<string>();
-        private int _baseIndex;
+        private readonly Stack<(string page, int selection, float scroll)> _history = new Stack<(string, int, float)>();
         private bool _subscribed;
         private bool _quiet;
         private Coroutine _pending;
@@ -47,12 +63,58 @@ namespace SpiderSurge.Common
             }
         }
 
-        public void Build(ModsMenuPopup menu)
+        public void Build(ModsMenu menu, Button entry)
         {
-            DestroyCreated();
+            StartCoroutine(BuildNextFrame(menu, entry));
+        }
+
+        private IEnumerator BuildNextFrame(ModsMenu menu, Button entry)
+        {
+            yield return null;
+            BuildMenu(menu, entry);
+        }
+
+        private void BuildMenu(ModsMenu menu, Button entry)
+        {
+            if (_menu != null) return;
             _menu = menu;
+            _entry = entry;
+            _view = menu.GetComponent<UIView>();
+            _view.HideBehavior.OnStart.Event.AddListener(Clear);
+            _originalContent = (RectTransform)menu.objectParent;
+            _scroll = _originalContent.GetComponentInParent<ScrollRect>();
+            _originalScroll = _scroll.verticalNormalizedPosition;
+            _originalSelection = _view.SelectedButton;
+            _back = menu.transform.Find("Back").GetComponent<Selectable>();
+            _backNavigation = _back.navigation;
+            _title = menu.transform.Find("Text (TMP)").GetComponent<TMP_Text>();
+            _originalTitle = _title.text;
+            _titleLocalization = _title.GetComponent<I2.Loc.Localize>();
+            if (_titleLocalization != null)
+            {
+                _localizationEnabled = _titleLocalization.enabled;
+                _titleLocalization.enabled = false;
+            }
+            _content = new GameObject("SpiderSurge settings", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
+            _content.SetParent(_originalContent.parent, false);
+            _content.anchorMin = new Vector2(0f, 1f);
+            _content.anchorMax = Vector2.one;
+            _content.pivot = new Vector2(0.5f, 1f);
+            _content.sizeDelta = Vector2.zero;
+            var layout = _content.GetComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(18, 32, 8, 16);
+            _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            _originalContent.gameObject.SetActive(false);
+            _scroll.content = _content;
+            _scroll.StopMovement();
+            menu.objectParent = _content;
             _open = this;
-            _baseIndex = menu.objectParent != null ? menu.objectParent.childCount : 0;
             _history.Clear();
             Current = MainPage;
             if (!_subscribed)
@@ -60,12 +122,29 @@ namespace SpiderSurge.Common
                 Settings.Changed += RequestRebuild;
                 _subscribed = true;
             }
-            Rebuild(-1);
+            Rebuild(0, true);
         }
 
         public void Clear()
         {
             DestroyCreated();
+            if (_menu != null)
+            {
+                _view.HideBehavior.OnStart.Event.RemoveListener(Clear);
+                _menu.objectParent = _originalContent;
+                _scroll.content = _originalContent;
+                _scroll.StopMovement();
+                _originalContent.gameObject.SetActive(true);
+                _scroll.verticalNormalizedPosition = _originalScroll;
+                _back.navigation = _backNavigation;
+                _view.SelectedButton = _originalSelection;
+                _title.text = _originalTitle;
+                if (_titleLocalization != null) _titleLocalization.enabled = _localizationEnabled;
+            }
+            if (_content != null) Destroy(_content.gameObject);
+            _content = null;
+            _history.Clear();
+            Settings.Flush();
             _menu = null;
             if (_open == this)
             {
@@ -75,13 +154,34 @@ namespace SpiderSurge.Common
 
         public void Open(string page)
         {
-            _history.Push(Current);
+            _history.Push((Current, SelectedIndex(), _scroll.verticalNormalizedPosition));
             Show(page);
         }
 
         public void Back()
         {
-            Show(_history.Count > 0 ? _history.Pop() : MainPage);
+            if (_pending != null || _backFrame == Time.frameCount) return;
+            _backFrame = Time.frameCount;
+            if (_history.Count == 0)
+            {
+                Clear();
+                if (_entry != null) _entry.Select();
+                return;
+            }
+            var previous = _history.Pop();
+            Current = previous.page;
+            _pending = StartCoroutine(ShowNextFrame(previous.selection, previous.scroll));
+        }
+
+        public static bool HandleBack(UIButton button = null)
+        {
+            if (button == null && _handledBackFrame == Time.frameCount) return true;
+            if (_open == null || _open._menu == null || !_open._view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null)
+                return false;
+            if (button != null && button.gameObject != _open._back.gameObject) return false;
+            _handledBackFrame = Time.frameCount;
+            _open.Back();
+            return true;
         }
 
         // The clicked button is still handling its click, so the page changes on the next frame
@@ -92,14 +192,21 @@ namespace SpiderSurge.Common
             {
                 StopCoroutine(_pending);
             }
-            _pending = StartCoroutine(ShowNextFrame());
+            _pending = StartCoroutine(ShowNextFrame(0, 1f));
         }
 
-        private IEnumerator ShowNextFrame()
+        private IEnumerator ShowNextFrame(int selection, float scroll)
         {
             yield return null;
             _pending = null;
-            Rebuild(0, true);
+            Rebuild(selection);
+            _scroll.verticalNormalizedPosition = scroll;
+            KeepSelectionVisible();
+        }
+
+        private void OnDisable()
+        {
+            if (_menu != null) Clear();
         }
 
         private void OnDestroy()
@@ -142,13 +249,8 @@ namespace SpiderSurge.Common
                 }
 
                 AddContent();
-                for (int i = 0; i < _created.Count; i++)
-                {
-                    if (_created[i] != null)
-                    {
-                        _created[i].transform.SetSiblingIndex(_baseIndex + i);
-                    }
-                }
+                ConfigureNavigation();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
                 Select(selectIndex);
                 if (toTop)
                 {
@@ -163,31 +265,55 @@ namespace SpiderSurge.Common
 
         private void AddContent()
         {
+            _title.text = "SPIDERSURGE";
             if (Current == MainPage)
             {
                 AddMain();
                 return;
             }
+            if (Current == "general") { AddGeneral(); return; }
+            if (Current == "parts") { AddParts(); return; }
+            if (Current == "about") { AddAbout(); return; }
+            if (Current == "confirm")
+            {
+                Title("Confirm reset");
+                Paragraph(_confirmationLabel + "?");
+                Note("This cannot be undone.");
+                Button("Keep current settings", Back);
+                Button("Reset", () =>
+                {
+                    Action action = _confirmation;
+                    Back();
+                    Run(action);
+                });
+                return;
+            }
 
             Part part = Array.Find(Parts.All, candidate => Current == candidate.Key || Current.StartsWith(candidate.Key + ".", StringComparison.Ordinal));
-            Button("Return", Back);
             if (part == null || !part.Running)
             {
                 Warning("This part isn't running.");
                 return;
             }
             part.BuildSettings(this);
-            Spacer();
-            Button("Return", Back);
-            Spacer();
         }
 
         private void AddMain()
         {
-            Paragraph($"<size=200%>\n<b>{Hud.Logo}</b></size>");
-            Paragraph($"<size=115%>Version {SpiderSurgeMod.Version}</size>");
-            Note("Turning a part on or off takes effect after restarting the game. Its settings below change right away.");
+            Note("Choose a settings category. Changes are saved automatically.");
+            foreach (Part part in MenuOrder)
+            {
+                if (part.Running && part.HasSettings) Button(part.Title, () => Open(part.Key));
+            }
+            Button("Enable or disable parts", () => Open("parts"));
+            Button("General", () => Open("general"));
+            Button("About SpiderSurge", () => Open("about"));
+        }
 
+        private void AddParts()
+        {
+            Title("Mod parts");
+            Note("Turning a part on or off takes effect after restarting the game.");
             foreach (Part part in MenuOrder)
             {
                 Spacer();
@@ -205,19 +331,22 @@ namespace SpiderSurge.Common
                 {
                     Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
                 }
-                if (part.Running && part.HasSettings)
-                {
-                    Button($"{part.Title} settings", () => Open(part.Key));
-                }
             }
+        }
 
-            Spacer();
-            Header("General");
+        private void AddGeneral()
+        {
+            Title("General");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
             Button("Reload the settings file", ReloadFile);
             Note($"Settings file: <noparse>{Settings.FilePath}</noparse>");
 
-            Spacer();
+        }
+
+        private void AddAbout()
+        {
+            Title("About SpiderSurge");
+            Paragraph($"Version {SpiderSurgeMod.Version}");
             Header("Credits");
             Paragraph("Icons by these artists from game-icons.net: delapouite, lorc, pierre-leducq");
             Note("Icons licensed under CC BY 3.0: https://creativecommons.org/licenses/by/3.0/");
@@ -241,7 +370,7 @@ namespace SpiderSurge.Common
 
         public void Title(string text)
         {
-            Paragraph($"<size=170%>\n<b><color={Hud.PinkHex}>{text.ToUpperInvariant()}</color></b></size>");
+            _title.text = "SPIDERSURGE / " + text.ToUpperInvariant();
         }
 
         public void Note(string text)
@@ -256,7 +385,10 @@ namespace SpiderSurge.Common
 
         public void Spacer()
         {
-            Paragraph("<size=100%>\n </size>");
+            var spacer = new GameObject("Section spacing", typeof(RectTransform), typeof(LayoutElement));
+            spacer.transform.SetParent(_menu.objectParent, false);
+            spacer.GetComponent<LayoutElement>().preferredHeight = 8f;
+            _created.Add(spacer);
         }
 
         public void Paragraph(string text)
@@ -264,6 +396,15 @@ namespace SpiderSurge.Common
             TMP_Text paragraph = _menu.CreateParagraph(text);
             if (paragraph != null)
             {
+                SetText(paragraph, text);
+                paragraph.fontSize = FontSize;
+                paragraph.enableAutoSizing = false;
+                paragraph.enableWordWrapping = true;
+                paragraph.alignment = TextAlignmentOptions.TopLeft;
+                paragraph.margin = Vector4.zero;
+                paragraph.raycastTarget = false;
+                var fitter = paragraph.GetComponent<ContentSizeFitter>();
+                if (fitter != null) DestroyImmediate(fitter);
                 _created.Add(paragraph.gameObject);
             }
         }
@@ -275,7 +416,10 @@ namespace SpiderSurge.Common
             {
                 _created.Add(checkbox.gameObject);
                 SetText(checkbox.label, label);
-                Widen(checkbox.label != null ? checkbox.label.rectTransform : null, CheckboxLabelWidth);
+                StyleRow(checkbox.gameObject);
+                StyleLabel(checkbox.label, -1f, 1f);
+                SetLayout(checkbox.toggle.gameObject, 30f, RowHeight);
+                Register(checkbox.toggle);
             }
         }
 
@@ -286,27 +430,41 @@ namespace SpiderSurge.Common
 
         public void Button(string label, Action onClick)
         {
-            UnityEngine.UI.Button button = ((ModsMenu)_menu).CreateButton(label, () => Run(onClick));
+            UnityEngine.UI.Button button = null;
+            button = _menu.CreateButton(label, () =>
+            {
+                button.Select();
+                Run(onClick);
+            });
             if (button == null)
             {
                 return;
             }
 
             _created.Add(button.gameObject);
+            StyleRow(button.gameObject);
             var text = button.GetComponentInChildren<TMP_Text>();
-            float textWidth = 0f;
-            if (text != null)
-            {
-                text.fontSize *= 1.2f;
-                textWidth = text.GetPreferredValues(text.text, float.PositiveInfinity, float.PositiveInfinity).x + ButtonPadding;
-            }
+            SetText(text, label);
+            text.fontSize = FontSize;
+            text.enableAutoSizing = false;
+            text.enableWordWrapping = true;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.margin = Vector4.zero;
+            text.rectTransform.anchorMin = Vector2.zero;
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.offsetMin = new Vector2(16f, 0f);
+            text.rectTransform.offsetMax = new Vector2(-16f, 0f);
+            Register(button);
+        }
 
-            var rect = button.GetComponent<RectTransform>();
-            if (rect != null)
+        public void ConfirmButton(string label, Action onConfirm)
+        {
+            Button(label, () =>
             {
-                float width = Mathf.Clamp(Mathf.Max(rect.sizeDelta.x * 1.1f, textWidth), ButtonWidth, MaxButtonWidth);
-                rect.sizeDelta = new Vector2(width, rect.sizeDelta.y * 1.45f);
-            }
+                _confirmation = onConfirm;
+                _confirmationLabel = label;
+                Open("confirm");
+            });
         }
 
         // A button that steps through fixed choices of a text setting; a value typed into the file shows as is until changed
@@ -350,20 +508,126 @@ namespace SpiderSurge.Common
             slider.slider.value = start;
             SetText(slider.sliderDescription, label);
             SetText(slider.sliderValueText, Format(value, step, unit));
-            Widen(slider.sliderDescription != null ? slider.sliderDescription.rectTransform : null, SliderLabelWidth);
-            var bar = slider.slider.GetComponent<RectTransform>();
-            if (bar != null)
-            {
-                bar.sizeDelta = new Vector2(SliderBarWidth, bar.sizeDelta.y);
-            }
+            StyleRow(slider.gameObject);
+            StyleLabel(slider.sliderDescription, -1f, 1f);
+            StyleLabel(slider.sliderValueText, 78f, 0f);
+            SetLayout(slider.slider.gameObject, 180f, RowHeight);
+            Register(slider.slider);
             _created.Add(slider.gameObject);
         }
 
-        private static void Widen(RectTransform rect, float width)
+        private static void SetLayout(GameObject target, float width, float height, float flexibleWidth = 0f)
         {
-            if (rect != null && rect.sizeDelta.x < width)
+            var layout = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
+            layout.minWidth = width;
+            layout.preferredWidth = width;
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleWidth = flexibleWidth;
+        }
+
+        private static void StyleRow(GameObject row)
+        {
+            SetLayout(row, -1f, RowHeight, 1f);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            if (layout != null)
             {
-                rect.sizeDelta = new Vector2(width, rect.sizeDelta.y);
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+                layout.childAlignment = TextAnchor.MiddleLeft;
+                layout.spacing = 16f;
+            }
+        }
+
+        private static void StyleLabel(TMP_Text label, float width, float flexibleWidth)
+        {
+            label.fontSize = FontSize;
+            label.enableAutoSizing = false;
+            label.enableWordWrapping = true;
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            label.margin = Vector4.zero;
+            SetLayout(label.gameObject, width, RowHeight, flexibleWidth);
+        }
+
+        private void Register(Selectable control)
+        {
+            _controls.Add(control);
+            var cancel = control.gameObject.AddComponent<SettingsControl>();
+            if (!(control is UnityEngine.UI.Button))
+            {
+                var row = control.transform.parent.gameObject;
+                cancel.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
+                cancel.Highlight.raycastTarget = false;
+                cancel.Highlight.color = Color.clear;
+            }
+            var button = control.GetComponent<UIButton>();
+            if (button != null) button.DeselectButtonAfterClick = false;
+        }
+
+        private void ConfigureNavigation()
+        {
+            for (int i = 0; i < _controls.Count; i++)
+            {
+                _controls[i].navigation = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnUp = i == 0 ? _back : _controls[i - 1],
+                    selectOnDown = i == _controls.Count - 1 ? _back : _controls[i + 1]
+                };
+            }
+            _back.navigation = new Navigation
+            {
+                mode = Navigation.Mode.Explicit,
+                selectOnUp = _controls.Count > 0 ? _controls[_controls.Count - 1] : null,
+                selectOnDown = _controls.Count > 0 ? _controls[0] : null
+            };
+            _view.SelectedButton = _controls.Count > 0 ? _controls[0].gameObject : _back.gameObject;
+        }
+
+        private void LateUpdate()
+        {
+            if (_menu == null || !_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null) return;
+            foreach (var pad in Gamepad.all)
+            {
+                if (pad.buttonEast.wasPressedThisFrame)
+                {
+                    HandleBack();
+                    return;
+                }
+            }
+            var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            if (selected == null)
+            {
+                Select(0);
+                selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            }
+            if (selected != _lastSelected)
+            {
+                _lastSelected = selected;
+                KeepSelectionVisible();
+            }
+        }
+
+        // Scroll only when focus moves, so the mouse wheel remains independent of selection.
+        private void KeepSelectionVisible()
+        {
+            var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            if (selected == null || !selected.transform.IsChildOf(_content)) return;
+            Transform row = selected.transform;
+            while (row.parent != _content) row = row.parent;
+            var viewport = _scroll.viewport;
+            var corners = new Vector3[4];
+            ((RectTransform)row).GetWorldCorners(corners);
+            var bounds = new Bounds(viewport.InverseTransformPoint(corners[0]), Vector3.zero);
+            for (int i = 1; i < corners.Length; i++) bounds.Encapsulate(viewport.InverseTransformPoint(corners[i]));
+            float delta = bounds.max.y > viewport.rect.yMax ? viewport.rect.yMax - bounds.max.y :
+                bounds.min.y < viewport.rect.yMin ? viewport.rect.yMin - bounds.min.y : 0f;
+            if (Mathf.Abs(delta) > 0.1f)
+            {
+                _scroll.StopMovement();
+                _content.anchoredPosition += new Vector2(0f, delta);
             }
         }
 
@@ -415,6 +679,8 @@ namespace SpiderSurge.Common
                 }
             }
             _created.Clear();
+            _controls.Clear();
+            _lastSelected = null;
         }
 
         // Doozy's click animations are DOTween sequences named after the button's RectTransform; left running, they fail once it is gone
@@ -431,7 +697,7 @@ namespace SpiderSurge.Common
 
         private void ScrollToTop()
         {
-            ScrollRect scroll = _menu != null && _menu.objectParent != null ? _menu.objectParent.GetComponentInParent<ScrollRect>() : null;
+            ScrollRect scroll = _scroll;
             if (scroll != null)
             {
                 scroll.verticalNormalizedPosition = 1f;
@@ -471,10 +737,11 @@ namespace SpiderSurge.Common
         private void Select(int index)
         {
             var events = EventSystem.current;
-            if (index < 0 || events == null || _created.Count == 0)
+            if (events == null)
             {
                 return;
             }
+            if (index < 0) { _back.Select(); return; }
 
             int start = Mathf.Min(index, _created.Count - 1);
             for (int distance = 0; distance < _created.Count; distance++)
@@ -484,6 +751,7 @@ namespace SpiderSurge.Common
                     return;
                 }
             }
+            _back.Select();
         }
 
         private bool TrySelect(EventSystem events, int index)
@@ -501,6 +769,26 @@ namespace SpiderSurge.Common
 
             events.SetSelectedGameObject(selectable.gameObject);
             return true;
+        }
+    }
+
+    public class SettingsControl : MonoBehaviour, ICancelHandler, ISelectHandler, IDeselectHandler
+    {
+        public Image Highlight;
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            if (Highlight != null) Highlight.color = new Color(1f, 0f, 0.38f, 0.22f);
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            if (Highlight != null) Highlight.color = Color.clear;
+        }
+
+        public void OnCancel(BaseEventData eventData)
+        {
+            if (SettingsPage.HandleBack()) eventData.Use();
         }
     }
 }
