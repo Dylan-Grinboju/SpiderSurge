@@ -1,5 +1,5 @@
 using HarmonyLib;
-using Logger = Silk.Logger;
+using I2.Loc;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -43,7 +43,8 @@ namespace SpiderSurge
 
                 StoragePersistenceManager.ClearAllStoredWeapons();
 
-                GameModePatches.UpdateSurgeSurvivalText();
+                SurgeGameModeManager.SelectMode(false);
+                SurgeLobbyPlatform.EnsureCreated();
             }
         }
     }
@@ -54,7 +55,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix()
         {
-            GameModePatches.UpdateSurgeSurvivalText();
+            SurgeLobbyPlatform.EnsureCreated();
         }
     }
 
@@ -86,21 +87,6 @@ namespace SpiderSurge
 
     public static class GameModePatches
     {
-        private static string GetSurvivalModeDisplayName()
-        {
-            return ModConfig.enableSurgeMode ? "Surge Survival" : "Wave Survival";
-        }
-
-        public static void UpdateSurgeSurvivalText()
-        {
-            const string path = "Level/SurvivalStartPlatform/Text/Survival Mode Text/ModeText";
-            var modeTextObj = GameObject.Find(path) ?? GameObject.Find("ModeText");
-            if (modeTextObj != null)
-            {
-                UpdateSurgeSurvivalText(modeTextObj);
-            }
-        }
-
         public static void UpdateSurgeSurvivalText(GameObject root)
         {
             if (root == null)
@@ -108,19 +94,20 @@ namespace SpiderSurge
                 return;
             }
 
-            var textElements = root.GetComponentsInChildren<TMP_Text>(true);
-            foreach (var tmp in textElements)
+            foreach (var localize in root.GetComponentsInChildren<Localize>(true))
             {
-                if (tmp == null || string.IsNullOrWhiteSpace(tmp.text))
+                if (localize.mTerm != "Wave/wave_survival_mode")
                 {
                     continue;
                 }
-
-                if (string.Equals(tmp.text, "Wave Survival", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(tmp.text, "Waves Survival", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(tmp.text, "Surge Survival", System.StringComparison.OrdinalIgnoreCase))
+                var tmp = localize.GetComponent<TMP_Text>();
+                if (tmp != null && SurgeGameModeManager.IsModeEnabled)
                 {
-                    tmp.text = GetSurvivalModeDisplayName();
+                    tmp.text = "SURGE SURVIVAL";
+                }
+                else
+                {
+                    localize.OnLocalize(true);
                 }
             }
         }

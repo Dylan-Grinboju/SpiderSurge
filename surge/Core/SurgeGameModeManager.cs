@@ -10,11 +10,16 @@ namespace SpiderSurge
         
         public bool RunUsedSurge { get; private set; }
 
-        public static bool IsModeEnabled => ModConfig.enableSurgeMode;
+        public static bool IsModeEnabled { get; private set; }
 
-        public static bool IsSurgeRunActive => IsModeEnabled && Instance != null && Instance.IsActive;
+        internal static void SelectMode(bool surge)
+        {
+            IsModeEnabled = surge;
+        }
+
+        public static bool IsSurgeRunActive => Instance != null && Instance.IsActive;
         
-        public static bool WasSurgeRunUsed => IsModeEnabled && Instance != null && Instance.RunUsedSurge;
+        public static bool WasSurgeRunUsed => Instance != null && Instance.RunUsedSurge;
 
         private void Awake()
         {

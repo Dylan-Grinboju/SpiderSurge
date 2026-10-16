@@ -17,7 +17,8 @@ namespace SpiderSurge.Common
 
         public string HarmonyId => "com.SpiderSurge." + Key;
         public string SettingKey => "parts." + Key;
-        public bool Enabled => Settings.GetBool(SettingKey);
+        public virtual bool CanDisable => true;
+        public bool Enabled => !CanDisable || Settings.GetBool(SettingKey);
         public bool Running { get; internal set; }
         public bool Failed { get; internal set; }
         public string BlockedBy { get; internal set; }
