@@ -16,8 +16,8 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
     - **Null Field**: Deploys a temporary protective energy barrier.
 - **Custom Enemies**:
-    - **Twin Whisp**: Fires dual projectiles simultaneously.
-    - **Missile Whisp**: Launches rockets that deal devastating damage.
+    - **Twin Whisp**: A black/red Whisp that fires dual projectiles simultaneously.
+    - **Missile Whisp**: Uses the RocketTurret's body and pink lights while flying and launching rockets.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
