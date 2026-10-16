@@ -72,27 +72,31 @@ namespace StatsMod
             if (projectile != null) shots.Remove(projectile.gameObject);
         }
 
-        public static void Hit(object source, Component target)
+        public static void EnemyHit(object source) => Hit(source, null);
+
+        public static void PlayerHit(object source, PlayerInput victim)
         {
-            if (!GameSessionManager.Instance.IsActive || !(source is Component component)) return;
-            Shot shot = Find(component);
-            if (shot == null || shot.Hit || shot.Player == null) return;
+            if (victim != null) Hit(source, victim);
+        }
 
-            if (target is EnemyHealthSystem enemy)
+        // Outside versus every player counts as a teammate, so only enemies and opponents make a shot hit.
+        private static void Hit(object source, PlayerInput victim)
+        {
+            try
             {
-                if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
-            }
-            else if (target is SpiderHealthSystem spider)
-            {
-                PlayerInput victim = spider.rootObject?.GetComponentInParent<PlayerInput>();
-                if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus || victim == null ||
-                    victim == shot.Player || PlayerRelations.AreTeammates(shot.Player, victim)) return;
-            }
-            else return;
+                if (!(source is Component component) || component == null) return;
+                Shot shot = Find(component);
+                if (shot == null || shot.Hit || shot.Player == null) return;
+                if (victim != null && (victim == shot.Player || PlayerRelations.AreTeammates(shot.Player, victim))) return;
 
-            shot.Hit = true;
-            shot.Weapon.Hit();
-            shot.Total.Hit();
+                shot.Hit = true;
+                shot.Weapon.Hit();
+                shot.Total.Hit();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error tracking hit: {ex.Message}");
+            }
         }
 
         private static Shot Find(Component source)

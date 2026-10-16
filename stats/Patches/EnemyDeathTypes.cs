@@ -145,7 +145,7 @@ namespace StatsMod
         {
             try
             {
-                if (__instance is ParticleBlade || __instance is Grenade) AccuracyTracker.Forget(__instance);
+                AccuracyTracker.Forget(__instance);
                 // After the original Equip method runs, fix the ownerWeaponClientId
                 if (wm != null && wm.healthSystem != null)
                 {

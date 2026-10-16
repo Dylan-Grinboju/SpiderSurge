@@ -26,9 +26,27 @@ namespace StatsMod
         public int ShotsFired { get; private set; }
         public int ShotsHit { get; private set; }
         public double? Percentage => ShotsFired > 0 ? 100.0 * ShotsHit / ShotsFired : (double?)null;
-        public string Display => Percentage?.ToString("0.#", CultureInfo.InvariantCulture) + (Percentage.HasValue ? "%" : "--");
+        public string Display { get; private set; } = "--";
 
-        internal void Fire() => ShotsFired++;
-        internal void Hit() => ShotsHit++;
+        internal void Fire()
+        {
+            ShotsFired++;
+            Format();
+        }
+
+        internal void Hit()
+        {
+            ShotsHit++;
+            Format();
+        }
+
+        internal void Reset()
+        {
+            ShotsFired = 0;
+            ShotsHit = 0;
+            Format();
+        }
+
+        private void Format() => Display = Percentage is double percentage ? percentage.ToString("0.#", CultureInfo.InvariantCulture) + "%" : "--";
     }
 }

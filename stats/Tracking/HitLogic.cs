@@ -135,7 +135,7 @@ namespace StatsMod
         {
             if (!GameSessionManager.Instance.IsActive) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
-            AccuracyTracker.Hit(current.Source, enemy);
+            AccuracyTracker.EnemyHit(current.Source);
 
             PlayerInput attacker = CurrentAttacker;
             if (attacker != null)
@@ -187,7 +187,8 @@ namespace StatsMod
         public static void OnPlayerHit(SpiderHealthSystem spider, bool damage, bool stun)
         {
             if (!GameSessionManager.Instance.IsActive) return;
-            if (!spider.dead && !spider.astralDead) AccuracyTracker.Hit(current.Source, spider);
+            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(current.Source, victim);
             int id = spider.GetInstanceID();
             PlayerInput attacker = CurrentAttacker;
             if (attacker == null)
@@ -196,7 +197,6 @@ namespace StatsMod
                 return;
             }
 
-            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
             if (victim == null) return;
 
             if (victim != attacker)
@@ -266,7 +266,7 @@ namespace StatsMod
             explosion.explosionOwnerId = ownerId;
             try
             {
-                if (source is BasicProjectile || source is Grenade) AccuracyTracker.Transfer(source, explosion);
+                AccuracyTracker.Transfer(source, explosion);
                 PlayerInput player;
                 if (source is BasicProjectile projectile) player = GetOwner(projectileOwners, projectile.GetInstanceID());
                 else if (source is BoomSpear spear) player = WeaponPlayer(spear);

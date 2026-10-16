@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Unity.Netcode;
 using UnityEngine;
@@ -65,7 +66,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(RailShot), "ReflectShot")]
     internal static class AccuracyRailReflectionPatch
     {
-        static void Postfix(RailShot __instance) => AccuracyTracker.Forget(__instance);
+        static void Prefix(RailShot __instance) => AccuracyTracker.Forget(__instance);
     }
 
     [HarmonyPatch(typeof(Shotgun), "ShootClientRpc")]
@@ -93,7 +94,19 @@ namespace StatsMod
             if (tracked != 1) Logger.LogWarning($"Shotgun particle emission changed ({tracked} sites); check shotgun accuracy tracking");
         }
 
+        private sealed class Emitter
+        {
+            public ParticleSystem Particles;
+            public float BusyUntil;
+        }
+
+        private static readonly AccessTools.FieldRef<DamageOnParticle, ParticleSystem> DamageParticles =
+            AccessTools.FieldRefAccess<DamageOnParticle, ParticleSystem>("_part");
+
+        private static readonly ConditionalWeakTable<Shotgun, List<Emitter>> emitters = new ConditionalWeakTable<Shotgun, List<Emitter>>();
+
         // Separate emitters give overlapping volleys their own shot identity in Unity's grouped collision callbacks.
+        // Idle ones are reused, the gun's own first; copies live until DamageOnParticle destroys them with the gun.
         private static void PlayVolley(ParticleSystem particles, Shotgun weapon)
         {
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost || !GameSessionManager.Instance.IsActive)
@@ -102,11 +115,30 @@ namespace StatsMod
                 return;
             }
 
-            ParticleSystem volley = Object.Instantiate(particles, particles.transform.position, particles.transform.rotation);
+            List<Emitter> pool = emitters.GetValue(weapon, _ => new List<Emitter> { new Emitter { Particles = particles } });
+            pool.RemoveAll(e => e.Particles == null);
+            Emitter emitter = pool.Find(e => Time.time >= e.BusyUntil && e.Particles.particleCount == 0);
+            if (emitter == null)
+            {
+                emitter = new Emitter { Particles = Object.Instantiate(particles, particles.transform.position, particles.transform.rotation) };
+                DamageOnParticle damage = emitter.Particles.GetComponent<DamageOnParticle>();
+                if (damage != null)
+                {
+                    DamageParticles(damage) = emitter.Particles;
+                    damage.collisionEvents = new List<ParticleCollisionEvent>();
+                }
+                pool.Add(emitter);
+            }
+            else if (emitter.Particles != particles)
+            {
+                emitter.Particles.transform.SetPositionAndRotation(particles.transform.position, particles.transform.rotation);
+            }
+
+            ParticleSystem volley = emitter.Particles;
             volley.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             AccuracyTracker.Fire(weapon, volley.gameObject);
             volley.Play();
-            Object.Destroy(volley.gameObject, volley.main.duration + volley.main.startLifetime.constantMax);
+            emitter.BusyUntil = Time.time + volley.main.startLifetime.constantMax;
         }
     }
 }
