@@ -23,7 +23,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(ref string __result)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive || SurgeGameModeManager.WasSurgeRunUsed)
+            if (SurgeGameModeManager.IsModeEnabled || SurgeGameModeManager.IsSurgeRunActive)
             {
                 __result = "";
                 return false;
@@ -38,7 +38,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(ref string __result)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive || SurgeGameModeManager.WasSurgeRunUsed)
+            if (SurgeGameModeManager.IsModeEnabled || SurgeGameModeManager.IsSurgeRunActive)
             {
                 __result = "";
                 return false;

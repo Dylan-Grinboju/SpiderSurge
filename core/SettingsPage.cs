@@ -317,7 +317,14 @@ namespace SpiderSurge.Common
             foreach (Part part in MenuOrder)
             {
                 Spacer();
-                Checkbox($"<b>{part.Title}</b>", part.Enabled, value => Settings.Set(part.SettingKey, value));
+                if (part.CanDisable)
+                {
+                    Checkbox($"<b>{part.Title}</b>", part.Enabled, value => Settings.Set(part.SettingKey, value));
+                }
+                else
+                {
+                    Header(part.Title);
+                }
                 Note(part.Description);
                 if (part.BlockedBy != null)
                 {

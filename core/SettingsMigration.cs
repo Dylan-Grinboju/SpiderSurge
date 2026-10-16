@@ -14,7 +14,7 @@ namespace SpiderSurge.Common
         private const string OldStatsId = "Stats_Mod";
         private const string OldTeamsId = "SpiderTeams";
         private const string BackupSuffix = ".old";
-        private static readonly string[] PartKeys = { "fixes", "surge", "stats", "teams" };
+        private static readonly string[] PartKeys = { "fixes", "stats", "teams" };
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
         {
@@ -90,7 +90,6 @@ namespace SpiderSurge.Common
                 if (!upgraded)
                 {
                     values["parts.fixes"] = true;
-                    values["parts.surge"] = legacySurge;
                 }
                 if (stats != null || !upgraded)
                 {

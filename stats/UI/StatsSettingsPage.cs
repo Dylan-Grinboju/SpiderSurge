@@ -7,6 +7,8 @@ namespace StatsMod
     internal static class StatsSettingsPage
     {
         private const string ColumnsPage = "stats.columns";
+        private const string AccuracyPrefix = "accuracy.";
+        private const string OverallAccuracy = AccuracyPrefix + "overall";
         private static readonly string[] CycleInputNames = { "D-pad", "Stick press (L3 or R3)", "D-pad or stick press", "Nothing" };
 
         private static readonly (string title, string prefix)[] ColumnGroups =
@@ -14,6 +16,7 @@ namespace StatsMod
             ("Totals", "total"),
             ("Enemy kills", "enemyKills."),
             ("Weapon kills", "weaponKills."),
+            ("Shooting accuracy", AccuracyPrefix),
             ("Player stats", ""),
         };
 
@@ -78,24 +81,35 @@ namespace StatsMod
             {
                 var (title, prefix) = ColumnGroups[i];
                 var group = columns.Where(column => column.StartsWith(prefix))
-                    .OrderBy(column => ColumnLabel(column), System.StringComparer.OrdinalIgnoreCase).ToList();
+                    .OrderBy(column => column != OverallAccuracy)
+                    .ThenBy(ColumnLabel, System.StringComparer.OrdinalIgnoreCase).ToList();
                 columns.RemoveAll(group.Contains);
                 if (page.Current != ColumnsPage + "." + i) continue;
 
                 page.Title(title + " columns");
+                if (prefix == AccuracyPrefix)
+                {
+                    page.Note("Accuracy is the percentage of shots that hit an enemy or a versus opponent. Each shot counts once; shields, armor and knockback count. Friendly fire does not.");
+                }
                 foreach (string column in group)
                 {
                     page.Toggle(ColumnLabel(column), ModConfig.ColumnsPrefix + column);
                 }
             }
-
         }
 
         private static string Key(string key) => ModConfig.Prefix + key;
 
         private static string ColumnLabel(string column)
         {
-            return Words(column.Substring(column.LastIndexOf('.') + 1));
+            string name = column.Substring(column.LastIndexOf('.') + 1);
+            if (column == OverallAccuracy) return "Overall accuracy";
+            if (column.StartsWith(AccuracyPrefix))
+            {
+                string label = WeaponAccuracy.Weapons.FirstOrDefault(weapon => weapon.Key == name).Label;
+                if (label != null) return label;
+            }
+            return Words(name);
         }
 
         // "maxSoloKillStreak" -> "Max solo kill streak"

@@ -9,7 +9,7 @@ namespace SpiderSurge
         {
             return config != null
                 && (config.name.Contains("_Surge")
-                    || (ModConfig.enableSurgeMode && config.type == SurvivalConfig.Type.EndlessSurvival));
+                    || (SurgeGameModeManager.IsModeEnabled && config.type == SurvivalConfig.Type.EndlessSurvival));
         }
 
         [HarmonyPrefix]

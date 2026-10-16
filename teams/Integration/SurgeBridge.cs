@@ -7,7 +7,7 @@ namespace SpiderTeams
     {
         public static bool Available => Parts.Surge.Running;
 
-        // Flips Surge's run flag directly so versus doesn't depend on its survival-only Surge Mode toggle.
+        // Versus activates abilities independently of the selected survival platform.
         public static bool SetRunActive(bool active)
         {
             SurgeGameModeManager manager = Available ? SurgeGameModeManager.Instance : null;
