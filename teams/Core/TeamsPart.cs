@@ -12,12 +12,10 @@ namespace SpiderTeams
         public override string Description => "Team versus: pick teams in the lobby, friendly fire rules, team colors, and Surge abilities in versus.";
         public override string Namespace => "SpiderTeams";
         public override bool OnByDefault => false;
-        public override bool HasSettings => true;
 
         protected internal override void OnStart()
         {
             ModConfig.Initialize();
-            TeamManager.RosterChanged += SettingsPage.RefreshOpen;
             CreateManager();
             ReflectionCache.ReportMissing();
         }
@@ -44,7 +42,7 @@ namespace SpiderTeams
                 UnityEngine.Object.Destroy(manager);
             }
 
-            TeamManager.RosterChanged -= SettingsPage.RefreshOpen;
+            VersusTeamsPage.RemoveAll();
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();
@@ -52,11 +50,6 @@ namespace SpiderTeams
             SpawnScope.Clear();
             Announcements.Clear();
             MatchSnapshot.Clear();
-        }
-
-        public override void BuildSettings(SettingsPage page)
-        {
-            TeamsSettingsPage.Build(page);
         }
 
         private static void CreateManager()

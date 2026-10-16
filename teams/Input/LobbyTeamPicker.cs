@@ -75,7 +75,7 @@ namespace SpiderTeams
                             Logger.LogDebug($"SpiderTeams: game binding {action.name} = {path}");
                             if (SamePath(path, _gamepadPath) || SamePath(path, _keyboardPath))
                             {
-                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button on the Mods page if they clash");
+                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button on the versus settings page if they clash");
                             }
                         }
                     }

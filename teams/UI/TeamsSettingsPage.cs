@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using SpiderSurge.Common;
-using Unity.Netcode;
 
 namespace SpiderTeams
 {
@@ -9,49 +7,34 @@ namespace SpiderTeams
     {
         private static readonly List<PlayerController> _members = new List<PlayerController>();
 
-        public static void Build(SettingsPage page)
+        public static void Build(VersusTeamsPage page)
         {
-            var manager = TeamManager.Instance;
-            bool locked = manager != null && manager.MatchLocked;
-            var network = NetworkManager.Singleton;
-            bool remoteClient = network != null && network.IsListening && !network.IsHost;
-
-            page.Title("Teams");
-            page.Paragraph($"<size=115%><b>Team versus:</b> {(ModConfig.TeamsEnabled ? Colored("Enabled", Consts.Formatting.Green) : Colored("Disabled", Consts.Formatting.Red))}</size>");
-            page.Note(PickHint());
-            if (remoteClient)
-            {
-                page.Warning("Teams only apply when you host.");
-            }
-
-            if (locked)
-            {
-                page.Warning("Team mode, team count and teams are locked during a match.");
-            }
-            else
-            {
-                page.Checkbox("Team versus", ModConfig.TeamsEnabled, ModConfig.SetTeamsEnabled);
-                page.Paragraph($"<size=115%><b>Teams:</b> {ModConfig.TeamCount}</size>");
-                page.Button("Fewer teams", () => ModConfig.SetTeamCount(ModConfig.TeamCount - 1));
-                page.Button("More teams", () => ModConfig.SetTeamCount(ModConfig.TeamCount + 1));
-            }
-
-            page.Spacer();
-            page.Button($"Friendly fire: {FriendlyFireLabel(ModConfig.FriendlyFire)}", CycleFriendlyFire);
+            page.Checkbox("Team versus", () => ModConfig.TeamsEnabled, ModConfig.SetTeamsEnabled);
+            page.Choice("Team count", ModConfig.TeamCount.ToString(),
+                () => ModConfig.SetTeamCount(ModConfig.TeamCount - 1),
+                () => ModConfig.SetTeamCount(ModConfig.TeamCount + 1));
+            page.Choice("Friendly fire", FriendlyFireLabel(ModConfig.FriendlyFire),
+                () => ModConfig.SetFriendlyFire((FriendlyFireMode)(((int)ModConfig.FriendlyFire + 2) % 3)), CycleFriendlyFire);
             page.Note(FriendlyFireDescription(ModConfig.FriendlyFire));
+            page.PlacePrimaryControls();
 
             page.Spacer();
-            page.Checkbox("Recolor spiders by team (during matches)", ModConfig.RecolorSpiders, ModConfig.SetRecolorSpiders);
-            page.Checkbox("Show a team marker above spiders", ModConfig.ShowMarker, ModConfig.SetShowMarker);
-            page.Checkbox("Spawn teammates together", ModConfig.GroupTeammates, ModConfig.SetGroupTeammates);
+            page.Header("Team options");
+            page.Note(PickHint());
+
+            page.Spacer();
+            page.Checkbox("Recolor spiders by team", () => ModConfig.RecolorSpiders, ModConfig.SetRecolorSpiders);
+            page.Checkbox("Show team markers", () => ModConfig.ShowMarker, ModConfig.SetShowMarker);
+            page.Checkbox("Spawn teammates together", () => ModConfig.GroupTeammates, ModConfig.SetGroupTeammates);
 
             page.Spacer();
             page.Button($"Team button (controller): {GamepadLabel()}", CycleGamepadBinding);
             page.Button($"Team button (keyboard): {KeyboardLabel()}", CycleKeyboardBinding);
 
+            var manager = TeamManager.Instance;
             if (manager != null && TeamManager.IsHost && ModConfig.TeamsEnabled)
             {
-                AddRoster(page, manager, locked);
+                AddRoster(page, manager);
             }
 
             AddSurge(page);
@@ -60,7 +43,7 @@ namespace SpiderTeams
             page.ConfirmButton("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
         }
 
-        private static void AddRoster(SettingsPage page, TeamManager manager, bool locked)
+        private static void AddRoster(VersusTeamsPage page, TeamManager manager)
         {
             var players = TeamManager.Players;
             if (players == null || players.Count == 0)
@@ -75,43 +58,31 @@ namespace SpiderTeams
             {
                 manager.CollectMembers(team, _members);
                 string hex = TeamPalette.Hex(TeamPalette.TeamColor(team));
-                string size = Plural(_members.Count, "player");
-                string score = locked && manager.TeamModeThisMatch ? ", " + Plural(manager.GetTeamScore(team), "point") : string.Empty;
-                page.Paragraph($"<size=115%><color=#{hex}><b>{TeamPalette.TeamName(team)}</b></color> ({size}{score})</size>");
+                page.Paragraph($"<size=115%><color=#{hex}><b>{TeamPalette.TeamName(team)}</b></color> ({Plural(_members.Count, "player")})</size>");
 
+                string next = TeamPalette.TeamName((team + 1) % count);
                 for (int i = 0; i < _members.Count; i++)
                 {
                     PlayerController member = _members[i];
-                    if (locked)
-                    {
-                        page.Paragraph($"<color=#{hex}>{TeamManager.RichName(member)}</color>");
-                    }
-                    else
-                    {
-                        string next = TeamPalette.TeamName((team + 1) % count);
-                        page.Button($"{TeamManager.RichName(member)} > {next}", () => MovePlayer(member));
-                    }
+                    page.Button($"{TeamManager.RichName(member)} > {next}", () => MovePlayer(member));
                 }
             }
 
-            if (!locked)
-            {
-                page.Button("Shuffle teams", () => manager.Shuffle());
-                page.Button("Balance teams", () => manager.Balance());
-            }
+            page.Button("Shuffle teams", () => manager.Shuffle());
+            page.Button("Balance teams", () => manager.Balance());
         }
 
-        private static void AddSurge(SettingsPage page)
+        private static void AddSurge(VersusTeamsPage page)
         {
             page.Spacer();
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. The Enable or disable parts page shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Enable or disable parts shows why.");
                 return;
             }
 
-            page.Checkbox("Give everyone an ability", ModConfig.SurgeEnabled, ModConfig.SetSurgeEnabled);
+            page.Checkbox("Give everyone an ability", () => ModConfig.SurgeEnabled, ModConfig.SetSurgeEnabled);
             if (!ModConfig.SurgeEnabled)
             {
                 page.Note("Turn this on to give every player the same Surge ability in versus.");
@@ -127,7 +98,7 @@ namespace SpiderTeams
                 page.Note($"This round: {Consts.Surge.AbilityNames[SurgeVersus.CurrentAbility]}");
             }
 
-            page.Checkbox(random ? "Ultimates" : $"Ultimate: {Consts.Surge.UltimateNames[ability]}", ModConfig.SurgeUltimate, ModConfig.SetSurgeUltimate);
+            page.Checkbox(random ? "Ultimates" : $"Ultimate: {Consts.Surge.UltimateNames[ability]}", () => ModConfig.SurgeUltimate, ModConfig.SetSurgeUltimate);
             if (ModConfig.SurgeUltimate && !random)
             {
                 page.Note(Consts.Surge.UltimateDescriptions[ability]);
@@ -137,9 +108,9 @@ namespace SpiderTeams
             page.Note(Consts.Surge.CooldownDescription);
             page.Button($"{Consts.Surge.DurationNames[ability]}: {PerkLevel(ModConfig.SurgeDuration)}", () => ModConfig.SetSurgeDuration(NextPerkLevel(ModConfig.SurgeDuration)));
             page.Note(Consts.Surge.DurationDescription);
-            page.Checkbox(Consts.Surge.ShortTermName, ModConfig.SurgeShortTerm, ModConfig.SetSurgeShortTerm);
+            page.Checkbox(Consts.Surge.ShortTermName, () => ModConfig.SurgeShortTerm, ModConfig.SetSurgeShortTerm);
             page.Note(Consts.Surge.ShortTermDescription);
-            page.Checkbox(Consts.Surge.LongTermName, ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
+            page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
             page.Note(Consts.Surge.LongTermDescription);
 
             page.Note("Ability: Q or L1 (hold Start and double-tap a button to remap it). Ultimate: C, or L3 and R3 together. Changes apply from the next round.");
@@ -267,11 +238,6 @@ namespace SpiderTeams
         private static string Plural(int count, string noun)
         {
             return count == 1 ? "1 " + noun : count + " " + noun + "s";
-        }
-
-        private static string Colored(string text, string hex)
-        {
-            return $"<color={hex}>{text}</color>";
         }
     }
 }

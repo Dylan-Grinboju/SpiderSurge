@@ -49,9 +49,11 @@ Split the lobby into teams and fight until one team is left standing. Spiders ta
 
 ### Settings in the game
 
-Everything can be changed from the pause menu, under **Mods** > **SpiderSurge**. Settings use the game's normal menu, with larger text and separate category pages. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
+Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with larger text and separate category pages. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
 
 <img width="1280" alt="The native SpiderSurge settings menu with controller selection" src="docs/images/mods-menu-native.png" />
+
+Team versus, team count and friendly fire are on the normal **Versus Battle** setup page, above the versus presets. Scroll down for the other team options. They are also available on the custom versus page.
 
 ## Controls
 
@@ -91,7 +93,7 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
 - **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
-- A settings page for each running part. Changes there apply right away and are saved to the file.
+- Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
 - **General**: check for updates and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version and credits.
 
