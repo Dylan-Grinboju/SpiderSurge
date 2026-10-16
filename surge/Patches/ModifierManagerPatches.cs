@@ -371,6 +371,10 @@ namespace SpiderSurge
             {
                 // Phase 4: Standard - Mix
                 List<Modifier> mixedPerks = new List<Modifier>();
+                if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave >= Consts.Values.Waves.UltUpgradeWave)
+                {
+                    mixedPerks.AddRange(selectedAbilityUlt);
+                }
                 mixedPerks.AddRange(modPerks);
                 mixedPerks.AddRange(vanillaPerks);
 
