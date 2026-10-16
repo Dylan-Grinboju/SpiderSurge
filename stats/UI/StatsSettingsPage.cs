@@ -14,6 +14,7 @@ namespace StatsMod
             ("Totals", "total"),
             ("Enemy kills", "enemyKills."),
             ("Weapon kills", "weaponKills."),
+            ("Shooting accuracy", "accuracy."),
             ("Player stats", ""),
         };
 
@@ -60,6 +61,7 @@ namespace StatsMod
         {
             page.Title("Player table columns");
             page.Note("The player's name is always shown.");
+            page.Note("Accuracy is the percentage of shots that hit an enemy or a versus opponent. Each shot counts once; shields, armor and knockback count. Friendly fire does not.");
 
             var columns = Settings.Keys.Where(key => key.StartsWith(ModConfig.ColumnsPrefix)).Select(key => key.Substring(ModConfig.ColumnsPrefix.Length)).ToList();
             foreach (var (title, prefix) in ColumnGroups)
@@ -72,7 +74,10 @@ namespace StatsMod
                 foreach (string column in group)
                 {
                     string name = column.Substring(column.LastIndexOf('.') + 1);
-                    page.Toggle(Words(name), ModConfig.ColumnsPrefix + column);
+                    string label = prefix == "accuracy."
+                        ? (name == "overall" ? "Overall accuracy" : WeaponAccuracy.Weapons.FirstOrDefault(weapon => weapon.Key == name).Label)
+                        : null;
+                    page.Toggle(label ?? Words(name), ModConfig.ColumnsPrefix + column);
                 }
             }
 

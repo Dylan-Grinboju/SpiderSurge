@@ -28,6 +28,7 @@ namespace StatsMod
 
         protected internal override void OnStop()
         {
+            AccuracyTracker.Reset();
             if (UIManager.Instance != null)
             {
                 Object.Destroy(UIManager.Instance.gameObject);

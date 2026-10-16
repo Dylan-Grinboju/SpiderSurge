@@ -123,6 +123,7 @@ namespace StatsMod
         public static void OnEnemyHit(EnemyHealthSystem enemy, bool damage)
         {
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
+            AccuracyTracker.Hit(current.Source, enemy);
 
             PlayerInput attacker = CurrentAttacker;
             if (attacker != null)
@@ -173,6 +174,7 @@ namespace StatsMod
         // its own attack) replaces that record, and so does a stun from an attack. Bumps outside an attack don't.
         public static void OnPlayerHit(SpiderHealthSystem spider, bool damage, bool stun)
         {
+            if (!spider.dead && !spider.astralDead) AccuracyTracker.Hit(current.Source, spider);
             int id = spider.GetInstanceID();
             PlayerInput attacker = CurrentAttacker;
             if (attacker == null)
@@ -251,6 +253,7 @@ namespace StatsMod
             explosion.explosionOwnerId = ownerId;
             try
             {
+                if (source is BasicProjectile || source is Grenade) AccuracyTracker.Transfer(source, explosion);
                 PlayerInput player;
                 if (source is BasicProjectile projectile) player = GetOwner(projectileOwners, projectile.GetInstanceID());
                 else if (source is BoomSpear spear) player = WeaponPlayer(spear);
@@ -313,6 +316,7 @@ namespace StatsMod
 
         public static void OnBallReflected(EnergyBall ball, PlayerInput reflector)
         {
+            AccuracyTracker.Forget(ball);
             if (reflector != null)
             {
                 StoreOwner(ballReflectors, ball.GetInstanceID(), reflector);

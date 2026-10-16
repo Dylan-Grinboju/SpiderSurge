@@ -49,6 +49,7 @@ namespace StatsMod
             ("display.bigUI.columns.airborneTime", false),
             ("display.bigUI.columns.lavaDeaths", false),
             ("display.bigUI.columns.astralReturns", false),
+            ("display.bigUI.columns.accuracy.overall", false),
             ("display.bigUI.columns.enemyKills.wasp", false),
             ("display.bigUI.columns.enemyKills.powerWasp", false),
             ("display.bigUI.columns.enemyKills.roller", false),
@@ -75,7 +76,10 @@ namespace StatsMod
             ("titles.enabled", true),
             ("titles.revealDelaySeconds", 2.0f),
             ("input.cycleInput", "dpad"),
-        }.Select(pair => new KeyValuePair<string, object>(Prefix + pair.key, pair.value)).ToArray();
+        }.Select(pair => new KeyValuePair<string, object>(Prefix + pair.key, pair.value))
+            .Concat(WeaponAccuracy.Weapons.Select(weapon => new KeyValuePair<string, object>(ColumnsPrefix + "accuracy." + weapon.Key, false))).ToArray();
+
+        internal static bool ShowAccuracy(string weapon) => Column("accuracy." + weapon);
 
         // Display settings
         public static bool ShowStatsWindow => Bool("display.showStatsWindow");

@@ -63,6 +63,8 @@ namespace StatsMod
             public float HighestPoint { get; set; }
             public Color SecondaryColor { get; set; }
             public Dictionary<string, int> WeaponHits { get; set; }
+            public WeaponAccuracy ShootingAccuracy { get; internal set; } = new WeaponAccuracy();
+            public Dictionary<string, WeaponAccuracy> AccuracyByWeapon { get; } = new Dictionary<string, WeaponAccuracy>();
             public Dictionary<string, int> EnemyKills { get; set; }
             public Dictionary<string, int> DeathsPerMap { get; set; }
 
@@ -336,8 +338,11 @@ namespace StatsMod
 
         public void ResetPlayerStats()
         {
+            AccuracyTracker.Reset();
             foreach (var entry in activePlayers)
             {
+                entry.Value.ShootingAccuracy = new WeaponAccuracy();
+                entry.Value.AccuracyByWeapon.Clear();
                 entry.Value.Deaths = 0;
                 entry.Value.LavaDeaths = 0;
                 entry.Value.Kills = 0;
@@ -377,6 +382,8 @@ namespace StatsMod
         {
             return new Dictionary<PlayerInput, PlayerData>(activePlayers);
         }
+
+        internal bool TryGetPlayer(PlayerInput player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
 
         public bool IsOnlyOnePlayerAlive()
         {

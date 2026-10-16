@@ -3,6 +3,7 @@ using SpiderSurge.Common;
 using Logger = Silk.Logger;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StatsMod
 {
@@ -18,6 +19,7 @@ namespace StatsMod
             public Tone Tone;
             public Func<PlayerTracker.PlayerData, int> Count;
             public Func<PlayerTracker.PlayerData, TimeSpan> Time;
+            public Func<PlayerTracker.PlayerData, WeaponAccuracy> Accuracy;
         }
 
         private static Column Count(string label, float width, Func<bool> shown, Tone tone, Func<PlayerTracker.PlayerData, int> count) =>
@@ -35,7 +37,7 @@ namespace StatsMod
         private const float COL_WIDTH_ENEMY_KILLS = 100f;
         private const float COL_WIDTH_WEAPON_KILLS = 100f;
 
-        private static readonly Column[] Columns =
+        private static readonly Column[] Columns = new Column[]
         {
             Count("Total Offence", 100f, () => ModConfig.BigUIShowTotalOffence, Tone.Good, p => p.Kills + p.EnemyShieldsTakenDown),
             Count("Friendly Hits", 100f, () => ModConfig.BigUIShowTotalFriendlyHits, Tone.Warm, p => p.FriendlyKills + p.FriendlyShieldsHit),
@@ -57,6 +59,7 @@ namespace StatsMod
             Duration("Airborne Time", 120f, () => ModConfig.BigUIShowAirborneTime, p => p.GetCurrentAirborneTime()),
             Count("Lava Deaths", 100f, () => ModConfig.BigUIShowLavaDeaths, Tone.Bad, p => p.LavaDeaths),
             Count("Astral Returns", 110f, () => ModConfig.BigUIShowAstralReturns, Tone.Good, p => p.AstralReturns),
+            new Column { Label = "Accuracy", Width = 110f, Shown = () => ModConfig.ShowAccuracy("overall"), Accuracy = p => p.ShootingAccuracy },
 
             Enemy("Wasp", "Wasp", () => ModConfig.BigUIShowWaspKills),
             Enemy("Power Wasp", "Power Wasp", () => ModConfig.BigUIShowPowerWaspKills),
@@ -81,7 +84,13 @@ namespace StatsMod
             Weapon("Laser Cube", "Laser Cube", () => ModConfig.BigUIShowLaserCubeKills),
             Weapon("Saw Disc", "SawDisc", () => ModConfig.BigUIShowSawDiscKills),
             Weapon("Explosions", "Explosions", () => ModConfig.BigUIShowExplosionKills),
-        };
+        }.Concat(WeaponAccuracy.Weapons.Select(weapon => new Column
+        {
+            Label = weapon.Label + " Accuracy",
+            Width = 130f,
+            Shown = () => ModConfig.ShowAccuracy(weapon.Key),
+            Accuracy = p => p.AccuracyByWeapon.TryGetValue(weapon.Key, out var accuracy) ? accuracy : null
+        })).ToArray();
 
         #region Base Dimensions
         public float BASE_PADDING = 28f;
@@ -341,7 +350,12 @@ namespace StatsMod
                 {
                     float width = column.Width * scale;
                     Rect cell = new Rect(x, row.y, width, rowHeight);
-                    if (column.Time != null)
+                    if (column.Accuracy != null)
+                    {
+                        WeaponAccuracy accuracy = column.Accuracy(playerData);
+                        Hud.Label(cell, accuracy?.Display ?? "--", valueStyle, accuracy?.ShotsFired > 0 ? Hud.Good : Hud.Dim);
+                    }
+                    else if (column.Time != null)
                     {
                         TimeSpan time = column.Time(playerData);
                         Hud.Label(cell, TimeFormatUtils.FormatTimeSpan(time), valueStyle, time.TotalSeconds >= 1 ? Hud.Text : Hud.Dim);

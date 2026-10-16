@@ -9,6 +9,7 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
 
 - **Extensive Player Statistics**: Tracks a wide range of player stats including kills, deaths, friendly kills, shield interactions, web swings, airborne time, kill streaks, enemy-specific and weapon-specific kills.
 - **Player Titles**: At the end of each game, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf")
+- **Shooting accuracy**: Optional overall and per-weapon accuracy columns in F2, with successful/fired shot counts in saved stats. Each shot counts once, including pellet volleys and sustained beams. See [definitions, supported weapons and implementation research](../docs/weapon-accuracy.md).
 - **In-Game Display**: 
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
