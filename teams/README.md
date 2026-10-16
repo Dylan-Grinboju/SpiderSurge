@@ -16,7 +16,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for Spiderheck. Split
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
 - **Team Win Screen**: The win screen and the lobby summary show each team's score and members.
 - **Surge Abilities**: With the [Surge](../surge/README.md) part on, give every spider the same Surge ability in versus, with its ultimate and perks if you like.
-- **In-Game Settings**: Every setting can be changed from the Mods menu, including moving players between teams.
+- **In-Game Settings**: Every setting can be changed from the versus setup page, including moving players between teams.
 
 ## Turning it on
 
@@ -34,7 +34,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 - Every member of the winning team gets a point, alive or dead, so everyone on a team has the same score on the scoreboard.
 - The first 8 teams are Red, Blue, Green, Yellow, Purple, Orange, Cyan and Pink. From the 9th team on, teams are numbered and get generated colors.
 - Teams are kept between matches until someone changes them or leaves. They are not saved when you quit the game.
-- Only players on the host's PC can switch with the team button. The host can move anyone, including online players, from the Mods menu.
+- Only players on the host's PC can switch with the team button. The host can move anyone, including online players, from the versus setup page.
 
 ## Friendly Fire
 
@@ -75,14 +75,18 @@ Surge only runs abilities for players on the host's PC, so a match with an onlin
 
 ## How to configure Teams
 
-### From the Mods menu:
+### From the versus settings page:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Teams settings**. The page has every setting from the Yaml file, plus:
+Open the normal **Versus Battle** setup page. Team versus, team count and friendly fire appear above the versus presets; scroll down for the other team options. The same controls are also available when customizing a versus preset. The page has every setting from the Yaml file, plus:
 
 - The team list, where the host can move each player to the next team, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
-Changes apply right away and are saved to the Yaml file. Team versus, the team count and the team list are locked while a match is running. The Surge settings only show while the Surge part runs.
+Changes apply right away and are saved to the Yaml file. Team versus, the team count, the team list and resetting are locked while a match is running. Only the host can change these controls. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** and restart the game if the controls are missing.
+
+![Team settings on the normal versus setup page](../docs/images/teams-settings.png)
+
+![More team options in the same scrollable page](../docs/images/teams-options.png)
 
 ### Using the Yaml file:
 
@@ -114,7 +118,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 
 `teams.buttonKeyboard`: The keyboard key that switches team in the lobby. Default: `<Keyboard>/t`.
 
-The Mods menu cycles through a few presets: Y, L3, R3 or Select on a controller, and T, G, R or Tab on the keyboard. In the file you can use any Unity Input System path, such as `<Keyboard>/y`, or `none` to turn the button off.
+The versus settings page cycles through a few presets: Y, L3, R3 or Select on a controller, and T, G, R or Tab on the keyboard. In the file you can use any Unity Input System path, such as `<Keyboard>/y`, or `none` to turn the button off.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).
@@ -141,7 +145,7 @@ Teams runs on the host. Couch games on one PC always count as hosting, so they j
 
 - **You host with the mod**: The team rules, friendly fire and team spawns apply to everyone. Players without the mod still see the team colors, the announcements and the right scores, but their win screen may name only one player from the winning team. For now, the team marker only shows on the host's PC.
 - **Someone else hosts**: The mod does nothing. When a match starts, it shows a one-time message that teams only apply when you host.
-- Online players can't use the team button yet. The host picks their team from the Mods menu.
+- Online players can't use the team button yet. The host picks their team from the versus settings page.
 - Surge abilities only work for players on the host's PC, so they are off for any match with an online player.
 - Like other gameplay mods, SpiderSurge makes Silk turn off leaderboard score uploads for the session.
 
@@ -157,7 +161,7 @@ Teams runs on the host. Couch games on one PC always count as hosting, so they j
 - With team versus off, versus plays exactly like the base game. With one player per team, the rules are the same as normal versus, with team colors and announcements on top.
 - A player who joins in the middle of a match starts at 0 points, even if their team is ahead. The match is still decided by the team's points.
 - Team colors use the game's temporary color sync, so your saved spider colors are never touched.
-- You can reset Teams' settings at any time with **Reset Teams settings to defaults**, or by deleting the `teams` section from the file; it will be recreated with default values on the next launch.
+- Between matches, use **Reset Teams settings to defaults**, or delete the `teams` section from the file; it will be recreated with default values on the next launch.
 
 ## The Future
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using SpiderSurge.Common;
 using Unity.Netcode;
 
 namespace SpiderTeams
@@ -9,20 +8,12 @@ namespace SpiderTeams
     {
         private static readonly List<PlayerController> _members = new List<PlayerController>();
 
-        public static void Build(SettingsPage page)
+        public static void Build(VersusTeamsPage page)
         {
             var manager = TeamManager.Instance;
             bool locked = manager != null && manager.MatchLocked;
             var network = NetworkManager.Singleton;
             bool remoteClient = network != null && network.IsListening && !network.IsHost;
-
-            page.Title("Teams");
-            page.Paragraph($"<size=115%><b>Team versus:</b> {(ModConfig.TeamsEnabled ? Colored("Enabled", Consts.Formatting.Green) : Colored("Disabled", Consts.Formatting.Red))}</size>");
-            page.Note(PickHint());
-            if (remoteClient)
-            {
-                page.Warning("Teams only apply when you host.");
-            }
 
             if (locked)
             {
@@ -31,18 +22,24 @@ namespace SpiderTeams
             else
             {
                 page.Checkbox("Team versus", ModConfig.TeamsEnabled, ModConfig.SetTeamsEnabled);
-                page.Paragraph($"<size=115%><b>Teams:</b> {ModConfig.TeamCount}</size>");
-                page.Button("Fewer teams", () => ModConfig.SetTeamCount(ModConfig.TeamCount - 1));
-                page.Button("More teams", () => ModConfig.SetTeamCount(ModConfig.TeamCount + 1));
+                page.Choice("Team count", ModConfig.TeamCount.ToString(),
+                    () => ModConfig.SetTeamCount(ModConfig.TeamCount - 1),
+                    () => ModConfig.SetTeamCount(ModConfig.TeamCount + 1));
             }
 
+            page.Choice("Friendly fire", FriendlyFireLabel(ModConfig.FriendlyFire),
+                () => ModConfig.SetFriendlyFire((FriendlyFireMode)(((int)ModConfig.FriendlyFire + 2) % 3)), CycleFriendlyFire);
+            page.PlacePrimaryControls();
+
             page.Spacer();
-            page.Button($"Friendly fire: {FriendlyFireLabel(ModConfig.FriendlyFire)}", CycleFriendlyFire);
+            page.Header("Team options");
+            page.Note(PickHint());
+            if (remoteClient) page.Warning("Teams only apply when you host. These settings are read-only.");
             page.Note(FriendlyFireDescription(ModConfig.FriendlyFire));
 
             page.Spacer();
-            page.Checkbox("Recolor spiders by team (during matches)", ModConfig.RecolorSpiders, ModConfig.SetRecolorSpiders);
-            page.Checkbox("Show a team marker above spiders", ModConfig.ShowMarker, ModConfig.SetShowMarker);
+            page.Checkbox("Recolor spiders by team", ModConfig.RecolorSpiders, ModConfig.SetRecolorSpiders);
+            page.Checkbox("Show team markers", ModConfig.ShowMarker, ModConfig.SetShowMarker);
             page.Checkbox("Spawn teammates together", ModConfig.GroupTeammates, ModConfig.SetGroupTeammates);
 
             page.Spacer();
@@ -57,10 +54,13 @@ namespace SpiderTeams
             AddSurge(page);
 
             page.Spacer();
-            page.Button("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
+            if (!locked)
+            {
+                page.Button("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
+            }
         }
 
-        private static void AddRoster(SettingsPage page, TeamManager manager, bool locked)
+        private static void AddRoster(VersusTeamsPage page, TeamManager manager, bool locked)
         {
             var players = TeamManager.Players;
             if (players == null || players.Count == 0)
@@ -101,7 +101,7 @@ namespace SpiderTeams
             }
         }
 
-        private static void AddSurge(SettingsPage page)
+        private static void AddSurge(VersusTeamsPage page)
         {
             page.Spacer();
             page.Header("Surge abilities in versus");
@@ -267,11 +267,6 @@ namespace SpiderTeams
         private static string Plural(int count, string noun)
         {
             return count == 1 ? "1 " + noun : count + " " + noun + "s";
-        }
-
-        private static string Colored(string text, string hex)
-        {
-            return $"<color={hex}>{text}</color>";
         }
     }
 }
