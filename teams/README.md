@@ -82,7 +82,7 @@ Open the normal **Versus Battle** setup page. Team versus, team count and friend
 - The team list, where the host can move each player to the next team, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
-Changes apply right away and are saved to the Yaml file. Team versus, the team count, the team list and resetting are locked while a match is running. Only the host can change these controls. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** and restart the game if the controls are missing.
+Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** and restart the game if the controls are missing.
 
 ![Team settings on the normal versus setup page](../docs/images/teams-settings.png)
 

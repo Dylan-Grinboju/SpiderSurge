@@ -76,6 +76,19 @@ namespace SpiderTeams
         }
     }
 
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.AddPlayer))]
+    public static class LobbyController_AddPlayer_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (TeamManager.Instance != null)
+            {
+                TeamManager.Instance.MarkRosterChanged();
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.SpawnPlayers))]
     public static class LobbyController_SpawnPlayers_Patch
     {

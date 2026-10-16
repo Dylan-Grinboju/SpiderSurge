@@ -479,8 +479,9 @@ namespace SpiderTeams
 
         public void Forget(PlayerController player)
         {
-            if (player != null && _teamOf.Remove(player.playerID.Value))
+            if (player != null)
             {
+                _teamOf.Remove(player.playerID.Value);
                 MarkRosterChanged();
             }
         }

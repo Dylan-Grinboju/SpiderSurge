@@ -368,7 +368,7 @@ namespace SpiderSurge.Common
         }
 
         // The menu prefabs carry I2 Localize components that would put their placeholder text back
-        private static void SetText(TMP_Text text, string value)
+        internal static void SetText(TMP_Text text, string value)
         {
             if (text == null)
             {

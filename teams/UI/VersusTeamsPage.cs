@@ -2,20 +2,39 @@ using System;
 using System.Collections.Generic;
 using Doozy.Engine.UI;
 using HarmonyLib;
+using SpiderSurge.Common;
 using TMPro;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Logger = Silk.Logger;
 using Object = UnityEngine.Object;
 
 namespace SpiderTeams
 {
     internal sealed class VersusTeamsPage : MonoBehaviour
     {
+        private const float RowWidth = 720f;
+        private const float RowHeight = 30f;
+
+        private enum Kind { Spacer, Text, Choice, Button }
+
+        private sealed class Entry
+        {
+            public Kind Kind;
+            public string Label;
+            public string Value;
+            public Action Previous;
+            public Action Next;
+        }
+
         private readonly List<Transform> _originals = new List<Transform>();
         private readonly List<GameObject> _created = new List<GameObject>();
         private readonly Dictionary<Selectable, Navigation> _navigation = new Dictionary<Selectable, Navigation>();
+        private List<Entry> _entries = new List<Entry>();
+        private List<Entry> _building;
+        private int _primaryCount;
+        private int _builtPrimaryCount;
         private UIView _view;
         private VerticalLayoutGroup _layout;
         private RectTransform _content;
@@ -23,34 +42,56 @@ namespace SpiderTeams
         private RectTransform _viewport;
         private Transform _rowTemplate;
         private Button _back;
-        private Transform _title;
-        private Vector2 _titlePosition;
-        private Vector2 _backPosition;
+        private RectTransform _title;
+        private Vector2 _titlePosition, _backPosition;
         private Vector2 _titleAnchorMin, _titleAnchorMax, _backAnchorMin, _backAnchorMax;
-        private Navigation _backNavigation;
+        private bool _captured;
         private GameObject _selected;
         private bool _dirty;
-        private bool _remoteClient;
-        private bool _toTop = true;
-        private int _rosterSignature;
+        private bool _showing;
 
         public static void Install(VersusSettingsUi ui)
         {
             foreach (string name in new[] { "View - StartVersus", "View - StartCustomVersus" })
             {
                 Transform view = ui.transform.Find(name);
-                if (view != null && view.GetComponent<VersusTeamsPage>() == null)
+                if (view == null || view.GetComponent<VersusTeamsPage>() != null)
                 {
-                    view.gameObject.AddComponent<VersusTeamsPage>().Build();
+                    continue;
+                }
+
+                VersusTeamsPage page = view.gameObject.AddComponent<VersusTeamsPage>();
+                try
+                {
+                    page.Build();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"SpiderTeams could not add its settings to {name}: {ex}");
+                    page.Restore();
+                    Object.DestroyImmediate(page);
                 }
             }
         }
 
+        // Unity skips OnDestroy for a component whose object was never active, so restore explicitly before destroying.
         public static void RemoveAll()
         {
             foreach (VersusTeamsPage page in Resources.FindObjectsOfTypeAll<VersusTeamsPage>())
             {
-                if (page.gameObject.scene.IsValid()) Object.DestroyImmediate(page);
+                if (page.gameObject.scene.IsValid())
+                {
+                    page.Restore();
+                    Object.DestroyImmediate(page);
+                }
+            }
+        }
+
+        public static void RefreshNavigation(VersusSettingsUi ui)
+        {
+            foreach (VersusTeamsPage page in ui.GetComponentsInChildren<VersusTeamsPage>())
+            {
+                if (page._content != null) page.ConfigureNavigation();
             }
         }
 
@@ -60,24 +101,30 @@ namespace SpiderTeams
             _view = GetComponent<UIView>();
             _layout = GetComponent<VerticalLayoutGroup>();
             _rowTemplate = transform.Find("WinningScore");
-            _back = transform.Find("Button - Cancel").GetComponent<Button>();
-            _backNavigation = _back.navigation;
-            _title = transform.Find("Title") ?? transform.Find("Text (TMP)");
+            Transform back = transform.Find("Button - Cancel");
+            _back = back != null ? back.GetComponent<Button>() : null;
+            _title = (RectTransform)(transform.Find("Title") ?? transform.Find("Text (TMP)"));
+            if (_view == null || _layout == null || _rowTemplate == null || _back == null || _title == null)
+            {
+                throw new InvalidOperationException("the view's UIView, layout, WinningScore row, title or Back button is missing");
+            }
+
             foreach (Transform child in transform) _originals.Add(child);
             foreach (Selectable control in GetComponentsInChildren<Selectable>(true)) _navigation[control] = control.navigation;
-            RectTransform title = (RectTransform)_title;
-            RectTransform back = (RectTransform)_back.transform;
-            _titlePosition = title.anchoredPosition;
-            _backPosition = back.anchoredPosition;
-            _titleAnchorMin = title.anchorMin;
-            _titleAnchorMax = title.anchorMax;
-            _backAnchorMin = back.anchorMin;
-            _backAnchorMax = back.anchorMax;
+            RectTransform backRect = (RectTransform)_back.transform;
+            _titlePosition = _title.anchoredPosition;
+            _backPosition = backRect.anchoredPosition;
+            _titleAnchorMin = _title.anchorMin;
+            _titleAnchorMax = _title.anchorMax;
+            _backAnchorMin = backRect.anchorMin;
+            _backAnchorMax = backRect.anchorMax;
+            _captured = true;
+
             _layout.enabled = false;
-            title.anchorMin = title.anchorMax = new Vector2(0.5f, 1f);
-            title.anchoredPosition = new Vector2(0f, -32f);
-            back.anchorMin = back.anchorMax = new Vector2(0.5f, 0f);
-            back.anchoredPosition = new Vector2(0f, 30f);
+            _title.anchorMin = _title.anchorMax = new Vector2(0.5f, 1f);
+            _title.anchoredPosition = new Vector2(0f, -32f);
+            backRect.anchorMin = backRect.anchorMax = new Vector2(0.5f, 0f);
+            backRect.anchoredPosition = new Vector2(0f, 30f);
 
             _scroll = new GameObject("Versus settings scroll", typeof(RectTransform), typeof(ScrollRect)).GetComponent<ScrollRect>();
             _scroll.transform.SetParent(transform, false);
@@ -86,35 +133,33 @@ namespace SpiderTeams
             _viewport.SetParent(_scroll.transform, false);
             Stretch(_viewport, Vector2.zero, Vector2.zero);
             _viewport.GetComponent<Image>().color = Color.clear;
-            _content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
-            _content.SetParent(_viewport, false);
-            _content.anchorMin = new Vector2(0f, 1f);
-            _content.anchorMax = Vector2.one;
-            _content.pivot = new Vector2(0.5f, 1f);
-            _content.sizeDelta = Vector2.zero;
-            var contentLayout = _content.GetComponent<VerticalLayoutGroup>();
+            var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
+            content.SetParent(_viewport, false);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = Vector2.zero;
+            var contentLayout = content.GetComponent<VerticalLayoutGroup>();
             contentLayout.childAlignment = TextAnchor.UpperCenter;
             contentLayout.childControlWidth = false;
             contentLayout.childControlHeight = false;
             contentLayout.childForceExpandWidth = false;
             contentLayout.childForceExpandHeight = false;
-            contentLayout.spacing = 12f;
+            contentLayout.spacing = 10f;
             contentLayout.padding = new RectOffset(0, 0, 8, 16);
-            _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             _scroll.viewport = _viewport;
-            _scroll.content = _content;
+            _scroll.content = content;
             _scroll.horizontal = false;
             _scroll.movementType = ScrollRect.MovementType.Clamped;
             _scroll.scrollSensitivity = 35f;
             AddScrollbar();
             foreach (Transform child in _originals)
             {
-                if (child != _title && child != _back.transform) child.SetParent(_content, false);
+                if (child != _title && child != _back.transform) child.SetParent(content, false);
             }
-            ModConfig.Changed += Refresh;
-            TeamManager.RosterChanged += Refresh;
-            Rebuild();
-            _scroll.verticalNormalizedPosition = 1f;
+            _content = content;
+            if (gameObject.activeInHierarchy) Show();
         }
 
         private static void Stretch(RectTransform rect, Vector2 min, Vector2 max)
@@ -151,99 +196,195 @@ namespace SpiderTeams
 
         private void OnEnable()
         {
-            _dirty = true;
-            _selected = null;
-            _toTop = true;
-            if (_scroll != null) _scroll.verticalNormalizedPosition = 1f;
+            ModConfig.Changed += Refresh;
+            TeamManager.RosterChanged += Refresh;
+            if (_content != null) Show();
         }
 
+        private void OnDisable()
+        {
+            ModConfig.Changed -= Refresh;
+            TeamManager.RosterChanged -= Refresh;
+        }
+
+        private void Show()
+        {
+            Rebuild(true);
+            SetOffset(0f);
+            _showing = true;
+        }
+
+        // Rects are only reliable once the show animation ends, so the page starts at the top and keeps the view's own selection.
         private void LateUpdate()
         {
-            if (_content == null || !_view.IsVisible) return;
-            int signature = TeamManager.IsHost ? 1 : 0;
-            var players = TeamManager.Players;
-            if (players != null)
-            {
-                foreach (PlayerController player in players) signature = unchecked(signature * 31 + (player != null ? player.GetInstanceID() : 0));
-            }
-            if (signature != _rosterSignature)
-            {
-                _rosterSignature = signature;
-                _dirty = true;
-            }
-            if (_dirty) Rebuild();
+            if (_content == null) return;
+            if (_dirty) Rebuild(false);
             GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
-            if (_toTop)
+            if (_showing)
             {
+                if (!_view.IsVisible) return;
+                _showing = false;
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
-                _scroll.verticalNormalizedPosition = 1f;
+                SetOffset(0f);
                 _selected = selected;
-                _toTop = false;
+                return;
             }
-            if (_selected != selected)
-            {
-                _selected = selected;
-                if (selected != null && selected.transform.IsChildOf(_content)) Reveal((RectTransform)selected.transform);
-            }
+            if (_selected == selected) return;
+            _selected = selected;
+            if (selected != null && selected.transform.IsChildOf(_content)) Reveal((RectTransform)selected.transform);
         }
 
-        private void Rebuild()
+        // Rows are only recreated when their text changes; otherwise the new actions replace the old ones in place.
+        private void Rebuild(bool force)
         {
             _dirty = false;
-            float scroll = _scroll.verticalNormalizedPosition;
+            var entries = new List<Entry>();
+            _building = entries;
+            _primaryCount = 0;
+            try
+            {
+                TeamsSettingsPage.Build(this);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams versus settings failed: {ex}");
+            }
+            _building = null;
+            bool same = !force && SameRows(entries);
+            _entries = entries;
+            if (!same) Recreate();
+            ConfigureNavigation();
+        }
+
+        private bool SameRows(List<Entry> entries)
+        {
+            if (entries.Count != _entries.Count || _primaryCount != _builtPrimaryCount || _created.Count != _entries.Count) return false;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                Entry a = entries[i], b = _entries[i];
+                if (a.Kind != b.Kind || a.Label != b.Label || a.Value != b.Value) return false;
+            }
+            return true;
+        }
+
+        private void Recreate()
+        {
             GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
-            int selection = _created.FindIndex(item => selected != null && selected.transform.IsChildOf(item.transform));
+            if (selected != null && !selected.transform.IsChildOf(_content)) selected = null;
+            float focusTop = selected != null ? TopInViewport(selected.transform) : 0f;
+            int selection = selected != null ? _created.FindIndex(item => selected.transform.IsChildOf(item.transform)) : -1;
             int column = selection >= 0 ? Array.FindIndex(_created[selection].GetComponentsInChildren<Selectable>(), control => control.gameObject == selected) : 0;
+            float offset = _content.anchoredPosition.y;
+
             foreach (GameObject item in _created)
             {
                 item.SetActive(false);
                 Object.Destroy(item);
             }
             _created.Clear();
-            NetworkManager network = NetworkManager.Singleton;
-            _remoteClient = network != null && network.IsListening && !network.IsHost;
-            TeamsSettingsPage.Build(this);
-            ConfigureNavigation();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
-            _scroll.verticalNormalizedPosition = scroll;
-            if (selection >= 0 && EventSystem.current != null)
+            Transform anchor = _content.Find(name == "View - StartVersus" ? "VersusTypes" : "DeathZone");
+            for (int i = 0; i < _entries.Count; i++)
             {
-                for (int i = Mathf.Min(selection, _created.Count - 1); i >= 0; i--)
-                {
-                    Selectable[] controls = _created[i].GetComponentsInChildren<Selectable>();
-                    Selectable control = controls.Length > 0 ? controls[Mathf.Clamp(column, 0, controls.Length - 1)] : null;
-                    if (control != null && control.IsInteractable())
-                    {
-                        control.Select();
-                        break;
-                    }
-                }
+                GameObject item = Create(_entries[i], i);
+                if (i < _primaryCount && anchor != null) item.transform.SetSiblingIndex(anchor.GetSiblingIndex());
+                _created.Add(item);
+            }
+            _builtPrimaryCount = _primaryCount;
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+            SetOffset(offset);
+            if (selection >= 0) Select(selection, column);
+            GameObject now = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            if (selected != null && now != null && now.transform.IsChildOf(_content))
+            {
+                SetOffset(_content.anchoredPosition.y + focusTop - TopInViewport(now.transform));
             }
         }
 
-        public void Header(string text) => Paragraph("<b>" + text.ToUpperInvariant() + "</b>");
-        public void Note(string text) => Paragraph("<color=#AAAAAA>" + text + "</color>");
-        public void Warning(string text) => Paragraph("<color=#FFAA66>" + text + "</color>");
-
-        public void PlacePrimaryControls()
+        private void Select(int index, int column)
         {
-            Transform before = _content.Find(name == "View - StartVersus" ? "VersusTypes" : "DeathZone");
-            if (before == null) return;
-            foreach (GameObject item in _created) item.transform.SetSiblingIndex(before.GetSiblingIndex());
+            int start = Mathf.Min(index, _created.Count - 1);
+            for (int distance = 0; distance < _created.Count; distance++)
+            {
+                if (TrySelect(start - distance, column) || TrySelect(start + distance, column)) return;
+            }
+            EventSystem.current.SetSelectedGameObject(_back.gameObject);
         }
 
-        public void Spacer()
+        private bool TrySelect(int index, int column)
+        {
+            if (index < 0 || index >= _created.Count) return false;
+            Selectable[] controls = Array.FindAll(_created[index].GetComponentsInChildren<Selectable>(), Usable);
+            if (controls.Length == 0) return false;
+            EventSystem.current.SetSelectedGameObject(controls[Mathf.Clamp(column, 0, controls.Length - 1)].gameObject);
+            return true;
+        }
+
+        private static bool Usable(Selectable control) => control.enabled && control.interactable && control.gameObject.activeInHierarchy;
+
+        private float TopInViewport(Transform target)
+        {
+            var corners = new Vector3[4];
+            ((RectTransform)target).GetWorldCorners(corners);
+            return _viewport.InverseTransformPoint(corners[1]).y;
+        }
+
+        private void SetOffset(float y)
+        {
+            float max = Mathf.Max(0f, _content.rect.height - _viewport.rect.height);
+            _scroll.StopMovement();
+            _content.anchoredPosition = new Vector2(_content.anchoredPosition.x, Mathf.Clamp(y, 0f, max));
+        }
+
+        public void Header(string text) => Paragraph("<b>" + text.ToUpperInvariant() + "</b>");
+        public void Note(string text) => Paragraph($"<color={SettingsPage.Gray}>{text}</color>");
+
+        public void PlacePrimaryControls() => _primaryCount = _building.Count;
+
+        public void Spacer() => _building.Add(new Entry { Kind = Kind.Spacer });
+
+        public void Paragraph(string value) => _building.Add(new Entry { Kind = Kind.Text, Label = value });
+
+        public void Checkbox(string label, Func<bool> value, Action<bool> set)
+        {
+            Action toggle = () => set(!value());
+            Choice(label, value() ? "On" : "Off", toggle, toggle);
+        }
+
+        public void Choice(string label, string value, Action previous, Action next)
+        {
+            _building.Add(new Entry { Kind = Kind.Choice, Label = label, Value = value, Previous = previous, Next = next });
+        }
+
+        public void Button(string label, Action action) => _building.Add(new Entry { Kind = Kind.Button, Label = label, Next = action });
+
+        private GameObject Create(Entry entry, int index)
+        {
+            switch (entry.Kind)
+            {
+                case Kind.Spacer:
+                    return CreateSpacer();
+                case Kind.Text:
+                    return CreateParagraph(entry.Label);
+                case Kind.Choice:
+                    return CreateChoice(entry, index);
+                default:
+                    return CreateButton(entry, index);
+            }
+        }
+
+        private GameObject CreateSpacer()
         {
             var spacer = new GameObject("Teams spacing", typeof(RectTransform));
             spacer.transform.SetParent(_content, false);
-            ((RectTransform)spacer.transform).sizeDelta = new Vector2(720f, 8f);
-            _created.Add(spacer);
+            ((RectTransform)spacer.transform).sizeDelta = new Vector2(RowWidth, 8f);
+            return spacer;
         }
 
-        public void Paragraph(string value)
+        private GameObject CreateParagraph(string value)
         {
             TMP_Text text = Object.Instantiate(_rowTemplate.Find("Label").GetComponent<TMP_Text>(), _content);
-            SetText(text, value);
+            SettingsPage.SetText(text, value);
             text.name = "Teams text";
             text.fontSize = 18f;
             text.enableAutoSizing = false;
@@ -251,71 +392,74 @@ namespace SpiderTeams
             text.alignment = TextAlignmentOptions.TopLeft;
             text.raycastTarget = false;
             text.transform.localScale = Vector3.one;
-            text.rectTransform.sizeDelta = new Vector2(720f, text.GetPreferredValues(value, 720f, float.PositiveInfinity).y + 4f);
-            _created.Add(text.gameObject);
+            text.rectTransform.sizeDelta = new Vector2(RowWidth, text.GetPreferredValues(value, RowWidth, float.PositiveInfinity).y + 4f);
+            return text.gameObject;
         }
 
-        public void Checkbox(string label, bool value, Action<bool> toggle)
-        {
-            Choice(label, value ? "On" : "Off", () => toggle(!value), () => toggle(!value));
-        }
-
-        public void Choice(string label, string value, Action previous, Action next)
+        private GameObject CreateChoice(Entry entry, int index)
         {
             Transform row = Object.Instantiate(_rowTemplate, _content);
-            row.name = "Teams - " + label;
+            row.name = "Teams - " + entry.Label;
             row.gameObject.SetActive(true);
             row.localScale = Vector3.one;
-            ((RectTransform)row).sizeDelta = new Vector2(720f, 36f);
+            ((RectTransform)row).sizeDelta = new Vector2(RowWidth, RowHeight);
             var layout = row.GetComponent<HorizontalLayoutGroup>();
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.spacing = 8f;
             TMP_Text title = row.Find("Label").GetComponent<TMP_Text>();
             TMP_Text setting = row.Find("Setting").GetComponent<TMP_Text>();
-            SetText(title, label);
-            SetText(setting, value);
+            SettingsPage.SetText(title, entry.Label);
+            SettingsPage.SetText(setting, entry.Value);
             StyleText(title, 360f);
             StyleText(setting, 220f);
-            PrepareButton(row.Find("Button - Back").gameObject, previous);
-            PrepareButton(row.Find("Button - Forward").gameObject, next);
-            _created.Add(row.gameObject);
+            PrepareButton(row.Find("Button - Back").gameObject, index, true);
+            PrepareButton(row.Find("Button - Forward").gameObject, index, false);
+            return row.gameObject;
         }
 
-        public void Button(string label, Action action)
+        private GameObject CreateButton(Entry entry, int index)
         {
             GameObject target = Object.Instantiate(_back.gameObject, _content);
-            target.name = "Teams - " + label;
+            target.name = "Teams - " + entry.Label;
             target.transform.localScale = Vector3.one;
-            ((RectTransform)target.transform).sizeDelta = new Vector2(720f, 36f);
+            ((RectTransform)target.transform).sizeDelta = new Vector2(RowWidth, RowHeight);
             TMP_Text text = target.GetComponentInChildren<TMP_Text>();
-            SetText(text, label);
+            SettingsPage.SetText(text, entry.Label);
             text.fontSize = 20f;
             text.enableAutoSizing = false;
-            PrepareButton(target, action);
-            _created.Add(target);
+            PrepareButton(target, index, false);
+            return target;
         }
 
-        private Button PrepareButton(GameObject target, Action action)
+        private void PrepareButton(GameObject target, int index, bool previous)
         {
             UIButton doozy = target.GetComponent<UIButton>();
             if (doozy != null) Object.DestroyImmediate(doozy);
             Button button = target.GetComponent<Button>();
             button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() =>
-            {
-                NetworkManager network = NetworkManager.Singleton;
-                if (network != null && network.IsListening && !network.IsHost) return;
-                action();
-                Refresh();
-            });
-            button.interactable = !_remoteClient;
+            button.onClick.AddListener(() => Run(index, previous));
+            button.interactable = true;
             var size = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
-            size.minWidth = size.preferredWidth = target.name.StartsWith("Button -", StringComparison.Ordinal) ? 40f : 720f;
-            size.minHeight = size.preferredHeight = 36f;
+            size.minWidth = size.preferredWidth = target.name.StartsWith("Button -", StringComparison.Ordinal) ? 40f : RowWidth;
+            size.minHeight = size.preferredHeight = RowHeight;
             size.flexibleWidth = size.flexibleHeight = 0f;
-            foreach (TMP_Text text in target.GetComponentsInChildren<TMP_Text>()) SetText(text, text.text);
-            return button;
+            foreach (TMP_Text text in target.GetComponentsInChildren<TMP_Text>()) SettingsPage.SetText(text, text.text);
+        }
+
+        private void Run(int index, bool previous)
+        {
+            if (index >= _entries.Count) return;
+            Action action = previous ? _entries[index].Previous : _entries[index].Next;
+            try
+            {
+                action?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams versus setting failed: {ex}");
+            }
+            Refresh();
         }
 
         private static void StyleText(TMP_Text text, float width)
@@ -329,19 +473,14 @@ namespace SpiderTeams
             layout.flexibleWidth = 0f;
         }
 
-        private static void SetText(TMP_Text text, string value)
-        {
-            foreach (I2.Loc.Localize localize in text.GetComponents<I2.Loc.Localize>()) Object.DestroyImmediate(localize);
-            text.text = value;
-        }
-
+        // Explicit links keep Up and Down on the visible rows; rerun whenever a native control turns on or off.
         private void ConfigureNavigation()
         {
             var rows = new List<Selectable[]>();
             foreach (Transform child in _content)
             {
                 if (!child.gameObject.activeSelf) continue;
-                Selectable[] controls = Array.FindAll(child.GetComponentsInChildren<Selectable>(), control => control.gameObject.activeInHierarchy && control.IsInteractable());
+                Selectable[] controls = Array.FindAll(child.GetComponentsInChildren<Selectable>(), Usable);
                 if (controls.Length > 0) rows.Add(controls);
             }
             rows.Add(new Selectable[] { _back });
@@ -379,11 +518,14 @@ namespace SpiderTeams
             }
         }
 
-        private void OnDestroy()
+        private void OnDestroy() => Restore();
+
+        private void Restore()
         {
             ModConfig.Changed -= Refresh;
             TeamManager.RosterChanged -= Refresh;
-            if (_content == null) return;
+            if (!_captured) return;
+            _captured = false;
             foreach (Transform child in _originals)
             {
                 if (child == null) continue;
@@ -391,18 +533,22 @@ namespace SpiderTeams
                 child.SetAsLastSibling();
             }
             foreach (var entry in _navigation) if (entry.Key != null) entry.Key.navigation = entry.Value;
-            if (_title == null || _back == null || _layout == null) return;
-            RectTransform title = (RectTransform)_title;
-            title.anchorMin = _titleAnchorMin;
-            title.anchorMax = _titleAnchorMax;
-            title.anchoredPosition = _titlePosition;
-            RectTransform back = (RectTransform)_back.transform;
-            back.anchorMin = _backAnchorMin;
-            back.anchorMax = _backAnchorMax;
-            back.anchoredPosition = _backPosition;
-            _back.navigation = _backNavigation;
-            _layout.enabled = true;
-            Object.Destroy(_scroll.gameObject);
+            if (_title != null)
+            {
+                _title.anchorMin = _titleAnchorMin;
+                _title.anchorMax = _titleAnchorMax;
+                _title.anchoredPosition = _titlePosition;
+            }
+            if (_back != null)
+            {
+                RectTransform back = (RectTransform)_back.transform;
+                back.anchorMin = _backAnchorMin;
+                back.anchorMax = _backAnchorMax;
+                back.anchoredPosition = _backPosition;
+            }
+            if (_layout != null) _layout.enabled = true;
+            if (_scroll != null) Object.Destroy(_scroll.gameObject);
+            _content = null;
         }
     }
 
@@ -410,6 +556,33 @@ namespace SpiderTeams
     internal static class VersusSettingsUi_Teams_Patch
     {
         [HarmonyPostfix]
-        private static void Postfix(VersusSettingsUi __instance) => VersusTeamsPage.Install(__instance);
+        private static void Postfix(VersusSettingsUi __instance)
+        {
+            try
+            {
+                VersusTeamsPage.Install(__instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams versus settings patch failed: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(VersusSettingsUi), nameof(VersusSettingsUi.CheckToggleType))]
+    internal static class VersusSettingsUi_CheckToggleType_Patch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(VersusSettingsUi __instance)
+        {
+            try
+            {
+                VersusTeamsPage.RefreshNavigation(__instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams versus navigation patch failed: {ex}");
+            }
+        }
     }
 }
