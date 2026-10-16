@@ -2,7 +2,7 @@
 
 The Surge part of [SpiderSurge](../README.md): a gameplay overhaul for Survival that introduces "Surge Mode", powerful new abilities, and fearsome custom enemies.
 
-Surge is off after installing. To turn it on, open the pause menu, pick **Mods** > **SpiderSurge**, check **Surge**, and restart the game.
+To play, stand on the **Surge Survival** platform above and to the left of **Wave Survival** in the lobby. Everyone joins the platform for the usual countdown, then chooses a pain level. The original Wave Survival platform still starts normal Survival. No settings toggle is needed.
 
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
@@ -47,7 +47,7 @@ Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.ya
 <summary>Explanation of the fields</summary>
 
 ### Gameplay:
-`surge.surgeMode`: Replaces Wave Survival with Surge Survival. It can't be changed during a run, and applies from the next one. Default: `true`.
+The lobby platform selects the mode for each run. Older `surge.surgeMode` and `parts.surge` settings are ignored.
 
 `surge.dpadUltimate`: If true, any D-pad direction casts the ultimate, instead of L3 and R3 together. While it's on, the D-pad doesn't switch the Stats windows. Default: `false`.
 
@@ -128,7 +128,7 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 
 ## Notes and disclaimers
 
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Turning off Surge Mode or the Surge part will restore your highscores. BACK UP YOUR SAVE FILES JUST IN CASE.
+- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores, and Wave Survival still shows your normal ones. BACK UP YOUR SAVE FILES JUST IN CASE.
 - Surge Mode is designed for Survival Mode. Its abilities only reach versus through the [Teams](../teams/README.md) part.
 
 ## The Future

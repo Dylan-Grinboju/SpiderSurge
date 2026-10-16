@@ -12,7 +12,7 @@ namespace SpiderSurge
     {
         private static bool ShouldApplySurge(SurvivalConfig survivalConfig)
         {
-            return ModConfig.enableSurgeMode
+            return SurgeGameModeManager.IsModeEnabled
                 && survivalConfig != null
                 && survivalConfig.type == SurvivalConfig.Type.EndlessSurvival;
         }

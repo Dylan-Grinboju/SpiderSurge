@@ -17,7 +17,8 @@ namespace SpiderSurge.Common
 
         public string HarmonyId => "com.SpiderSurge." + Key;
         public string SettingKey => "parts." + Key;
-        public bool Enabled => Settings.GetBool(SettingKey);
+        public virtual bool CanDisable => true;
+        public bool Enabled => !CanDisable || Settings.GetBool(SettingKey);
         public bool Running { get; internal set; }
         public bool Failed { get; internal set; }
         public string BlockedBy { get; internal set; }
@@ -52,7 +53,7 @@ namespace SpiderSurge.Common
 
         private static Harmony _core;
 
-        public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Select(part => new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
+        public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Where(part => part.CanDisable).Select(part =>new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
 
         public static void StartAll()
         {

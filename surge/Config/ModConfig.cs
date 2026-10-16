@@ -9,7 +9,6 @@ namespace SpiderSurge
 {
     public static class ModConfig
     {
-        public const string SurgeModeKey = "surge.surgeMode";
         public const string DpadUltimateKey = "surge.dpadUltimate";
         public const string UnlimitedPerkTimeKey = "surge.unlimitedPerkTime";
         public const string ShowTutorialKey = "surge.showTutorial";
@@ -29,7 +28,6 @@ namespace SpiderSurge
 
         public static readonly KeyValuePair<string, object>[] Defaults =
         {
-            new KeyValuePair<string, object>(SurgeModeKey, true),
             new KeyValuePair<string, object>(DpadUltimateKey, false),
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
             new KeyValuePair<string, object>(ShowTutorialKey, true),
@@ -46,9 +44,6 @@ namespace SpiderSurge
         };
 
         private static readonly Dictionary<string, (string raw, Color color)> _colors = new Dictionary<string, (string raw, Color color)>();
-
-        // Surge mode settings
-        public static bool enableSurgeMode => Settings.GetBool(SurgeModeKey);
 
         // Ability indicator configuration
         public static float IndicatorRadius => Mathf.Clamp(Settings.GetFloat(IndicatorRadiusKey), MinIndicatorRadius, MaxIndicatorRadius);
@@ -68,8 +63,6 @@ namespace SpiderSurge
         public static bool TelemetryEnabled => Settings.GetBool(TelemetryKey);
         public static bool ShowTutorial => Settings.GetBool(ShowTutorialKey);
         public static bool ShowTelemetryConsentPrompt => Settings.GetBool(ShowTelemetryPromptKey);
-
-        public static void SetEnableSurgeMode(bool value) => Settings.Set(SurgeModeKey, value);
 
         public static void SetShowTutorial(bool value) => Settings.Set(ShowTutorialKey, value);
 
