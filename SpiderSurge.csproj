@@ -6,7 +6,7 @@
     <Title>SpiderSurge Mod</Title>
 
     <!-- Version -->
-    <Version>0.4.0</Version>
+    <Version>1.0.0</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
 
@@ -23,6 +23,7 @@
 
     <!-- Target Framework -->
     <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
 
   </PropertyGroup>
 
@@ -61,8 +62,8 @@
 
   <!-- Embed sound files as resources in the DLL -->
   <ItemGroup>
-    <EmbeddedResource Include="Sounds\*.wav" />
-    <EmbeddedResource Include="Icons\*.png" />
+    <EmbeddedResource Include="surge\Sounds\*.wav" />
+    <EmbeddedResource Include="surge\Icons\*.png" />
   </ItemGroup>
 
   <!-- Assembly References -->
@@ -210,11 +211,5 @@
     <Private>false</Private>
   </Reference>
 </ItemGroup>
-
-  <!-- Auto-generate version.txt before build -->
-  <Target Name="GenerateVersionFile" BeforeTargets="BeforeBuild">
-    <WriteLinesToFile File="$(MSBuildProjectDirectory)\version.txt" Lines="$(Version)" Overwrite="true" />
-    <Message Text="Generated version.txt with version $(Version)" Importance="high" />
-  </Target>
 
 </Project>

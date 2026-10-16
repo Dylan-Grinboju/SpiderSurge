@@ -1,0 +1,543 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Collections.Generic;
+using System.Reflection;
+using Unity.Netcode;
+using Interfaces;
+using HarmonyLib;
+using Logger = Silk.Logger;
+
+namespace SpiderSurge
+{
+    public class PulseAbility : BaseAbility
+    {
+        public static Dictionary<PlayerInput, PulseAbility> playerPulseAbilities = new Dictionary<PlayerInput, PulseAbility>();
+
+        public override string PerkName => Consts.PerkNames.PulseAbility;
+
+        public override float AbilityBaseCooldown => Consts.Values.Pulse.AbilityBaseCooldown;
+        public override float AbilityBaseDuration => Consts.Values.Pulse.AbilityBaseDuration;
+        public override float UltimateBaseDuration => Consts.Values.Pulse.UltimateBaseDuration;
+        public override float UltimateBaseCooldown => Consts.Values.Pulse.UltimateBaseCooldown;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Pulse.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Pulse.UltimateCooldownReductionPerLevel;
+
+        public override bool HasUltimate => true;
+        public override string UltimatePerkDisplayName => "Thermal Detonation";
+        public override string UltimatePerkDescription => "Pulse deals lethal damage in the death zone instead of just knockback.";
+
+        private float GetKnockBackRadius(bool isUlt)
+        {
+            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
+            float radius;
+            int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+            int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+            if (isUlt)
+            {
+                radius = Consts.Values.Pulse.UltimateBaseKnockbackRadius;
+                if (durationLevel >= 2) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius -= Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
+            }
+            else
+            {
+                radius = Consts.Values.Pulse.AbilityBaseKnockbackRadius;
+                if (durationLevel >= 1) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
+                if (shortTermLevel > 0) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
+                if (longTermLevel > 0) radius -= Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
+            }
+            return radius;
+        }
+
+        private float GetKnockBackStrength(bool isUlt)
+        {
+            float strength;
+            int biggerBoom = 0;
+            if (ModifierManager.instance != null)
+            {
+                biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
+            }
+
+            if (isUlt)
+            {
+                strength = Consts.Values.Pulse.UltimateBaseKnockbackStrength;
+                if (biggerBoom > 1) strength += Consts.Values.Pulse.UltimateKnockbackStrengthIncreasePerLevel;
+            }
+            else
+            {
+                strength = Consts.Values.Pulse.AbilityBaseKnockbackStrength;
+                if (biggerBoom > 0) strength += Consts.Values.Pulse.AbilityKnockbackStrengthIncreasePerLevel;
+            }
+
+            return strength;
+        }
+
+        private float GetDeathRadius(bool isUlt)
+        {
+            if (!isUlt)
+            {
+                return 0f;
+            }
+
+            float deathRadius = Consts.Values.Pulse.UltimateBaseDeathRadius;
+
+            if (ModifierManager.instance != null)
+            {
+                int tooCool = ModifierManager.instance.GetModLevel(Consts.ModifierNames.TooCool);
+                deathRadius += Consts.Values.Pulse.UltimateDeathRadiusIncreasePerLevel * tooCool;
+            }
+
+            return deathRadius;
+        }
+
+        private LayerMask pulseLayers;
+
+        // Cached pulse VFX prefab (obtained from SpiderHealthSystem at runtime)
+        private static GameObject cachedExplosionPrefab;
+
+        // Pre-allocated buffer for physics queries to avoid GC allocation
+        private Collider2D[] _pulseResults = new Collider2D[64];
+
+        protected override void Awake()
+        {
+            base.Awake();
+            if (playerInput != null)
+            {
+                playerPulseAbilities[playerInput] = this;
+            }
+
+            pulseLayers = LayerMask.GetMask("Player", "Item", "Weapon", "Enemy", "EnemyWeapon", "DynamicWorld");
+
+            if (pulseLayers == 0)
+            {
+                pulseLayers = ~0;// All layers
+                Logger.LogWarning("PulseAbility: Could not find expected layers, using all layers");
+            }
+
+            InitExplosionReflection();
+        }
+
+        protected override void OnActivate()
+        {
+            // Play pulse ability sound (only for regular ability, not ultimate)
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(
+                    Consts.SoundNames.PulseAbility,
+                    Consts.SoundVolumes.PulseAbility * Consts.SoundVolumes.MasterVolume
+                );
+            }
+
+            TriggerPulse(deadly: false);
+            // Start cooldown immediately since this is an instant ability
+            isActive = false;
+            StartCooldown();
+        }
+
+        protected override void OnActivateUltimate()
+        {
+            TriggerPulse(deadly: true);
+            // Start cooldown immediately since this is an instant ability
+            isActive = false;
+            isUltimateActive = false;
+            StartCooldown(wasUltimate: true);
+        }
+
+        protected override void OnDeactivate()
+        {
+            // Nothing to do - pulse is instant
+        }
+
+        private struct PulseParams
+        {
+            public Vector3 Position;
+            public float KnockBackRadius;
+            public float DeathRadius;
+            public float KnockBackStrength;
+        }
+
+        private void TriggerPulse(bool deadly)
+        {
+            if (playerController == null || spiderHealthSystem == null)
+            {
+                Logger.LogWarning($"PulseAbility: Missing playerController or spiderHealthSystem for player {playerInput?.playerIndex}");
+                return;
+            }
+
+            PulseParams pulseParams = CalculatePulseParameters(deadly);
+
+            // Visual effects
+            ApplyCameraEffects(deadly, pulseParams.KnockBackRadius);
+            SpawnRingVisual(pulseParams.Position, pulseParams.KnockBackRadius);
+
+            if (deadly)
+            {
+                SpawnExplosionVFX(pulseParams.Position, GetDeathRadius(deadly));
+            }
+
+            // Physics (Host only)
+            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            {
+                ApplyPulsePhysics(pulseParams, deadly);
+            }
+        }
+
+        private PulseParams CalculatePulseParameters(bool deadly)
+        {
+            return new PulseParams
+            {
+                Position = spiderHealthSystem.transform.position,
+                KnockBackRadius = GetKnockBackRadius(deadly),
+                KnockBackStrength = GetKnockBackStrength(deadly),
+                DeathRadius = GetDeathRadius(deadly),
+            };
+        }
+
+        private void ApplyCameraEffects(bool deadly, float radius)
+        {
+            try
+            {
+                CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
+                float shakeStrength = deadly ? (radius / 2f) : (radius / 4f);
+                CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Pulse.CameraShakeDuration);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"PulseAbility: Could not trigger camera effects: {ex.Message}");
+            }
+        }
+
+        internal static PlayerInput CasterOf(PulseAbility ability) => ability.playerInput;
+
+        private void ApplyPulsePhysics(PulseParams p, bool deadly)
+        {
+            int playerID = playerController.playerID.Value;
+
+            bool _attemptedLethalExplosion = false;
+
+            // Use NonAlloc to avoid allocating new array every time
+            int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _pulseResults, pulseLayers);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D collider = _pulseResults[i];
+                if (collider == null) continue;
+                if (collider.gameObject == gameObject) continue;
+
+                if (BelongsToActivator(collider, playerID)) continue;
+
+                if (!collider.TryGetComponent<IDamageable>(out var damageable))
+                {
+                    damageable = collider.GetComponentInParent<IDamageable>();
+                }
+
+                if (damageable == null) continue;
+
+                Vector2 closestPoint = collider.ClosestPoint(p.Position);
+                float distance = Vector2.Distance(p.Position, closestPoint);
+                if (distance < 0.1f) distance = 0.1f;
+
+                Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
+                Vector2 force = direction * p.KnockBackStrength;
+
+                if (collider.CompareTag("EnemyRigidbody") || collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+                {
+                    force *= Consts.Values.Pulse.EnemyKnockbackMultiplier;
+                }
+
+                Rigidbody2D rb = collider.attachedRigidbody;
+
+                // When deadly and within death radius, let the Explosion component handle damage
+                // (the stats mod tracks kills from Explosion.KnockBack automatically)
+                if (deadly && distance <= p.DeathRadius)
+                {
+                    if (_canUseExplosion && !_attemptedLethalExplosion)
+                    {
+                        _attemptedLethalExplosion = true;
+                        if (!SpawnLethalExplosion(p))
+                        {
+                            _canUseExplosion = false;
+                        }
+                    }
+
+                    if (!_canUseExplosion)
+                    {
+                        // Fallback: apply damage directly if Explosion reflection not available
+                        if (rb != null)
+                            rb.velocity = Vector2.zero;
+                        damageable.Damage(force, closestPoint, true);
+                    }
+                    continue;
+                }
+                else
+                {
+                    if (rb != null)
+                        rb.velocity = Vector2.zero;
+                    damageable.Impact(force, closestPoint, true, true);
+                }
+            }
+
+            ApplyPulseToRailShotsWithoutColliders(p);
+        }
+
+        // The activating player must never be affected by their own pulse.
+        // Their spider parts resolve through the PlayerController in the parent chain, but an
+        // equipped weapon is a separate network object that is only linked back through
+        // Weapon.owner - knocking it back pushes the holder via WeaponManager.AbsorbImpact.
+        private bool BelongsToActivator(Collider2D collider, int playerID)
+        {
+            PlayerController hitPlayerController = collider.GetComponentInParent<PlayerController>();
+            if (hitPlayerController != null && hitPlayerController.playerID.Value == playerID)
+            {
+                return true;
+            }
+
+            SpiderHealthSystem hitHealthSystem = collider.GetComponentInParent<SpiderHealthSystem>();
+            if (hitHealthSystem != null && hitHealthSystem == spiderHealthSystem)
+            {
+                return true;
+            }
+
+            if (!collider.TryGetComponent<Weapon>(out var weapon))
+            {
+                weapon = collider.GetComponentInParent<Weapon>();
+            }
+
+            if (weapon != null && weapon.equipped && weapon.owner != null && weapon.owner.healthSystem == spiderHealthSystem)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
+        {
+            IReadOnlyList<RailShot> railShots = RailShotTracker.All;
+            if (railShots.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < railShots.Count; i++)
+            {
+                RailShot railShot = railShots[i];
+                if (railShot == null || !railShot.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Rigidbody2D rb = railShot.GetComponent<Rigidbody2D>();
+                if (rb == null)
+                {
+                    continue;
+                }
+
+                if (rb.attachedColliderCount > 0)
+                {
+                    continue;
+                }
+
+                Vector2 railShotPosition = rb.position;
+                float distance = Vector2.Distance((Vector2)p.Position, railShotPosition);
+                if (distance > p.KnockBackRadius)
+                {
+                    continue;
+                }
+
+                Vector2 direction = (railShotPosition - (Vector2)p.Position).normalized;
+                if (direction.sqrMagnitude < 0.0001f)
+                {
+                    direction = Vector2.up;
+                }
+
+                rb.velocity = Vector2.zero;
+                rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
+            }
+        }
+
+        // ─── Explosion Reflection (for stats mod kill tracking) ─────────────────────
+        private static bool _explosionReflectionInitialized;
+        private static bool _canUseExplosion;
+        private static FieldInfo _expKnockBackRadius;
+        private static FieldInfo _expLayers;
+        private static FieldInfo _expDeathRadius;
+        private static FieldInfo _expPlayerDeathRadius;
+        private static FieldInfo _expIsBoomSpear;
+        private static FieldInfo _expPlayerExplosionID;
+        private static FieldInfo _expOwnerId;
+        private static MethodInfo _expKnockBack;
+
+        private static void InitExplosionReflection()
+        {
+            if (_explosionReflectionInitialized) return;
+            _explosionReflectionInitialized = true;
+
+            try
+            {
+                _expKnockBackRadius = AccessTools.Field(typeof(Explosion), "knockBackRadius");
+                _expLayers = AccessTools.Field(typeof(Explosion), "layers");
+                _expDeathRadius = AccessTools.Field(typeof(Explosion), "deathRadius");
+                _expPlayerDeathRadius = AccessTools.Field(typeof(Explosion), "_playerDeathRadius");
+                _expIsBoomSpear = AccessTools.Field(typeof(Explosion), "isBoomSpear");
+                _expPlayerExplosionID = AccessTools.Field(typeof(Explosion), "playerExplosionID");
+                _expOwnerId = AccessTools.Field(typeof(Explosion), "explosionOwnerId");
+                _expKnockBack = AccessTools.Method(typeof(Explosion), "KnockBack");
+
+                _canUseExplosion = _expKnockBack != null
+                    && _expKnockBackRadius != null
+                    && _expDeathRadius != null
+                    && _expOwnerId != null
+                    && _expLayers != null
+                    && _expPlayerDeathRadius != null
+                    && _expIsBoomSpear != null
+                    && _expPlayerExplosionID != null;
+
+                if (!_canUseExplosion)
+                    Logger.LogWarning("PulseAbility: Explosion reflection incomplete — pulse ult kills will use fallback (not tracked)");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"PulseAbility: Explosion reflection failed: {ex.Message}");
+                _canUseExplosion = false;
+            }
+        }
+
+        private bool SpawnLethalExplosion(PulseParams p)
+        {
+            GameObject tempObj = null;
+            try
+            {
+                tempObj = new GameObject("PulseExplosion");
+                tempObj.transform.position = p.Position;
+
+                var explosion = tempObj.AddComponent<Explosion>();
+                explosion.enabled = false;
+
+                int playerID = playerController.playerID.Value;
+
+                _expKnockBackRadius.SetValue(explosion, p.DeathRadius);
+                _expLayers?.SetValue(explosion, pulseLayers);
+                _expDeathRadius.SetValue(explosion, p.DeathRadius);
+                _expPlayerDeathRadius?.SetValue(explosion, p.DeathRadius);
+                _expIsBoomSpear?.SetValue(explosion, true);
+                _expPlayerExplosionID?.SetValue(explosion, playerID);
+                _expOwnerId.SetValue(explosion, playerController.OwnerClientId);
+
+                explosion.enabled = true;
+                _expKnockBack.Invoke(explosion, null);
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"PulseAbility: Failed to spawn lethal explosion for stats tracking: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                if (tempObj != null)
+                {
+                    Destroy(tempObj);
+                }
+            }
+        }
+
+        private void SpawnRingVisual(Vector3 position, float radius)
+        {
+            try
+            {
+                GameObject ringObj = new GameObject("PulseRing");
+                ringObj.transform.position = position;
+                var ringEffect = ringObj.AddComponent<PulseRingEffect>();
+                // Match the visual expansion to the actual physics radius
+                ringEffect.Setup(radius);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"PulseAbility: Failed to spawn ring visual: {ex.Message}");
+            }
+        }
+
+        private void SpawnExplosionVFX(Vector3 position, float radius = 1f)
+        {
+            try
+            {
+                GameObject explosionPrefab = GetExplosionPrefab();
+                if (explosionPrefab == null)
+                {
+                    Logger.LogWarning("PulseAbility: Could not get pulse prefab");
+                    return;
+                }
+
+                GameObject explosionVFX = Instantiate(explosionPrefab, position, Quaternion.identity);
+                float vfxScale = Mathf.Clamp(radius / Consts.Values.Pulse.UltimateBaseDeathRadius, 0.5f, 2f);
+                explosionVFX.transform.localScale *= vfxScale;
+
+                if (playerController != null)
+                {
+                    try
+                    {
+                        Color playerColor = playerController.playerColor.Value;
+                        var changeColor = explosionVFX.GetComponent<ChangeExplosionColor>();
+                        if (changeColor != null)
+                        {
+                            changeColor.SetExplosionColor(playerColor);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.LogWarning($"PulseAbility: Could not set pulse color: {ex.Message}");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"PulseAbility: Failed to spawn pulse VFX: {ex.Message}");
+            }
+        }
+
+        private static FieldInfo _deadExplosionPrefabField;
+
+        private GameObject GetExplosionPrefab()
+        {
+            if (cachedExplosionPrefab != null) return cachedExplosionPrefab;
+
+            if (spiderHealthSystem != null)
+            {
+                try
+                {
+                    if (_deadExplosionPrefabField == null)
+                    {
+                        _deadExplosionPrefabField = typeof(SpiderHealthSystem).GetField("DeadExplosionParticlePrefab",
+                            BindingFlags.NonPublic | BindingFlags.Instance);
+                    }
+
+                    if (_deadExplosionPrefabField != null)
+                    {
+                        cachedExplosionPrefab = _deadExplosionPrefabField.GetValue(spiderHealthSystem) as GameObject;
+                        if (cachedExplosionPrefab != null)
+                        {
+                            return cachedExplosionPrefab;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.LogWarning($"PulseAbility: Failed to get DeadExplosionParticlePrefab via reflection: {ex.Message}");
+                }
+            }
+            return null;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            if (playerInput != null && playerPulseAbilities.ContainsKey(playerInput))
+            {
+                playerPulseAbilities.Remove(playerInput);
+            }
+        }
+    }
+}
