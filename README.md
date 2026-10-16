@@ -15,7 +15,7 @@ SpiderSurge is made of four parts. Each one can be turned on or off from the gam
 | [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival, with live stats windows and fun titles at the end of each run | Yes |
 | [Surge](surge/README.md) | Surge Mode for Survival: new abilities, ultimates, perks and custom enemies | No |
 | [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
-| [Game fixes](#game-fixes) | Fixes two bugs in the base game | Yes |
+| [Game fixes](#game-fixes) | Fixes bugs in the base game | Yes |
 
 Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
 
@@ -107,6 +107,7 @@ Each part's page explains its own section. Edit the file while the game is close
 
 ## Game fixes
 
+- Reconnecting a controller keeps its original spider instead of adding a second player controlled by the same gamepad.
 - Whisps no longer shoot the moment they spawn.
 - Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
 
