@@ -71,6 +71,7 @@ namespace StatsMod
         {
             try
             {
+                if (!GameSessionManager.Instance.IsActive) return;
                 PlayerTracker.Instance.RecordPlayerDeath(__instance);
                 HitLogic.OnPlayerDeath(__instance);
             }
@@ -88,6 +89,7 @@ namespace StatsMod
         {
             try
             {
+                if (!GameSessionManager.Instance.IsActive) return;
                 PlayerTracker.Instance.UndoPlayerDeath(__instance);
             }
             catch (Exception ex)
@@ -106,7 +108,7 @@ namespace StatsMod
         {
             try
             {
-                if (__instance.dead || __instance.astralDead || __instance.rootObject == null)
+                if (!GameSessionManager.Instance.IsActive || __instance.dead || __instance.astralDead || __instance.rootObject == null)
                     return;
 
                 PlayerInput playerInput = __instance.rootObject.GetComponentInParent<PlayerInput>();
@@ -170,6 +172,7 @@ namespace StatsMod
         {
             try
             {
+                if (!GameSessionManager.Instance.IsActive) return;
                 if (__instance.rootObject != null)
                 {
                     PlayerInput victimPlayerInput = __instance.rootObject.GetComponentInParent<PlayerInput>();

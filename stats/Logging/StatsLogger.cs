@@ -98,7 +98,7 @@ namespace StatsMod
 
                 sb.AppendLine($"  Total Players: {statsSnapshot.ActivePlayers.Count}");
                 sb.AppendLine($"  Total Player Kills: {totalKills}");
-                sb.AppendLine($"  Total Friendly Kills (PvP): {totalFriendlyKills}");
+                sb.AppendLine($"  Total Friendly Kills: {totalFriendlyKills}");
                 sb.AppendLine($"  Total Player Deaths: {totalDeaths}");
                 sb.AppendLine($"  Total Enemy Shields Taken Down: {totalEnemyShieldsTakenDown}");
                 sb.AppendLine($"  Total Friendly Shields Hit: {totalFriendlyShieldsHit}");
@@ -121,7 +121,7 @@ namespace StatsMod
                     sb.AppendLine($"    Wave Clutches: {playerData.WaveClutches}");
                     sb.AppendLine($"    Max Kill Streak: {playerData.MaxKillStreak}");
                     sb.AppendLine($"    Max Solo Kill Streak: {playerData.MaxKillStreakWhileSolo}");
-                    sb.AppendLine($"    Friendly Kills (PvP): {playerData.FriendlyKills}");
+                    sb.AppendLine($"    Friendly Kills: {playerData.FriendlyKills}");
                     sb.AppendLine($"    Deaths: {playerData.Deaths}");
                     sb.AppendLine($"    Lava Deaths: {playerData.LavaDeaths}");
                     sb.AppendLine($"    Astral Returns: {playerData.AstralReturns}");

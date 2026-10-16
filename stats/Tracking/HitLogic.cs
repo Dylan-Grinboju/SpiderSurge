@@ -118,10 +118,21 @@ namespace StatsMod
 
         public static bool HasPlayerHits => lastPlayerHits.Count > 0;
 
+        public static void Clear()
+        {
+            lastEnemyHits.Clear();
+            lastPlayerHits.Clear();
+            rollerFuses.Clear();
+            foreach (var owners in ownerMaps) owners.Clear();
+            current = default;
+            lastPruneTime = Time.time;
+        }
+
         // An attack without a player, or damage from anything else (a friendly wasp, a hazard), takes the kill away
         // from the last player who hit the enemy. Bumps from enemies, pulls and portals outside an attack don't.
         public static void OnEnemyHit(EnemyHealthSystem enemy, bool damage)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
 
             PlayerInput attacker = CurrentAttacker;
@@ -173,6 +184,7 @@ namespace StatsMod
         // its own attack) replaces that record, and so does a stun from an attack. Bumps outside an attack don't.
         public static void OnPlayerHit(SpiderHealthSystem spider, bool damage, bool stun)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             int id = spider.GetInstanceID();
             PlayerInput attacker = CurrentAttacker;
             if (attacker == null)
@@ -351,6 +363,7 @@ namespace StatsMod
 
         public static void OnEnemyDeath(EnemyHealthSystem enemy)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
 
@@ -379,6 +392,7 @@ namespace StatsMod
 
         public static void OnEnemyShieldDestroyed(EnemyHealthSystem enemy)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             if (!TryGetRecentHit(lastEnemyHits, enemy.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
             Logger.LogDebug($"Recording shield hit on enemy {enemy.name} by {PlayerLabel(hit.Player)}");
@@ -388,21 +402,33 @@ namespace StatsMod
 
         public static void OnPlayerShieldBroken(SpiderHealthSystem spider)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             if (!TryGetRecentHit(lastPlayerHits, spider.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
-            Logger.LogDebug($"Recording friendly shield hit by {PlayerLabel(hit.Player)}");
-            PlayerTracker.Instance.IncrementFriendlyShieldsHit(hit.Player);
+            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            if (victim == null) return;
+
+            bool friendly = PlayerRelations.AreTeammates(hit.Player, victim);
+            Logger.LogDebug($"Recording {(friendly ? "friendly" : "opponent")} shield hit by {PlayerLabel(hit.Player)}");
+            if (friendly) PlayerTracker.Instance.IncrementFriendlyShieldsHit(hit.Player);
+            else PlayerTracker.Instance.IncrementEnemyShieldsTakenDown(hit.Player);
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
         }
 
         public static void OnPlayerDeath(SpiderHealthSystem spider)
         {
+            if (!GameSessionManager.Instance.IsActive) return;
             // Lava and falling out of the map mark the spider as dying before it dies, a damage kill happens on the hit
             float? window = ReflectionCache.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
             if (!TryTakeHit(lastPlayerHits, spider.GetInstanceID(), window, out HitRecord hit, out _)) return;
 
-            Logger.LogInfo($"Recording friendly kill for {PlayerLabel(hit.Player)}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
-            PlayerTracker.Instance.IncrementFriendlyKill(hit.Player);
+            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            if (victim == null) return;
+
+            bool friendly = PlayerRelations.AreTeammates(hit.Player, victim);
+            Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(hit.Player)}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
+            if (friendly) PlayerTracker.Instance.IncrementFriendlyKill(hit.Player);
+            else PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
             PlayerTracker.Instance.IncrementEnemyKillByName(hit.Player, "Player");
         }

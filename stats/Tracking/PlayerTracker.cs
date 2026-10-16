@@ -392,6 +392,11 @@ namespace StatsMod
             return activePlayers.FirstOrDefault(p => p.Value.IsAlive).Key;
         }
 
+        private bool HasLivingTeammate(PlayerInput player)
+        {
+            return activePlayers.Any(p => p.Value.IsAlive && PlayerRelations.AreTeammates(player, p.Key));
+        }
+
         public void IncrementPlayerKill(PlayerInput player)
         {
             if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
@@ -417,7 +422,7 @@ namespace StatsMod
                     }
                 }
 
-                if (IsOnlyOnePlayerAlive())
+                if (!HasLivingTeammate(player))
                 {
                     data.KillsWhileSolo++;
                     data.KillStreakWhileSolo++;
@@ -631,9 +636,9 @@ namespace StatsMod
                 }
                 data.CurrentAliveStartTime = Time.unscaledTime;
 
-                if (!IsOnlyOnePlayerAlive())
+                foreach (var entry in activePlayers)
                 {
-                    foreach (var entry in activePlayers)
+                    if (HasLivingTeammate(entry.Key))
                     {
                         entry.Value.KillStreakWhileSolo = 0;
                     }

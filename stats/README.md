@@ -8,15 +8,15 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
 ## Features
 
 - **Extensive Player Statistics**: Tracks a wide range of player stats including kills, deaths, friendly kills, shield interactions, web swings, airborne time, kill streaks, enemy-specific and weapon-specific kills.
-- **Player Titles**: At the end of each game, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf")
+- **Player Titles**: At the end of each Survival run, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf"). Titles stay hidden during and after Versus matches, with or without teams
 - **In-Game Display**: 
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
-  - Press **F3** to view player titles (only after the game ends)
+  - Press **F3** to view player titles after a Survival run
   - Press **D-pad** on a controller to cycle the UIs. You can switch to a stick press instead. While Surge's ultimate is on the D-pad, only the stick press works
 - **Log File**: All the stats are saved to a local txt file when the game ends 
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
-- **Versus Mode Support**: The mod will track stats in versus mode, but as this was developed with the survival mode in mind, some features (such as the titles) may not work as intended. In versus, a kill on another spider counts as a friendly kill (the Friendly Kills and Friendly Hits columns); Kills only counts enemies
+- **Versus Mode Support**: Opponent kills count toward Kills, Total Offence, kill streaks and weapon stats. Breaking an opponent's shield counts toward Enemy Shields and Total Offence. With Teams on, only teammate kills and shield breaks count as friendly fire; without teams, every other spider is an opponent. Solo kills and streaks mean no living teammates, even while opponents are alive
 
 
 ### Small window (F1)
@@ -73,7 +73,7 @@ To stop tracking altogether, turn off the Stats part (`parts.stats`).
 
 ### Titles:
 
-`stats.titles.enabled`: If true, player titles will be calculated and displayed at the end of each game. Press F3 to view them.
+`stats.titles.enabled`: If true, player titles will be calculated and displayed at the end of each Survival run. Press F3 to view them. Versus titles stay hidden regardless of this setting.
 
 `stats.titles.revealDelaySeconds`: Controls the delay between revealing each title card in the titles screen animation, from 0 to 10. Default is 2.0 seconds. Set to 0 for instant reveal.
 
@@ -112,6 +112,7 @@ Registers a custom title that participates in the native title pipeline (dominat
 
 - **Data is cleared** at the start of each game session — external mods should re-register their stats and titles after each game ends.
 - **Titles require 2+ players** — they are meaningless in solo play and will not be displayed.
+- **Titles are Survival-only** — native and external titles are skipped for Versus matches, with or without teams.
 - **Thread safety**: All API methods are synchronized internally. Safe to call from any thread.
 - **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part is off, registered stats and titles are never shown.
 
@@ -120,7 +121,7 @@ Registers a custom title that participates in the native title pipeline (dominat
 - By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/SpiderStats/Spiderheck_stats_<Current_Date>.txt`
 - There are some kills that won't register such as activating a weapon with another (hitting a grenade with a particle blade). This just complicates the logic and is up to interpretation of who gets the kill in difficult scenarios. Also, this is just very complicated to track, and I wasn't feeling like coding it
 - This probably won't work with multiplayer, you are welcome to try and send me feedback, but I don't plan to support it anytime soon
-- Stats doesn't know about teams yet. In team versus, it counts every kill on another spider as a friendly kill
+- Lobby combat does not change the last game's stats. Hit credit resets at the start of each session and versus round
 
 ## The Future
 - I plan to continue expanding this mod with more fun titles and statistics

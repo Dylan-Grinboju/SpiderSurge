@@ -10,7 +10,7 @@ namespace StatsMod
 
         public override string Key => "stats";
         public override string Title => "Stats";
-        public override string Description => "Tracks kills, deaths, streaks and more in Survival, with live stats windows and end-of-run titles.";
+        public override string Description => "Tracks kills, deaths, streaks and more in Survival and Versus, with live stats windows and Survival titles.";
         public override string Namespace => "StatsMod";
         public override bool OnByDefault => true;
         public override bool HasSettings => true;

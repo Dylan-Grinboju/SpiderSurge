@@ -36,6 +36,15 @@ namespace StatsMod
 
         #region Singleton
         public static UIManager Instance { get; private set; }
+        public static bool CanShowTitles
+        {
+            get
+            {
+                var session = GameSessionManager.Instance;
+                GameMode mode = session.CurrentGameMode != GameMode.None ? session.CurrentGameMode : session.LastGameMode;
+                return ModConfig.TitlesEnabled && mode != GameMode.Versus;
+            }
+        }
         #endregion
 
         #region UI Components
@@ -225,10 +234,18 @@ namespace StatsMod
                     ShowBigUI();
                     break;
                 case UIState.BigUI:
-                    currentUIState = UIState.TitlesUI;
                     HideSmallUI();
                     HideBigUI();
-                    ShowTitlesUIWithoutAnimation();
+                    if (CanShowTitles)
+                    {
+                        currentUIState = UIState.TitlesUI;
+                        ShowTitlesUIWithoutAnimation();
+                    }
+                    else
+                    {
+                        currentUIState = UIState.Off;
+                        HideTitlesUI();
+                    }
                     break;
                 case UIState.TitlesUI:
                     currentUIState = UIState.Off;
@@ -300,6 +317,7 @@ namespace StatsMod
 
         private void HandleF3Press()
         {
+            if (!CanShowTitles) return;
             // If currently animating, skip the animation
             if (titlesUI != null && titlesUI.IsAnimating())
             {
@@ -426,7 +444,7 @@ namespace StatsMod
 
         public static void AutoShowTitles(bool animate = true)
         {
-            if (!ModConfig.TitlesEnabled) return;
+            if (!CanShowTitles) return;
             if (Instance == null) return;
 
             Instance.HideSmallUI();

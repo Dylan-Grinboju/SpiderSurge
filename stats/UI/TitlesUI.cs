@@ -43,7 +43,7 @@ namespace StatsMod
         public string LABEL_MATCH_OVER = "MATCH COMPLETE";
         public string LABEL_LAST_SESSION = "LAST SESSION";
         public string LABEL_NO_TITLES = "No titles yet";
-        public string LABEL_NO_TITLES_NOTE = "Titles are handed out at the end of a run or match with two or more players.";
+        public string LABEL_NO_TITLES_NOTE = "Titles are handed out at the end of a Survival run with two or more players.";
         #endregion
 
         #region UI State
@@ -87,7 +87,7 @@ namespace StatsMod
         #region Display Control
         public void ShowDisplay()
         {
-            if (!ModConfig.TitlesEnabled) return;
+            if (!UIManager.CanShowTitles) return;
             isDisplayVisible = true;
             if (TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0 && !hasAnimationPlayed)
             {
@@ -102,7 +102,7 @@ namespace StatsMod
 
         public void ShowDisplayWithoutAnimation()
         {
-            if (!ModConfig.TitlesEnabled) return;
+            if (!UIManager.CanShowTitles) return;
             isDisplayVisible = true;
             titlesToShow = TitlesManager.Instance.TitleCount;
             if (!isAnimating)
@@ -127,7 +127,7 @@ namespace StatsMod
 
         public bool IsVisible()
         {
-            return isDisplayVisible && ModConfig.TitlesEnabled;
+            return isDisplayVisible && UIManager.CanShowTitles;
         }
 
         public bool IsAnimating()
@@ -271,7 +271,7 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisible || !ModConfig.TitlesEnabled || Event.current.type != EventType.Repaint) return;
+            if (!isDisplayVisible || !UIManager.CanShowTitles || Event.current.type != EventType.Repaint) return;
 
             InitializeStyles();
 
