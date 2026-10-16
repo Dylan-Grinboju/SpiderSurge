@@ -111,6 +111,7 @@ namespace StatsMod
                 // **THIS IS OUR ADDITION** - Track the disc owner
                 PlayerInput ownerPlayer = __instance.owner?.healthSystem?.GetComponentInParent<PlayerInput>();
                 HitLogic.RegisterDiscOwner(gameObject, ownerPlayer);
+                AccuracyTracker.Fire(__instance, gameObject);
 
                 // Reset phase effect and visual elements
                 __instance.discPhaseEffect.ResetEffect();
@@ -144,6 +145,7 @@ namespace StatsMod
         {
             try
             {
+                AccuracyTracker.Forget(__instance);
                 // After the original Equip method runs, fix the ownerWeaponClientId
                 if (wm != null && wm.healthSystem != null)
                 {
