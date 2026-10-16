@@ -1,37 +1,39 @@
 using UnityEngine;
-using Silk;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
 {
     public class SmallUI : MonoBehaviour
     {
+        private const int WindowId = 0x5353;
+
         #region Base Dimensions
-        public float BASE_WINDOW_WIDTH = 200f;
-        public float BASE_WINDOW_HEIGHT = 15f;
-        public float BASE_HEADER_HEIGHT = 35f;
+        public float BASE_HEADER_HEIGHT = 20f;
         public float BASE_PLAYER_ROW_HEIGHT = 30f;
         public float BASE_PADDING = 10f;
+        public float BASE_BAR_WIDTH = 4f;
+        public float BASE_BAR_GAP = 8f;
         #endregion
 
         #region Column Widths
-        public float COL_WIDTH_KILL = 50f;
-        public float COL_WIDTH_DEATH = 80f;
+        public float COL_WIDTH_KILL = 62f;
+        public float COL_WIDTH_DEATH = 72f;
         #endregion
 
         #region Text Labels
-        public string LABEL_KILL = "Kills";
-        public string LABEL_DEATH = "Deaths";
-        public string LABEL_NO_PLAYERS = "No players";
+        public string LABEL_KILL = "KILLS";
+        public string LABEL_DEATH = "DEATHS";
+        public string LABEL_NO_PLAYERS = "NO PLAYERS";
         #endregion
 
-        #region Spacing
-        public float SPACING_BETWEEN_ROWS = 2f;
+        #region Font Sizes
+        public int HEADER_FONT_SIZE = 12;
+        public int VALUE_FONT_SIZE = 21;
         #endregion
 
-        // Scaled properties
-        private float WindowWidth => UIManager.ScaleValue(BASE_WINDOW_WIDTH);
-        private float WindowHeight => UIManager.ScaleValue(BASE_WINDOW_HEIGHT);
+        public float DEAD_PLAYER_ALPHA = 0.5f;
+
         private float HeaderHeight => UIManager.ScaleValue(BASE_HEADER_HEIGHT);
         private float PlayerRowHeight => UIManager.ScaleValue(BASE_PLAYER_ROW_HEIGHT);
         private float Padding => UIManager.ScaleValue(BASE_PADDING);
@@ -40,26 +42,23 @@ namespace StatsMod
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
+        private GameStatsSnapshot statsSnapshot;
+        private int snapshotFrame = -1;
         #endregion
 
         #region GUI Styles
         private GUIStyle windowStyle;
-        private GUIStyle transparentWindowStyle;
         private GUIStyle headerStyle;
-        private GUIStyle headerCenteredStyle;
-        private GUIStyle labelStyle;
-        private GUIStyle playerColorCenteredStyle;
+        private GUIStyle noPlayersStyle;
+        private GUIStyle valueStyle;
         private int stylesVersion = -1;
+        private int fontVersion = -1;
         #endregion
 
         #region Initialization
         public void Initialize()
         {
-            float xPos = ModConfig.DisplayPositionX;
-            float yPos = ModConfig.DisplayPositionY;
-
-            windowRect = new Rect(xPos, yPos, WindowWidth, 100f);
-            UpdateWindowSize();
+            windowRect = new Rect(ModConfig.DisplayPositionX, ModConfig.DisplayPositionY, 0f, 0f);
             isDisplayVisible = isDisplayVisibleAtAll;
 
             Logger.LogInfo("SmallUI initialized");
@@ -91,23 +90,16 @@ namespace StatsMod
         #region Style Management
         private void InitializeStyles()
         {
-            if (stylesVersion == UIManager.StyleVersion) return;
+            Hud.EnsureFonts();
+            if (stylesVersion == UIManager.StyleVersion && fontVersion == Hud.FontVersion) return;
 
-            windowStyle = UIManager.Instance.CreateWindowStyle(UIManager.Instance.GetDarkTexture());
-            
-            // Create transparent window style for no-background mode
-            transparentWindowStyle = new GUIStyle(GUI.skin.window)
-            {
-                normal = { background = null },
-                padding = new RectOffset(UIManager.ScaleInt(UIManager.PADDING * 2), UIManager.ScaleInt(UIManager.PADDING * 2), UIManager.ScaleInt(UIManager.PADDING * 2), UIManager.ScaleInt(UIManager.PADDING * 2))
-            };
-            
-            headerStyle = UIManager.Instance.CreateHeaderStyle();
-            headerCenteredStyle = new GUIStyle(headerStyle) { alignment = TextAnchor.MiddleCenter };
-            labelStyle = UIManager.Instance.CreateLabelStyle();
-            playerColorCenteredStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleCenter };
+            windowStyle = new GUIStyle();
+            headerStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
+            noPlayersStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true);
+            valueStyle = Hud.Style(UIManager.ScaleFont(VALUE_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
 
             stylesVersion = UIManager.StyleVersion;
+            fontVersion = Hud.FontVersion;
         }
         #endregion
 
@@ -117,11 +109,15 @@ namespace StatsMod
             if (!isDisplayVisibleAtAll || !isDisplayVisible) return;
 
             InitializeStyles();
-            UpdateWindowSize();
+            if (snapshotFrame != Time.frameCount)
+            {
+                statsSnapshot = GameSessionManager.Instance?.GetStatsSnapshot();
+                snapshotFrame = Time.frameCount;
+            }
+            UpdateWindowSize(statsSnapshot?.ActivePlayers?.Count ?? 0);
 
             Vector2 oldPosition = new Vector2(windowRect.x, windowRect.y);
-            GUIStyle activeWindowStyle = ModConfig.SmallUIShowBackground ? windowStyle : transparentWindowStyle;
-            windowRect = GUI.Window(0, windowRect, DrawStatsWindow, "", activeWindowStyle);
+            windowRect = GUI.Window(WindowId, windowRect, DrawStatsWindow, "", windowStyle);
 
             Vector2 newPosition = new Vector2(windowRect.x, windowRect.y);
             if (oldPosition != newPosition)
@@ -132,87 +128,60 @@ namespace StatsMod
 
         private void DrawStatsWindow(int windowID)
         {
-            GUILayout.BeginVertical();
-
-            var statsSnapshot = GameSessionManager.Instance.GetStatsSnapshot();
-            DrawPlayerStats(statsSnapshot);
-
-            GUILayout.EndVertical();
-            GUI.DragWindow();
-        }
-        #endregion
-
-        #region Drawing Methods
-        private void DrawPlayerStats(GameStatsSnapshot statsSnapshot)
-        {
             try
             {
-                // Header row
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(LABEL_KILL, headerCenteredStyle, GUILayout.Width(UIManager.ScaleValue(COL_WIDTH_KILL)));
-                GUILayout.Label(LABEL_DEATH, headerCenteredStyle, GUILayout.Width(UIManager.ScaleValue(COL_WIDTH_DEATH)));
-                GUILayout.EndHorizontal();
-
-                if (statsSnapshot.ActivePlayers != null && statsSnapshot.ActivePlayers.Count > 0)
+                bool background = ModConfig.SmallUIShowBackground;
+                if (background)
                 {
-                    foreach (var playerEntry in statsSnapshot.ActivePlayers)
-                    {
-                        var playerData = playerEntry.Value;
+                    Hud.Fill(new Rect(0f, 0f, windowRect.width, windowRect.height), Hud.Ink);
+                    Hud.Fill(new Rect(0f, 0f, windowRect.width, UIManager.ScaleValue(2f)), Hud.Pink);
+                }
 
-                        // Set the player's color for the style
-                        playerColorCenteredStyle.normal.textColor = playerData.PlayerColor;
+                bool shadow = !background;
+                float killX = Padding + UIManager.ScaleValue(BASE_BAR_WIDTH + BASE_BAR_GAP);
+                float killWidth = UIManager.ScaleValue(COL_WIDTH_KILL);
+                float deathX = killX + killWidth;
+                float deathWidth = UIManager.ScaleValue(COL_WIDTH_DEATH);
+                float y = Padding;
 
-                        GUILayout.Space(UIManager.ScaleValue(SPACING_BETWEEN_ROWS));
+                Hud.Label(new Rect(killX, y, killWidth, HeaderHeight), LABEL_KILL, headerStyle, Hud.Pink, shadow);
+                Hud.Label(new Rect(deathX, y, deathWidth, HeaderHeight), LABEL_DEATH, headerStyle, Hud.Pink, shadow);
+                y += HeaderHeight;
 
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Label(playerData.Kills.ToString(), playerColorCenteredStyle, GUILayout.Width(UIManager.ScaleValue(COL_WIDTH_KILL)));
-                        GUILayout.Label(playerData.Deaths.ToString(), playerColorCenteredStyle, GUILayout.Width(UIManager.ScaleValue(COL_WIDTH_DEATH)));
-                        GUILayout.EndHorizontal();
-                    }
+                if (statsSnapshot?.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
+                {
+                    Hud.Label(new Rect(Padding, y, windowRect.width - Padding * 2, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
                 }
                 else
                 {
-                    GUILayout.Label(LABEL_NO_PLAYERS, labelStyle);
+                    bool sessionActive = statsSnapshot.IsSurvivalActive || statsSnapshot.IsVersusActive;
+                    float barInset = PlayerRowHeight * 0.18f;
+                    foreach (var playerEntry in statsSnapshot.ActivePlayers)
+                    {
+                        var playerData = playerEntry.Value;
+                        float alpha = sessionActive && !playerData.IsAlive ? DEAD_PLAYER_ALPHA : 1f;
+
+                        Hud.Fill(new Rect(Padding, y + barInset, UIManager.ScaleValue(BASE_BAR_WIDTH), PlayerRowHeight - barInset * 2), Hud.WithAlpha(Hud.Readable(playerData.PlayerColor), alpha));
+                        Hud.Label(new Rect(killX, y, killWidth, PlayerRowHeight), playerData.Kills.ToString(), valueStyle, Hud.WithAlpha(playerData.Kills > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
+                        Hud.Label(new Rect(deathX, y, deathWidth, PlayerRowHeight), playerData.Deaths.ToString(), valueStyle, Hud.WithAlpha(playerData.Deaths > 0 ? Hud.Pink : Hud.Muted, alpha), shadow);
+                        y += PlayerRowHeight;
+                    }
                 }
             }
             catch (System.Exception ex)
             {
-                GUILayout.Label($"Error: {ex.Message}", labelStyle);
                 Logger.LogError($"Error displaying player stats: {ex.Message}");
             }
+
+            GUI.DragWindow();
         }
         #endregion
 
         #region Window Size Management
-        private void UpdateWindowSize()
+        private void UpdateWindowSize(int rows)
         {
-            float totalHeight = WindowHeight + HeaderHeight;
-
-            var statsSnapshot = GameSessionManager.Instance?.GetStatsSnapshot();
-            if (statsSnapshot?.ActivePlayers != null && statsSnapshot.ActivePlayers.Count > 0)
-            {
-                totalHeight += statsSnapshot.ActivePlayers.Count * PlayerRowHeight;
-            }
-            else
-            {
-                totalHeight += PlayerRowHeight; // Space for "No players" message
-            }
-
-            windowRect.height = totalHeight;
-
-            // Calculate width based on kill + death columns + padding
-            float dynamicWidth = UIManager.ScaleValue(COL_WIDTH_KILL) + UIManager.ScaleValue(COL_WIDTH_DEATH) + Padding * 2;
-            windowRect.width = dynamicWidth;
-        }
-
-        public void OnPlayerJoined()
-        {
-            UpdateWindowSize();
-        }
-
-        public void OnPlayerLeft()
-        {
-            UpdateWindowSize();
+            windowRect.height = Padding * 2 + HeaderHeight + Mathf.Max(rows, 1) * PlayerRowHeight;
+            windowRect.width = Padding * 2 + UIManager.ScaleValue(BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_KILL + COL_WIDTH_DEATH);
         }
         #endregion
     }
