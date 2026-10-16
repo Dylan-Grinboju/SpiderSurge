@@ -105,11 +105,6 @@ namespace StatsMod
             return value * UIScaleFactor;
         }
 
-        public static int ScaleInt(int value)
-        {
-            return Mathf.RoundToInt(value * UIScaleFactor);
-        }
-
         public static int ScaleFont(int baseFontSize)
         {
             return Mathf.RoundToInt(baseFontSize * UIScaleFactor);
@@ -140,7 +135,6 @@ namespace StatsMod
             GameObject bigUIObj = new GameObject("BigUI");
             bigUIObj.transform.SetParent(transform);
             bigUI = bigUIObj.AddComponent<BigUI>();
-            bigUI.Initialize();
 
             GameObject titlesUIObj = new GameObject("TitlesUI");
             titlesUIObj.transform.SetParent(transform);
@@ -403,20 +397,6 @@ namespace StatsMod
         public TitlesUI GetTitlesUI()
         {
             return titlesUI;
-        }
-        #endregion
-
-        #region Event Handling
-        public void OnPlayerJoined()
-        {
-            smallUI?.OnPlayerJoined();
-            bigUI?.OnPlayerJoined();
-        }
-
-        public void OnPlayerLeft()
-        {
-            smallUI?.OnPlayerLeft();
-            bigUI?.OnPlayerLeft();
         }
         #endregion
 

@@ -89,6 +89,7 @@ namespace StatsMod
         public float BASE_SECTION_SPACING = 22f;
         public float BASE_COLUMN_HEADER_HEIGHT = 44f;
         public float BASE_PLAYER_ROW_HEIGHT = 42f;
+        public float BASE_HEADER_LINE_HEIGHT = 2f;
         public float BASE_TILE_WIDTH = 190f;
         public float BASE_MIN_WIDTH = 620f;
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
@@ -134,13 +135,6 @@ namespace StatsMod
         private int fontVersion = -1;
         #endregion
 
-        #region Initialization
-        public void Initialize()
-        {
-            Logger.LogInfo("BigUI initialized");
-        }
-        #endregion
-
         #region Display Control
         public void ToggleDisplay()
         {
@@ -181,15 +175,10 @@ namespace StatsMod
             fontVersion = Hud.FontVersion;
         }
 
-        private static void Resize(GUIStyle style, int baseSize, float scale)
-        {
-            style.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * scale));
-        }
-
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint) return;
 
             InitializeStyles();
 
@@ -230,11 +219,10 @@ namespace StatsMod
             float baseHeight = BASE_PADDING * 2 + BASE_TITLE_HEIGHT;
             if (showTable)
             {
-                baseHeight += BASE_SECTION_SPACING + BASE_COLUMN_HEADER_HEIGHT + Mathf.Max(playerCount, 1) * BASE_PLAYER_ROW_HEIGHT;
+                baseHeight += BASE_SECTION_SPACING + BASE_COLUMN_HEADER_HEIGHT + BASE_HEADER_LINE_HEIGHT + Mathf.Max(playerCount, 1) * BASE_PLAYER_ROW_HEIGHT;
             }
 
-            float scale = UIManager.UIScaleFactor;
-            scale = Mathf.Min(scale, Screen.width * BASE_MAX_WIDTH_PERCENT / baseWidth, Screen.height * BASE_MAX_HEIGHT_PERCENT / baseHeight);
+            float scale = Hud.FitScale(UIManager.UIScaleFactor, baseWidth, baseHeight, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
             ApplyScale(scale);
 
             Rect panel = new Rect((Screen.width - baseWidth * scale) * 0.5f, (Screen.height - baseHeight * scale) * 0.5f, baseWidth * scale, baseHeight * scale);
@@ -255,15 +243,15 @@ namespace StatsMod
 
         private void ApplyScale(float scale)
         {
-            Resize(captionStyle, CAPTION_FONT_SIZE, scale);
-            Resize(captionRightStyle, CAPTION_FONT_SIZE, scale);
-            Resize(titleStyle, TITLE_FONT_SIZE, scale);
-            Resize(tileValueStyle, TILE_VALUE_FONT_SIZE, scale);
-            Resize(columnHeaderStyle, COLUMN_HEADER_FONT_SIZE, scale);
-            Resize(playerHeaderStyle, COLUMN_HEADER_FONT_SIZE, scale);
-            Resize(nameStyle, NAME_FONT_SIZE, scale);
-            Resize(valueStyle, VALUE_FONT_SIZE, scale);
-            Resize(emptyStyle, NAME_FONT_SIZE, scale);
+            Hud.Resize(captionStyle, CAPTION_FONT_SIZE, scale);
+            Hud.Resize(captionRightStyle, CAPTION_FONT_SIZE, scale);
+            Hud.Resize(titleStyle, TITLE_FONT_SIZE, scale);
+            Hud.Resize(tileValueStyle, TILE_VALUE_FONT_SIZE, scale);
+            Hud.Resize(columnHeaderStyle, COLUMN_HEADER_FONT_SIZE, scale);
+            Hud.Resize(playerHeaderStyle, COLUMN_HEADER_FONT_SIZE, scale);
+            Hud.Resize(nameStyle, NAME_FONT_SIZE, scale);
+            Hud.Resize(valueStyle, VALUE_FONT_SIZE, scale);
+            Hud.Resize(emptyStyle, NAME_FONT_SIZE, scale);
         }
 
         private void DrawTitleRow(GameStatsSnapshot statsSnapshot, Rect row, bool showTiles, float scale)
@@ -323,8 +311,9 @@ namespace StatsMod
             }
 
             float y = table.y + headerHeight;
-            Hud.Fill(new Rect(table.x, y, table.width, 2f * scale), Hud.Pink);
-            y += 2f * scale;
+            float lineHeight = BASE_HEADER_LINE_HEIGHT * scale;
+            Hud.Fill(new Rect(table.x, y, table.width, lineHeight), Hud.Pink);
+            y += lineHeight;
 
             if (statsSnapshot.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
             {
@@ -379,16 +368,6 @@ namespace StatsMod
                 case Tone.Warm: return Hud.Warm;
                 default: return Hud.Text;
             }
-        }
-        #endregion
-
-        #region Event Handling
-        public void OnPlayerJoined()
-        {
-        }
-
-        public void OnPlayerLeft()
-        {
         }
         #endregion
     }

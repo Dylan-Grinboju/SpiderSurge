@@ -231,8 +231,6 @@ namespace StatsMod
             playerIds[playerId] = player;
 
             RefreshPlayerCache();
-
-            UIManager.Instance?.OnPlayerJoined();
         }
 
 
@@ -248,8 +246,6 @@ namespace StatsMod
                 RefreshPlayerCache();
 
                 StabilizerFixedUpdatePatch.ClearCache();
-
-                UIManager.Instance?.OnPlayerLeft();
             }
         }
 

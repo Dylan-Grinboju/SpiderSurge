@@ -31,7 +31,6 @@ namespace SpiderSurge.Common
 
         public static int FontVersion { get; private set; }
 
-        // "SPIDER" in lavender and "SURGE" in pink, like the game's logo.
         public static string Logo => $"<color={LavenderHex}>SPIDER</color><color={PinkHex}>SURGE</color>";
 
         public static Color Rgb(int r, int g, int b) => new Color(r / 255f, g / 255f, b / 255f, 1f);
@@ -47,24 +46,27 @@ namespace SpiderSurge.Common
 
         public static void EnsureFonts()
         {
-            if (_regular != null || Time.unscaledTime < _nextFontSearch)
+            if ((_regular != null && _bold != null) || Time.unscaledTime < _nextFontSearch)
             {
                 return;
             }
             _nextFontSearch = Time.unscaledTime + FontRetryInterval;
 
+            bool found = false;
             foreach (Font font in Resources.FindObjectsOfTypeAll<Font>())
             {
-                if (font.name == "Spartan-Regular")
+                if (_regular == null && font.name == "Spartan-Regular")
                 {
                     _regular = font;
+                    found = true;
                 }
-                else if (font.name == "Spartan-SemiBold")
+                else if (_bold == null && font.name == "Spartan-SemiBold")
                 {
                     _bold = font;
+                    found = true;
                 }
             }
-            if (_regular != null)
+            if (found)
             {
                 FontVersion++;
             }
@@ -131,6 +133,17 @@ namespace SpiderSurge.Common
             }
             style.normal.textColor = color;
             GUI.Label(rect, text, style);
+        }
+
+        public static void Resize(GUIStyle style, int baseSize, float scale)
+        {
+            style.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * scale));
+        }
+
+        // Shrinks the UI scale so a panel of the given base size fits in that share of the screen.
+        public static float FitScale(float scale, float baseWidth, float baseHeight, float maxWidthPercent, float maxHeightPercent)
+        {
+            return Mathf.Min(scale, Screen.width * maxWidthPercent / baseWidth, Screen.height * maxHeightPercent / baseHeight);
         }
 
         public static float Width(GUIStyle style, string text) => style.CalcSize(new GUIContent(text)).x;

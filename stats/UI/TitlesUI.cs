@@ -43,7 +43,7 @@ namespace StatsMod
         public string LABEL_MATCH_OVER = "MATCH COMPLETE";
         public string LABEL_LAST_SESSION = "LAST SESSION";
         public string LABEL_NO_TITLES = "No titles yet";
-        public string LABEL_NO_TITLES_NOTE = "Titles are handed out at the end of a run with two or more players.";
+        public string LABEL_NO_TITLES_NOTE = "Titles are handed out at the end of a run or match with two or more players.";
         #endregion
 
         #region UI State
@@ -141,6 +141,7 @@ namespace StatsMod
             {
                 titlesToShow = TitlesManager.Instance.TitleCount;
                 isAnimating = false;
+                ShowAllCards();
             }
         }
 
@@ -203,6 +204,7 @@ namespace StatsMod
             {
                 titlesToShow = TitlesManager.Instance.TitleCount;
                 isAnimating = false;
+                ShowAllCards();
                 return;
             }
             int shouldShow = Mathf.FloorToInt(animationTimer / revealDelay);
@@ -256,25 +258,20 @@ namespace StatsMod
 
         private void ApplyScale(float scale)
         {
-            Resize(captionStyle, CAPTION_FONT_SIZE, scale);
-            Resize(headerStyle, HEADER_FONT_SIZE, scale);
-            Resize(cardTitleStyle, TITLE_FONT_SIZE, scale);
-            Resize(cardDescriptionStyle, DESCRIPTION_FONT_SIZE, scale);
-            Resize(cardPlayerNameStyle, PLAYER_NAME_FONT_SIZE, scale);
-            Resize(emptyStyle, EMPTY_FONT_SIZE, scale);
-            Resize(emptyNoteStyle, DESCRIPTION_FONT_SIZE, scale);
-        }
-
-        private static void Resize(GUIStyle style, int baseSize, float scale)
-        {
-            style.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * scale));
+            Hud.Resize(captionStyle, CAPTION_FONT_SIZE, scale);
+            Hud.Resize(headerStyle, HEADER_FONT_SIZE, scale);
+            Hud.Resize(cardTitleStyle, TITLE_FONT_SIZE, scale);
+            Hud.Resize(cardDescriptionStyle, DESCRIPTION_FONT_SIZE, scale);
+            Hud.Resize(cardPlayerNameStyle, PLAYER_NAME_FONT_SIZE, scale);
+            Hud.Resize(emptyStyle, EMPTY_FONT_SIZE, scale);
+            Hud.Resize(emptyNoteStyle, DESCRIPTION_FONT_SIZE, scale);
         }
         #endregion
 
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisible || !ModConfig.TitlesEnabled) return;
+            if (!isDisplayVisible || !ModConfig.TitlesEnabled || Event.current.type != EventType.Repaint) return;
 
             InitializeStyles();
 
@@ -292,8 +289,7 @@ namespace StatsMod
             float baseGridHeight = rows == 0 ? 120f : rows * CARD_HEIGHT + (rows - 1) * CARD_SPACING_Y;
             float baseHeight = HEADER_HEIGHT + HEADER_TO_GRID_SPACING + baseGridHeight;
 
-            float scale = UIManager.UIScaleFactor;
-            scale = Mathf.Min(scale, Screen.width * BASE_MAX_WIDTH_PERCENT / baseGridWidth, Screen.height * BASE_MAX_HEIGHT_PERCENT / baseHeight);
+            float scale = Hud.FitScale(UIManager.UIScaleFactor, baseGridWidth, baseHeight, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
             ApplyScale(scale);
 
             float top = (Screen.height - baseHeight * scale) * 0.5f;

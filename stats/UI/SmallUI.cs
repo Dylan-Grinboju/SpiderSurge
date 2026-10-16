@@ -42,11 +42,14 @@ namespace StatsMod
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
+        private GameStatsSnapshot statsSnapshot;
+        private int snapshotFrame = -1;
         #endregion
 
         #region GUI Styles
         private GUIStyle windowStyle;
         private GUIStyle headerStyle;
+        private GUIStyle noPlayersStyle;
         private GUIStyle valueStyle;
         private int stylesVersion = -1;
         private int fontVersion = -1;
@@ -56,7 +59,6 @@ namespace StatsMod
         public void Initialize()
         {
             windowRect = new Rect(ModConfig.DisplayPositionX, ModConfig.DisplayPositionY, 0f, 0f);
-            UpdateWindowSize();
             isDisplayVisible = isDisplayVisibleAtAll;
 
             Logger.LogInfo("SmallUI initialized");
@@ -93,6 +95,7 @@ namespace StatsMod
 
             windowStyle = new GUIStyle();
             headerStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
+            noPlayersStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true);
             valueStyle = Hud.Style(UIManager.ScaleFont(VALUE_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
 
             stylesVersion = UIManager.StyleVersion;
@@ -106,7 +109,12 @@ namespace StatsMod
             if (!isDisplayVisibleAtAll || !isDisplayVisible) return;
 
             InitializeStyles();
-            UpdateWindowSize();
+            if (snapshotFrame != Time.frameCount)
+            {
+                statsSnapshot = GameSessionManager.Instance?.GetStatsSnapshot();
+                snapshotFrame = Time.frameCount;
+            }
+            UpdateWindowSize(statsSnapshot?.ActivePlayers?.Count ?? 0);
 
             Vector2 oldPosition = new Vector2(windowRect.x, windowRect.y);
             windowRect = GUI.Window(WindowId, windowRect, DrawStatsWindow, "", windowStyle);
@@ -140,12 +148,9 @@ namespace StatsMod
                 Hud.Label(new Rect(deathX, y, deathWidth, HeaderHeight), LABEL_DEATH, headerStyle, Hud.Pink, shadow);
                 y += HeaderHeight;
 
-                var statsSnapshot = GameSessionManager.Instance.GetStatsSnapshot();
-                if (statsSnapshot.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
+                if (statsSnapshot?.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
                 {
-                    headerStyle.alignment = TextAnchor.MiddleLeft;
-                    Hud.Label(new Rect(Padding, y, windowRect.width - Padding * 2, PlayerRowHeight), LABEL_NO_PLAYERS, headerStyle, Hud.Muted, shadow);
-                    headerStyle.alignment = TextAnchor.MiddleCenter;
+                    Hud.Label(new Rect(Padding, y, windowRect.width - Padding * 2, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
                 }
                 else
                 {
@@ -173,21 +178,10 @@ namespace StatsMod
         #endregion
 
         #region Window Size Management
-        private void UpdateWindowSize()
+        private void UpdateWindowSize(int rows)
         {
-            int rows = GameSessionManager.Instance?.GetStatsSnapshot()?.ActivePlayers?.Count ?? 0;
             windowRect.height = Padding * 2 + HeaderHeight + Mathf.Max(rows, 1) * PlayerRowHeight;
             windowRect.width = Padding * 2 + UIManager.ScaleValue(BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_KILL + COL_WIDTH_DEATH);
-        }
-
-        public void OnPlayerJoined()
-        {
-            UpdateWindowSize();
-        }
-
-        public void OnPlayerLeft()
-        {
-            UpdateWindowSize();
         }
         #endregion
     }
