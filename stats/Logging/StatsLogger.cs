@@ -167,6 +167,15 @@ namespace StatsMod
                         }
                     }
 
+                    sb.AppendLine($"    Shooting Accuracy: {playerData.ShootingAccuracy.Display} ({playerData.ShootingAccuracy.ShotsHit}/{playerData.ShootingAccuracy.ShotsFired} shots hit)");
+                    foreach (var weapon in WeaponAccuracy.Weapons)
+                    {
+                        if (playerData.AccuracyByWeapon.TryGetValue(weapon.Key, out var accuracy))
+                        {
+                            sb.AppendLine($"      {weapon.Label}: {accuracy.Display} ({accuracy.ShotsHit}/{accuracy.ShotsFired} shots hit)");
+                        }
+                    }
+
                     // Enemy kills breakdown
                     if (playerData.EnemyKills != null && playerData.EnemyKills.Any())
                     {

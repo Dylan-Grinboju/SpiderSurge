@@ -155,9 +155,9 @@ namespace SpiderSurge
             GUILayout.BeginVertical();
 
             DrawSection("General information", new string[] {
-                "• This mod overrides the standard Survival Mode with new wave logic and enemies.",
-                "• Highscores are kept separately from the vanilla game. It is still recommended to backup your save files.",
-                "• <b>To turn it off:</b> uncheck Surge Mode in <b>Mods > SpiderSurge > Surge settings</b>."
+                "• <b>To play:</b> stand on the <b>Surge Survival</b> platform in the lobby, above and to the left of Wave Survival.",
+                "• Surge Survival brings new wave logic and enemies. The Wave Survival platform still starts the normal game.",
+                "• Surge highscores are kept separately from the vanilla game. It is still recommended to backup your save files."
             });
 
             DrawSection("Abilities", new string[] {

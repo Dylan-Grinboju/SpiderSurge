@@ -12,9 +12,10 @@ namespace SpiderSurge
 
         public override string Key => "surge";
         public override string Title => "Surge";
-        public override string Description => "Abilities, ultimates and perks for Survival.";
+        public override string Description => "Play Surge from its lobby platform above and left of Wave Survival.";
         public override string Namespace => "SpiderSurge";
-        public override bool OnByDefault => false;
+        public override bool OnByDefault => true;
+        public override bool CanDisable => false;
         public override bool HasSettings => true;
 
         protected internal override void OnStart()
@@ -28,14 +29,15 @@ namespace SpiderSurge
             TelemetryConsentUI.Initialize();
             PlayerControlSettings.Initialize();
 
-            Settings.Lock(ModConfig.SurgeModeKey, () => SurgeSettingsPage.RunActive, "Surge Mode can't change while a Survival run is active, so it kept its value.");
+            SurgeLobbyPlatform.EnsureCreated();
             Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
-            Settings.Unlock(ModConfig.SurgeModeKey);
+            SurgeLobbyPlatform.Remove();
+            SurgeGameModeManager.SelectMode(false);
 
             foreach (string name in Objects)
             {
@@ -61,10 +63,6 @@ namespace SpiderSurge
             if (key == null)
             {
                 ModConfig.ForgetColors();
-            }
-            if (Settings.Affects(key, ModConfig.SurgeModeKey))
-            {
-                GameModePatches.UpdateSurgeSurvivalText();
             }
         }
     }

@@ -7,21 +7,10 @@ namespace SpiderSurge
         private static readonly string[] Colors = { "#00FF00", "#FF0000", "#87CEEB", "#FFFF00", "#FFA500", "#FF00FF", "#00FFFF", "#FFFFFF" };
         private static readonly string[] ColorNames = { "Green", "Red", "Sky blue", "Yellow", "Orange", "Magenta", "Cyan", "White" };
 
-        internal static bool RunActive => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive();
-
         public static void Build(SettingsPage page)
         {
             page.Title("Surge");
-            page.Paragraph($"<size=115%><b>Surge Mode:</b> {(ModConfig.enableSurgeMode ? $"<color={SettingsPage.Green}>Enabled</color>" : $"<color={SettingsPage.Red}>Disabled</color>")}</size>");
-            page.Note("Surge Mode replaces Wave Survival with Surge Survival. Changes apply to the next run.");
-            if (RunActive)
-            {
-                page.Warning("Surge Mode can't be changed while a Survival run is active.");
-            }
-            else
-            {
-                page.Checkbox("Surge Mode", ModConfig.enableSurgeMode, SetSurgeMode);
-            }
+            page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
 
             page.Spacer();
             page.Header("Play");
@@ -58,16 +47,5 @@ namespace SpiderSurge
             page.Button("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
         }
 
-        private static void SetSurgeMode(bool value)
-        {
-            if (RunActive)
-            {
-                Announcer.InformationPopup("Cannot change Surge Mode while a Survival run is active.");
-                SettingsPage.RefreshOpen();
-                return;
-            }
-
-            ModConfig.SetEnableSurgeMode(value);
-        }
     }
 }
