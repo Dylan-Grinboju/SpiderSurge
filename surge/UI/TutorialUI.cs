@@ -1,3 +1,4 @@
+using SpiderSurge.Common;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,38 +6,26 @@ namespace SpiderSurge
 {
     public class TutorialUI : MonoBehaviour
     {
+        private const string Gold = "#FFD24A";
+        private const string Cyan = "#00FFFF";
+
         private static TutorialUI _instance;
         public static TutorialUI Instance => _instance;
 
         private bool isVisible = false;
-        private bool stylesInitialized = false;
+        private int fontVersion = -1;
+        private float scale = 1f;
+        private Vector2 scrollPosition = Vector2.zero;
 
         #region GUI Styles
-        private GUIStyle backgroundStyle;
+        private GUIStyle captionStyle;
+        private GUIStyle titleStyle;
         private GUIStyle headerStyle;
         private GUIStyle labelStyle;
-        private GUIStyle valueStyle;
-        private GUIStyle cardStyle;
-        private GUIStyle titleStyle;
         private GUIStyle keyStyle;
-        private GUIStyle greenStyle;
-        private GUIStyle blueStyle;
-        private GUIStyle redStyle;
-        #endregion
-
-        #region Colors
-        private static readonly Color Blue = new Color(0.259f, 0.522f, 0.957f, 1f);
-        private static readonly Color Red = new Color(1f, 0.341f, 0.133f, 1f);
-        private static readonly Color Green = new Color(0.298f, 0.686f, 0.314f, 1f);
-        private static readonly Color White = new Color(0.9f, 0.9f, 0.9f, 1f);
-        private static readonly Color DarkGray = new Color(0.10f, 0.10f, 0.10f, 0.98f);
-        private static readonly Color MediumGray = new Color(0.20f, 0.20f, 0.20f, 0.95f);
-        private static readonly Color Orange = new Color(1f, 0.647f, 0f, 1f);
-        #endregion
-
-        #region Textures
-        private Texture2D darkTexture;
-        private Texture2D mediumTexture;
+        private GUIStyle valueStyle;
+        private GUIStyle footerStyle;
+        private GUIStyle cardStyle;
         #endregion
 
         public static void Initialize()
@@ -62,7 +51,6 @@ namespace SpiderSurge
                 return;
             }
             _instance = this;
-            CreateTextures();
         }
 
         private void Start()
@@ -97,80 +85,40 @@ namespace SpiderSurge
             isVisible = false;
         }
 
-        private void CreateTextures()
-        {
-            darkTexture = new Texture2D(1, 1);
-            darkTexture.SetPixel(0, 0, DarkGray);
-            darkTexture.Apply();
-
-            mediumTexture = new Texture2D(1, 1);
-            mediumTexture.SetPixel(0, 0, MediumGray);
-            mediumTexture.Apply();
-        }
+        private int S(float value) => Mathf.RoundToInt(value * scale);
 
         private void InitializeStyles()
         {
-            if (stylesInitialized) return;
+            Hud.EnsureFonts();
+            float screenScale = Mathf.Clamp(Screen.height / 1080f, 0.75f, 3f);
+            if (fontVersion == Hud.FontVersion && cardStyle != null && Mathf.Approximately(scale, screenScale)) return;
+            scale = screenScale;
 
-            backgroundStyle = new GUIStyle { normal = { background = darkTexture } };
-
-            titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 48,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Orange },
-                alignment = TextAnchor.MiddleCenter,
-                richText = true
-            };
-
-            headerStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 32,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Blue },
-                padding = new RectOffset(10, 10, 10, 5),
-                richText = true
-            };
-
-            labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 22,
-                normal = { textColor = White },
-                padding = new RectOffset(20, 10, 5, 5),
-                wordWrap = true,
-                richText = true
-            };
-
-            valueStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 22,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Green },
-                padding = new RectOffset(5, 5, 5, 5),
-                richText = true
-            };
-
-            keyStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 22,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Orange },
-                padding = new RectOffset(5, 5, 5, 5),
-                richText = true
-            };
+            captionStyle = Hud.Style(S(16), bold: true, anchor: TextAnchor.MiddleCenter);
+            captionStyle.normal.textColor = Hud.Muted;
+            titleStyle = Hud.Style(S(52), bold: true, anchor: TextAnchor.MiddleCenter);
+            headerStyle = Hud.Style(S(24), bold: true);
+            headerStyle.normal.textColor = Hud.Pink;
+            headerStyle.padding = new RectOffset(0, 0, 0, S(8));
+            labelStyle = Hud.Style(S(20), wrap: true);
+            labelStyle.padding = new RectOffset(0, 0, S(4), S(4));
+            keyStyle = Hud.Style(S(20), bold: true, wrap: true);
+            keyStyle.normal.textColor = Hud.Muted;
+            keyStyle.padding = new RectOffset(0, 0, S(4), S(4));
+            valueStyle = Hud.Style(S(20), bold: true);
+            valueStyle.normal.textColor = Hud.Text;
+            valueStyle.padding = new RectOffset(0, 0, S(4), S(4));
+            footerStyle = Hud.Style(S(16), bold: true, anchor: TextAnchor.MiddleCenter);
+            footerStyle.normal.textColor = Hud.Muted;
 
             cardStyle = new GUIStyle
             {
-                normal = { background = mediumTexture },
-                padding = new RectOffset(20, 20, 15, 15),
-                margin = new RectOffset(10, 10, 10, 10)
+                normal = { background = Hud.Solid(Hud.Card) },
+                padding = new RectOffset(S(28), S(28), S(22), S(22)),
+                margin = new RectOffset(0, 0, 0, S(16))
             };
 
-            greenStyle = new GUIStyle(labelStyle) { normal = { textColor = Green }, fontStyle = FontStyle.Bold, richText = true };
-            blueStyle = new GUIStyle(labelStyle) { normal = { textColor = Blue }, fontStyle = FontStyle.Bold, richText = true };
-            redStyle = new GUIStyle(labelStyle) { normal = { textColor = Red }, fontStyle = FontStyle.Bold, richText = true };
-
-            stylesInitialized = true;
+            fontVersion = Hud.FontVersion;
         }
 
         private void OnGUI()
@@ -190,39 +138,42 @@ namespace SpiderSurge
             float x = Screen.width * marginPercent;
             float y = Screen.height * marginPercent;
 
+            Hud.Fill(new Rect(0f, 0f, Screen.width, Screen.height), Hud.WithAlpha(Hud.Dimmer, 0.6f));
             Rect rect = new Rect(x, y, width, height);
-            GUI.Box(rect, "", backgroundStyle);
+            Hud.Fill(rect, Hud.Ink);
+            Hud.Fill(new Rect(x, y, width, S(3)), Hud.Pink);
 
-            GUILayout.BeginArea(new Rect(x + 30, y + 20, width - 60, height - 40));
+            GUILayout.BeginArea(new Rect(x + S(40), y + S(24), width - S(80), height - S(48)));
 
             // Fixed top part
-            GUILayout.Label("SPIDER SURGE MOD", titleStyle);
-            GUILayout.Space(10);
+            GUILayout.Label("SURVIVAL GUIDE", captionStyle);
+            GUILayout.Label(Hud.Logo, titleStyle);
+            GUILayout.Space(S(18));
 
             // Scrollable content
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition, false, false);
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition, false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
             GUILayout.BeginVertical();
 
-            DrawSection("General Information", new string[] {
+            DrawSection("General information", new string[] {
                 "• This mod overrides the standard Survival Mode with new wave logic and enemies.",
                 "• Highscores are kept separately from the vanilla game. It is still recommended to backup your save files.",
-                "• <b>To Disable:</b> Turn off Surge Mode in the Mods menu (Mods > SpiderSurge > Surge settings)."
+                "• <b>To turn it off:</b> uncheck Surge Mode in <b>Mods > SpiderSurge > Surge settings</b>."
             });
 
-            DrawSection("ABILITIES", new string[] {
+            DrawSection("Abilities", new string[] {
                 "• Special Abilities perks appear at the first perk choice.",
                 "• Special Ultimate upgrades appear at wave 30.",
                 "• Choose wisely, Ultimates have longer cooldowns but high impact!",
             });
 
-            DrawSection("HOW TO ACTIVATE ABILITIES", new string[] {
-                "Ability:", "Q (Keyboard) / L1 (Gamepad)",
-                "Ultimate Ability:", "C (Keyboard) / L3 + R3 (Gamepad)",
-                "Config:", "Set 'UseDpadForUltimate' to <b>true</b> to use D-pad."
+            DrawSection("How to activate abilities", new string[] {
+                "Ability", "Q (Keyboard) / L1 (Gamepad)",
+                "Ultimate Ability", "C (Keyboard) / L3 + R3 (Gamepad)",
+                "D-pad", "Turn on <b>Ultimate on the D-pad</b> in Surge settings to cast it with any D-pad direction."
             }, true);
 
-            DrawSection("CUSTOMIZE CONTROLS", new string[] {
-                "Set New Ability Button on a Gamepad: While holding Menu/Start, Double-Tap any button.",
+            DrawSection("Customize controls", new string[] {
+                "<b>Set a new ability button on a gamepad:</b> While holding Menu/Start, Double-Tap any button.",
                 "<b>Reset to Default:</b> Hold <b>Menu/Start</b> for <b>3 seconds</b>.",
                 "• Customizable Per-Player. Settings persist until you leave or reset."
             });
@@ -236,75 +187,62 @@ namespace SpiderSurge
 
             // Fixed bottom part
             GUILayout.FlexibleSpace();
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            GUILayout.Label("<b>Press [ ` ] (Backtick) to toggle this UI at any time</b>", keyStyle);
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-            GUILayout.Space(10);
+            GUILayout.Space(S(10));
+            GUILayout.Label($"PRESS <color={Hud.PinkHex}>[ ` ]</color> (BACKTICK) TO TOGGLE THIS GUIDE AT ANY TIME", footerStyle);
 
             GUILayout.EndArea();
         }
-
-        private Vector2 scrollPosition = Vector2.zero;
 
         private void DrawIndicatorSection()
         {
             GUILayout.BeginVertical(cardStyle);
             GUILayout.Label("ABILITY INDICATOR", headerStyle);
 
-            float dotWidth = 25f;
-            float statusWidth = 140f;
+            DrawIndicatorRow(ModConfig.IndicatorAvailableColor, "Ready", "Ability is ready to use.");
+            DrawIndicatorRow(ModConfig.IndicatorActiveColor, "Active", "Ability is currently active.");
+            DrawIndicatorRow(ModConfig.IndicatorCooldownColor, "Cooldown", "Ability is on cooldown.");
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("•", labelStyle, GUILayout.Width(dotWidth));
-            GUILayout.Label("Green:", greenStyle, GUILayout.Width(statusWidth));
-            GUILayout.Label("Ability is ready to use.", labelStyle);
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("•", labelStyle, GUILayout.Width(dotWidth));
-            GUILayout.Label("Blue:", blueStyle, GUILayout.Width(statusWidth));
-            GUILayout.Label("Ability is currently active.", labelStyle);
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("•", labelStyle, GUILayout.Width(dotWidth));
-            GUILayout.Label("Red:", redStyle, GUILayout.Width(statusWidth));
-            GUILayout.Label("Ability is on cooldown.", labelStyle);
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(10);
-            GUILayout.Label("• You can customize indicator <b>radius, offset, and colors</b> in the config YAML.", labelStyle);
+            GUILayout.Space(S(10));
+            GUILayout.Label("• Change the indicator's <b>size, offset and colors</b> in <b>Mods > SpiderSurge > Surge settings</b>.", labelStyle);
 
             GUILayout.EndVertical();
+        }
+
+        private void DrawIndicatorRow(Color color, string status, string meaning)
+        {
+            GUILayout.BeginHorizontal();
+            Rect dot = GUILayoutUtility.GetRect(S(26), S(32), GUILayout.Width(S(26)));
+            Hud.Fill(new Rect(dot.x, dot.center.y - S(7), S(14), S(14)), color);
+            GUILayout.Label(status, keyStyle, GUILayout.Width(S(160)));
+            GUILayout.Label(meaning, labelStyle);
+            GUILayout.EndHorizontal();
         }
 
         private void DrawSynergySection()
         {
             GUILayout.BeginVertical(cardStyle);
             GUILayout.Label("SYNERGY PERKS", headerStyle);
-            GUILayout.Label("Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color=#00FFFF>Synergized</color> in the perk selection.", labelStyle);
-            GUILayout.Space(10);
+            GUILayout.Label($"Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color={Cyan}>Synergized</color> in the perk selection.", labelStyle);
+            GUILayout.Space(S(10));
 
-            GUILayout.Label("<b><color=#FFD700>Null Field</color></b> + Shield Perks:", labelStyle);
+            GUILayout.Label($"<b><color={Gold}>Null Field</color></b> + Shield Perks:", labelStyle);
             GUILayout.Label("• <b>Start Shields</b>, <b>Positive Encouragement</b>, or <b>Safety Net</b>:", labelStyle);
             GUILayout.Label("  → If you have a shield when activating Null Field and avoid getting hit, you keep the shield after immunity ends.", labelStyle);
-            GUILayout.Space(8);
+            GUILayout.Space(S(8));
 
-            GUILayout.Label("<b><color=#FFD700>Bottomless Clip</color></b> + Efficiency:", labelStyle);
+            GUILayout.Label($"<b><color={Gold}>Bottomless Clip</color></b> + Efficiency:", labelStyle);
             GUILayout.Label("• No Efficiency: When the effect ends or weapon is dropped, the weapon is <b>disintegrated</b>.", labelStyle);
             GUILayout.Label("• <b>Efficiency Lv1</b>: Keep weapon ammo at its original pre-effect value.", labelStyle);
             GUILayout.Label("• <b>Efficiency Lv2</b>: Held weapon is kept at least at <b>50%</b> capacity.", labelStyle);
             GUILayout.Label("  → If dropped/thrown, both Lv1/Lv2 keep original pre-effect ammo.", labelStyle);
-            GUILayout.Space(8);
+            GUILayout.Space(S(8));
 
-            GUILayout.Label("<b><color=#FFD700>Kinetic Pulse</color></b> + Explosion Perks:", labelStyle);
+            GUILayout.Label($"<b><color={Gold}>Kinetic Pulse</color></b> + Explosion Perks:", labelStyle);
             GUILayout.Label("• <b>Bigger Boom</b>: Increases <b>knockback strength</b>.", labelStyle);
             GUILayout.Label("• <b>Too Cool</b>: Increases <b>death radius</b> of the ultimate.", labelStyle);
-            GUILayout.Space(8);
+            GUILayout.Space(S(8));
 
-            GUILayout.Label("<b><color=#FFD700>Pocket Dimension</color></b> + Weapon Perks:", labelStyle);
+            GUILayout.Label($"<b><color={Gold}>Pocket Dimension</color></b> + Weapon Perks:", labelStyle);
             GUILayout.Label("• <b>More Guns</b>, <b>More Boom</b>, or <b>More Particles</b>:", labelStyle);
             GUILayout.Label("  → <b>Level 1</b>: Keep matching stored weapons between rounds.", labelStyle);
             GUILayout.Label("  → <b>Level 2</b>: Keep matching stored weapons even after <b>death</b>.", labelStyle);
@@ -316,18 +254,18 @@ namespace SpiderSurge
         private void DrawSection(string title, string[] content, bool isKeyPairs = false)
         {
             GUILayout.BeginVertical(cardStyle);
-            GUILayout.Label(title, headerStyle);
+            GUILayout.Label(title.ToUpperInvariant(), headerStyle);
 
             if (isKeyPairs)
             {
-                float keyWidth = 400f;
+                float keyWidth = S(260);
                 for (int i = 0; i < content.Length; i += 2)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(content[i], labelStyle, GUILayout.Width(keyWidth));
+                    GUILayout.Label(content[i], keyStyle, GUILayout.Width(keyWidth));
                     if (i + 1 < content.Length)
                     {
-                        GUILayout.Label(content[i + 1], valueStyle);
+                        GUILayout.Label(content[i + 1], content[i + 1].Contains("<") ? labelStyle : valueStyle);
                     }
                     GUILayout.EndHorizontal();
                 }
@@ -341,7 +279,7 @@ namespace SpiderSurge
                     {
                         var parts = line.Split(new[] { ':' }, 2);
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(parts[0] + ":", keyStyle, GUILayout.Width(350));
+                        GUILayout.Label(parts[0] + ":", keyStyle, GUILayout.Width(S(350)));
                         GUILayout.Label(parts.Length > 1 ? parts[1].Trim() : string.Empty, labelStyle);
                         GUILayout.EndHorizontal();
                     }
@@ -357,8 +295,6 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
-            if (darkTexture != null) Destroy(darkTexture);
-            if (mediumTexture != null) Destroy(mediumTexture);
             _instance = null;
         }
     }

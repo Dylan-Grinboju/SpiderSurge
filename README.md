@@ -1,6 +1,14 @@
 # SpiderSurge
 
-A mod for Spiderheck that brings together four parts in one file. Each part can be turned on or off from the game's Mods menu.
+**Abilities, live stats and team versus for SpiderHeck, all in one mod.**
+
+[![Latest release](https://img.shields.io/github/v/release/Dylan-Grinboju/SpiderSurge?label=release&color=ff0061)](https://github.com/Dylan-Grinboju/SpiderSurge/releases)
+[![Downloads](https://img.shields.io/github/downloads/Dylan-Grinboju/SpiderSurge/total?color=ff0061)](https://github.com/Dylan-Grinboju/SpiderSurge/releases)
+[![Silk](https://img.shields.io/badge/Silk-0.7.0-ff0061)](https://github.com/SilkModding/Silk)
+
+<img width="2559" height="1439" alt="Choosing a Surge ability" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
+
+SpiderSurge is made of four parts. Each one can be turned on or off from the game's Mods menu.
 
 | Part | What it does | On after installing |
 |---|---|---|
@@ -11,8 +19,53 @@ A mod for Spiderheck that brings together four parts in one file. Each part can 
 
 Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
 
+## A look around
 
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
+### Stats
+
+A small live window sits in a corner of the screen while you play: each spider's kills and deaths, next to its color. It fades a spider's row while it's dead. Drag it anywhere with the mouse.
+
+<img width="680" alt="The small stats window next to the game's HUD" src="docs/images/stats-small-window-closeup.png" />
+
+The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). Green is good, pink is a hit you took, amber is friendly fire.
+
+<img width="1600" alt="The big stats window during a Survival run" src="docs/images/stats-big-window.jpg" />
+
+When a run with two or more players ends, everyone gets fun titles based on how they played. The cards are revealed one by one in the lobby.
+
+<img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
+
+### Surge
+
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it; press the backtick key to open it at any time.
+
+<img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
+
+### Teams
+
+Split the lobby into teams and fight until one team is left standing. Spiders take their team's color, teammates spawn together, and the win screen shows each team's score.
+
+<img width="1600" alt="A team versus match" src="docs/images/teams-versus.jpg" />
+
+### Settings in the game
+
+Everything can be changed from the pause menu, under **Mods** > **SpiderSurge**: turn parts on or off, and open each part's settings page.
+
+<img width="1600" alt="The SpiderSurge page in the Mods menu" src="docs/images/mods-menu.jpg" />
+
+## Controls
+
+| What | Keyboard | Controller |
+|---|---|---|
+| Small stats window | **F1** | D-pad (cycles the windows) |
+| Big stats window | **F2** | |
+| Titles | **F3** (also skips the reveal) | |
+| Surge ability | **Q** | **L1**, or any button you pick: hold **Start** and double-tap it |
+| Surge ultimate | **C** | **L3 + R3** together, or any D-pad direction if you turn that on |
+| Surge guide | **`** (backtick) | |
+| Switch team in the lobby | **T** | **Y / Triangle** |
+
+On a controller you can switch the stats windows with a stick press instead of the D-pad. While Surge's ultimate is on the D-pad, only the stick press switches them.
 
 ## Installation
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 using System.Collections.Generic;
 
@@ -9,32 +10,40 @@ namespace StatsMod
         #region Grid Layout Parameters
         public int MAX_TITLES = 8;
         public int GRID_COLUMNS = 4;
-        public int GRID_ROWS = 2;
-        public float CARD_WIDTH = 350f;
-        public float CARD_HEIGHT = 300f;
-        public float CARD_SPACING_X = 50f;
-        public float CARD_SPACING_Y = 100f;
-        public float GRID_MARGIN_X = 0f;
-        public float GRID_MARGIN_Y = 0f;
-        public float HEADER_HEIGHT = 100f;
+        public float CARD_WIDTH = 330f;
+        public float CARD_HEIGHT = 240f;
+        public float CARD_SPACING_X = 26f;
+        public float CARD_SPACING_Y = 26f;
+        public float CARD_PADDING = 22f;
+        public float CARD_BAND_HEIGHT = 6f;
+        public float HEADER_HEIGHT = 136f;
+        public float HEADER_TO_GRID_SPACING = 30f;
+        public float BASE_MAX_WIDTH_PERCENT = 0.94f;
+        public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
 
-        // Font sizes for card elements
-        public int TITLE_FONT_SIZE = 32;
-        public int DESCRIPTION_FONT_SIZE = 22;
-        public int PLAYER_NAME_FONT_SIZE = 24;
+        public int CAPTION_FONT_SIZE = 18;
+        public int HEADER_FONT_SIZE = 64;
+        public int TITLE_FONT_SIZE = 26;
+        public int DESCRIPTION_FONT_SIZE = 19;
+        public int PLAYER_NAME_FONT_SIZE = 20;
+        public int EMPTY_FONT_SIZE = 22;
 
-        // Card element sizing
-        public float PLAYER_SQUARE_SIZE = 30f;
-        public float BORDER_SIZE = 5f;
-
-        // Card internal spacing
+        public float PLAYER_SQUARE_SIZE = 18f;
+        public float BORDER_SIZE = 4f;
+        public float SQUARE_TO_NAME_SPACING = 10f;
         public float TITLE_TO_DESCRIPTION_SPACING = 10f;
-        public float DESCRIPTION_TO_SQUARE_SPACING = 5f;
-        public float SQUARE_TO_NAME_SPACING = 8f;
 
-        // Banner constraints
-        public float BASE_MARGIN_PERCENT = 0.05f;
-        public float BASE_MAX_HEIGHT_PERCENT = 0.95f;
+        public float REVEAL_SECONDS = 0.4f;
+        public float REVEAL_RISE = 28f;
+        #endregion
+
+        #region Text Labels
+        public string LABEL_HEADER = "TITLES";
+        public string LABEL_RUN_OVER = "RUN COMPLETE";
+        public string LABEL_MATCH_OVER = "MATCH COMPLETE";
+        public string LABEL_LAST_SESSION = "LAST SESSION";
+        public string LABEL_NO_TITLES = "No titles yet";
+        public string LABEL_NO_TITLES_NOTE = "Titles are handed out at the end of a run with two or more players.";
         #endregion
 
         #region UI State
@@ -44,25 +53,25 @@ namespace StatsMod
         private int titlesToShow = 0;
         private float animationTimer = 0f;
         private bool hasAnimationPlayed = false;
+        private float[] revealedAt;
         #endregion
 
         #region GUI Styles
-        private GUIStyle backgroundStyle;
+        private GUIStyle captionStyle;
         private GUIStyle headerStyle;
         private GUIStyle cardTitleStyle;
         private GUIStyle cardDescriptionStyle;
         private GUIStyle cardPlayerNameStyle;
-        private GUIStyle dynamicPlayerNameStyle; // Reused for dynamic player colors
-        private GUIStyle noTitlesStyle;
-
-        private int stylesVersion = -1;
-        private Texture2D whiteTexture;
+        private GUIStyle emptyStyle;
+        private GUIStyle emptyNoteStyle;
+        private int fontVersion = -1;
         #endregion
 
         #region Initialization
         public void Initialize()
         {
-            CreateTextures();
+            revealedAt = new float[MAX_TITLES];
+            ShowAllCards();
             TitlesManager.Instance.OnTitlesUpdated += UpdateTitlesCache;
             UpdateTitlesCache();
             Logger.LogInfo("TitlesUI initialized");
@@ -72,14 +81,6 @@ namespace StatsMod
         {
             _cachedTitles = TitlesManager.Instance.CurrentTitles;
             hasAnimationPlayed = false;
-        }
-
-        private void CreateTextures()
-        {
-            whiteTexture = new Texture2D(1, 1);
-            whiteTexture.SetPixel(0, 0, Color.white);
-            whiteTexture.Apply();
-            whiteTexture.hideFlags = HideFlags.HideAndDontSave;
         }
         #endregion
 
@@ -104,6 +105,10 @@ namespace StatsMod
             if (!ModConfig.TitlesEnabled) return;
             isDisplayVisible = true;
             titlesToShow = TitlesManager.Instance.TitleCount;
+            if (!isAnimating)
+            {
+                ShowAllCards();
+            }
         }
 
         public void HideDisplay()
@@ -168,11 +173,23 @@ namespace StatsMod
             isAnimating = true;
             titlesToShow = 0;
             animationTimer = 0f;
+            for (int i = 0; i < revealedAt.Length; i++)
+            {
+                revealedAt[i] = float.NaN;
+            }
         }
 
         private void StopAnimation()
         {
             isAnimating = false;
+        }
+
+        private void ShowAllCards()
+        {
+            for (int i = 0; i < revealedAt.Length; i++)
+            {
+                revealedAt[i] = float.NegativeInfinity;
+            }
         }
 
         private void Update()
@@ -199,6 +216,16 @@ namespace StatsMod
                 isAnimating = false;
             }
         }
+
+        // 0 when the card is first drawn, 1 once its fade-in is done.
+        private float RevealProgress(int index)
+        {
+            if (float.IsNaN(revealedAt[index]))
+            {
+                revealedAt[index] = Time.unscaledTime;
+            }
+            return REVEAL_SECONDS <= 0f ? 1f : Hud.Ease((Time.unscaledTime - revealedAt[index]) / REVEAL_SECONDS);
+        }
         #endregion
 
         #region Public Methods
@@ -213,36 +240,34 @@ namespace StatsMod
         #region Style Management
         private void InitializeStyles()
         {
-            if (stylesVersion == UIManager.StyleVersion) return;
+            Hud.EnsureFonts();
+            if (fontVersion == Hud.FontVersion && captionStyle != null) return;
 
-            backgroundStyle = new GUIStyle()
-            {
-                normal = { background = UIManager.Instance.GetDarkTexture() }
-            };
+            captionStyle = Hud.Style(CAPTION_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter);
+            headerStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter);
+            cardTitleStyle = Hud.Style(TITLE_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter, wrap: true);
+            cardDescriptionStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.UpperCenter, wrap: true);
+            cardPlayerNameStyle = Hud.Style(PLAYER_NAME_FONT_SIZE, bold: true);
+            emptyStyle = Hud.Style(EMPTY_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
+            emptyNoteStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.MiddleCenter, wrap: true);
 
-            headerStyle = UIManager.Instance.CreateHeaderStyle(64);
-            headerStyle.alignment = TextAnchor.MiddleCenter;
-            headerStyle.normal.textColor = UIManager.Blue;
+            fontVersion = Hud.FontVersion;
+        }
 
-            cardTitleStyle = UIManager.Instance.CreateHeaderStyle(TITLE_FONT_SIZE);
-            cardTitleStyle.alignment = TextAnchor.UpperCenter;
-            cardTitleStyle.normal.textColor = UIManager.Orange;
-            cardTitleStyle.wordWrap = true;
+        private void ApplyScale(float scale)
+        {
+            Resize(captionStyle, CAPTION_FONT_SIZE, scale);
+            Resize(headerStyle, HEADER_FONT_SIZE, scale);
+            Resize(cardTitleStyle, TITLE_FONT_SIZE, scale);
+            Resize(cardDescriptionStyle, DESCRIPTION_FONT_SIZE, scale);
+            Resize(cardPlayerNameStyle, PLAYER_NAME_FONT_SIZE, scale);
+            Resize(emptyStyle, EMPTY_FONT_SIZE, scale);
+            Resize(emptyNoteStyle, DESCRIPTION_FONT_SIZE, scale);
+        }
 
-            cardDescriptionStyle = UIManager.Instance.CreateValueStyle(DESCRIPTION_FONT_SIZE);
-            cardDescriptionStyle.alignment = TextAnchor.UpperCenter;
-            cardDescriptionStyle.normal.textColor = UIManager.Gray;
-            cardDescriptionStyle.wordWrap = true;
-
-            cardPlayerNameStyle = UIManager.Instance.CreateValueStyle(PLAYER_NAME_FONT_SIZE);
-            cardPlayerNameStyle.alignment = TextAnchor.MiddleCenter;
-
-            // Create reusable style for dynamic player colors
-            dynamicPlayerNameStyle = new GUIStyle(cardPlayerNameStyle);
-            noTitlesStyle = new GUIStyle(cardPlayerNameStyle) { normal = { textColor = UIManager.Gray } };
-
-
-            stylesVersion = UIManager.StyleVersion;
+        private static void Resize(GUIStyle style, int baseSize, float scale)
+        {
+            style.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * scale));
         }
         #endregion
 
@@ -254,153 +279,116 @@ namespace StatsMod
             InitializeStyles();
 
             Color originalColor = GUI.color;
-            float opacity = 1.0f;
-            GUI.color = new Color(originalColor.r, originalColor.g, originalColor.b, opacity);
+            GUI.color = new Color(originalColor.r, originalColor.g, originalColor.b, 1f);
 
-            float marginX = Screen.width * BASE_MARGIN_PERCENT;
-            float contentHeight = CalculateContentHeight();
-            float backgroundHeight = Mathf.Min(contentHeight, Screen.height * BASE_MAX_HEIGHT_PERCENT);
-            float backgroundY = (Screen.height - backgroundHeight) * 0.5f;
+            Hud.Fill(new Rect(0f, 0f, Screen.width, Screen.height), Hud.Dimmer);
 
-            Rect backgroundRect = new Rect(marginX, backgroundY, Screen.width - (marginX * 2), backgroundHeight);
-            GUI.Box(backgroundRect, "", backgroundStyle);
+            bool hasTitles = TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0;
+            if (_cachedTitles == null) _cachedTitles = TitlesManager.Instance.CurrentTitles;
+            int titleCount = hasTitles ? Mathf.Min(_cachedTitles.Count, MAX_TITLES) : 0;
+            int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
 
-            GUILayout.BeginArea(backgroundRect);
+            float baseGridWidth = GRID_COLUMNS * CARD_WIDTH + (GRID_COLUMNS - 1) * CARD_SPACING_X;
+            float baseGridHeight = rows == 0 ? 120f : rows * CARD_HEIGHT + (rows - 1) * CARD_SPACING_Y;
+            float baseHeight = HEADER_HEIGHT + HEADER_TO_GRID_SPACING + baseGridHeight;
 
-            bool showingPreviousSessionTitles = GameSessionManager.Instance.IsActive &&
-                                               TitlesManager.Instance.HasGameEndedTitles &&
-                                               TitlesManager.Instance.TitleCount > 0;
-            string headerText = showingPreviousSessionTitles ? "Titles - Last Session" : "Titles";
-            GUILayout.Label(headerText, headerStyle);
-            GUILayout.Space(UIManager.ScaleValue(40f));
+            float scale = UIManager.UIScaleFactor;
+            scale = Mathf.Min(scale, Screen.width * BASE_MAX_WIDTH_PERCENT / baseGridWidth, Screen.height * BASE_MAX_HEIGHT_PERCENT / baseHeight);
+            ApplyScale(scale);
 
-            if (!TitlesManager.Instance.HasGameEndedTitles || TitlesManager.Instance.TitleCount == 0)
+            float top = (Screen.height - baseHeight * scale) * 0.5f;
+            string caption = !hasTitles ? ""
+                : GameSessionManager.Instance.IsActive ? LABEL_LAST_SESSION
+                : GameSessionManager.Instance.LastGameMode == GameMode.Versus ? LABEL_MATCH_OVER : LABEL_RUN_OVER;
+            DrawHeader(new Rect(0f, top, Screen.width, HEADER_HEIGHT * scale), caption, scale);
+
+            float gridTop = top + (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale;
+            if (titleCount == 0)
             {
-                GUILayout.Label("No titles to display", noTitlesStyle);
+                float lineHeight = EMPTY_FONT_SIZE * 2f * scale;
+                Hud.Label(new Rect(0f, gridTop, Screen.width, lineHeight), LABEL_NO_TITLES, emptyStyle, Hud.Text);
+                Hud.Label(new Rect(Screen.width * 0.25f, gridTop + lineHeight, Screen.width * 0.5f, lineHeight), LABEL_NO_TITLES_NOTE, emptyNoteStyle, Hud.Muted);
             }
             else
             {
-                DrawTitles(backgroundRect.width);
+                DrawTitles(gridTop, Mathf.Min(titlesToShow, titleCount), scale);
             }
-
-            GUILayout.EndArea();
 
             GUI.color = originalColor;
         }
 
-        private float CalculateContentHeight()
+        private void DrawHeader(Rect header, string caption, float scale)
         {
-            float headerHeight = UIManager.ScaleValue(HEADER_HEIGHT);
+            float captionHeight = CAPTION_FONT_SIZE * 2.2f * scale;
+            Hud.Label(new Rect(header.x, header.y, header.width, captionHeight), caption, captionStyle, Hud.Pink);
+            Hud.Label(new Rect(header.x, header.y + captionHeight, header.width, header.height - captionHeight), LABEL_HEADER, headerStyle, Hud.Text);
 
-            if (!TitlesManager.Instance.HasGameEndedTitles || TitlesManager.Instance.TitleCount == 0)
-            {
-                return headerHeight + UIManager.ScaleValue(100f);
-            }
-
-            float gridHeight = UIManager.ScaleValue(GRID_ROWS * CARD_HEIGHT + (GRID_ROWS - 1) * CARD_SPACING_Y);
-            return headerHeight + gridHeight + UIManager.ScaleValue(40f);
+            float lineWidth = 64f * scale;
+            Hud.Fill(new Rect((Screen.width - lineWidth) * 0.5f, header.yMax - 4f * scale, lineWidth, 4f * scale), Hud.Pink);
         }
 
-        private void DrawTitles(float contentWidth)
+        private void DrawTitles(float gridTop, int count, float scale)
         {
-            if (_cachedTitles == null) _cachedTitles = TitlesManager.Instance.CurrentTitles;
             var titles = _cachedTitles;
-            int count = Mathf.Min(titlesToShow, titles.Count, MAX_TITLES);
-            if (count == 0)
+            float cardWidth = CARD_WIDTH * scale;
+            float cardHeight = CARD_HEIGHT * scale;
+            float spacingX = CARD_SPACING_X * scale;
+            float spacingY = CARD_SPACING_Y * scale;
+            int total = Mathf.Min(titles.Count, MAX_TITLES);
+
+            for (int index = 0; index < count; index++)
             {
-                return;
-            }
+                int row = index / GRID_COLUMNS;
+                int col = index % GRID_COLUMNS;
+                int inRow = Mathf.Min(GRID_COLUMNS, total - row * GRID_COLUMNS);
+                float rowWidth = inRow * cardWidth + (inRow - 1) * spacingX;
+                float x = (Screen.width - rowWidth) * 0.5f + col * (cardWidth + spacingX);
+                float y = gridTop + row * (cardHeight + spacingY);
 
+                float reveal = RevealProgress(index);
+                Rect card = new Rect(x, y + (1f - reveal) * REVEAL_RISE * scale, cardWidth, cardHeight);
 
-            float cardWidth = UIManager.ScaleValue(CARD_WIDTH);
-            float cardHeight = UIManager.ScaleValue(CARD_HEIGHT);
-            float spacingX = UIManager.ScaleValue(CARD_SPACING_X);
-            float spacingY = UIManager.ScaleValue(CARD_SPACING_Y);
-            float gridMarginX = UIManager.ScaleValue(GRID_MARGIN_X);
-            float gridMarginY = UIManager.ScaleValue(GRID_MARGIN_Y);
-
-            float totalGridWidth = (GRID_COLUMNS * cardWidth) + ((GRID_COLUMNS - 1) * spacingX);
-            float availableWidth = contentWidth - (gridMarginX * 2);
-            float startX = gridMarginX + ((availableWidth - totalGridWidth) / 2f);
-
-            GUILayout.Space(gridMarginY);
-
-            int titleIndex = 0;
-
-            for (int row = 0; row < GRID_ROWS; row++)
-            {
-                if (titleIndex >= count) break;
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(startX);
-
-                for (int col = 0; col < GRID_COLUMNS; col++)
-                {
-                    if (titleIndex >= count) break;
-
-                    var title = titles[titleIndex];
-                    DrawTitleCard(title, cardWidth, cardHeight);
-                    titleIndex++;
-
-                    if (col < GRID_COLUMNS - 1 && titleIndex < count)
-                        GUILayout.Space(spacingX);
-                }
-
-                GUILayout.EndHorizontal();
-
-                if (row < GRID_ROWS - 1 && titleIndex < count)
-                    GUILayout.Space(spacingY);
+                Color old = GUI.color;
+                GUI.color = new Color(old.r, old.g, old.b, old.a * reveal);
+                DrawTitleCard(titles[index], card, scale);
+                GUI.color = old;
             }
         }
 
-        private void DrawTitleCard(TitleEntry title, float cardWidth, float cardHeight)
+        private void DrawTitleCard(TitleEntry title, Rect card, float scale)
         {
-            float squareSize = UIManager.ScaleValue(PLAYER_SQUARE_SIZE);
-            float borderSize = UIManager.ScaleValue(BORDER_SIZE);
-            float totalSquareSize = squareSize + (borderSize * 2);
+            Color playerColor = Hud.Readable(title.PrimaryColor);
+            Hud.Fill(card, Hud.Card);
+            Hud.Fill(new Rect(card.x, card.y, card.width, CARD_BAND_HEIGHT * scale), playerColor);
 
-            GUILayout.BeginVertical(GUILayout.Width(cardWidth), GUILayout.Height(cardHeight));
+            float padding = CARD_PADDING * scale;
+            float innerWidth = card.width - padding * 2;
+            float y = card.y + CARD_BAND_HEIGHT * scale + padding;
 
-            GUILayout.Label(title.TitleName, cardTitleStyle, GUILayout.Width(cardWidth));
+            string name = (title.TitleName ?? "").ToUpperInvariant();
+            float titleHeight = cardTitleStyle.CalcHeight(new GUIContent(name), innerWidth);
+            Hud.Label(new Rect(card.x + padding, y, innerWidth, titleHeight), name, cardTitleStyle, Hud.Text);
+            y += titleHeight + TITLE_TO_DESCRIPTION_SPACING * scale;
 
-            GUILayout.Space(UIManager.ScaleValue(TITLE_TO_DESCRIPTION_SPACING));
+            string description = title.Description ?? "";
+            float descriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(description), innerWidth);
+            Hud.Label(new Rect(card.x + padding, y, innerWidth, descriptionHeight), description, cardDescriptionStyle, Hud.Muted);
 
-            GUILayout.Label(title.Description ?? "", cardDescriptionStyle, GUILayout.Width(cardWidth));
+            float squareSize = PLAYER_SQUARE_SIZE * scale;
+            float borderSize = BORDER_SIZE * scale;
+            float chipSize = squareSize + borderSize * 2;
+            string playerName = title.PlayerName ?? "";
+            float nameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale);
+            float groupWidth = chipSize + SQUARE_TO_NAME_SPACING * scale + nameWidth;
+            float footerHeight = Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale);
+            float footerY = card.yMax - padding - footerHeight;
+            float groupX = card.x + (card.width - groupWidth) * 0.5f;
 
-            GUILayout.Space(UIManager.ScaleValue(DESCRIPTION_TO_SQUARE_SPACING));
-
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            Rect outerRect = GUILayoutUtility.GetRect(totalSquareSize, totalSquareSize);
-            DrawPlayerSquare(outerRect, title.PrimaryColor, title.SecondaryColor, squareSize, borderSize);
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(UIManager.ScaleValue(SQUARE_TO_NAME_SPACING));
-
-            // Reuse cached style, just update the color
-            dynamicPlayerNameStyle.normal.textColor = title.PrimaryColor;
-            GUILayout.Label(title.PlayerName, dynamicPlayerNameStyle, GUILayout.Width(cardWidth));
-
-            GUILayout.EndVertical();
-        }
-
-        private void DrawPlayerSquare(Rect outerRect, Color primaryColor, Color secondaryColor, float squareSize, float borderSize)
-        {
-            Color originalColor = GUI.color;
-            GUI.color = secondaryColor;
-            GUI.DrawTexture(outerRect, whiteTexture);
-
-            Rect innerRect = new Rect(
-                outerRect.x + borderSize,
-                outerRect.y + borderSize,
-                squareSize,
-                squareSize
-            );
-            GUI.color = primaryColor;
-            GUI.DrawTexture(innerRect, whiteTexture);
-
-            GUI.color = originalColor;
+            Hud.Fill(new Rect(card.x + padding, footerY - padding * 0.6f, innerWidth, Mathf.Max(1f, scale)), Hud.Line);
+            Rect chip = new Rect(groupX, footerY + (footerHeight - chipSize) * 0.5f, chipSize, chipSize);
+            Hud.Fill(chip, title.SecondaryColor);
+            Hud.Fill(new Rect(chip.x + borderSize, chip.y + borderSize, squareSize, squareSize), title.PrimaryColor);
+            Hud.Label(new Rect(chip.xMax + SQUARE_TO_NAME_SPACING * scale, footerY, nameWidth, footerHeight), playerName, cardPlayerNameStyle, playerColor);
         }
         #endregion
 
@@ -408,7 +396,6 @@ namespace StatsMod
         private void OnDestroy()
         {
             TitlesManager.Instance.OnTitlesUpdated -= UpdateTitlesCache;
-            if (whiteTexture != null) Destroy(whiteTexture);
         }
         #endregion
     }

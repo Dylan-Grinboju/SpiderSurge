@@ -14,7 +14,6 @@ namespace SpiderSurge.Common
     public class SettingsPage : MonoBehaviour
     {
         public const string MainPage = "main";
-        public const string Gold = "#FFD700";
         public const string Green = "#00FF00";
         public const string Red = "#FF5555";
         public const string Gray = "#AAAAAA";
@@ -185,7 +184,7 @@ namespace SpiderSurge.Common
 
         private void AddMain()
         {
-            Paragraph($"<size=200%>\n<b><color={Gold}>SpiderSurge</color></b></size>");
+            Paragraph($"<size=200%>\n<b>{Hud.Logo}</b></size>");
             Paragraph($"<size=115%>Version {SpiderSurgeMod.Version}</size>");
             Note("Turning a part on or off takes effect after restarting the game. Its settings below change right away.");
 
@@ -237,12 +236,12 @@ namespace SpiderSurge.Common
 
         public void Header(string text)
         {
-            Paragraph($"<size=130%><b>{text}</b></size>");
+            Paragraph($"<size=130%><b>{text.ToUpperInvariant()}</b></size>");
         }
 
         public void Title(string text)
         {
-            Paragraph($"<size=170%>\n<b><color={Gold}>{text}</color></b></size>");
+            Paragraph($"<size=170%>\n<b><color={Hud.PinkHex}>{text.ToUpperInvariant()}</color></b></size>");
         }
 
         public void Note(string text)

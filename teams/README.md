@@ -2,6 +2,8 @@
 
 The Teams part of [SpiderSurge](../README.md): team versus for Spiderheck. Split the lobby into teams and fight it out: a round ends when only one team is left standing, not one spider.
 
+<img width="1600" alt="A team versus match: two red spiders against a blue one" src="../docs/images/teams-versus.jpg" />
+
 
 ## Features
 

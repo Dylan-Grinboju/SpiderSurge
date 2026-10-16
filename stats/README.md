@@ -16,17 +16,25 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
   - Press **D-pad** on a controller to cycle the UIs. You can switch to a stick press instead. While Surge's ultimate is on the D-pad, only the stick press works
 - **Log File**: All the stats are saved to a local txt file when the game ends 
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
-- **Versus Mode Support**: The mod will track stats in versus mode, but as this was developed with the survival mode in mind, some features (such as the titles) may not work as intended
+- **Versus Mode Support**: The mod will track stats in versus mode, but as this was developed with the survival mode in mind, some features (such as the titles) may not work as intended. In versus, a kill on another spider counts as a friendly kill (the Friendly Kills and Friendly Hits columns); Kills only counts enemies
 
 
-### Titles
-<img width="2485" height="1288" alt="Pasted image 20260109102238" src="https://github.com/user-attachments/assets/ea9b7aa7-9b15-408d-88d9-dd35c2679eff" />
+### Small window (F1)
+Each spider's kills and deaths, next to its color. A dead spider's row fades until it respawns. Turn on `stats.display.smallUIShowBackground` for a dark panel behind it.
 
-### Small version:
-<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/2fd4a739-d333-4173-9e68-1ee017032b86" />
+<img width="680" alt="The small stats window next to the game's HUD" src="../docs/images/stats-small-window-closeup.png" />
 
-### Big version:
-<img width="2547" height="1422" alt="image" src="https://github.com/user-attachments/assets/42ea27ef-9450-4cae-ae46-3f1befbe0d6a" />
+<img width="1600" alt="The small stats window during a run" src="../docs/images/stats-small-window.jpg" />
+
+### Big window (F2)
+The run time, enemies killed and a table with the columns you pick. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. If the columns don't fit on the screen, the window shrinks to fit. In versus it shows the match time instead.
+
+<img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
+
+### Titles (F3)
+Shown in the lobby when a run with two or more players ends. The cards are revealed one by one; press F3 to show them all at once.
+
+<img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
 
 ## How to configure Stats
 

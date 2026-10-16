@@ -50,32 +50,6 @@ namespace StatsMod
         private static string _configuredCycleInput;
         #endregion
 
-        #region Shared Constants
-        public const int PADDING = 8;
-        public const int HEADER_SIZE = 16;
-        public const int LABEL_SIZE = 14;
-        public const int BIG_HEADER_SIZE = 24;
-        public const int BIG_LABEL_SIZE = 18;
-        #endregion
-
-        #region Shared Colors
-        public static readonly Color Blue = new Color(0.259f, 0.522f, 0.957f, 1f);
-        public static readonly Color Red = new Color(1f, 0.341f, 0.133f, 1f);
-        public static readonly Color Green = new Color(0.298f, 0.686f, 0.314f, 1f);
-        public static readonly Color White = new Color(0.9f, 0.9f, 0.9f, 1f);
-        public static readonly Color Gray = new Color(0.7f, 0.7f, 0.7f, 1f);
-        public static readonly Color DarkGray = new Color(0.10f, 0.10f, 0.10f, 0.95f);
-        public static readonly Color MediumGray = new Color(0.20f, 0.20f, 0.20f, 0.95f);
-        public static readonly Color LightGray = new Color(0.35f, 0.35f, 0.35f, 0.95f);
-        public static readonly Color Orange = new Color(1f, 0.647f, 0f, 1f);
-        #endregion
-
-        #region Shared Textures
-        private Texture2D darkTexture;
-        private Texture2D mediumTexture;
-        private Texture2D lightTexture;
-        #endregion
-
         #region UI Scaling
         private static float _uiScaleFactor = 1.0f;
         private static bool _scalingInitialized = false;
@@ -158,8 +132,6 @@ namespace StatsMod
 
         private void InitializeComponents()
         {
-            CreateSharedTextures();
-
             GameObject smallUIObj = new GameObject("SmallUI");
             smallUIObj.transform.SetParent(transform);
             smallUI = smallUIObj.AddComponent<SmallUI>();
@@ -434,89 +406,6 @@ namespace StatsMod
         }
         #endregion
 
-        #region Shared Texture Management
-        private void CreateSharedTextures()
-        {
-            darkTexture = CreateColorTexture(DarkGray);
-            mediumTexture = CreateColorTexture(MediumGray);
-            lightTexture = CreateColorTexture(LightGray);
-        }
-
-        private Texture2D CreateColorTexture(Color color)
-        {
-            var texture = new Texture2D(1, 1);
-            texture.SetPixel(0, 0, color);
-            texture.Apply();
-            return texture;
-        }
-
-        public Texture2D GetDarkTexture() => darkTexture;
-        public Texture2D GetMediumTexture() => mediumTexture;
-        public Texture2D GetLightTexture() => lightTexture;
-        #endregion
-
-        #region Shared Style Creation
-        public GUIStyle CreateWindowStyle(Texture2D backgroundTexture)
-        {
-            return new GUIStyle(GUI.skin.window)
-            {
-                normal = { background = backgroundTexture },
-                padding = new RectOffset(ScaleInt(PADDING * 2), ScaleInt(PADDING * 2), ScaleInt(PADDING * 2), ScaleInt(PADDING * 2))
-            };
-        }
-
-        public GUIStyle CreateHeaderStyle(int fontSize = HEADER_SIZE)
-        {
-            return new GUIStyle(GUI.skin.label)
-            {
-                fontSize = ScaleFont(fontSize),
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Blue },
-                padding = new RectOffset(ScaleInt(PADDING), 0, ScaleInt(4), ScaleInt(2))
-            };
-        }
-
-        public GUIStyle CreateLabelStyle(int fontSize = LABEL_SIZE)
-        {
-            return new GUIStyle(GUI.skin.label)
-            {
-                fontSize = ScaleFont(fontSize),
-                normal = { textColor = Gray },
-                padding = new RectOffset(ScaleInt(PADDING), 0, ScaleInt(2), ScaleInt(2))
-            };
-        }
-
-        public GUIStyle CreateValueStyle(int fontSize = LABEL_SIZE)
-        {
-            return new GUIStyle(GUI.skin.label)
-            {
-                fontSize = ScaleFont(fontSize),
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = White },
-                padding = new RectOffset(0, ScaleInt(PADDING), ScaleInt(2), ScaleInt(2))
-            };
-        }
-
-        public GUIStyle CreateCardStyle(Texture2D backgroundTexture)
-        {
-            return new GUIStyle()
-            {
-                normal = { background = backgroundTexture },
-                padding = new RectOffset(ScaleInt(PADDING), ScaleInt(PADDING), ScaleInt(4), ScaleInt(4)),
-                margin = new RectOffset(ScaleInt(2), ScaleInt(2), ScaleInt(2), ScaleInt(2))
-            };
-        }
-
-        public GUIStyle CreateErrorStyle(int fontSize = LABEL_SIZE)
-        {
-            return new GUIStyle(GUI.skin.label)
-            {
-                fontSize = ScaleFont(fontSize),
-                normal = { textColor = Red }
-            };
-        }
-        #endregion
-
         #region Event Handling
         public void OnPlayerJoined()
         {
@@ -535,9 +424,6 @@ namespace StatsMod
         private void OnDestroy()
         {
             Settings.Changed -= OnSettingsChanged;
-            if (darkTexture != null) Destroy(darkTexture);
-            if (mediumTexture != null) Destroy(mediumTexture);
-            if (lightTexture != null) Destroy(lightTexture);
 
             if (Instance == this)
             {

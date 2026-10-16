@@ -21,7 +21,7 @@ Surge is off after installing. To turn it on, open the pause menu, pick **Mods**
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Special perk selection phases at waves 30 and 60 for powerful "Ultimate" variants and ability swaps.
-- **In-Game Tutorial**: A dedicated UI to guide players through new mechanics and ability controls.
+- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It opens on the first launch, and the backtick key (**`**) opens it at any time.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together, or any D-pad direction if you turn that on.
@@ -30,6 +30,8 @@ Surge is off after installing. To turn it on, open the pause menu, pick **Mods**
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
+
+<img width="1600" alt="The Surge guide" src="../docs/images/surge-guide.jpg" />
 
 ## How to configure Surge
 
