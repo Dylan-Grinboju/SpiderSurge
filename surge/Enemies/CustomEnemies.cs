@@ -60,7 +60,7 @@ namespace SpiderSurge.Enemies
                 MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp");
                 SetupMissileAppearance(MissileWhispPrefab, turret);
                 SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
-                SetupOffScreenIndicator(MissileWhispPrefab, turret.energyColor);
+                SetupOffScreenIndicator(MissileWhispPrefab, Consts.Values.Colors.MissileWhispColor);
             }
 
             // Create Shielded Variant if source is provided
@@ -171,6 +171,13 @@ namespace SpiderSurge.Enemies
                 {
                     Object.Instantiate(child, thrusters.transform, false).name = child.name;
                 }
+            }
+
+            foreach (var renderer in enemyObj.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                Color color = Color.Lerp(renderer.color, Consts.Values.Colors.MissileWhispColor, 0.7f);
+                color.a = renderer.color.a;
+                renderer.color = color;
             }
 
             var brain = enemyObj.GetComponent<WhispBrain>();
