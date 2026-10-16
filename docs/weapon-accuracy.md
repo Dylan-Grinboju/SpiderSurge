@@ -30,7 +30,7 @@ Thrown grenades, mines, cubes, melee weapons, staff melee zaps and Surge abiliti
 
 The same shot record follows a projectile into its own explosion, including grenade-launcher grenades and rail-impact blasts. It remains valid after the shooter drops the gun or dies. Reflected rail shots and energy balls lose their original shooting attribution; reflecting does not manufacture another fired shot. Picking up a launched grenade or blade ends its original projectile attribution. Independently armed explosives and chain reactions do not inherit shooting accuracy.
 
-Hits reuse the attack scopes and guarded receivers already used by kill credit. Accuracy is recorded on contact, independently of eventual kill credit. A shared success flag prevents repeated callbacks from increasing the numerator. Resetting the player stats replaces the shot table and counters, so projectiles from an earlier session cannot change a new session's accuracy. Turning Stats off also clears the shot table.
+Hits reuse the attack scopes and guarded receivers already used by kill credit, along with its shared teammate classification. Accuracy is recorded on contact, independently of eventual kill credit. A shared success flag prevents repeated callbacks from increasing the numerator. Resetting the player stats replaces the shot table and counters, so projectiles from an earlier session cannot change a new session's accuracy. Hit-credit cleanup at the start of a versus round clears in-flight shot attribution while preserving the match's accuracy totals. Turning Stats off also clears the shot table.
 
 ### Shotgun particles
 

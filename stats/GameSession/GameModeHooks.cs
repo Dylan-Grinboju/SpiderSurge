@@ -88,6 +88,18 @@ namespace StatsMod
         }
     }
 
+    [HarmonyPatch(typeof(VersusMode), "StartRound")]
+    public class VersusModeStartRoundPatch
+    {
+        static void Prefix()
+        {
+            if (GameSessionManager.Instance.CurrentGameMode == GameMode.Versus)
+            {
+                HitLogic.Clear();
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(VersusMode), "EndMatch")]
     public class VersusModeEndPatch
     {

@@ -188,9 +188,10 @@ public class TitlesManager
         currentTitles.Clear();
         allTitles.Clear();
 
-        if (snapshot?.ActivePlayers == null || snapshot.ActivePlayers.Count <= 1)
+        if (snapshot?.ActivePlayers == null || snapshot.GameMode != GameMode.Survival || snapshot.ActivePlayers.Count <= 1)
         {
             hasGameEndedTitles = false;
+            OnTitlesUpdated?.Invoke();
             return;
         }
 

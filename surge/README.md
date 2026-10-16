@@ -20,7 +20,7 @@ Surge is off after installing. To turn it on, open the pause menu, pick **Mods**
     - **Missile Whisp**: Launches rockets that deal devastating damage.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
-- **Ultimate Upgrades**: Special perk selection phases at waves 30 and 60 for powerful "Ultimate" variants and ability swaps.
+- **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It opens on the first launch, and the backtick key (**`**) opens it at any time.
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:

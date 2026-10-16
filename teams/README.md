@@ -149,7 +149,7 @@ Teams runs on the host. Couch games on one PC always count as hosting, so they j
 
 - **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Supported. Nothing in Teams assumes 4 players, and team spawns use the extra spawn points it adds.
 - **[Surge](../surge/README.md)**: Its abilities can be used in versus, see [Surge Abilities](#surge-abilities). Survival with Surge is unchanged.
-- **[Stats](../stats/README.md)**: Stats doesn't know about teams yet, so in team versus it counts every kill on another spider as a friendly kill.
+- **[Stats](../stats/README.md)**: Opponent kills and shield breaks count toward normal offence stats; teammate kills and shield breaks count as friendly fire. Solo streaks use your living teammates. Titles stay hidden after versus matches.
 
 ## Notes and disclaimers
 
@@ -164,4 +164,3 @@ Teams runs on the host. Couch games on one PC always count as hosting, so they j
 - Surge abilities for online players
 - Sharing the teams with online players who have the mod, so they can pick their own team and see the markers and the team win screen
 - Giving a player who joins in the middle of a match their team's score
-- Stats integration, so it can tell teammate kills from enemy kills

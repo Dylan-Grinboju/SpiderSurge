@@ -12,7 +12,6 @@ namespace StatsMod
         private sealed class Shot
         {
             public PlayerInput Player;
-            public int PlayerId;
             public WeaponAccuracy Weapon;
             public WeaponAccuracy Total;
             public bool Hit;
@@ -39,8 +38,7 @@ namespace StatsMod
                 accuracy.Fire();
                 data.ShootingAccuracy.Fire();
                 shots.Remove(source);
-                PlayerController controller = player.GetComponentInChildren<PlayerController>();
-                shots.Add(source, new Shot { Player = player, PlayerId = controller != null ? controller.playerID.Value : -1, Weapon = accuracy, Total = data.ShootingAccuracy });
+                shots.Add(source, new Shot { Player = player, Weapon = accuracy, Total = data.ShootingAccuracy });
             }
             catch (Exception ex)
             {
@@ -87,13 +85,8 @@ namespace StatsMod
             else if (target is SpiderHealthSystem spider)
             {
                 PlayerInput victim = spider.rootObject?.GetComponentInParent<PlayerInput>();
-                if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus || victim == null || victim == shot.Player) return;
-                if (SpiderTeams.TeamManager.TeamMatchActive)
-                {
-                    var manager = SpiderTeams.TeamManager.Instance;
-                    if (manager.TryGetTeamOfPlayerId(shot.PlayerId, out int attackerTeam) &&
-                        attackerTeam == manager.GetTeam(spider.GetComponentInParent<PlayerController>())) return;
-                }
+                if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus || victim == null ||
+                    victim == shot.Player || PlayerRelations.AreTeammates(shot.Player, victim)) return;
             }
             else return;
 
