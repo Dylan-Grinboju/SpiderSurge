@@ -10,11 +10,11 @@ namespace StatsMod
         #region Grid Layout Parameters
         public int MAX_TITLES = 8;
         public int GRID_COLUMNS = 4;
-        public float CARD_WIDTH = 330f;
-        public float CARD_HEIGHT = 240f;
+        public float CARD_WIDTH = 400f;
+        public float CARD_HEIGHT = 280f;
         public float CARD_SPACING_X = 26f;
         public float CARD_SPACING_Y = 26f;
-        public float CARD_PADDING = 22f;
+        public float CARD_PADDING = 24f;
         public float CARD_BAND_HEIGHT = 6f;
         public float HEADER_HEIGHT = 136f;
         public float HEADER_TO_GRID_SPACING = 30f;
@@ -23,9 +23,9 @@ namespace StatsMod
 
         public int CAPTION_FONT_SIZE = 18;
         public int HEADER_FONT_SIZE = 64;
-        public int TITLE_FONT_SIZE = 26;
-        public int DESCRIPTION_FONT_SIZE = 19;
-        public int PLAYER_NAME_FONT_SIZE = 20;
+        public int TITLE_FONT_SIZE = 32;
+        public int DESCRIPTION_FONT_SIZE = 22;
+        public int PLAYER_NAME_FONT_SIZE = 24;
         public int EMPTY_FONT_SIZE = 22;
 
         public float PLAYER_SQUARE_SIZE = 18f;
@@ -249,7 +249,7 @@ namespace StatsMod
             headerStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter);
             cardTitleStyle = Hud.Style(TITLE_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter, wrap: true);
             cardDescriptionStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.UpperCenter, wrap: true);
-            cardPlayerNameStyle = Hud.Style(PLAYER_NAME_FONT_SIZE, bold: true);
+            cardPlayerNameStyle = Hud.Style(PLAYER_NAME_FONT_SIZE, bold: true, wrap: true);
             emptyStyle = Hud.Style(EMPTY_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
             emptyNoteStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.MiddleCenter, wrap: true);
 
@@ -286,13 +286,21 @@ namespace StatsMod
             int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
 
             float baseGridWidth = GRID_COLUMNS * CARD_WIDTH + (GRID_COLUMNS - 1) * CARD_SPACING_X;
-            float baseGridHeight = rows == 0 ? 120f : rows * CARD_HEIGHT + (rows - 1) * CARD_SPACING_Y;
-            float baseHeight = HEADER_HEIGHT + HEADER_TO_GRID_SPACING + baseGridHeight;
+            float scale = Hud.FitScale(UIManager.UIScaleFactor, baseGridWidth, HEADER_HEIGHT, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
+            float cardHeight = 0f;
+            float contentHeight = 0f;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                ApplyScale(scale);
+                cardHeight = MeasureCardHeight(titleCount, scale);
+                float gridHeight = rows == 0 ? 120f * scale : rows * cardHeight + (rows - 1) * CARD_SPACING_Y * scale;
+                contentHeight = (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale + gridHeight;
+                float fit = Screen.height * BASE_MAX_HEIGHT_PERCENT / contentHeight;
+                if (fit >= 1f || attempt == 4) break;
+                scale *= fit * 0.99f;
+            }
 
-            float scale = Hud.FitScale(UIManager.UIScaleFactor, baseGridWidth, baseHeight, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
-            ApplyScale(scale);
-
-            float top = (Screen.height - baseHeight * scale) * 0.5f;
+            float top = (Screen.height - contentHeight) * 0.5f;
             string caption = !hasTitles ? ""
                 : GameSessionManager.Instance.IsActive ? LABEL_LAST_SESSION
                 : GameSessionManager.Instance.LastGameMode == GameMode.Versus ? LABEL_MATCH_OVER : LABEL_RUN_OVER;
@@ -307,7 +315,7 @@ namespace StatsMod
             }
             else
             {
-                DrawTitles(gridTop, Mathf.Min(titlesToShow, titleCount), scale);
+                DrawTitles(gridTop, Mathf.Min(titlesToShow, titleCount), cardHeight, scale);
             }
 
             GUI.color = originalColor;
@@ -323,11 +331,35 @@ namespace StatsMod
             Hud.Fill(new Rect((Screen.width - lineWidth) * 0.5f, header.yMax - 4f * scale, lineWidth, 4f * scale), Hud.Pink);
         }
 
-        private void DrawTitles(float gridTop, int count, float scale)
+        // Measure every card before revealing any so wrapped text cannot move the grid mid-animation.
+        private float MeasureCardHeight(int count, float scale)
+        {
+            float height = CARD_HEIGHT * scale;
+            float innerWidth = (CARD_WIDTH - CARD_PADDING * 2f) * scale;
+            for (int index = 0; index < count; index++)
+            {
+                TitleEntry title = _cachedTitles[index];
+                float titleHeight = cardTitleStyle.CalcHeight(new GUIContent((title.TitleName ?? "").ToUpperInvariant()), innerWidth);
+                float descriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(title.Description ?? ""), innerWidth);
+                float footerHeight = MeasureFooterHeight(title, innerWidth, scale);
+                height = Mathf.Max(height, titleHeight + descriptionHeight + footerHeight
+                    + (CARD_BAND_HEIGHT + CARD_PADDING * 3f + TITLE_TO_DESCRIPTION_SPACING) * scale);
+            }
+            return height;
+        }
+
+        private float MeasureFooterHeight(TitleEntry title, float innerWidth, float scale)
+        {
+            float chipSize = (PLAYER_SQUARE_SIZE + BORDER_SIZE * 2f) * scale;
+            float nameWidth = innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale;
+            float nameHeight = cardPlayerNameStyle.CalcHeight(new GUIContent(title.PlayerName ?? ""), nameWidth);
+            return Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale, nameHeight);
+        }
+
+        private void DrawTitles(float gridTop, int count, float cardHeight, float scale)
         {
             var titles = _cachedTitles;
             float cardWidth = CARD_WIDTH * scale;
-            float cardHeight = CARD_HEIGHT * scale;
             float spacingX = CARD_SPACING_X * scale;
             float spacingY = CARD_SPACING_Y * scale;
             int total = Mathf.Min(titles.Count, MAX_TITLES);
@@ -376,7 +408,7 @@ namespace StatsMod
             string playerName = title.PlayerName ?? "";
             float nameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale);
             float groupWidth = chipSize + SQUARE_TO_NAME_SPACING * scale + nameWidth;
-            float footerHeight = Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale);
+            float footerHeight = MeasureFooterHeight(title, innerWidth, scale);
             float footerY = card.yMax - padding - footerHeight;
             float groupX = card.x + (card.width - groupWidth) * 0.5f;
 
