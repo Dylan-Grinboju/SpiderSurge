@@ -128,7 +128,7 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 
 ## Notes and disclaimers
 
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Turning off Surge Mode or the Surge part will restore your highscores. BACK UP YOUR SAVE FILES JUST IN CASE.
+- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores, and Wave Survival still shows your normal ones. BACK UP YOUR SAVE FILES JUST IN CASE.
 - Surge Mode is designed for Survival Mode. Its abilities only reach versus through the [Teams](../teams/README.md) part.
 
 ## The Future

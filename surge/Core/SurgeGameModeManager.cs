@@ -4,6 +4,8 @@ namespace SpiderSurge
 {
     public class SurgeGameModeManager : MonoBehaviour
     {
+        public const string DisplayName = "SURGE SURVIVAL";
+
         public static SurgeGameModeManager Instance { get; private set; }
 
         public bool IsActive { get; private set; }

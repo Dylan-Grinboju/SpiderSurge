@@ -3,14 +3,17 @@ using I2.Loc;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
     public sealed class SurgeLobbyPlatform : MonoBehaviour
     {
-        private static GameObject _platform;
-        private TMP_Text _label;
+        private const string LabelPath = "Text/Survival Mode Text/ModeText";
 
+        private static GameObject _platform;
+
+        // A copy of the Survival platform; its label's Localize is removed so I2 never puts "Wave Survival" back
         internal static void EnsureCreated()
         {
             if (_platform != null)
@@ -24,17 +27,27 @@ namespace SpiderSurge
                 return;
             }
 
-            _platform = Instantiate(survival, survival.transform.parent);
-            _platform.name = "SurgeStartPlatform";
-            _platform.transform.position = survival.transform.position + new Vector3(-110f, 85f, 0f);
-            var marker = _platform.AddComponent<SurgeLobbyPlatform>();
-            marker._label = _platform.transform.Find("Text/Survival Mode Text/ModeText").GetComponent<TMP_Text>();
-            Localize localize = marker._label.GetComponent<Localize>();
+            GameObject platform = Instantiate(survival, survival.transform.parent);
+            Transform labelObject = platform.transform.Find(LabelPath);
+            TMP_Text label = labelObject != null ? labelObject.GetComponent<TMP_Text>() : null;
+            if (label == null)
+            {
+                Logger.LogWarning($"The Survival platform has no {LabelPath}, so the Surge Survival platform was not added");
+                platform.SetActive(false);
+                Destroy(platform);
+                return;
+            }
+
+            Localize localize = label.GetComponent<Localize>();
             if (localize != null)
             {
-                localize.enabled = false;
+                Destroy(localize);
             }
-            marker.LateUpdate();
+            label.text = SurgeGameModeManager.DisplayName;
+            platform.name = "SurgeStartPlatform";
+            platform.transform.position = survival.transform.position + new Vector3(-110f, 85f, 0f);
+            platform.AddComponent<SurgeLobbyPlatform>();
+            _platform = platform;
         }
 
         internal static void Remove()
@@ -44,14 +57,6 @@ namespace SpiderSurge
                 _platform.SetActive(false);
                 Destroy(_platform);
                 _platform = null;
-            }
-        }
-
-        private void LateUpdate()
-        {
-            if (_label != null && _label.text != "SURGE SURVIVAL")
-            {
-                _label.text = "SURGE SURVIVAL";
             }
         }
     }

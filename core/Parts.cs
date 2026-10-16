@@ -53,7 +53,7 @@ namespace SpiderSurge.Common
 
         private static Harmony _core;
 
-        public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Select(part => new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
+        public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Where(part => part.CanDisable).Select(part =>new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
 
         public static void StartAll()
         {

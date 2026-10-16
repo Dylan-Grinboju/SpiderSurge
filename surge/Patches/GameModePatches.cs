@@ -103,7 +103,7 @@ namespace SpiderSurge
                 var tmp = localize.GetComponent<TMP_Text>();
                 if (tmp != null && SurgeGameModeManager.IsModeEnabled)
                 {
-                    tmp.text = "SURGE SURVIVAL";
+                    tmp.text = SurgeGameModeManager.DisplayName;
                 }
                 else
                 {

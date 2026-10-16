@@ -103,7 +103,7 @@ All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It ha
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
-Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. Surge Mode can't change during a Survival run, so a reload or reset keeps it until the run ends. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
+Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
 
 ## Game fixes
 
