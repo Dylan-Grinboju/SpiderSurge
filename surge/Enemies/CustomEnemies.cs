@@ -15,9 +15,11 @@ namespace SpiderSurge.Enemies
 
         public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
         {
-            if (TwinWhispPrefab != null) return;
-
-            TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
+            if (TwinWhispPrefab == null)
+            {
+                TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
+                SetupOffScreenIndicator(TwinWhispPrefab, Consts.Values.Colors.TwinWhispColor);
+            }
 
             // Create Shielded Variant if source is provided
             if (shieldSourceEnemy != null && ShieldedTwinWhispPrefab == null)
@@ -48,15 +50,23 @@ namespace SpiderSurge.Enemies
 
             if (MissileWhispPrefab == null)
             {
-                MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp", Consts.Values.Colors.MissileWhispColor);
+                var turret = Resources.FindObjectsOfTypeAll<TurretBrain>().FirstOrDefault(t => t.name == "RocketTurret");
+                if (turret == null)
+                {
+                    Logger.LogWarning("[SpiderSurge] RocketTurret appearance is not available yet.");
+                    return;
+                }
+
+                MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp");
+                SetupMissileAppearance(MissileWhispPrefab, turret);
                 SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
-                SetupOffScreenIndicator(MissileWhispPrefab);
+                SetupOffScreenIndicator(MissileWhispPrefab, Consts.Values.Colors.MissileWhispColor);
             }
 
             // Create Shielded Variant if source is provided
             if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null && MissileWhispPrefab != null)
             {
-                ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp");
+                ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp", Consts.Values.Colors.MissileWhispShieldColor);
             }
         }
 
@@ -142,7 +152,45 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private static void SetupOffScreenIndicator(GameObject enemyObj)
+        private static void SetupMissileAppearance(GameObject enemyObj, TurretBrain turret)
+        {
+            foreach (string path in new[] { "Body", "CoreBase/Eye", "CoreBase/BaseSprite" })
+            {
+                var source = turret.transform.Find(path).GetComponent<SpriteRenderer>();
+                var target = enemyObj.transform.Find(path).GetComponent<SpriteRenderer>();
+                target.sprite = source.sprite;
+                target.color = source.color;
+            }
+
+            enemyObj.transform.Find("GlowBase").GetComponent<SpriteRenderer>().enabled = false;
+            GameObject thrusters = new GameObject("Thrusters");
+            thrusters.transform.SetParent(enemyObj.transform, false);
+            foreach (Transform child in turret.transform)
+            {
+                if (child.name.StartsWith("circle"))
+                {
+                    Object.Instantiate(child, thrusters.transform, false).name = child.name;
+                }
+            }
+
+            foreach (var renderer in enemyObj.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                Color color = Color.Lerp(renderer.color, Consts.Values.Colors.MissileWhispColor, 0.7f);
+                color.a = renderer.color.a;
+                renderer.color = color;
+            }
+
+            var brain = enemyObj.GetComponent<WhispBrain>();
+            typeof(WhispBrain).GetField("glowRender", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(brain, thrusters);
+            brain.energyColor = turret.energyColor;
+            brain.chargeColor = turret.chargeColor;
+            var charge = brain.chargeParticles.main;
+            charge.startColor = turret.chargeParticles.main.startColor;
+            var launch = brain.launchParticles.main;
+            launch.startColor = turret.launchParticles.main.startColor;
+        }
+
+        private static void SetupOffScreenIndicator(GameObject enemyObj, Color color)
         {
             var offScreen = enemyObj.GetComponentInChildren<OffScreenIndicator>(true);
             var type = typeof(OffScreenIndicator);
@@ -183,16 +231,16 @@ namespace SpiderSurge.Enemies
 
             if (offScreen != null)
             {
-                type.GetField("color", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, Consts.Values.Colors.MissileWhispColor);
+                type.GetField("color", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, color);
                 type.GetField("_mainCamera", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, Camera.main); // Initialize camera
 
                 // Tracked target is the sprite renderer
-                var sr = enemyObj.GetComponentInChildren<SpriteRenderer>();
+                var sr = enemyObj.GetComponentInChildren<SpriteRenderer>(true);
                 type.GetField("trackedTarget", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(offScreen, sr);
             }
         }
 
-        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name)
+        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name, Color? shieldTint = null)
         {
             if (baseEnemy == null || shieldSourceEnemy == null) return null;
 
@@ -203,12 +251,14 @@ namespace SpiderSurge.Enemies
 
             if (sourceHealth != null && sourceHealth.shield != null)
             {
-                // Clone Shield
-                GameObject newShield = Object.Instantiate(sourceHealth.shield, newEnemyObj.transform);
-                newShield.name = sourceHealth.shield.name;
-                newShield.transform.localPosition = sourceHealth.shield.transform.localPosition;
-                newShield.transform.localRotation = sourceHealth.shield.transform.localRotation;
-                newShield.transform.localScale = sourceHealth.shield.transform.localScale;
+                GameObject newShield = new GameObject(sourceHealth.shield.name);
+                newShield.SetActive(false);
+                newShield.transform.SetParent(newEnemyObj.transform, false);
+
+                var shieldRenderer = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
+                Color shieldColor = shieldTint ?? (shieldRenderer != null ? shieldRenderer.color : Color.magenta);
+                newShield.AddComponent<ShieldedEnemyVisuals>().Initialize(
+                    newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true), shieldColor);
 
                 healthSystem.shield = newShield;
                 newShield.SetActive(true);
@@ -224,6 +274,14 @@ namespace SpiderSurge.Enemies
 
                     healthSystem.shieldShatterEffect = newShatter;
                     newShatter.SetActive(false);
+                    if (shieldTint.HasValue)
+                    {
+                        foreach (var particles in newShatter.GetComponentsInChildren<ParticleSystem>(true))
+                        {
+                            var main = particles.main;
+                            main.startColor = shieldTint.Value;
+                        }
+                    }
                 }
             }
             return newEnemyObj;
