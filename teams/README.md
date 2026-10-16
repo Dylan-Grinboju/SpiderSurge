@@ -20,7 +20,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for Spiderheck. Split
 
 ## Turning it on
 
-Teams is off after installing SpiderSurge. Open the pause menu, pick **Mods** > **SpiderSurge**, check **Teams**, and restart the game.
+Teams is off after installing SpiderSurge. Open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
 
 Team versus is on as soon as the part runs. You can turn team versus off between matches from the Teams page, without restarting.
 
@@ -82,7 +82,7 @@ Open the normal **Versus Battle** setup page. Team versus, team count and friend
 - The team list, where the host can move each player to the next team, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
-Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** and restart the game if the controls are missing.
+Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** > **Enable or disable parts** and restart the game if the controls are missing.
 
 ![Team settings on the normal versus setup page](../docs/images/teams-settings.png)
 

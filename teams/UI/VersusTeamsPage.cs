@@ -49,6 +49,7 @@ namespace SpiderTeams
         private GameObject _selected;
         private bool _dirty;
         private bool _showing;
+        private string _confirming;
 
         public static void Install(VersusSettingsUi ui)
         {
@@ -209,6 +210,7 @@ namespace SpiderTeams
 
         private void Show()
         {
+            _confirming = null;
             Rebuild(true);
             SetOffset(0f);
             _showing = true;
@@ -357,6 +359,24 @@ namespace SpiderTeams
         }
 
         public void Button(string label, Action action) => _building.Add(new Entry { Kind = Kind.Button, Label = label, Next = action });
+
+        // Pressing it swaps the button for a question with Keep and Reset, like the Mods menu's confirmation page.
+        public void ConfirmButton(string label, Action onConfirm)
+        {
+            if (_confirming != label)
+            {
+                Button(label, () => _confirming = label);
+                return;
+            }
+            Paragraph(label + "?");
+            Note("This cannot be undone.");
+            Button("Keep current settings", () => _confirming = null);
+            Button("Reset", () =>
+            {
+                _confirming = null;
+                onConfirm();
+            });
+        }
 
         private GameObject Create(Entry entry, int index)
         {

@@ -49,9 +49,11 @@ Split the lobby into teams and fight until one team is left standing. Spiders ta
 
 ### Settings in the game
 
-Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Team versus, team count and friendly fire are on the normal **Versus Battle** setup page, above the versus presets. Scroll down for the other team options. They are also available on the custom versus page.
+Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with larger text and separate category pages. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
 
-<img width="1600" alt="The SpiderSurge page in the Mods menu" src="docs/images/mods-menu.jpg" />
+<img width="1280" alt="The native SpiderSurge settings menu with controller selection" src="docs/images/mods-menu-native.png" />
+
+Team versus, team count and friendly fire are on the normal **Versus Battle** setup page, above the versus presets. Scroll down for the other team options. They are also available on the custom versus page.
 
 ## Controls
 
@@ -73,7 +75,7 @@ On a controller you can switch the stats windows with a stick press instead of t
 2. Download the `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or build it from the source.
 3. Place the `SpiderSurge.dll` into your Silk `mods` folder.
 4. Launch the game.
-5. Play Surge from its platform above and left of Wave Survival in the lobby. To turn on Teams, open the pause menu, pick **Mods** > **SpiderSurge**, check **Teams**, and restart the game.
+5. Play Surge from its platform above and left of Wave Survival in the lobby. To turn on Teams, open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
 
 ## Updating from SpiderStats or SpiderTeams
 
@@ -90,10 +92,12 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
-- A switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
+- **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
-- **Check for updates**: when the game starts, checks whether a new version is out.
-- **Reload the settings file**: picks up edits to the file without restarting the game.
+- **General**: check for updates and reload edits to the settings file without restarting the game.
+- **About SpiderSurge**: version and credits.
+
+Stats columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Surge's indicator and telemetry settings have their own pages. Every reset asks for confirmation first.
 
 ### Using the Yaml file:
 
