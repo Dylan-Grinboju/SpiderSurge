@@ -162,7 +162,8 @@ namespace SpiderSurge
 
             DrawSection("Abilities", new string[] {
                 "• Special Abilities perks appear at the first perk choice.",
-                "• Special Ultimate upgrades appear at wave 30.",
+                "• Your Ultimate is guaranteed as a choice at wave 30 and can appear in later perk choices until unlocked.",
+                "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
                 "• Choose wisely, Ultimates have longer cooldowns but high impact!",
             });
 
