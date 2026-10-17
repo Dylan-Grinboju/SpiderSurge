@@ -197,6 +197,7 @@ namespace SpiderSurge
                 public const float SpawnCountMultiplier = 1.75f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
+                public const float CocoonSpawnInterval = 10f;
             }
 
             public static class Colors
@@ -242,6 +243,7 @@ namespace SpiderSurge
                     { "PowerWhisp Variant", new EnemySpawnConfig(3f, 6, 0) },
                     { "PowerWasp Variant", new EnemySpawnConfig(3f, 7, 16) },
                     { "TwinBladeMeleeWhisp", new EnemySpawnConfig(4f, 8, 16) },
+                    { "WaspCocoon", new EnemySpawnConfig(4f, 9, 24) },
                     { "PowerRoller Variant", new EnemySpawnConfig(4f, 9, 0) },
                     { "PowerKhepri Variant", new EnemySpawnConfig(4f, 10, 0) },
                     { "PowerMeleeWhisp Variant", new EnemySpawnConfig(4f, 11, 20) },
@@ -251,6 +253,7 @@ namespace SpiderSurge
                     { "TwinBladePowerMeleeWhisp", new EnemySpawnConfig(6f, 15, 0) },
                     { "PowerWasp Variant Shield", new EnemySpawnConfig(6f, 16, 0) },
                     { "ShieldedTwinWhisp", new EnemySpawnConfig(6f, 17, 0) },
+                    { "ShieldedWaspCocoon", new EnemySpawnConfig(7f, 18, 0) },
                     { "Hornet Variant", new EnemySpawnConfig(6f, 18, 25) },
                     { "MissileWhisp", new EnemySpawnConfig(7f, 19, 25) },
                     { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 20, 0) },

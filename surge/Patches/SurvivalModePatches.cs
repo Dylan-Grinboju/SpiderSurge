@@ -104,6 +104,7 @@ namespace SpiderSurge
                         CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
                     }
                 }
+                CustomEnemies.CreateWaspCocoon();
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
@@ -152,6 +153,16 @@ namespace SpiderSurge
                 if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
+                }
+
+                if (CustomEnemies.WaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("WaspCocoon", out var cocoonStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.WaspCocoonPrefab, cocoonStats.Cost, cocoonStats.MinWave, cocoonStats.MaxWave));
+                }
+
+                if (CustomEnemies.ShieldedWaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedWaspCocoon", out var shieldedCocoonStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedWaspCocoonPrefab, shieldedCocoonStats.Cost, shieldedCocoonStats.MinWave, shieldedCocoonStats.MaxWave));
                 }
 
                 // If Pain Level is 2 or higher, set min wave to 0 for all enemies
