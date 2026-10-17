@@ -14,6 +14,10 @@ namespace SpiderSurge
             AccessTools.FieldRefAccess<ExplodingRoller, bool>("_triggered");
         private static readonly AccessTools.FieldRef<ExplodingRoller, float> RollerTimeToExplode =
             AccessTools.FieldRefAccess<ExplodingRoller, float>("_timeToExplode");
+        private static readonly AccessTools.FieldRef<HornetShamanBrain, DeathCloud> ShamanCloud =
+            AccessTools.FieldRefAccess<HornetShamanBrain, DeathCloud>("_deathCloud");
+        private static readonly AccessTools.FieldRef<DeathCloud, Dictionary<GameObject, float>> CloudPlayersInRange =
+            AccessTools.FieldRefAccess<DeathCloud, Dictionary<GameObject, float>>("inRange");
         private const float RollerFuse = 2f;
 
         private EnemyHealthSystem _enemy;
@@ -24,7 +28,7 @@ namespace SpiderSurge
         private readonly List<EnemyBrain> _brains = new List<EnemyBrain>();
         private readonly List<EnemyBrain> _disabledBrains = new List<EnemyBrain>();
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
-        private readonly List<KeyValuePair<SpriteRenderer, Color>> _tints = new List<KeyValuePair<SpriteRenderer, Color>>();
+        private readonly Dictionary<SpriteRenderer, Color> _tints = new Dictionary<SpriteRenderer, Color>();
 
         public float TimeLeft => Mathf.Max(0f, _thawTime - Time.time);
 
@@ -41,6 +45,22 @@ namespace SpiderSurge
         {
             FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
             return frozen != null ? frozen.TimeLeft : 0f;
+        }
+
+        internal static void SetBaseColor(SpriteRenderer sprite, Color color)
+        {
+            FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
+            if (frozen != null && frozen._held)
+            {
+                frozen._tints[sprite] = color;
+                Color tinted = Color.Lerp(color, Consts.Values.Freeze.TintColor, Consts.Values.Freeze.TintStrength);
+                tinted.a = color.a;
+                sprite.color = tinted;
+            }
+            else
+            {
+                sprite.color = color;
+            }
         }
 
         // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
@@ -78,7 +98,13 @@ namespace SpiderSurge
                     _fuseLeft = RollerTimeToExplode(roller) - Time.time;
                 }
                 // The shaman's OnDisable destroys its death cloud, so it stays enabled and its updates are skipped by a patch instead
-                if (brain is HornetShamanBrain || !brain.enabled) continue;
+                if (brain is HornetShamanBrain shaman)
+                {
+                    DeathCloud cloud = ShamanCloud(shaman);
+                    if (cloud != null) CloudPlayersInRange(cloud).Clear();
+                    continue;
+                }
+                if (!brain.enabled) continue;
                 brain.enabled = false;
                 _disabledBrains.Add(brain);
             }
@@ -91,14 +117,9 @@ namespace SpiderSurge
                 body.constraints = RigidbodyConstraints2D.FreezeAll;
             }
 
-            Color ice = Consts.Values.Freeze.TintColor;
             foreach (SpriteRenderer sprite in _enemy.GetComponentsInChildren<SpriteRenderer>(true))
             {
-                Color original = sprite.color;
-                _tints.Add(new KeyValuePair<SpriteRenderer, Color>(sprite, original));
-                Color tinted = Color.Lerp(original, ice, Consts.Values.Freeze.TintStrength);
-                tinted.a = original.a;
-                sprite.color = tinted;
+                SetBaseColor(sprite, sprite.color);
             }
         }
 
