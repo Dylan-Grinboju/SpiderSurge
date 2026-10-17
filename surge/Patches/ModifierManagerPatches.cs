@@ -64,7 +64,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (mode == GameMode.Wave && value > 0)
+            if (mode == GameMode.Wave && value > 0 && modifier != null && modifier.data != null)
             {
                 string key = modifier.data.key;
                 if (PerksManager.Instance.GetAllPerkNames().Contains(key))
@@ -415,7 +415,7 @@ namespace SpiderSurge
             {
                 if (mod == null || mod.data == null) continue;
 
-                // Only apply luck to perks with max level > 1 
+                // Only apply luck to perks with max level > 1
                 if (mod.data.maxLevel <= 1) continue;
                 if (mod.levelInSurvival > 0) continue;
 

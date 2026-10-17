@@ -8,7 +8,7 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
 ## Features
 
 - **Extensive Player Statistics**: Tracks a wide range of player stats including kills, deaths, friendly kills, shield interactions, web swings, airborne time, kill streaks, enemy-specific and weapon-specific kills.
-- **Player Titles**: At the end of each Survival run, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf"). Titles stay hidden during and after Versus matches, with or without teams
+- **Player Titles**: At the end of each Survival run, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf"). Titles stay hidden during and after Versus matches, with or without teams.
 - **Shooting accuracy**: Optional overall and per-weapon accuracy columns in F2, with successful/fired shot counts in saved stats. Each shot counts once, including pellet volleys and sustained beams. See [definitions, supported weapons and implementation research](../docs/weapon-accuracy.md).
 - **In-Game Display**: 
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
@@ -17,7 +17,7 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
   - Press **D-pad** on a controller to cycle the UIs. You can switch to a stick press instead. While Surge's ultimate is on the D-pad, only the stick press works
 - **Log File**: All the stats are saved to a local txt file when the game ends 
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
-- **Versus Mode Support**: Opponent kills count toward Kills, Total Offence, kill streaks and weapon stats. Breaking an opponent's shield counts toward Enemy Shields and Total Offence. With Teams on, only teammate kills and shield breaks count as friendly fire; without teams, every other spider is an opponent. Solo kills and streaks mean no living teammates, even while opponents are alive
+- **Versus Mode Support**: Opponent kills count toward Kills, Total Offence, kill streaks and weapon stats. Breaking an opponent's shield counts toward Enemy Shields and Total Offence. With Teams on, only teammate kills and shield breaks count as friendly fire; without teams, every other spider is an opponent. Solo kills and streaks mean no living teammates, even while opponents are alive.
 
 
 ### Small window (F1)
@@ -41,7 +41,7 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats settings**. Changes apply right away. The page has every setting below, the big window's columns on their own page, and **Reset Stats settings to defaults**, which keeps the small window's position.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats**. Changes apply right away. The page has every setting below except the small window's position, which you set by dragging it, the big window's columns on their own page, and **Reset Stats settings to defaults**, which keeps the small window's position.
 
 ### Using the Yaml file:
 
@@ -51,13 +51,13 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 <summary>Explanation of the fields</summary>
 
 ### UI:
-`stats.display.showStatsWindow`: shows the mod UI. If false then pressing F1, F2, or F3 will do nothing. Note that the tracking will still work, it will just not show you anything.
+`stats.display.showStatsWindow`: shows the mod UI. If false, pressing F1 or F2 does nothing; F3 still shows the titles. Note that the tracking will still work, it will just not show you anything.
 
-`stats.display.showPlayers`, `stats.display.showPlayTime` and `stats.display.showEnemyDeaths`: Exactly what this sounds. Will hide/show the corresponding parts of the Big UI.
+`stats.display.showPlayers`, `stats.display.showPlayTime` and `stats.display.showEnemyDeaths`: Exactly what it sounds like. Will hide/show the corresponding parts of the Big UI.
 
 `stats.display.autoScale`: If true, the mod will automatically scale the UI based on your screen resolution.
 
-`stats.display.uiScale`: You can use this to manually scale the UI, from 0.5 to 3. 1 is normal size, 2 is double size, 0.5 is half size and so on. You can use this with conjunction with autoScale or by itself.
+`stats.display.uiScale`: You can use this to manually scale the UI, from 0.5 to 3. 1 is normal size, 2 is double size, 0.5 is half size and so on. You can use this in conjunction with autoScale or by itself.
 
 `stats.display.bigUIOpacity`: Controls the transparency of the Big UI overlay (F2). Values range from 0 (fully transparent) to 100 (fully opaque). Default is 100. 
 
@@ -118,8 +118,8 @@ Registers a custom title that participates in the native title pipeline (dominat
 - **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part is off, registered stats and titles are never shown.
 
 ## Notes and disclaimers
-- Stats reset when starting a new game. After the game ending you can return to the lobby and the overlay will show the last game's stats
-- By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/SpiderStats/Spiderheck_stats_<Current_Date>.txt`
+- Stats reset when starting a new game. After the game ends, you can return to the lobby and the overlay will show the last game's stats.
+- By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/SpiderStats/Spiderheck_stats_YYYY-MM-DD_HH-mm-ss.txt`
 - There are some kills that won't register such as activating a weapon with another (hitting a grenade with a particle blade). This just complicates the logic and is up to interpretation of who gets the kill in difficult scenarios. Also, this is just very complicated to track, and I wasn't feeling like coding it
 - This probably won't work with multiplayer, you are welcome to try and send me feedback, but I don't plan to support it anytime soon
 - Lobby combat does not change the last game's stats. Hit credit resets at the start of each session and versus round

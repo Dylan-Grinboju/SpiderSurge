@@ -1,6 +1,6 @@
 # Teams
 
-The Teams part of [SpiderSurge](../README.md): team versus for Spiderheck. Split the lobby into teams and fight it out: a round ends when only one team is left standing, not one spider.
+The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split the lobby into teams and fight it out: a round ends when only one team is left standing, not one spider.
 
 <img width="1600" alt="A team versus match: two red spiders against a blue one" src="../docs/images/teams-versus.jpg" />
 
@@ -22,7 +22,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for Spiderheck. Split
 
 Teams is off after installing SpiderSurge. Open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
 
-Team versus is on as soon as the part runs. You can turn team versus off between matches from the Teams page, without restarting.
+Team versus is on as soon as the part runs. You can turn team versus off between matches from the versus setup page, without restarting.
 
 ## How to Play
 
@@ -49,12 +49,12 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 
 ## Surge Abilities
 
-Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **Give everyone an ability** under **Surge abilities in versus** on the Teams page; it is off by default. It works in normal free-for-all versus too, not only with teams.
+Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **Give everyone an ability** under **Surge abilities in versus** on the versus setup page; it is off by default. It works in normal free-for-all versus too, not only with teams.
 
 - Everyone gets the same ability. Pick one, or **Random** for a new one every round, never the same one twice in a row. The ability is announced at the start of the match, and every round in Random mode.
 - Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge. To move your ability to another button, hold **Start** and double-tap that button.
 - Each round starts fresh, so stored weapons don't carry over.
-- Changes on the Teams page apply from the next round.
+- Changes on the versus setup page apply from the next round.
 
 | Ability | What it does | Ultimate |
 |---|---|---|
@@ -108,7 +108,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. For now it only shows on the host's PC. Default: `false`.
 
-You can use both, one, or neither. With both off, teams only show in the announcements and on the Teams page.
+You can use both, one, or neither. With both off, teams only show in the announcements and on the versus setup page.
 
 ### Spawns:
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
@@ -118,7 +118,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 
 `teams.buttonKeyboard`: The keyboard key that switches team in the lobby. Default: `<Keyboard>/t`.
 
-The versus settings page cycles through a few presets: Y, L3, R3 or Select on a controller, and T, G, R or Tab on the keyboard. In the file you can use any Unity Input System path, such as `<Keyboard>/y`, or `none` to turn the button off.
+The versus settings page cycles through a few presets: Y, L3, R3, Select or Off on a controller, and T, G, R, Tab or Off on the keyboard. In the file you can use any Unity Input System path, such as `<Keyboard>/y`, or `none` to turn the button off.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).

@@ -8,7 +8,7 @@ namespace SpiderSurge
     /// <summary>
     /// Manages per-player control settings for ability activation.
     /// Allows each player to customize which button activates their ability.
-    /// 
+    ///
     /// Controls:
     /// - Hold Menu button + Double-tap any button = Set that button as ability activation
     /// - Hold Menu button for 3 seconds = Reset to default (L1)
@@ -34,6 +34,7 @@ namespace SpiderSurge
         // Visual feedback tracking
         private readonly Dictionary<int, string> feedbackMessages = new Dictionary<int, string>();
         private readonly Dictionary<int, float> feedbackEndTimes = new Dictionary<int, float>();
+        private GUIStyle feedbackStyle;
 
         private const float DoubleTapWindow = 0.4f;
         private const float ResetHoldDuration = 3f;
@@ -369,12 +370,15 @@ namespace SpiderSurge
                 {
                     float alpha = Mathf.Clamp01((endTime - Time.time) / 0.5f); // Fade out in last 0.5s
 
-                    GUIStyle style = new GUIStyle(GUI.skin.label)
+                    if (feedbackStyle == null)
                     {
-                        fontSize = 24,
-                        alignment = TextAnchor.MiddleCenter,
-                        fontStyle = FontStyle.Bold
-                    };
+                        feedbackStyle = new GUIStyle(GUI.skin.label)
+                        {
+                            fontSize = 24,
+                            alignment = TextAnchor.MiddleCenter,
+                            fontStyle = FontStyle.Bold
+                        };
+                    }
 
                     // Background
                     GUI.color = new Color(0, 0, 0, 0.7f * alpha);
@@ -385,7 +389,7 @@ namespace SpiderSurge
 
                     // Text
                     GUI.color = new Color(0.5f, 1f, 0.5f, alpha);
-                    GUI.Label(bgRect, $"P{playerIndex + 1}: {message}", style);
+                    GUI.Label(bgRect, $"P{playerIndex + 1}: {message}", feedbackStyle);
 
                     GUI.color = Color.white;
                 }

@@ -3,6 +3,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Reflection;
 using System.Collections.Generic;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge.Patches
 {
@@ -81,7 +82,7 @@ namespace SpiderSurge.Patches
                 }
                 else
                 {
-                    Debug.LogWarning($"[WhispBrainPatch] WhispBrain '{__instance.name}' (ID: {__instance.NetworkObjectId}) missing Rigidbody2D. Cannot apply recoil.");
+                    Logger.LogWarning($"[WhispBrainPatch] WhispBrain '{__instance.name}' (ID: {__instance.NetworkObjectId}) missing Rigidbody2D. Cannot apply recoil.");
                 }
 
                 // Set Cooldown

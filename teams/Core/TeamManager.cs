@@ -187,7 +187,7 @@ namespace SpiderTeams
             }
             _clientNoticeShown = true;
             Logger.LogInfo("SpiderTeams: someone else is hosting this match, so their rules apply");
-            Toast.Show("SpiderTeams: teams only apply when you host", Color.white);
+            Toast.Show("SpiderSurge: teams only apply when you host", Color.white);
         }
 
         public int AddTeamPoint(int team)

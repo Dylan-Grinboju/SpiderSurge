@@ -9,7 +9,7 @@ namespace SpiderSurge
         public static SurgeGameModeManager Instance { get; private set; }
 
         public bool IsActive { get; private set; }
-        
+
         public bool RunUsedSurge { get; private set; }
 
         public static bool IsModeEnabled { get; private set; }
@@ -20,7 +20,7 @@ namespace SpiderSurge
         }
 
         public static bool IsSurgeRunActive => Instance != null && Instance.IsActive;
-        
+
         public static bool WasSurgeRunUsed => Instance != null && Instance.RunUsedSurge;
 
         private void Awake()

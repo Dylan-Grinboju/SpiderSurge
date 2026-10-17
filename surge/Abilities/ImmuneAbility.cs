@@ -514,7 +514,7 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (spiderHealthSystem != null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
+            if ((object)spiderHealthSystem != null && immuneByHealthSystem.ContainsKey(spiderHealthSystem))
             {
                 ApplyImmunity(false);
                 immuneByHealthSystem.Remove(spiderHealthSystem);
