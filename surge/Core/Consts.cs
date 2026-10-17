@@ -118,8 +118,8 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 20f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
                 public const float UltimateBaseCooldown = 30f;
