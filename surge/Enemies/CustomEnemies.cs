@@ -90,7 +90,7 @@ namespace SpiderSurge.Enemies
             {
                 WaspCocoonPrefab = CreateBaseEnemy(cocoon, "WaspCocoon");
                 WaspCocoonPrefab.tag = "Untagged";
-                WaspCocoonPrefab.AddComponent<SpawnerBrain>().Initialize(wasp, shieldedWasp, Consts.Values.Enemies.CocoonSpawnInterval);
+                WaspCocoonPrefab.AddComponent<SpawnerBrain>().Initialize(wasp, shieldedWasp, Consts.Values.Enemies.CocoonSpawnInterval, Consts.Values.Enemies.CocoonMaxWasps);
             }
 
             if (shieldedWasp != null && ShieldedWaspCocoonPrefab == null)

@@ -1,6 +1,8 @@
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace SpiderSurge.Enemies
@@ -10,20 +12,25 @@ namespace SpiderSurge.Enemies
         [SerializeField] private GameObject spawnPrefab;
         [SerializeField] private GameObject shieldedSpawnPrefab;
         [SerializeField] private float interval;
+        [SerializeField] private int maxHatchlings;
 
         private EnemyHealthSystem health;
         private Collider2D[] colliders;
         private readonly HashSet<GameObject> ignored = new HashSet<GameObject>();
+        private readonly List<EnemyHealthSystem> hatchlings = new List<EnemyHealthSystem>();
         private float timer;
 
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> survivalConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
         private static readonly HashSet<SpawnerBrain> hatching = new HashSet<SpawnerBrain>();
+        private static readonly MethodInfo spawnEffectRpc = AccessTools.Method(typeof(EnemySpawner), "InstantiateEnemySpawnEffectClientRpc");
+        private static readonly MethodInfo spawnCosmeticRpc = AccessTools.Method(typeof(EnemySpawner), "SpawnObjectCosmeticClientRpc");
 
-        public void Initialize(GameObject prefab, GameObject shieldedPrefab, float spawnInterval)
+        public void Initialize(GameObject prefab, GameObject shieldedPrefab, float spawnInterval, int maxAlive)
         {
             spawnPrefab = prefab;
             shieldedSpawnPrefab = shieldedPrefab;
             interval = spawnInterval;
+            maxHatchlings = maxAlive;
         }
 
         private void Start()
@@ -39,7 +46,8 @@ namespace SpiderSurge.Enemies
             IgnoreEnemiesInside();
 
             timer += Time.fixedDeltaTime;
-            if (timer < interval || hatching.Contains(this) || !RoomForEnemy()) return;
+            hatchlings.RemoveAll(h => h == null || h.IsDead());
+            if (timer < interval || hatching.Contains(this) || hatchlings.Count >= maxHatchlings || !RoomForEnemy()) return;
             timer = 0f;
 
             GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
@@ -51,10 +59,20 @@ namespace SpiderSurge.Enemies
             }
         }
 
+        // EnemySpawner.SpawnObject without keeping the spawned enemy, so this follows it to count its own wasps
         private IEnumerator Hatch(GameObject prefab)
         {
             hatching.Add(this);
-            yield return EnemySpawner.instance.SpawnObject(prefab, transform);
+            EnemySpawner spawner = EnemySpawner.instance;
+            float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
+            spawnEffectRpc.Invoke(spawner, new object[] { transform.position, delay, false });
+            yield return new WaitForSeconds(delay);
+
+            GameObject hatchling = Instantiate(prefab, transform.position, transform.rotation);
+            spawner.spawnedEnemies.Add(hatchling);
+            hatchlings.Add(hatchling.GetComponent<EnemyHealthSystem>());
+            hatchling.GetComponent<NetworkObject>().Spawn(destroyWithScene: true);
+            spawnCosmeticRpc.Invoke(spawner, null);
             hatching.Remove(this);
         }
 

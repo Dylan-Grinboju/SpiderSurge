@@ -198,6 +198,7 @@ namespace SpiderSurge
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
                 public const float CocoonSpawnInterval = 10f;
+                public const int CocoonMaxWasps = 2;
             }
 
             public static class Colors
