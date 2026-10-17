@@ -53,7 +53,7 @@ namespace SpiderSurge.Enemies
 
         private void FixedUpdate()
         {
-            if (health == null || !health.IsHost || health.IsDead() || EnemySpawner.instance == null) return;
+            if (health == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer || health.IsDead() || EnemySpawner.instance == null) return;
 
             IgnoreEnemiesInside();
 
