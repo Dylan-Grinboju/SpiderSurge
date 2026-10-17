@@ -9,8 +9,15 @@ namespace SpiderSurge.Logging
         public int PlayerCount { get; set; }
         public int WavesSurvived { get; set; }
         public int PainLevel { get; set; }
+        public string EndReason { get; set; } = SpiderSurgeStatsManager.EndReasons.Quit;
+        public int LivesLeft { get; set; }
+        public int MaxLives { get; set; }
+        public bool StatsTracked { get; set; }
+        public bool UnlimitedPerkTime { get; set; }
         public List<PlayerStats> PlayerStats { get; set; } = new List<PlayerStats>();
         public List<string> GlobalPerks { get; set; } = new List<string>();
+        public List<PerkChoiceRecord> PerkChoices { get; set; } = new List<PerkChoiceRecord>();
+        public List<WaveRecord> Waves { get; set; } = new List<WaveRecord>();
     }
 
     public class PlayerStats
@@ -18,5 +25,38 @@ namespace SpiderSurge.Logging
         public int PlayerIndex { get; set; }
         public int AbilityActivationCount { get; set; }
         public int UltimateActivationCount { get; set; }
+        public int Deaths { get; set; }
+        public int LavaDeaths { get; set; }
+        public int Kills { get; set; }
+        public int FriendlyKills { get; set; }
+        public int ShotsFired { get; set; }
+        public int ShotsHit { get; set; }
+        public int AliveSeconds { get; set; }
+        public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
+    }
+
+    public class PerkChoiceRecord
+    {
+        public int Wave { get; set; }
+        public string Kind { get; set; }
+        public List<string> Offered { get; set; } = new List<string>();
+        public List<string> LuckyOffered { get; set; } = new List<string>();
+        public string Picked { get; set; }
+        public int Level { get; set; }
+        public bool TimedOut { get; set; }
+        public float DecisionSeconds { get; set; }
+        public float OfferedAtRealtime { get; set; }
+    }
+
+    public class WaveRecord
+    {
+        public int Wave { get; set; }
+        public string Map { get; set; }
+        public string Result { get; set; }
+        public float Seconds { get; set; }
+        public int Deaths { get; set; } = -1;
+        public int LivesAtStart { get; set; }
+        public float StartTime { get; set; }
+        public int DeathsAtStart { get; set; } = -1;
     }
 }

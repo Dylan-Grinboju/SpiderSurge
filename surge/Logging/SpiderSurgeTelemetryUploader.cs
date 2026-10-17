@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -135,32 +136,34 @@ namespace SpiderSurge.Logging
                 .Select(perk => perk.Trim())
                 .ToList();
 
-            var playerStats = (snapshot.PlayerStats ?? new List<PlayerStats>())
-                .Select(player => new PlayerStats
-                {
-                    PlayerIndex = player.PlayerIndex,
-                    AbilityActivationCount = player.AbilityActivationCount,
-                    UltimateActivationCount = player.UltimateActivationCount
-                })
-                .ToList();
+            var playerStats = snapshot.PlayerStats ?? new List<PlayerStats>();
+            var perkChoices = snapshot.PerkChoices ?? new List<PerkChoiceRecord>();
+            var waves = snapshot.Waves ?? new List<WaveRecord>();
 
-            return BuildEventJson(snapshot, globalPerks, playerStats, false, false);
+            bool perkChoicesTruncated = perkChoices.Count > Consts.Telemetry.MaxPerkChoiceRecords;
+            bool wavesTruncated = waves.Count > Consts.Telemetry.MaxWaveRecords;
+            if (perkChoicesTruncated) perkChoices = perkChoices.Skip(perkChoices.Count - Consts.Telemetry.MaxPerkChoiceRecords).ToList();
+            if (wavesTruncated) waves = waves.Skip(waves.Count - Consts.Telemetry.MaxWaveRecords).ToList();
+
+            return BuildEventJson(snapshot, globalPerks, playerStats, perkChoices, waves, perkChoicesTruncated, wavesTruncated);
         }
 
         private string BuildEventJson(
             SpiderSurgeStatsSnapshot snapshot,
             List<string> globalPerks,
             List<PlayerStats> playerStats,
-            bool perksTruncated,
-            bool playerStatsTruncated)
+            List<PerkChoiceRecord> perkChoices,
+            List<WaveRecord> waves,
+            bool perkChoicesTruncated,
+            bool wavesTruncated)
         {
-            string perksJson = "[" + string.Join(",", globalPerks.Select(perk => "\"" + EscapeJson(perk) + "\"")) + "]";
-            string playerStatsJson = "[" + string.Join(",", playerStats.Select(player =>
-                "{\"playerIndex\":" + player.PlayerIndex + ",\"abilityActivationCount\":" + player.AbilityActivationCount + ",\"ultimateActivationCount\":" + player.UltimateActivationCount + "}")) + "]";
+            string playerStatsJson = "[" + string.Join(",", playerStats.Select(BuildPlayerJson)) + "]";
+            string perkChoicesJson = "[" + string.Join(",", perkChoices.Select(BuildPerkChoiceJson)) + "]";
+            string wavesJson = "[" + string.Join(",", waves.Select(BuildWaveJson)) + "]";
 
             return "{" +
                 "\"eventType\":\"spidersurge_match\"," +
-                "\"schemaVersion\":1," +
+                "\"schemaVersion\":" + Consts.Telemetry.SchemaVersion + "," +
                 "\"anonId\":\"" + EscapeJson(GetOrCreateAnonymousId()) + "\"," +
                 "\"timestampUtc\":\"" + DateTime.UtcNow.ToString("O") + "\"," +
                 "\"modVersion\":\"" + EscapeJson(SpiderSurgeMod.Version) + "\"," +
@@ -168,12 +171,77 @@ namespace SpiderSurge.Logging
                 "\"playerCount\":" + Math.Max(0, snapshot.PlayerCount) + "," +
                 "\"wavesSurvived\":" + Math.Max(0, snapshot.WavesSurvived) + "," +
                 "\"painLevel\":" + Math.Max(1, snapshot.PainLevel) + "," +
-                "\"globalPerksTruncated\":" + (perksTruncated ? "true" : "false") + "," +
-                "\"playerStatsTruncated\":" + (playerStatsTruncated ? "true" : "false") + "," +
-                "\"globalPerks\":" + perksJson + "," +
-                "\"playerStats\":" + playerStatsJson +
+                "\"endReason\":\"" + EscapeJson(snapshot.EndReason) + "\"," +
+                "\"livesLeft\":" + Math.Max(0, snapshot.LivesLeft) + "," +
+                "\"maxLives\":" + Math.Max(0, snapshot.MaxLives) + "," +
+                "\"statsTracked\":" + JsonBool(snapshot.StatsTracked) + "," +
+                "\"unlimitedPerkTime\":" + JsonBool(snapshot.UnlimitedPerkTime) + "," +
+                "\"globalPerksTruncated\":false," +
+                "\"playerStatsTruncated\":false," +
+                "\"perkChoicesTruncated\":" + JsonBool(perkChoicesTruncated) + "," +
+                "\"wavesTruncated\":" + JsonBool(wavesTruncated) + "," +
+                "\"globalPerks\":" + JsonStringArray(globalPerks) + "," +
+                "\"playerStats\":" + playerStatsJson + "," +
+                "\"perkChoices\":" + perkChoicesJson + "," +
+                "\"waves\":" + wavesJson +
                 "}";
         }
+
+        private static string BuildPlayerJson(PlayerStats player)
+        {
+            string enemyKillsJson = "{" + string.Join(",", (player.EnemyKills ?? new Dictionary<string, int>())
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => "\"" + EscapeJson(entry.Key) + "\":" + entry.Value)) + "}";
+
+            return "{" +
+                "\"playerIndex\":" + player.PlayerIndex + "," +
+                "\"abilityActivationCount\":" + player.AbilityActivationCount + "," +
+                "\"ultimateActivationCount\":" + player.UltimateActivationCount + "," +
+                "\"deaths\":" + player.Deaths + "," +
+                "\"lavaDeaths\":" + player.LavaDeaths + "," +
+                "\"kills\":" + player.Kills + "," +
+                "\"friendlyKills\":" + player.FriendlyKills + "," +
+                "\"shotsFired\":" + player.ShotsFired + "," +
+                "\"shotsHit\":" + player.ShotsHit + "," +
+                "\"aliveSeconds\":" + Math.Max(0, player.AliveSeconds) + "," +
+                "\"enemyKills\":" + enemyKillsJson +
+                "}";
+        }
+
+        private static string BuildPerkChoiceJson(PerkChoiceRecord choice)
+        {
+            return "{" +
+                "\"wave\":" + choice.Wave + "," +
+                "\"kind\":\"" + EscapeJson(choice.Kind) + "\"," +
+                "\"offered\":" + JsonStringArray(choice.Offered) + "," +
+                "\"lucky\":" + JsonStringArray(choice.LuckyOffered) + "," +
+                "\"picked\":\"" + EscapeJson(choice.Picked) + "\"," +
+                "\"level\":" + choice.Level + "," +
+                "\"timedOut\":" + JsonBool(choice.TimedOut) + "," +
+                "\"decisionSeconds\":" + JsonSeconds(choice.DecisionSeconds) +
+                "}";
+        }
+
+        private static string BuildWaveJson(WaveRecord wave)
+        {
+            return "{" +
+                "\"wave\":" + wave.Wave + "," +
+                "\"map\":\"" + EscapeJson(wave.Map) + "\"," +
+                "\"result\":\"" + EscapeJson(wave.Result) + "\"," +
+                "\"seconds\":" + JsonSeconds(wave.Seconds) + "," +
+                "\"livesAtStart\":" + wave.LivesAtStart +
+                (wave.Deaths >= 0 ? ",\"deaths\":" + wave.Deaths : "") +
+                "}";
+        }
+
+        private static string JsonStringArray(IEnumerable<string> values)
+        {
+            return "[" + string.Join(",", (values ?? Enumerable.Empty<string>()).Select(value => "\"" + EscapeJson(value) + "\"")) + "]";
+        }
+
+        private static string JsonBool(bool value) => value ? "true" : "false";
+
+        private static string JsonSeconds(float seconds) => Math.Max(0f, seconds).ToString("0.#", CultureInfo.InvariantCulture);
 
         public string GetAnonymousIdOrNull()
         {

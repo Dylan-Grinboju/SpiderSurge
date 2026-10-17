@@ -69,7 +69,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 `surge.indicator.showOnlyWhenReady`: If true, the indicator only appears when the ability is off cooldown. Default: `false`.
 
 ### Logging:
-`surge.statsLogging`: Records each run's ability and ultimate use to a local file, and feeds it to the Stats titles and the telemetry. Default: `true`.
+`surge.statsLogging`: Records each run's ability and ultimate use, perk choices and waves to a local file, and feeds it to the Stats titles and the telemetry. Default: `true`.
 
 `surge.telemetry`: Uploads anonymous stats for each finished Surge Survival run. See [Telemetry](#telemetry). Default: `false`.
 
@@ -84,6 +84,15 @@ SpiderSurge supports optional telemetry to help track balancing and gameplay tre
 ### How to enable
 
 Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run stats** on the **Run stats and telemetry** page under Surge, or `surge.telemetry` in the file. Uploads also need **Track ability use in each run** (`surge.statsLogging`) on.
+
+### What is sent
+
+One report per finished Surge Survival run, sent by the host:
+
+- **The run:** mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, and whether the perk choice timer is unlimited.
+- **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took.
+- **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, and how many spiders died in it.
+- **Each player, by slot number:** ability and ultimate presses. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills by enemy type, friendly kills, shots fired and hit, and time alive.
 
 ### Privacy and identity
 

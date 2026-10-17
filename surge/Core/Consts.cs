@@ -94,6 +94,9 @@ namespace SpiderSurge
             public const int MaxQueuedPayloads = 50;
             public const int MinSendIntervalMs = 2000;
             public const int DuplicatePayloadWindowMinutes = 10;
+            public const int SchemaVersion = 2;
+            public const int MaxPerkChoiceRecords = 60;
+            public const int MaxWaveRecords = 150;
         }
 
         public static class ModUpdater

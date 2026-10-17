@@ -72,6 +72,8 @@ namespace SpiderSurge.Logging
             sb.AppendLine($"Players: {stats.PlayerCount}");
             sb.AppendLine($"Waves Survived: {stats.WavesSurvived}");
             sb.AppendLine($"Pain Level: {stats.PainLevel}");
+            sb.AppendLine($"Ended By: {stats.EndReason}");
+            sb.AppendLine($"Lives Left: {stats.LivesLeft}/{stats.MaxLives}");
             sb.AppendLine();
 
             sb.AppendLine("GLOBAL PERKS (Active):");
@@ -96,6 +98,13 @@ namespace SpiderSurge.Logging
                     sb.AppendLine($"  Player {player.PlayerIndex + 1}:");
                     sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
                     sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
+                    if (stats.StatsTracked)
+                    {
+                        sb.AppendLine($"    Deaths: {player.Deaths} ({player.LavaDeaths} in lava)");
+                        sb.AppendLine($"    Kills: {player.Kills}");
+                        sb.AppendLine($"    Shots Hit: {player.ShotsHit}/{player.ShotsFired}");
+                        sb.AppendLine($"    Time Alive: {FormatTimeSpan(TimeSpan.FromSeconds(player.AliveSeconds))}");
+                    }
                     sb.AppendLine();
                 }
             }
@@ -103,6 +112,36 @@ namespace SpiderSurge.Logging
             {
                 sb.AppendLine("  No player data collected.");
             }
+
+            sb.AppendLine("PERK CHOICES:");
+            if (stats.PerkChoices != null && stats.PerkChoices.Count > 0)
+            {
+                foreach (var choice in stats.PerkChoices)
+                {
+                    string timedOut = choice.TimedOut ? ", timer ran out" : "";
+                    sb.AppendLine($"  Wave {choice.Wave} ({choice.Kind}): {choice.Picked} Lvl {choice.Level} from [{string.Join(", ", choice.Offered)}]{timedOut}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("  None");
+            }
+            sb.AppendLine();
+
+            sb.AppendLine("WAVES:");
+            if (stats.Waves != null && stats.Waves.Count > 0)
+            {
+                foreach (var wave in stats.Waves)
+                {
+                    string deaths = wave.Deaths >= 0 ? $", {wave.Deaths} deaths" : "";
+                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("  None");
+            }
+            sb.AppendLine();
 
             sb.AppendLine("=".PadRight(60, '='));
             return sb.ToString();
