@@ -18,10 +18,33 @@ namespace SpiderSurge.Common
     [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartClient))]
     public static class NetworkManager_StartClient_Patch
     {
+        [HarmonyPrefix]
+        public static void Prefix(NetworkManager __instance)
+        {
+            Net.PrepareConnect(__instance);
+        }
+
         [HarmonyPostfix]
         public static void Postfix()
         {
             Net.Bind();
+        }
+    }
+
+    [HarmonyPatch(typeof(LobbyController), "ConnectionApprovalCallback")]
+    public static class LobbyController_ConnectionApprovalCallback_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(byte[] connectionData, ulong clientId)
+        {
+            try
+            {
+                Net.OnApproval(connectionData, clientId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"SpiderSurge could not read the connection data: {ex.Message}");
+            }
         }
     }
 
@@ -32,11 +55,11 @@ namespace SpiderSurge.Common
         private static bool _warned;
 
         [HarmonyPrefix]
-        public static void Prefix()
+        public static void Prefix(LobbyType lobby)
         {
             try
             {
-                if (_warned || !GameSettings.LoadUseServer())
+                if (_warned || lobby == LobbyType.Private || !GameSettings.LoadUseServer())
                 {
                     return;
                 }

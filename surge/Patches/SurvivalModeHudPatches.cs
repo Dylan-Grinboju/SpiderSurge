@@ -89,6 +89,31 @@ namespace SpiderSurge
         }
     }
 
+    // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then
+    public static class PerkChoiceRefresh
+    {
+        public static void Refresh()
+        {
+            var hud = SurvivalModeHud.instance;
+            if (hud == null || hud.perkChoiceView == null || !hud.perkChoiceView.IsVisible)
+            {
+                return;
+            }
+            foreach (var card in hud.survivalModifierChoiceCards)
+            {
+                if (card != null && card.modifier != null)
+                {
+                    SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, card.cardIndex, false);
+                }
+            }
+            SurvivalModeHud_ShowPerkChoicesClientRpc_Patch.Postfix(hud);
+            if (hud.choiseTimerComponent != null)
+            {
+                PerkChoiseTimer_SetTimerValue_Patch.Postfix(hud.choiseTimerComponent);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
     public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
     {

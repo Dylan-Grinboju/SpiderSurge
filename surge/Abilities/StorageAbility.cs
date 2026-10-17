@@ -239,6 +239,7 @@ namespace SpiderSurge
 
             _weaponManager.UnEquipWeapon();
 
+            HideFromClients(heldWeaponObj);
             heldWeaponObj.transform.SetParent(transform);
             heldWeaponObj.transform.localPosition = Vector3.zero;
             heldWeaponObj.SetActive(false);
@@ -277,6 +278,7 @@ namespace SpiderSurge
 
             storedWeaponObj.SetActive(true);
             storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
+            ShowToClients(storedWeaponObj);
 
             Weapon weapon = storedWeaponObj.GetComponent<Weapon>();
             if (weapon != null)
@@ -297,6 +299,70 @@ namespace SpiderSurge
                     Consts.SoundNames.StorageRetrieve,
                     Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
                 );
+            }
+        }
+
+        // Netcode doesn't sync SetActive, so a stored weapon is despawned on clients until it comes back out
+        private static bool HiddenFromClients(ulong clientId) => clientId == Net.ServerId;
+
+        private static void HideFromClients(GameObject weaponObj)
+        {
+            var no = weaponObj.GetComponent<NetworkObject>();
+            if (no == null || !Net.IsHost)
+            {
+                return;
+            }
+            no.CheckObjectVisibility = HiddenFromClients;
+            if (!no.IsSpawned)
+            {
+                return;
+            }
+            foreach (ulong client in new List<ulong>(Net.Manager.ConnectedClientsIds))
+            {
+                HideFrom(no, client);
+            }
+        }
+
+        private static void HideFrom(NetworkObject no, ulong client)
+        {
+            if (client != Net.ServerId && no.IsNetworkVisibleTo(client))
+            {
+                no.NetworkHide(client);
+            }
+        }
+
+        private static void ShowToClients(GameObject weaponObj)
+        {
+            var no = weaponObj.GetComponent<NetworkObject>();
+            if (no == null || !Net.IsHost)
+            {
+                return;
+            }
+            no.CheckObjectVisibility = null;
+            if (!no.IsSpawned)
+            {
+                return;
+            }
+            foreach (ulong client in new List<ulong>(Net.Manager.ConnectedClientsIds))
+            {
+                if (client != Net.ServerId && !no.IsNetworkVisibleTo(client))
+                {
+                    no.NetworkShow(client);
+                }
+            }
+        }
+
+        // Netcode makes a joining client an observer of every object, stored weapons included
+        public static void HideStoredWeaponsFrom(ulong clientId)
+        {
+            foreach (var storage in FindObjectsOfType<StorageAbility>())
+            {
+                var weapon = storage._storedWeaponData?.WeaponRef;
+                var no = weapon != null ? weapon.GetComponent<NetworkObject>() : null;
+                if (no != null && no.IsSpawned)
+                {
+                    HideFrom(no, clientId);
+                }
             }
         }
 
@@ -446,7 +512,11 @@ namespace SpiderSurge
                     if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
                     {
                         var no = newWeaponObj.GetComponent<NetworkObject>();
-                        if (no != null) no.Spawn(true);
+                        if (no != null)
+                        {
+                            no.CheckObjectVisibility = HiddenFromClients;
+                            no.Spawn(true);
+                        }
                     }
 
                     Weapon newWeapon = newWeaponObj.GetComponent<Weapon>();

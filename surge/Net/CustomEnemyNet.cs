@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
@@ -6,9 +7,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Enemies
 {
-    // A custom enemy is a clone of a game prefab, so NGO would spawn the plain original on clients. Each clone gets its own
-    // GlobalObjectIdHash and a prefab handler, which lets a modded client build the clone instead. In a lobby with a vanilla
-    // client the host spawns the clone under the original's hash, so everyone at least sees the base enemy.
+    // Each custom enemy clone gets its own hash and prefab handler; clients without the mod are sent the original's hash
     public static class CustomEnemyNet
     {
         private sealed class Handler : INetworkPrefabInstanceHandler
@@ -93,17 +92,13 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        // Runs on the host right before an instance spawns: keep the custom hash only when every client can build it
-        public static void PrepareForSpawn(NetworkObject instance)
+        public static uint HashForClient(uint hash, ulong targetClientId)
         {
-            if (instance == null || !_byHash.TryGetValue(instance.GlobalObjectIdHash, out var entry))
+            if (!_byHash.TryGetValue(hash, out var entry) || Net.ClientRunsMod(targetClientId))
             {
-                return;
+                return hash;
             }
-            if (Net.HasRemotePlayers && !Net.AllClientsModded)
-            {
-                instance.GlobalObjectIdHash = entry.OriginalHash;
-            }
+            return entry.OriginalHash;
         }
     }
 }

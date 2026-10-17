@@ -38,6 +38,7 @@ namespace StatsMod
         private float remoteSessionSeconds;
         private float remoteReceivedAt;
         private bool remoteRestartRequested;
+        private bool isMirrored;
 
         public bool IsActive => isSurvivalActive || isVersusActive;
         public GameMode CurrentGameMode => currentGameMode;
@@ -119,7 +120,7 @@ namespace StatsMod
 
         private void StopSession(GameMode mode)
         {
-            if (Net.IsRemoteClient) return;
+            if (Net.IsRemoteClient || isMirrored) return;
             bool isCorrectMode = (mode == GameMode.Survival && isSurvivalActive) ||
                                  (mode == GameMode.Versus && isVersusActive);
 
@@ -143,6 +144,8 @@ namespace StatsMod
 
             TitlesManager.Instance.CalculateAndStoreTitles(statsSnapshot);
             statsSnapshot.Titles = TitlesManager.Instance.AllTitles;
+            lastGameMode = currentGameMode;
+            currentGameMode = GameMode.None;
             StatsNet.SendSnapshot(SnapshotReason.Stopped);
             StatsNet.SendTitles();
 
@@ -168,14 +171,12 @@ namespace StatsMod
             }
 
             restartRequested = false;
-
-            lastGameMode = currentGameMode;
-            currentGameMode = GameMode.None;
             Logger.LogInfo($"{mode} session stopped. Duration: {TimeFormatUtils.FormatTimeSpan(sessionTime)}");
         }
 
         public void MarkRestartRequested()
         {
+            if (Net.IsRemoteClient) return;
             restartRequested = true;
         }
 
@@ -316,6 +317,7 @@ namespace StatsMod
 
         public void ReadSession(BinaryReader reader)
         {
+            isMirrored = true;
             isSurvivalActive = reader.ReadBoolean();
             isVersusActive = reader.ReadBoolean();
             currentGameMode = (GameMode)reader.ReadInt32();
@@ -338,6 +340,11 @@ namespace StatsMod
         public void OnRemoteSnapshot(SnapshotReason reason)
         {
             if (reason != SnapshotReason.Started) return;
+
+            if (currentGameMode == GameMode.Versus)
+            {
+                TitlesManager.Instance.ClearTitles();
+            }
 
             bool keepEndOfGameTitlesVisible = pauseAfterRestartOnNextSessionStart &&
                                              TitlesManager.Instance.HasGameEndedTitles &&
@@ -375,6 +382,8 @@ namespace StatsMod
             lastGameDuration = TimeSpan.Zero;
             remoteSessionSeconds = 0f;
             remoteRestartRequested = false;
+            restartRequested = false;
+            isMirrored = false;
             pauseAfterRestartOnNextSessionStart = false;
             painLevel = -1;
             mapsPlayed.Clear();

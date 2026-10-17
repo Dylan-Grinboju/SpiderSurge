@@ -11,9 +11,35 @@ namespace SpiderSurge
         public static List<SpiderController> ActiveSpiderControllers = new List<SpiderController>();
         private static readonly HashSet<int> SeenPlayerSpawns = new HashSet<int>();
 
+        public static int SpawnEpoch { get; private set; }
+
+        // The host counts each reset and sends the count, so clients forget the same spawns at the same time
         public static void ResetSpawnTracking()
         {
             SeenPlayerSpawns.Clear();
+            if (Net.IsAuthority)
+            {
+                SpawnEpoch++;
+                SurgeNet.SendStateNow();
+            }
+        }
+
+        public static void ApplyRemoteEpoch(int epoch)
+        {
+            if (epoch == SpawnEpoch)
+            {
+                return;
+            }
+            SpawnEpoch = epoch;
+            SeenPlayerSpawns.Clear();
+        }
+
+        public static void AttachToExistingSpiders()
+        {
+            foreach (var spider in Object.FindObjectsOfType<SpiderController>())
+            {
+                InitializePlayerAbilities(spider.gameObject);
+            }
         }
 
         // Every spider gets abilities: a local player's take input, a remote player's are proxies the host runs and clients draw
@@ -43,10 +69,6 @@ namespace SpiderSurge
                     return;
                 }
 
-                int playerId = playerController.playerID.Value;
-                bool isRespawn = SeenPlayerSpawns.Contains(playerId);
-                SeenPlayerSpawns.Add(playerId);
-
                 SpiderController spiderController = playerObject.GetComponent<SpiderController>();
                 if (spiderController == null)
                 {
@@ -55,10 +77,15 @@ namespace SpiderSurge
                 }
 
                 ActiveSpiderControllers.RemoveAll(sc => sc == null);
-                if (!ActiveSpiderControllers.Contains(spiderController))
+                if (ActiveSpiderControllers.Contains(spiderController))
                 {
-                    ActiveSpiderControllers.Add(spiderController);
+                    return;
                 }
+                ActiveSpiderControllers.Add(spiderController);
+
+                int playerId = playerController.playerID.Value;
+                bool isRespawn = SeenPlayerSpawns.Contains(playerId);
+                SeenPlayerSpawns.Add(playerId);
 
                 if (playerInput != null && spiderController.GetComponent<InputInterceptor>() == null)
                 {

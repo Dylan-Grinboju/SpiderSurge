@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Unity.Collections;
 using Unity.Netcode;
 using Logger = Silk.Logger;
@@ -19,10 +20,12 @@ namespace SpiderSurge.Common
         private const string HelloChannel = "core.hello";
         private const string WelcomeChannel = "core.welcome";
         private const string SettingsChannel = "core.settings";
-        private const int MaxPayload = 1024 * 1024;
+        private const string ConnectPrefix = "SpiderSurge/";
+        private const int MaxPayload = 63000;
 
         private static readonly Dictionary<uint, (string name, Handler handler)> _handlers = new Dictionary<uint, (string, Handler)>();
         private static readonly HashSet<ulong> _moddedClients = new HashSet<ulong>();
+        private static readonly HashSet<ulong> _announcedClients = new HashSet<ulong>();
         private static readonly List<ulong> _targets = new List<ulong>();
         private static CustomMessagingManager _boundTo;
         private static NetworkManager _subscribedTo;
@@ -30,6 +33,7 @@ namespace SpiderSurge.Common
 
         public static event Action<ulong> PeerReady;
         public static event Action<ulong> PeerLeft;
+        public static event Action<ulong> ClientJoined;
         public static event Action JoinedHost;
         public static event Action LeftHost;
 
@@ -67,22 +71,29 @@ namespace SpiderSurge.Common
             return clientId == Net.ServerId || _moddedClients.Contains(clientId);
         }
 
-        public static bool AllClientsModded
+        // True from connection approval on, before the client's Hello arrives
+        public static bool ClientRunsMod(ulong clientId)
         {
-            get
+            return ClientHasMod(clientId) || _announcedClients.Contains(clientId);
+        }
+
+        internal static void PrepareConnect(NetworkManager manager)
+        {
+            if (manager != null)
             {
-                if (!IsHost)
-                {
-                    return HostHasMod || !IsRemoteClient;
-                }
-                foreach (ulong client in Manager.ConnectedClientsIds)
-                {
-                    if (!ClientHasMod(client))
-                    {
-                        return false;
-                    }
-                }
-                return true;
+                manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(ConnectPrefix + SpiderSurgeMod.Version);
+            }
+        }
+
+        internal static void OnApproval(byte[] connectionData, ulong clientId)
+        {
+            if (clientId == Net.ServerId || connectionData == null || connectionData.Length < ConnectPrefix.Length)
+            {
+                return;
+            }
+            if (Encoding.UTF8.GetString(connectionData).StartsWith(ConnectPrefix, StringComparison.Ordinal))
+            {
+                _announcedClients.Add(clientId);
             }
         }
 
@@ -240,6 +251,7 @@ namespace SpiderSurge.Common
         {
             bool wasJoined = HostHasMod;
             _moddedClients.Clear();
+            _announcedClients.Clear();
             HostHasMod = false;
             HostVersion = null;
             Settings.ClearRemote();
@@ -257,6 +269,10 @@ namespace SpiderSurge.Common
                 {
                     Send(HelloChannel, Net.ServerId, Payload(writer => writer.Write(SpiderSurgeMod.Version)));
                 }
+                else if (IsHost && clientId != Net.ServerId)
+                {
+                    Raise(ClientJoined, clientId);
+                }
             }
             catch (Exception ex)
             {
@@ -270,6 +286,7 @@ namespace SpiderSurge.Common
             {
                 if (IsHost)
                 {
+                    _announcedClients.Remove(clientId);
                     if (_moddedClients.Remove(clientId))
                     {
                         Raise(PeerLeft, clientId);
@@ -427,10 +444,18 @@ namespace SpiderSurge.Common
             {
                 return;
             }
+            if (!Fits(channel, payload))
+            {
+                return;
+            }
             var writer = Writer(channel, payload);
             try
             {
                 messaging.SendNamedMessage(MessageName, clientId, writer, Delivery(payload));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderSurge net message '{channel}' could not be sent: {ex.Message}");
             }
             finally
             {
@@ -445,10 +470,18 @@ namespace SpiderSurge.Common
             {
                 return;
             }
+            if (!Fits(channel, payload))
+            {
+                return;
+            }
             var writer = Writer(channel, payload);
             try
             {
                 messaging.SendNamedMessage(MessageName, clientIds, writer, Delivery(payload));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderSurge net message '{channel}' could not be sent: {ex.Message}");
             }
             finally
             {
@@ -462,12 +495,19 @@ namespace SpiderSurge.Common
             return Available ? Manager.CustomMessagingManager : null;
         }
 
+        // Netcode refuses a fragmented message over 64000 bytes
+        private static bool Fits(string channel, byte[] payload)
+        {
+            if (payload.Length <= MaxPayload)
+            {
+                return true;
+            }
+            Logger.LogWarning($"SpiderSurge net message '{channel}' is too large to send ({payload.Length} bytes)");
+            return false;
+        }
+
         private static FastBufferWriter Writer(string channel, byte[] payload)
         {
-            if (payload.Length > MaxPayload)
-            {
-                throw new InvalidOperationException($"SpiderSurge net message '{channel}' is too large ({payload.Length} bytes)");
-            }
             var writer = new FastBufferWriter(payload.Length + 16, Allocator.Temp, MaxPayload + 16);
             uint hash = Hash(channel);
             writer.WriteValueSafe(hash);

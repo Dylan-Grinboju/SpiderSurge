@@ -10,14 +10,14 @@ namespace SpiderTeams
     public static class VersusMode_StartMatch_Patch
     {
         [HarmonyPostfix]
-        public static void Postfix(VersusMode __instance)
+        public static void Postfix(VersusMode __instance, bool waitingRoom)
         {
             try
             {
                 var manager = TeamManager.Instance;
                 if (manager != null && __instance.GameModeActive())
                 {
-                    manager.BeginMatch(!ReflectionCache.IsWaitingRoom(__instance));
+                    manager.BeginMatch(!waitingRoom);
                 }
                 SurgeVersus.OnMatchStarted();
             }
@@ -202,6 +202,8 @@ namespace SpiderTeams
                     return;
                 }
 
+                // BeginMatch only runs on the host, so a client drops the last match's team result here
+                MatchSnapshot.Clear();
                 var manager = TeamManager.Instance;
                 if (manager != null)
                 {

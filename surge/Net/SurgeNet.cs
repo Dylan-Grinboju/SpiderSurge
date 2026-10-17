@@ -32,6 +32,7 @@ namespace SpiderSurge
         private static bool _initialized;
         private static bool _dirty;
         private static int _lastRemoteWave;
+        private static bool _awaitingFirstState;
 
         public static void Initialize()
         {
@@ -44,6 +45,7 @@ namespace SpiderSurge
             Net.Register(AbilityChannel, OnAbility);
             Net.Register(FxChannel, OnFx);
             Net.PeerReady += OnPeerReady;
+            Net.ClientJoined += StorageAbility.HideStoredWeaponsFrom;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
         }
@@ -59,6 +61,7 @@ namespace SpiderSurge
             Net.Unregister(AbilityChannel);
             Net.Unregister(FxChannel);
             Net.PeerReady -= OnPeerReady;
+            Net.ClientJoined -= StorageAbility.HideStoredWeaponsFrom;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
         }
@@ -129,12 +132,14 @@ namespace SpiderSurge
         private static void OnJoinedHost()
         {
             _lastRemoteWave = 0;
+            _awaitingFirstState = true;
             Enemies.CustomEnemyNet.RegisterHandlers();
         }
 
         private static void OnLeftHost()
         {
             _lastRemoteWave = 0;
+            _awaitingFirstState = false;
             SurgeGameModeManager.Instance?.ResetRun();
             SurgeGameModeManager.SelectMode(false);
             PerksManager.Instance?.ResetPerks();
@@ -180,6 +185,7 @@ namespace SpiderSurge
             {
                 writer.Write(key);
             }
+            writer.Write(PlayerAbilityHandler.SpawnEpoch);
         }
 
         private static void OnState(ulong sender, BinaryReader reader)
@@ -213,10 +219,23 @@ namespace SpiderSurge
                 {
                     lucky.Add(reader.ReadString());
                 }
+                int spawnEpoch = reader.ReadInt32();
 
                 SurgeGameModeManager.SelectMode(modeEnabled);
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
+                PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
+
+                // Spiders already alive when a client joins mid-run started before Surge was active there
+                if (_awaitingFirstState)
+                {
+                    _awaitingFirstState = false;
+                    if (active)
+                    {
+                        PlayerAbilityHandler.AttachToExistingSpiders();
+                        PerkChoiceRefresh.Refresh();
+                    }
+                }
 
                 if (wave != _lastRemoteWave)
                 {

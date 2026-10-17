@@ -10,7 +10,7 @@ namespace SpiderTeams
 
         public static void Build(VersusTeamsPage page)
         {
-            page.Checkbox("Team versus", () => ModConfig.TeamsEnabled, ModConfig.SetTeamsEnabled);
+            page.Checkbox(Settings.IsRemote(Consts.Keys.TeamsEnabled) ? "Team versus (set by host)" : "Team versus", () => ModConfig.TeamsEnabled, ModConfig.SetTeamsEnabled);
             page.Choice("Team count", ModConfig.TeamCount.ToString(),
                 () => ModConfig.SetTeamCount(ModConfig.TeamCount - 1),
                 () => ModConfig.SetTeamCount(ModConfig.TeamCount + 1));

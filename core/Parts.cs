@@ -68,7 +68,7 @@ namespace SpiderSurge.Common
                 }
                 foreach (string shared in part.SharedSettings)
                 {
-                    if (Settings.Affects(shared, key))
+                    if (Settings.Affects(shared, key) || Settings.Affects(key, shared))
                     {
                         return true;
                     }
