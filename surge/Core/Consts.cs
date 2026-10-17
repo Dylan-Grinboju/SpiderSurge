@@ -181,6 +181,7 @@ namespace SpiderSurge
                 public const float BanishPullTime = 0.3f;
                 public const float BanishEndScale = 0.1f;
                 public const float BanishMissCooldownFraction = 0.25f;
+                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.65f, 0.25f, 1f, 0.8f);
                 public const float SpawnDistance = 50f;
             }
 

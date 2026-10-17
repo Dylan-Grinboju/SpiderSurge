@@ -9,13 +9,32 @@ namespace SpiderSurge
         private float currentRadius = 0f;
         private float maxRadius = 100f;
         private float speed;
+        private bool inward;
+        private float closeTime;
+        private float elapsed;
+        private Transform follow;
         private int segments = 60;
 
         public void Setup(float targetRadius)
         {
             this.maxRadius = targetRadius;
             this.speed = Consts.Values.Pulse.RingSpeed;
+            CreateLine(Consts.Values.Pulse.RingColor);
+        }
 
+        // Starts at the radius and closes on the followed transform, speeding up like Banish's pull
+        public void SetupInward(float radius, Color color, float duration, Transform followTarget)
+        {
+            maxRadius = radius;
+            currentRadius = radius;
+            inward = true;
+            closeTime = duration;
+            follow = followTarget;
+            CreateLine(color);
+        }
+
+        private void CreateLine(Color color)
+        {
             lineRenderer = gameObject.AddComponent<LineRenderer>();
             lineRenderer.useWorldSpace = false;
             lineRenderer.loop = true;
@@ -27,8 +46,8 @@ namespace SpiderSurge
             material = new Material(Shader.Find("Sprites/Default"));
             lineRenderer.material = material;
 
-            lineRenderer.startColor = Consts.Values.Pulse.RingColor;
-            lineRenderer.endColor = Consts.Values.Pulse.RingColor;
+            lineRenderer.startColor = color;
+            lineRenderer.endColor = color;
 
             // Initial draw
             DrawRing();
@@ -44,9 +63,23 @@ namespace SpiderSurge
 
         private void Update()
         {
-            currentRadius += speed * Time.deltaTime;
+            if (follow != null) transform.position = follow.position;
 
-            if (currentRadius >= maxRadius)
+            bool done;
+            if (inward)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / closeTime;
+                currentRadius = maxRadius * (1f - t * t);
+                done = t >= 1f;
+            }
+            else
+            {
+                currentRadius += speed * Time.deltaTime;
+                done = currentRadius >= maxRadius;
+            }
+
+            if (done)
             {
                 Destroy(gameObject);
                 return;

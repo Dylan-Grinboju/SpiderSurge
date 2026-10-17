@@ -98,6 +98,7 @@ namespace SpiderSurge
         protected override void OnActivateUltimate()
         {
             bool hit = TryBanishNearest();
+            SpawnBanishRing();
             SoundManager.Instance?.PlaySound(
                 Consts.SoundNames.StorageSend,
                 Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
@@ -110,6 +111,16 @@ namespace SpiderSurge
             {
                 ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
             }
+        }
+
+        private void SpawnBanishRing()
+        {
+            if (spiderHealthSystem == null) return;
+
+            Transform body = spiderHealthSystem.transform;
+            GameObject ring = new GameObject("BanishRing");
+            ring.transform.position = body.position;
+            ring.AddComponent<PulseRingEffect>().SetupInward(BanishRange, Consts.Values.Storage.RingColor, Consts.Values.Storage.BanishPullTime, body);
         }
 
         // Pulls the closest enemy that counts for the wave, or the closest other spider that can die, within banish range
