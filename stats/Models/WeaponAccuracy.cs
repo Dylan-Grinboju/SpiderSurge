@@ -48,5 +48,12 @@ namespace StatsMod
         }
 
         private void Format() => Display = Percentage is double percentage ? percentage.ToString("0.#", CultureInfo.InvariantCulture) + "%" : "--";
+
+        internal void Set(int fired, int hit)
+        {
+            ShotsFired = fired;
+            ShotsHit = hit;
+            Format();
+        }
     }
 }

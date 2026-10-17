@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -9,6 +10,7 @@ namespace SpiderSurge
     public class StorageAbility : BaseAbility
     {
         public override string PerkName => Consts.PerkNames.StorageAbility;
+        public override AbilityKind Kind => AbilityKind.Storage;
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
@@ -90,14 +92,22 @@ namespace SpiderSurge
             UpdateCachedModifierLevels();
         }
 
+        // Weapons are network objects, so only the host moves them; a client plays the sounds for its own press
         protected override void OnActivate()
         {
-            StartCoroutine(SwapRoutine());
+            if (IsAuthority)
+            {
+                StartCoroutine(SwapRoutine());
+            }
+            else if (!IsRemote)
+            {
+                StartCoroutine(SwapSoundsOnly());
+            }
         }
 
         protected override void OnActivateUltimate()
         {
-            bool hit = TryBanishNearest();
+            bool hit = IsAuthority && TryBanishNearest();
             SpawnBanishRing();
             SoundManager.Instance?.PlaySound(
                 Consts.SoundNames.StorageSend,
@@ -107,9 +117,30 @@ namespace SpiderSurge
             isActive = false;
             isUltimateActive = false;
             StartCooldown(wasUltimate: true);
-            if (!hit)
+            if (IsAuthority && !hit)
             {
                 ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
+            }
+        }
+
+        private bool _clientSlotFilled;
+
+        private IEnumerator SwapSoundsOnly()
+        {
+            bool hadWeapon = _weaponManager != null && _weaponManager.equippedWeapon != null;
+            bool hadStored = _clientSlotFilled;
+            _clientSlotFilled = hadWeapon;
+
+            if (hadWeapon && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume);
+            }
+
+            yield return new WaitForSeconds(AbilityDuration);
+
+            if (hadStored && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume);
             }
         }
 
@@ -168,12 +199,12 @@ namespace SpiderSurge
 
             if (spiderTarget != null)
             {
-                BanishedTarget.BeginSpider(spiderTarget, body, playerInput);
+                BanishedTarget.BeginSpider(spiderTarget, body, playerController);
                 return true;
             }
             if (enemyTarget != null)
             {
-                BanishedTarget.BeginEnemy(enemyTarget, body, playerInput);
+                BanishedTarget.BeginEnemy(enemyTarget, body, playerController);
                 return true;
             }
             return false;
@@ -291,9 +322,9 @@ namespace SpiderSurge
 
         private void SaveWeapons(bool isDeath)
         {
-            if (PerksManager.Instance == null) return;
+            if (PerksManager.Instance == null || !IsAuthority) return;
 
-            int playerId = playerInput != null ? playerInput.playerIndex : -1;
+            int playerId = PlayerId;
             if (playerId == -1) return;
 
             List<StoragePersistenceManager.SavedWeaponData> dataList = new List<StoragePersistenceManager.SavedWeaponData>();
@@ -364,9 +395,9 @@ namespace SpiderSurge
 
         private void RestoreWeapons()
         {
-            if (PerksManager.Instance == null) return;
+            if (PerksManager.Instance == null || !IsAuthority) return;
 
-            int playerId = playerInput != null ? playerInput.playerIndex : -1;
+            int playerId = PlayerId;
             List<StoragePersistenceManager.SavedWeaponData> dataList = StoragePersistenceManager.GetStoredWeapons(playerId);
 
             if (dataList == null || dataList.Count == 0) return;

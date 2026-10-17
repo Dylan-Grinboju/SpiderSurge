@@ -10,6 +10,7 @@ namespace StatsMod
 
         void Update()
         {
+            StatsNet.Tick();
             bool isPaused = Mathf.Approximately(Time.timeScale, 0f);
             if (isPaused && !wasPaused)
             {

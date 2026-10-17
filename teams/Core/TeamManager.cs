@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -39,12 +41,13 @@ namespace SpiderTeams
             }
         }
 
+        // True on a client too, once the host's roster says team mode is on; host-only work still checks IsHost
         public static bool TeamMatchActive
         {
             get
             {
                 var manager = Instance;
-                if (manager == null || !manager.TeamModeThisMatch || !IsHost)
+                if (manager == null || !manager.TeamModeThisMatch || !(IsHost || Net.HostHasMod))
                 {
                     return false;
                 }
@@ -104,6 +107,10 @@ namespace SpiderTeams
             {
                 _rosterDirty = false;
                 RaiseRosterChanged();
+                if (IsHost)
+                {
+                    TeamNet.BroadcastRoster();
+                }
             }
 
             if (Time.unscaledTime >= _nextLabelRefresh)
@@ -131,14 +138,34 @@ namespace SpiderTeams
             _rosterDirty = true;
         }
 
-        public void BeginMatch()
+        // An online match opens in the WaitingRoom, where players still join and pick, so the roster locks at the first real round
+        public void BeginMatch(bool lockNow)
         {
             Array.Clear(_teamScores, 0, _teamScores.Length);
             MatchSnapshot.Clear();
             Announcements.ClearPicks();
+            TeamModeThisMatch = ModConfig.TeamsEnabled && IsHost;
+            MatchLocked = false;
+            if (lockNow)
+            {
+                LockRoster();
+            }
+            else
+            {
+                NormalizeRoster();
+                MarkRosterChanged();
+                Logger.LogInfo("SpiderTeams: waiting room, teams stay open until the first round");
+            }
+        }
+
+        public void LockRoster()
+        {
+            if (MatchLocked)
+            {
+                return;
+            }
             _matchTeamCount = ModConfig.TeamCount;
             MatchLocked = true;
-            TeamModeThisMatch = ModConfig.TeamsEnabled && IsHost;
             NormalizeRoster();
             MarkRosterChanged();
 
@@ -186,9 +213,89 @@ namespace SpiderTeams
                 return;
             }
             _clientNoticeShown = true;
-            Logger.LogInfo("SpiderTeams: someone else is hosting this match, so their rules apply");
-            Toast.Show("SpiderSurge: teams only apply when you host", Color.white);
+            if (Net.HostHasMod)
+            {
+                Logger.LogInfo("SpiderTeams: the host runs SpiderSurge, so its team rules apply");
+                Toast.Show("SpiderSurge: the host's team rules apply", Color.white);
+            }
+            else
+            {
+                Logger.LogInfo("SpiderTeams: the host has no SpiderSurge, so there are no teams in this match");
+                Toast.Show("SpiderSurge: the host has no SpiderSurge, no teams this match", Color.white);
+            }
         }
+
+        // A joining client's roster still describes its own local session, whose playerIDs mean other people here
+        public void OnJoinedHost()
+        {
+            ResetSession();
+        }
+
+        public void OnLeftHost()
+        {
+            ResetSession();
+        }
+
+        private void ResetSession()
+        {
+            _teamOf.Clear();
+            Array.Clear(_teamScores, 0, _teamScores.Length);
+            MatchLocked = false;
+            TeamModeThisMatch = false;
+            _clientNoticeShown = false;
+            MarkRosterChanged();
+        }
+
+        public void WriteState(BinaryWriter writer)
+        {
+            writer.Write(TeamCount);
+            writer.Write(MatchLocked);
+            writer.Write(TeamModeThisMatch);
+            writer.Write(_teamOf.Count);
+            foreach (var pair in _teamOf)
+            {
+                writer.Write(pair.Key);
+                writer.Write(pair.Value);
+            }
+            writer.Write(_teamScores.Length);
+            for (int team = 0; team < _teamScores.Length; team++)
+            {
+                writer.Write(_teamScores[team]);
+            }
+        }
+
+        public void ReadState(BinaryReader reader)
+        {
+            int teamCount = reader.ReadInt32();
+            bool locked = reader.ReadBoolean();
+            TeamModeThisMatch = reader.ReadBoolean();
+            _teamOf.Clear();
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                int id = reader.ReadInt32();
+                _teamOf[id] = reader.ReadInt32();
+            }
+            int scores = reader.ReadInt32();
+            for (int team = 0; team < scores; team++)
+            {
+                int score = reader.ReadInt32();
+                if (team < _teamScores.Length)
+                {
+                    _teamScores[team] = score;
+                }
+            }
+            // A client keeps the host's team count in force through MatchLocked, whose TeamCount reads _matchTeamCount
+            _matchTeamCount = Mathf.Max(1, teamCount);
+            MatchLocked = locked || Net.IsRemoteClient;
+            _remoteLocked = locked;
+            MarkRosterChanged();
+        }
+
+        private bool _remoteLocked;
+
+        // Whether the host still lets players pick; on the host this is !MatchLocked
+        public bool PicksOpen => Net.IsRemoteClient ? !_remoteLocked : !MatchLocked;
 
         public int AddTeamPoint(int team)
         {
@@ -371,8 +478,13 @@ namespace SpiderTeams
 
         public bool CycleTeam(PlayerController player)
         {
-            if (player == null || MatchLocked)
+            if (player == null || !PicksOpen)
             {
+                return false;
+            }
+            if (Net.IsRemoteClient)
+            {
+                TeamNet.RequestPick(player.playerID.Value);
                 return false;
             }
 

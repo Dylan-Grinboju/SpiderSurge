@@ -8,11 +8,27 @@ namespace SpiderSurge
     {
         public static PerksManager Instance { get; private set; }
 
-        public bool IsFirstNormalPerkSelection { get; set; } = true;
+        private bool _isFirstNormalPerkSelection = true;
+        private bool _isUltUpgradePerkSelection;
+        private bool _isUltSwapPerkSelection;
 
-        public bool IsUltUpgradePerkSelection { get; set; } = false;
+        public bool IsFirstNormalPerkSelection
+        {
+            get => _isFirstNormalPerkSelection;
+            set { _isFirstNormalPerkSelection = value; SurgeNet.MarkDirty(); }
+        }
 
-        public bool IsUltSwapPerkSelection { get; set; } = false;
+        public bool IsUltUpgradePerkSelection
+        {
+            get => _isUltUpgradePerkSelection;
+            set { _isUltUpgradePerkSelection = value; SurgeNet.MarkDirty(); }
+        }
+
+        public bool IsUltSwapPerkSelection
+        {
+            get => _isUltSwapPerkSelection;
+            set { _isUltSwapPerkSelection = value; SurgeNet.MarkDirty(); }
+        }
 
         // Ability perks - shown in special ability selection screen
         private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ImmuneAbility, Consts.PerkNames.AmmoAbility, Consts.PerkNames.PulseAbility, Consts.PerkNames.StorageAbility };
@@ -276,6 +292,34 @@ namespace SpiderSurge
         public void SetPerkLevel(string perkKey, int level)
         {
             perkLevels[perkKey] = level;
+            SurgeNet.MarkDirty();
+        }
+
+        // A client takes the host's perk table as is and re-registers its local abilities against it
+        public void ApplyRemote(Dictionary<string, int> levels, bool firstSelection, bool ultUpgrade, bool ultSwap)
+        {
+            perkLevels.Clear();
+            foreach (var pair in levels)
+            {
+                perkLevels[pair.Key] = pair.Value;
+            }
+            _isFirstNormalPerkSelection = firstSelection;
+            _isUltUpgradePerkSelection = ultUpgrade;
+            _isUltSwapPerkSelection = ultSwap;
+            RefreshAbilityRegistrations();
+            UpdatePerkIcons();
+        }
+
+        public void RefreshAbilityRegistrations()
+        {
+            PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc == null);
+            foreach (SpiderController player in PlayerAbilityHandler.ActiveSpiderControllers)
+            {
+                foreach (var ability in player.GetComponents<BaseAbility>())
+                {
+                    ability.RegisterWithInputInterceptor();
+                }
+            }
         }
 
         private Dictionary<string, System.Action> _perkActions;
@@ -327,9 +371,10 @@ namespace SpiderSurge
         public void ResetPerks()
         {
             perkLevels.Clear();
-            IsFirstNormalPerkSelection = true;
-            IsUltUpgradePerkSelection = false;
-            IsUltSwapPerkSelection = false;
+            _isFirstNormalPerkSelection = true;
+            _isUltUpgradePerkSelection = false;
+            _isUltSwapPerkSelection = false;
+            SurgeNet.MarkDirty();
             UpdatePerkIcons();
         }
 

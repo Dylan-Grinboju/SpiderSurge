@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SpiderSurge.Enemies;
 using Unity.Netcode;
 using System;
 
@@ -66,6 +67,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static void Prefix(NetworkObject __instance)
         {
+            CustomEnemyNet.PrepareForSpawn(__instance);
             if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive) return;
 
             // Ensure custom enemies (and any other modded objects) are active when spawned.

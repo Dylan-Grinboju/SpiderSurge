@@ -40,8 +40,8 @@ namespace SpiderTeams
                 if (!_warnedRemote)
                 {
                     _warnedRemote = true;
-                    Logger.LogInfo("SpiderTeams: Surge abilities are off for this match because a player is online");
-                    Announcements.Broadcast("Surge abilities are off: they only work for players on the host's machine", Color.white, false);
+                    Logger.LogInfo("SpiderTeams: Surge abilities are off for this match because a player has no SpiderSurge");
+                    Announcements.Broadcast("Surge abilities are off: a player has no SpiderSurge", Color.white, false);
                 }
                 return;
             }
@@ -161,7 +161,7 @@ namespace SpiderTeams
             return weapons != null && weapons.Count > 0 ? versus.GetRandomWeapon(false) : null;
         }
 
-        // SpiderSurge only runs abilities for the host's own players, so a match with anyone online plays without them.
+        // A remote player's abilities run through SpiderSurge on its own machine, so every client must run the mod.
         private static bool AllPlayersLocal()
         {
             var players = TeamManager.Players;
@@ -172,7 +172,7 @@ namespace SpiderTeams
 
             for (int i = 0; i < players.Count; i++)
             {
-                if (players[i] != null && !players[i].IsOwner)
+                if (players[i] != null && !players[i].IsOwner && !SpiderSurge.Common.Net.ClientHasMod(players[i].OwnerClientId))
                 {
                     return false;
                 }

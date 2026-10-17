@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Unity.Netcode;
 using HarmonyLib;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge.Logging
@@ -45,7 +45,7 @@ namespace SpiderSurge.Logging
 
         public void StartTracking()
         {
-            if (!ModConfig.EnableStatsLogging) return;
+            if (!ModConfig.EnableStatsLogging || !Net.IsAuthority) return;
 
             _matchStartTime = DateTime.Now;
             _abilityActivationsPerPlayer.Clear();
@@ -62,28 +62,32 @@ namespace SpiderSurge.Logging
             _isTracking = false;
             TimeSpan duration = DateTime.Now - _matchStartTime;
 
-            // Collect stats
+            var players = Players.All;
             var snapshot = new SpiderSurgeStatsSnapshot
             {
                 MatchDuration = duration,
-                PlayerCount = PlayerInput.all.Count,
+                PlayerCount = players != null ? players.Count : 0,
                 WavesSurvived = GetWavesSurvived(),
                 PainLevel = GetCurrentPainLevel(),
                 GlobalPerks = GetGlobalPerks()
             };
 
-            foreach (var player in PlayerInput.all)
+            if (players != null)
             {
-                int pIndex = player.playerIndex;
-                int abilityActivations = _abilityActivationsPerPlayer.ContainsKey(pIndex) ? _abilityActivationsPerPlayer[pIndex] : 0;
-                int ultimateActivations = _ultimateActivationsPerPlayer.ContainsKey(pIndex) ? _ultimateActivationsPerPlayer[pIndex] : 0;
-
-                snapshot.PlayerStats.Add(new PlayerStats
+                foreach (var player in players)
                 {
-                    PlayerIndex = pIndex,
-                    AbilityActivationCount = abilityActivations,
-                    UltimateActivationCount = ultimateActivations
-                });
+                    if (player == null) continue;
+                    int playerId = player.playerID.Value;
+                    int abilityActivations = _abilityActivationsPerPlayer.ContainsKey(playerId) ? _abilityActivationsPerPlayer[playerId] : 0;
+                    int ultimateActivations = _ultimateActivationsPerPlayer.ContainsKey(playerId) ? _ultimateActivationsPerPlayer[playerId] : 0;
+
+                    snapshot.PlayerStats.Add(new PlayerStats
+                    {
+                        PlayerId = playerId,
+                        AbilityActivationCount = abilityActivations,
+                        UltimateActivationCount = ultimateActivations
+                    });
+                }
             }
 
             SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
@@ -109,26 +113,26 @@ namespace SpiderSurge.Logging
             }
         }
 
-        public void LogAbilityActivation(int playerIndex)
+        public void LogAbilityActivation(int playerId)
         {
             if (!_isTracking) return;
 
-            if (!_abilityActivationsPerPlayer.ContainsKey(playerIndex))
+            if (!_abilityActivationsPerPlayer.ContainsKey(playerId))
             {
-                _abilityActivationsPerPlayer[playerIndex] = 0;
+                _abilityActivationsPerPlayer[playerId] = 0;
             }
-            _abilityActivationsPerPlayer[playerIndex]++;
+            _abilityActivationsPerPlayer[playerId]++;
         }
 
-        public void LogUltimateActivation(int playerIndex)
+        public void LogUltimateActivation(int playerId)
         {
             if (!_isTracking) return;
 
-            if (!_ultimateActivationsPerPlayer.ContainsKey(playerIndex))
+            if (!_ultimateActivationsPerPlayer.ContainsKey(playerId))
             {
-                _ultimateActivationsPerPlayer[playerIndex] = 0;
+                _ultimateActivationsPerPlayer[playerId] = 0;
             }
-            _ultimateActivationsPerPlayer[playerIndex]++;
+            _ultimateActivationsPerPlayer[playerId]++;
         }
 
         public void IncrementWave()

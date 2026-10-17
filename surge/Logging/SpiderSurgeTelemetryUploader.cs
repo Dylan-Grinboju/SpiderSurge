@@ -138,7 +138,7 @@ namespace SpiderSurge.Logging
             var playerStats = (snapshot.PlayerStats ?? new List<PlayerStats>())
                 .Select(player => new PlayerStats
                 {
-                    PlayerIndex = player.PlayerIndex,
+                    PlayerId = player.PlayerId,
                     AbilityActivationCount = player.AbilityActivationCount,
                     UltimateActivationCount = player.UltimateActivationCount
                 })
@@ -156,7 +156,7 @@ namespace SpiderSurge.Logging
         {
             string perksJson = "[" + string.Join(",", globalPerks.Select(perk => "\"" + EscapeJson(perk) + "\"")) + "]";
             string playerStatsJson = "[" + string.Join(",", playerStats.Select(player =>
-                "{\"playerIndex\":" + player.PlayerIndex + ",\"abilityActivationCount\":" + player.AbilityActivationCount + ",\"ultimateActivationCount\":" + player.UltimateActivationCount + "}")) + "]";
+                "{\"playerIndex\":" + player.PlayerId + ",\"abilityActivationCount\":" + player.AbilityActivationCount + ",\"ultimateActivationCount\":" + player.UltimateActivationCount + "}")) + "]";
 
             return "{" +
                 "\"eventType\":\"spidersurge_match\"," +

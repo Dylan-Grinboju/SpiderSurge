@@ -23,6 +23,7 @@ namespace SpiderSurge.Common
         private static readonly Dictionary<string, object> _unsaved = new Dictionary<string, object>();
         private static readonly HashSet<string> _warned = new HashSet<string>();
         private static readonly Dictionary<string, (Func<bool> locked, string reason)> _locks = new Dictionary<string, (Func<bool> locked, string reason)>();
+        private static readonly Dictionary<string, string> _remote = new Dictionary<string, string>();
         private static float _saveAt = -1f;
 
         private delegate bool Parser<T>(string raw, out T value);
@@ -116,6 +117,37 @@ namespace SpiderSurge.Common
             Raise(null);
             return reasons.Count > 0 ? string.Join("\n", reasons) : null;
         }
+
+        public static bool HasRemote => _remote.Count > 0;
+
+        public static bool IsRemote(string key) => _remote.ContainsKey(key);
+
+        // The host's values for shared keys win while connected to it; nothing is written to this machine's file
+        public static void ApplyRemote(IDictionary<string, string> values)
+        {
+            foreach (var pair in values)
+            {
+                if (IsDefined(pair.Key))
+                {
+                    _remote[pair.Key] = pair.Value;
+                    _cache.Remove(pair.Key);
+                }
+            }
+            Raise(null);
+        }
+
+        public static void ClearRemote()
+        {
+            if (_remote.Count == 0)
+            {
+                return;
+            }
+            _remote.Clear();
+            _cache.Clear();
+            Raise(null);
+        }
+
+        public static string Raw(string key) => ReadRaw(key, false);
 
         public static bool GetBool(string key) => Get<bool>(key, TryParseBool);
 
@@ -333,8 +365,14 @@ namespace SpiderSurge.Common
         }
 
         // Values come back from the file as text and from the menus as typed objects
-        private static string ReadRaw(string key)
+        private static string ReadRaw(string key) => ReadRaw(key, true);
+
+        private static string ReadRaw(string key, bool allowRemote)
         {
+            if (allowRemote && _remote.TryGetValue(key, out string remote))
+            {
+                return remote;
+            }
             object raw = _unsaved.TryGetValue(key, out object pending) ? pending : Config.GetModConfigValue<object>(FileId, key, null);
             if (raw == null || raw is IDictionary<string, object>)
             {

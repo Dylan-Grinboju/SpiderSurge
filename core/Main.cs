@@ -45,6 +45,7 @@ namespace SpiderSurge
 
             OldMods.Check();
             Settings.Load();
+            Net.Initialize();
             Parts.StartAll();
             ModUpdater.ScheduleCheck();
         }
@@ -58,6 +59,7 @@ namespace SpiderSurge
             }
             MainThread.Drain();
             Settings.Tick();
+            Net.Tick();
         }
 
         private void OnApplicationQuit()
@@ -76,6 +78,7 @@ namespace SpiderSurge
             }
             Logger.LogInfo("Unloading SpiderSurge...");
             Parts.StopAll();
+            Net.Shutdown();
             Settings.Flush();
             OldMods.Release();
             Instance = null;

@@ -18,6 +18,7 @@ namespace SpiderTeams
             ModConfig.Initialize();
             CreateManager();
             ReflectionCache.ReportMissing();
+            TeamNet.Initialize();
         }
 
         protected internal override void OnStop()
@@ -43,6 +44,7 @@ namespace SpiderTeams
             }
 
             VersusTeamsPage.RemoveAll();
+            TeamNet.Shutdown();
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();

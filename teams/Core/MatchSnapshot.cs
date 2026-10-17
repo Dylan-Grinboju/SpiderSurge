@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderTeams
@@ -35,6 +37,59 @@ namespace SpiderTeams
         {
             var snapshot = Current;
             Current = null;
+            return snapshot;
+        }
+
+        public static void SetRemote(MatchSnapshot snapshot)
+        {
+            Current = snapshot;
+        }
+
+        public void Write(BinaryWriter writer)
+        {
+            writer.Write(Celebrate);
+            writer.Write(Winner != null ? Teams.IndexOf(Winner) : -1);
+            writer.Write(Teams.Count);
+            foreach (Team team in Teams)
+            {
+                writer.Write(team.Index);
+                writer.WriteText(team.Name);
+                writer.Write(team.Color);
+                writer.Write(team.Score);
+                writer.Write(team.Members.Count);
+                foreach (Member member in team.Members)
+                {
+                    writer.WriteText(member.Name);
+                    writer.Write(member.Color);
+                }
+            }
+        }
+
+        public static MatchSnapshot Read(BinaryReader reader)
+        {
+            var snapshot = new MatchSnapshot { Celebrate = reader.ReadBoolean() };
+            int winner = reader.ReadInt32();
+            int teams = reader.ReadInt32();
+            for (int i = 0; i < teams; i++)
+            {
+                var team = new Team
+                {
+                    Index = reader.ReadInt32(),
+                    Name = reader.ReadString(),
+                    Color = reader.ReadColor(),
+                    Score = reader.ReadInt32()
+                };
+                int members = reader.ReadInt32();
+                for (int j = 0; j < members; j++)
+                {
+                    team.Members.Add(new Member { Name = reader.ReadString(), Color = reader.ReadColor() });
+                }
+                snapshot.Teams.Add(team);
+            }
+            if (winner >= 0 && winner < snapshot.Teams.Count)
+            {
+                snapshot.Winner = snapshot.Teams[winner];
+            }
             return snapshot;
         }
 
