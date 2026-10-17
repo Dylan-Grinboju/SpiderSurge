@@ -118,8 +118,8 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 20f;
-                public const float AbilityCooldownReductionPerLevel = 5f;
+                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 5f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
                 public const float UltimateBaseCooldown = 30f;
@@ -174,10 +174,14 @@ namespace SpiderSurge
                 public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 2.5f;
                 public const float AbilityDurationReductionPerLevel = 1f;
-                public const float UltimateBaseCooldown = 15f;
+                public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
-                public const float UltimateBaseDuration = 4f;
-                public const float UltimateDurationReductionPerLevel = 1f;
+                public const float BanishBaseRange = 75f;
+                public const float BanishRangeIncreasePerLevel = 25f;
+                public const float BanishPullTime = 0.3f;
+                public const float BanishEndScale = 0.1f;
+                public const float BanishMissCooldownFraction = 0.25f;
+                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.65f, 0.25f, 1f, 0.8f);
                 public const float SpawnDistance = 50f;
             }
 
@@ -305,7 +309,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "Care Package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Pocket Dimension^2"
+                [PerkNames.StorageAbilityUltimate] = "Banish"
             };
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
@@ -322,7 +326,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Adds a second storage slot</color>"
+                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Pull the nearest enemy or spider into the pocket dimension, forever</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -350,7 +354,7 @@ namespace SpiderSurge
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Faster ultimate retrieval from the storage";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases banish range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)

@@ -8,7 +8,6 @@ namespace SpiderSurge
         {
             public SerializationWeaponName WeaponName;
             public float Ammo;
-            public bool IsUltimateSlot;
         }
 
         private static readonly Dictionary<int, List<SavedWeaponData>> _storedWeapons = new Dictionary<int, List<SavedWeaponData>>();
