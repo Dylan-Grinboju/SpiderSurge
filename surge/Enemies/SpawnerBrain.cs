@@ -1,3 +1,5 @@
+using HarmonyLib;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,6 +15,9 @@ namespace SpiderSurge.Enemies
         private Collider2D[] colliders;
         private readonly HashSet<GameObject> ignored = new HashSet<GameObject>();
         private float timer;
+
+        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> survivalConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
+        private static readonly HashSet<SpawnerBrain> hatching = new HashSet<SpawnerBrain>();
 
         public void Initialize(GameObject prefab, GameObject shieldedPrefab, float spawnInterval)
         {
@@ -34,7 +39,7 @@ namespace SpiderSurge.Enemies
             IgnoreEnemiesInside();
 
             timer += Time.fixedDeltaTime;
-            if (timer < interval) return;
+            if (timer < interval || hatching.Contains(this) || !RoomForEnemy()) return;
             timer = 0f;
 
             GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
@@ -42,13 +47,41 @@ namespace SpiderSurge.Enemies
                 : spawnPrefab;
             if (prefab != null)
             {
-                StartCoroutine(EnemySpawner.instance.SpawnObject(prefab, transform));
+                StartCoroutine(Hatch(prefab));
             }
+        }
+
+        private IEnumerator Hatch(GameObject prefab)
+        {
+            hatching.Add(this);
+            yield return EnemySpawner.instance.SpawnObject(prefab, transform);
+            hatching.Remove(this);
+        }
+
+        // The same live enemy cap that holds back the wave's own spawns, counting wasps still hatching
+        private static bool RoomForEnemy()
+        {
+            SurvivalMode survival = SurvivalMode.instance;
+            SurvivalConfig config = survival != null ? survivalConfig(survival) : null;
+            if (config == null || config.difficultyIncreaseThreshold <= 0) return true;
+
+            int alive = hatching.Count;
+            foreach (EnemyHealthSystem enemy in EnemyHealthSystem.s_activeEnemies)
+            {
+                if (enemy.needToKillToCompleteLevel) alive++;
+            }
+            return alive < survival.CurrentWave / config.difficultyIncreaseThreshold + 2;
         }
 
         private void OnCharacterDied()
         {
             StopAllCoroutines();
+            hatching.Remove(this);
+        }
+
+        private void OnDestroy()
+        {
+            hatching.Remove(this);
         }
 
         // Hatchlings and enemies from a shared spawn point appear inside the cocoon, which would otherwise push them out
