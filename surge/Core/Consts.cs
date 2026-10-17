@@ -149,7 +149,13 @@ namespace SpiderSurge
                 public const float UltimateBaseKnockbackStrength = 1200f;
                 public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
 
-                public const float EnemyKnockbackMultiplier = 2f;
+                // Enemies are launched at a set speed, past the game's 150 speed cap for a moment
+                public const float AbilityBaseEnemyLaunchSpeed = 400f;
+                public const float AbilityEnemyLaunchSpeedIncreasePerLevel = 100f;
+                public const float UltimateBaseEnemyLaunchSpeed = 500f;
+                public const float UltimateEnemyLaunchSpeedIncreasePerLevel = 125f;
+                public const float EnemyUncappedDuration = 0.35f;
+                public const float EnemyStunDuration = 0.8f;
 
                 //too cool perk
                 public const float UltimateBaseDeathRadius = 100f;

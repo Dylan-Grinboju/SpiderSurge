@@ -72,6 +72,29 @@ namespace SpiderSurge
             return strength;
         }
 
+        private float GetEnemyLaunchSpeed(bool isUlt)
+        {
+            float speed;
+            int biggerBoom = 0;
+            if (ModifierManager.instance != null)
+            {
+                biggerBoom = ModifierManager.instance.GetModLevel(Consts.ModifierNames.BiggerBoom);
+            }
+
+            if (isUlt)
+            {
+                speed = Consts.Values.Pulse.UltimateBaseEnemyLaunchSpeed;
+                if (biggerBoom > 1) speed += Consts.Values.Pulse.UltimateEnemyLaunchSpeedIncreasePerLevel;
+            }
+            else
+            {
+                speed = Consts.Values.Pulse.AbilityBaseEnemyLaunchSpeed;
+                if (biggerBoom > 0) speed += Consts.Values.Pulse.AbilityEnemyLaunchSpeedIncreasePerLevel;
+            }
+
+            return speed;
+        }
+
         private float GetDeathRadius(bool isUlt)
         {
             if (!isUlt)
@@ -97,6 +120,8 @@ namespace SpiderSurge
 
         // Pre-allocated buffer for physics queries to avoid GC allocation
         private Collider2D[] _pulseResults = new Collider2D[64];
+
+        private readonly HashSet<EnemyHealthSystem> _enemiesToLaunch = new HashSet<EnemyHealthSystem>();
 
         protected override void Awake()
         {
@@ -154,6 +179,7 @@ namespace SpiderSurge
             public float KnockBackRadius;
             public float DeathRadius;
             public float KnockBackStrength;
+            public float EnemyLaunchSpeed;
         }
 
         private void TriggerPulse(bool deadly)
@@ -190,6 +216,7 @@ namespace SpiderSurge
                 KnockBackRadius = GetKnockBackRadius(deadly),
                 KnockBackStrength = GetKnockBackStrength(deadly),
                 DeathRadius = GetDeathRadius(deadly),
+                EnemyLaunchSpeed = GetEnemyLaunchSpeed(deadly),
             };
         }
 
@@ -217,6 +244,7 @@ namespace SpiderSurge
 
             // Use NonAlloc to avoid allocating new array every time
             int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _pulseResults, pulseLayers);
+            CollectEnemiesToLaunch(hitCount);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -239,11 +267,6 @@ namespace SpiderSurge
 
                 Vector2 direction = (closestPoint - (Vector2)p.Position).normalized;
                 Vector2 force = direction * p.KnockBackStrength;
-
-                if (collider.CompareTag("EnemyRigidbody") || collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-                {
-                    force *= Consts.Values.Pulse.EnemyKnockbackMultiplier;
-                }
 
                 Rigidbody2D rb = collider.attachedRigidbody;
 
@@ -277,7 +300,37 @@ namespace SpiderSurge
                 }
             }
 
+            LaunchEnemies(p);
             ApplyPulseToRailShotsWithoutColliders(p);
+        }
+
+        // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
+        private void CollectEnemiesToLaunch(int hitCount)
+        {
+            _enemiesToLaunch.Clear();
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D collider = _pulseResults[i];
+                if (collider == null) continue;
+
+                EnemyHealthSystem enemy = collider.GetComponentInParent<EnemyHealthSystem>();
+                if (PulseKnockback.CanLaunch(enemy))
+                {
+                    _enemiesToLaunch.Add(enemy);
+                }
+            }
+        }
+
+        private void LaunchEnemies(PulseParams p)
+        {
+            foreach (EnemyHealthSystem enemy in _enemiesToLaunch)
+            {
+                if (enemy != null && !enemy.dead)
+                {
+                    PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
+                }
+            }
+            _enemiesToLaunch.Clear();
         }
 
         // The activating player must never be affected by their own pulse.
