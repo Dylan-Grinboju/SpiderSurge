@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using SpiderSurge.Enemies;
@@ -315,5 +316,30 @@ namespace SpiderSurge
             }
         }
 
+    }
+
+    // Cocoon wasps don't count toward the live enemy cap that holds back a wave's spawns; the wave still waits for them to die
+    [HarmonyPatch]
+    public class SurvivalMode_SpawnEnemies_Patch
+    {
+        static MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "SpawnEnemies"));
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo enemiesAlive = AccessTools.Method(typeof(SurvivalMode), "EnemiesAlive");
+            bool patched = false;
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+                if (instruction.Calls(enemiesAlive))
+                {
+                    yield return CodeInstruction.Call(typeof(SurvivalMode_SpawnEnemies_Patch), nameof(WithoutHatchlings));
+                    patched = true;
+                }
+            }
+            if (!patched) Logger.LogWarning("SurvivalMode.SpawnEnemies no longer counts live enemies; cocoon wasps count toward the enemy cap");
+        }
+
+        static int WithoutHatchlings(int alive) => alive - SpawnerBrain.CountHatchlingsAlive();
     }
 }
