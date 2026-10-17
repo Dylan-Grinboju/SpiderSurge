@@ -5,6 +5,7 @@ namespace SpiderSurge
     public class PulseRingEffect : MonoBehaviour
     {
         private LineRenderer lineRenderer;
+        private Material material;
         private float currentRadius = 0f;
         private float maxRadius = 100f;
         private float speed;
@@ -23,7 +24,7 @@ namespace SpiderSurge
             lineRenderer.endWidth = Consts.Values.Pulse.RingWidth;
 
             // Use a simple sprite shader that supports color
-            Material material = new Material(Shader.Find("Sprites/Default"));
+            material = new Material(Shader.Find("Sprites/Default"));
             lineRenderer.material = material;
 
             lineRenderer.startColor = Consts.Values.Pulse.RingColor;
@@ -31,6 +32,14 @@ namespace SpiderSurge
 
             // Initial draw
             DrawRing();
+        }
+
+        private void OnDestroy()
+        {
+            if (material != null)
+            {
+                Destroy(material);
+            }
         }
 
         private void Update()

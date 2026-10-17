@@ -173,7 +173,7 @@ namespace SpiderSurge
         {
             if (__result)
             {
-                if (survivalConfig != null)
+                if (ShouldApplySurge(survivalConfig))
                 {
                     Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
                     Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
@@ -225,7 +225,7 @@ namespace SpiderSurge
             [HarmonyPostfix]
             public static void Postfix(int value)
             {
-                if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && value > 0)
+                if (SurgeGameModeManager.IsSurgeRunActive && SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && value > 0)
                 {
                     var config = SurvivalMode.instance.GetSurvivalConfig(-1);
                     if (config != null)

@@ -114,6 +114,8 @@ Each part's page explains its own section. Edit the file while the game is close
 - Reconnecting a controller keeps its original spider instead of adding a second player controlled by the same gamepad.
 - Whisps no longer shoot the moment they spawn.
 - Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
+- Pain-level colour unlocks no longer throw an error on every lobby load, and every earned colour unlocks instead of only the first.
+- Starting the game no longer throws the custom-maps warning error twice.
 
 ## Other Mods
 

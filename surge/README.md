@@ -14,7 +14,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
     - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
-    - **Null Field**: Deploys a temporary protective energy barrier.
+    - **Null Field**: Become immune to all damage for a short time.
 - **Custom Enemies**:
     - **Twin Whisp**: Fires dual projectiles simultaneously.
     - **Missile Whisp**: Launches rockets that deal devastating damage.
@@ -27,6 +27,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together, or any D-pad direction if you turn that on.
     - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key.
     - **Reset**: Hold **Start/Menu** for 3 seconds to reset to default (L1).
+- **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
@@ -37,7 +38,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge settings**. Changes apply right away. **Reset Surge settings to defaults** at the bottom keeps your telemetry choice.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Ultimate on the D-pad**, which applies from the next run. **Reset Surge settings to defaults** at the bottom keeps your telemetry choice.
 
 ### Using the Yaml file:
 
@@ -54,7 +55,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. Default: `true`.
 
 ### UI:
-`surge.showTutorial`: Shows the instruction overlay. Default: `true`.
+`surge.showTutorial`: Opens the Surge guide on the next launch, then turns itself off. Default: `true`.
 
 `surge.indicator.radius`: The size of the ability indicator, from 0.5 to 10. Default: `1.5`.
 
@@ -79,14 +80,14 @@ SpiderSurge supports optional telemetry to help track balancing and gameplay tre
 
 ### How to enable
 
-Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run stats** on the Surge page, or `surge.telemetry` in the file. Uploads also need **Track ability use in each run** (`surge.statsLogging`) on.
+Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run stats** on the **Run stats and telemetry** page under Surge, or `surge.telemetry` in the file. Uploads also need **Track ability use in each run** (`surge.statsLogging`) on.
 
 ### Privacy and identity
 
 - Telemetry uses an anonymous random ID, not player names.
 - The anonymous ID is generated locally and stored in:
     `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
-- The Surge page shows the ID, and **Reset telemetry ID** replaces it with a new one.
+- The **Run stats and telemetry** page shows the ID, and **Reset telemetry ID** replaces it with a new one.
 
 
 ### Local log files (non-telemetry)

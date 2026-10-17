@@ -18,7 +18,6 @@ namespace SpiderSurge.Common
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
         {
-            { "EnableSurgeMode", "surge.surgeMode" },
             { "UseDpadForUltimate", "surge.dpadUltimate" },
             { "UnlimitedPerkChoosingTime", "surge.unlimitedPerkTime" },
             { "EnableStatsLogging", "surge.statsLogging" },

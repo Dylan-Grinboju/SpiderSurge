@@ -42,7 +42,7 @@ Shot capture patches the actual instantiation or playback sites. The IL rewriter
 
 ## Display and saved stats
 
-Under **Stats settings > Player table columns > Shooting accuracy**, enable overall accuracy or the desired weapon columns. All are optional and disabled by default. YAML keys are `stats.display.bigUI.columns.accuracy.overall` and `stats.display.bigUI.columns.accuracy.<SerializationWeaponName>`, for example `Railvolver` or `LaserCannon`.
+Under **Stats > Player table columns > Shooting accuracy**, enable overall accuracy or the desired weapon columns. All are optional and disabled by default. YAML keys are `stats.display.bigUI.columns.accuracy.overall` and `stats.display.bigUI.columns.accuracy.<SerializationWeaponName>`, for example `Railvolver` or `LaserCannon`.
 
 Saved run statistics include overall and per-weapon percentages plus raw successful/fired counts, regardless of column visibility. Existing kill and weapon-hit counters keep their meanings. Accuracy is tracked on the host; this does not introduce client-side stats synchronization.
 

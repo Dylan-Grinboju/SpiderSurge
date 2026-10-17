@@ -64,7 +64,7 @@ namespace SpiderSurge
 
         private void Update()
         {
-            if (Keyboard.current.backquoteKey.wasPressedThisFrame)
+            if (Keyboard.current != null && Keyboard.current.backquoteKey.wasPressedThisFrame)
             {
                 Toggle();
             }
@@ -164,17 +164,17 @@ namespace SpiderSurge
                 "• Special Abilities perks appear at the first perk choice.",
                 "• Your Ultimate is guaranteed as a choice at wave 30 and can appear in later perk choices until unlocked.",
                 "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
-                "• Choose wisely, Ultimates have longer cooldowns but high impact!",
+                "• Choose wisely: Ultimates have longer cooldowns but high impact!",
             });
 
             DrawSection("How to activate abilities", new string[] {
                 "Ability", "Q (Keyboard) / L1 (Gamepad)",
                 "Ultimate Ability", "C (Keyboard) / L3 + R3 (Gamepad)",
-                "D-pad", "Turn on <b>Ultimate on the D-pad</b> in Surge settings to cast it with any D-pad direction."
+                "D-pad", "Turn on <b>Ultimate on the D-pad</b> in Mods > SpiderSurge > Surge to cast it with any D-pad direction."
             }, true);
 
             DrawSection("Customize controls", new string[] {
-                "<b>Set a new ability button on a gamepad:</b> While holding Menu/Start, Double-Tap any button.",
+                "<b>Set a new ability button on a gamepad:</b> While holding Menu/Start, double-tap any button.",
                 "<b>Reset to Default:</b> Hold <b>Menu/Start</b> for <b>3 seconds</b>.",
                 "• Customizable Per-Player. Settings persist until you leave or reset."
             });
@@ -204,7 +204,7 @@ namespace SpiderSurge
             DrawIndicatorRow(ModConfig.IndicatorCooldownColor, "Cooldown", "Ability is on cooldown.");
 
             GUILayout.Space(S(10));
-            GUILayout.Label("• Change the indicator's <b>size, offset and colors</b> in <b>Mods > SpiderSurge > Surge settings</b>.", labelStyle);
+            GUILayout.Label("• Change the indicator's <b>size, offset and colors</b> in <b>Mods > SpiderSurge > Surge</b>.", labelStyle);
 
             GUILayout.EndVertical();
         }

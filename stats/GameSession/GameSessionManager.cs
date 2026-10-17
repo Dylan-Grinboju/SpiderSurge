@@ -27,7 +27,6 @@ namespace StatsMod
         private bool isPaused = false;
         private DateTime pauseStartTime;
 
-        private List<TitleEntry> lastGameTitles = new List<TitleEntry>();
         private readonly List<string> mapsPlayed = new List<string>();
         private readonly List<string> perksChosen = new List<string>();
         private int painLevel = -1;
@@ -81,7 +80,6 @@ namespace StatsMod
                 TitlesManager.Instance.ClearTitles();
             }
 
-            lastGameTitles.Clear();
             mapsPlayed.Clear();
             perksChosen.Clear();
             painLevel = -1;
@@ -135,12 +133,6 @@ namespace StatsMod
 
             TitlesManager.Instance.CalculateAndStoreTitles(statsSnapshot);
             statsSnapshot.Titles = TitlesManager.Instance.AllTitles;
-
-            var titlesUI = UIManager.Instance?.GetTitlesUI();
-            if (titlesUI != null)
-            {
-                lastGameTitles = titlesUI.GetCurrentTitles();
-            }
 
             if (ModConfig.SaveStatsToFile)
             {

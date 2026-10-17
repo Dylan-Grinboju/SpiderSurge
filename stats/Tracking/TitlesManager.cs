@@ -513,7 +513,7 @@ public class TitlesManager
 
         foreach (var req in title.Requirements)
         {
-            // Custom requirements from external mods won't be in `conditions`, 
+            // Custom requirements from external mods won't be in `conditions`,
             // so we skip them here (we assume the external mod validated its own custom stats).
             if (!conditions.TryGetValue(req, out var cond))
                 continue;
