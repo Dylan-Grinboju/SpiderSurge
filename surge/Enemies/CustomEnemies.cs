@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using System.Linq;
 using Logger = Silk.Logger;
 
@@ -14,6 +15,9 @@ namespace SpiderSurge.Enemies
         public static GameObject ShieldedTwinWhispPrefab;
         public static GameObject WaspCocoonPrefab;
         public static GameObject ShieldedWaspCocoonPrefab;
+        public static readonly Dictionary<string, GameObject> LaserPrefabs = new Dictionary<string, GameObject>();
+
+        public static IEnumerable<GameObject> CustomBasePrefabs => new[] { TwinBladeMeleeWhispPrefab, TwinBladePowerMeleeWhispPrefab, TwinWhispPrefab, MissileWhispPrefab };
 
         public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
         {
@@ -107,12 +111,51 @@ namespace SpiderSurge.Enemies
                 .FirstOrDefault(e => e.name == name && !e.gameObject.scene.IsValid())?.gameObject;
         }
 
+        // Each listed enemy gets a copy whose red shield carries a pulsing laser ring; breaking the shield ends the ring
+        public static void CreateLaserVariants(IEnumerable<GameObject> baseEnemies, GameObject shieldSourceEnemy)
+        {
+            if (shieldSourceEnemy == null) return;
+
+            var laserCannon = Resources.FindObjectsOfTypeAll<LaserCannon>().FirstOrDefault(w => w.name == "Laser Cannon");
+            var deathRay = Resources.FindObjectsOfTypeAll<DeathRay>().FirstOrDefault(w => w.name == "DeathRay");
+            if (laserCannon == null || deathRay == null)
+            {
+                Logger.LogWarning($"[SpiderSurge] Laser enemies need the Laser Cannon and Death Ray. LaserCannon: {laserCannon != null}, DeathRay: {deathRay != null}");
+                return;
+            }
+
+            foreach (var baseEnemy in baseEnemies.ToList())
+            {
+                if (baseEnemy == null || !Consts.Values.LaserRing.Variants.TryGetValue(baseEnemy.name, out string laserName)) continue;
+                if (LaserPrefabs.ContainsKey(laserName)) continue;
+
+                var baseHealth = baseEnemy.GetComponent<EnemyHealthSystem>();
+                if (baseHealth == null || (baseHealth.shield != null && baseHealth.shield.activeSelf)) continue;
+
+                var laserEnemy = CreateShieldedEnemy(baseEnemy, shieldSourceEnemy, laserName, Consts.Values.LaserRing.Color);
+                var laserHealth = laserEnemy?.GetComponent<EnemyHealthSystem>();
+                if (laserHealth == null || laserHealth.shield == null || laserHealth.shieldShatterEffect == null)
+                {
+                    Logger.LogWarning($"[SpiderSurge] Could not give {laserName} a shield.");
+                    continue;
+                }
+
+                laserHealth.shield.AddComponent<LaserRing>().Initialize(laserHealth, laserCannon, deathRay);
+                LaserPrefabs[laserName] = laserEnemy;
+            }
+        }
+
         private static GameObject CreateBaseEnemy(GameObject original, string name, Color? color = null)
         {
-            GameObject newEnemyObj = Object.Instantiate(original);
+            // Instantiating under an inactive holder keeps the copy's OnEnable/OnDisable from running (HornetShamanBrain.OnDisable throws without a network)
+            var holder = new GameObject("SpiderSurgeEnemyHolder");
+            holder.SetActive(false);
+            GameObject newEnemyObj = Object.Instantiate(original, holder.transform);
             newEnemyObj.name = name;
-            Object.DontDestroyOnLoad(newEnemyObj);
             newEnemyObj.SetActive(false);
+            newEnemyObj.transform.SetParent(null, false);
+            Object.Destroy(holder);
+            Object.DontDestroyOnLoad(newEnemyObj);
 
             if (color.HasValue)
             {
@@ -423,6 +466,11 @@ namespace SpiderSurge.Enemies
             if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
             if (powerMeleeWhispPrefab != null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
             CreateWaspCocoon();
+
+            if (elements.allEnemies != null)
+            {
+                CreateLaserVariants(elements.allEnemies.Where(e => e != null).Select(e => e.gameObject).Concat(CustomBasePrefabs), shieldSource);
+            }
         }
     }
 }
