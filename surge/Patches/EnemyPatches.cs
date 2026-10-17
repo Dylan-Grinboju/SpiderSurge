@@ -81,4 +81,37 @@ namespace SpiderSurge
             }
         }
     }
+
+    // A pulse launches enemies faster than the game's 150 speed cap, so the cap waits until the launch is over
+    [HarmonyPatch(typeof(EnemyHealthSystem), "LimitVelocity")]
+    public class EnemyHealthSystem_LimitVelocity_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(EnemyHealthSystem __instance)
+        {
+            return !PulseKnockback.IsUncapped(__instance.rb2D);
+        }
+    }
+
+    // Khepri keeps thrusting while stunned (only its wall braking checks the stun), so a pulse stun holds its movement too
+    [HarmonyPatch(typeof(KhepriBrain), "Move")]
+    public class KhepriBrain_Move_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(KhepriBrain __instance)
+        {
+            return !PulseKnockback.IsPulseStunned(__instance);
+        }
+    }
+
+    // Stingers, Whisp blades and roller struts have their own 150 speed cap, which would hold a launched enemy back
+    [HarmonyPatch(typeof(WaspStinger), "LimitVelocity")]
+    public class WaspStinger_LimitVelocity_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(WaspStinger __instance)
+        {
+            return __instance.enemyHealthSystem == null || !PulseKnockback.IsUncapped(__instance.enemyHealthSystem.rb2D);
+        }
+    }
 }
