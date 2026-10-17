@@ -76,7 +76,7 @@ namespace SpiderTeams
             public static readonly string[] AbilityPerks = { "immune", "ammo", "pulse", "storage" };
             public static readonly string[] UltimatePerks = { "immuneUltimate", "ammoUltimate", "pulseUltimate", "storageUltimate" };
             public static readonly string[] AbilityNames = { "Null Field", "Bottomless Clip", "Kinetic Pulse", "Pocket Dimension", "Random" };
-            public static readonly string[] UltimateNames = { "Neural Backup", "Care Package", "Thermal Detonation", "Pocket Dimension^2" };
+            public static readonly string[] UltimateNames = { "Neural Backup", "Care Package", "Thermal Detonation", "Banish" };
 
             public static readonly string[] AbilityDescriptions =
             {
@@ -92,7 +92,7 @@ namespace SpiderTeams
                 "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
                 "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
                 "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
-                "Adds a second storage slot (3x cooldown).",
+                "Pulls the nearest enemy or spider close to you into the pocket dimension, forever. Teammates only with friendly fire set to damage. A miss has a shorter cooldown.",
             };
 
             public const string CooldownPerk = "abilityCooldown";

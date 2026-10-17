@@ -1,0 +1,167 @@
+using System.Collections.Generic;
+using HarmonyLib;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace SpiderSurge
+{
+    // A target taken by Banish: frozen and harmless, pulled into the caster while it shrinks, then gone for good.
+    // An enemy is removed without a death, a spider dies
+    public class BanishedTarget : MonoBehaviour
+    {
+        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying =
+            AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
+        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
+            AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
+
+        public PlayerInput Caster { get; private set; }
+
+        private EnemyHealthSystem _enemy;
+        private SpiderHealthSystem _spider;
+        private readonly List<Rigidbody2D> _pausedBodies = new List<Rigidbody2D>();
+        private Transform _target;
+        private Vector2 _targetPosition;
+        private Vector2 _startPosition;
+        private Vector3 _startScale;
+        private float _elapsed;
+
+        public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerInput caster)
+        {
+            if (enemy == null || IsBanished(enemy.gameObject)) return;
+
+            BanishedTarget banished = enemy.gameObject.AddComponent<BanishedTarget>();
+            banished._enemy = enemy;
+            banished.Caster = caster;
+            banished.FreezeEnemy();
+            banished.StartPull(target);
+        }
+
+        public static void BeginSpider(SpiderHealthSystem spider, Transform target, PlayerInput caster)
+        {
+            if (spider == null || spider.rootObject == null || IsBanished(spider.rootObject)) return;
+
+            BanishedTarget banished = spider.rootObject.AddComponent<BanishedTarget>();
+            banished._spider = spider;
+            banished.Caster = caster;
+            banished.FreezeSpider();
+            banished.StartPull(target);
+        }
+
+        public static bool IsBanished(GameObject root)
+        {
+            return root != null && root.GetComponent<BanishedTarget>() != null;
+        }
+
+        // Nothing protects it: alive, not respawn immune and not inside a Null Field
+        public static bool CanDie(SpiderHealthSystem spider)
+        {
+            if (spider == null || spider.dead || spider.astralDead || SpiderDying(spider) || Time.time < SpiderImmuneTill(spider)) return false;
+
+            ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(spider);
+            return nullField == null || !nullField.IsImmune;
+        }
+
+        // Banish ignores shields; Stats credits the caster with this kill
+        public static void KillSpider(SpiderHealthSystem spider, PlayerInput caster)
+        {
+            spider.DisableShield();
+            spider.Disintegrate();
+        }
+
+        // Its brain, bodies and colliders stop, so it can't hit anyone, shoot or light a fuse on the way in
+        private void FreezeEnemy()
+        {
+            foreach (EnemyBrain brain in GetComponentsInChildren<EnemyBrain>(true))
+            {
+                brain.CancelInvoke();
+                brain.enabled = false;
+            }
+
+            foreach (Rigidbody2D body in GetComponentsInChildren<Rigidbody2D>(true))
+            {
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.constraints = RigidbodyConstraints2D.FreezeAll;
+            }
+
+            foreach (Collider2D collider in GetComponentsInChildren<Collider2D>(true))
+            {
+                collider.enabled = false;
+            }
+
+            _enemy.CancelInvoke();
+            _enemy.enabled = false;
+        }
+
+        // It drops its weapon where it stood, loses its web and leaves the physics, so nothing can hit it on the way in
+        private void FreezeSpider()
+        {
+            SpiderWeaponManager weaponManager = GetComponentInChildren<SpiderWeaponManager>();
+            if (weaponManager != null && weaponManager.equippedWeapon != null) weaponManager.UnEquipWeapon();
+            if (_spider.webMaker != null) _spider.webMaker.DisconnectWeb();
+
+            SpiderController controller = GetComponent<SpiderController>();
+            if (controller != null) controller.enabled = false;
+
+            foreach (Rigidbody2D body in GetComponentsInChildren<Rigidbody2D>())
+            {
+                if (!body.simulated) continue;
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.simulated = false;
+                _pausedBodies.Add(body);
+            }
+        }
+
+        private void StartPull(Transform target)
+        {
+            _target = target;
+            _startPosition = BodyPosition();
+            _startScale = transform.localScale;
+            _targetPosition = target != null ? (Vector2)target.position : _startPosition;
+        }
+
+        private Vector2 BodyPosition()
+        {
+            if (_spider != null) return _spider.transform.position;
+            return _enemy.rb2D != null ? (Vector2)_enemy.rb2D.transform.position : (Vector2)transform.position;
+        }
+
+        private void Update()
+        {
+            if (_enemy == null && _spider == null) return;
+            if (_target != null) _targetPosition = _target.position;
+
+            _elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(_elapsed / Consts.Values.Storage.BanishPullTime);
+            float eased = t * t;
+
+            transform.localScale = Vector3.Lerp(_startScale, _startScale * Consts.Values.Storage.BanishEndScale, eased);
+            Vector2 offset = Vector2.Lerp(_startPosition, _targetPosition, eased) - BodyPosition();
+            transform.position += (Vector3)offset;
+
+            if (t < 1f) return;
+
+            enabled = false;
+            if (_enemy != null) Destroy(gameObject);
+            else if (CanDie(_spider)) KillSpider(_spider, Caster);
+            else Release();
+        }
+
+        // A spider that became unkillable on the way in comes back where it is
+        private void Release()
+        {
+            Vector2 position = BodyPosition();
+            transform.localScale = _startScale;
+            transform.position += (Vector3)(position - BodyPosition());
+            foreach (Rigidbody2D body in _pausedBodies)
+            {
+                if (body != null) body.simulated = true;
+            }
+
+            SpiderController controller = GetComponent<SpiderController>();
+            if (controller != null) controller.enabled = true;
+            Destroy(this);
+        }
+    }
+}

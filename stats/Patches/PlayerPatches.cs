@@ -82,6 +82,22 @@ namespace StatsMod
         }
     }
 
+    [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.KillSpider))]
+    public class SpiderBanishedPatch
+    {
+        static void Prefix(SpiderHealthSystem spider, PlayerInput caster)
+        {
+            try
+            {
+                HitLogic.OnPlayerBanished(spider, caster);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error recording banished spider: {ex.Message}");
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(SpiderHealthSystem), "DisableDeathEffect")]
     public class SpiderHealthSystemDisableDeathEffect
     {
@@ -108,7 +124,9 @@ namespace StatsMod
         {
             try
             {
-                if (!GameSessionManager.Instance.IsActive || __instance.dead || __instance.astralDead || __instance.rootObject == null)
+                // SpiderSurge's Banish kills through the same dissolve, without lava
+                if (!GameSessionManager.Instance.IsActive || __instance.dead || __instance.astralDead || __instance.rootObject == null ||
+                    SpiderSurge.BanishedTarget.IsBanished(__instance.rootObject))
                     return;
 
                 PlayerInput playerInput = __instance.rootObject.GetComponentInParent<PlayerInput>();

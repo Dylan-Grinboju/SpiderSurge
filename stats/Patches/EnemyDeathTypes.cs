@@ -70,6 +70,23 @@ namespace StatsMod
         }
     }
 
+    [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.BeginEnemy))]
+    class EnemyBanishedPatch
+    {
+        static void Prefix(EnemyHealthSystem enemy, PlayerInput caster)
+        {
+            try
+            {
+                if (enemy == null || SpiderSurge.BanishedTarget.IsBanished(enemy.gameObject)) return;
+                HitLogic.OnEnemyBanished(enemy, caster);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError($"Error recording banished enemy: {ex.Message}");
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(EnemyHealthSystem), "DestroyShield")]
     class EnemyShieldDestroyedPatch
     {

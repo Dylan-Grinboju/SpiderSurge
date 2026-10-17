@@ -23,6 +23,36 @@ namespace SpiderTeams
         }
     }
 
+    // Banish can't push, so it takes a teammate only when friendly fire does damage.
+    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanBanish))]
+    public static class StorageAbility_CanBanish_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
+        {
+            if (!__result || ModConfig.FriendlyFire == FriendlyFireMode.Damage || !TeamManager.TeamMatchActive)
+            {
+                return;
+            }
+
+            try
+            {
+                var caster = __instance.GetComponentInParent<PlayerController>();
+                var victim = spider.GetComponentInParent<PlayerController>();
+                var manager = TeamManager.Instance;
+                if (caster != null && victim != null && manager.TryGetTeamOfPlayerId(caster.playerID.Value, out int team) &&
+                    manager.TryGetTeamOfPlayerId(victim.playerID.Value, out int victimTeam) && team == victimTeam)
+                {
+                    __result = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                PatchScopes.Report("Banish friendly fire", ex);
+            }
+        }
+    }
+
     // Surge revives any dead player; in versus that could be an opponent, so only teammates come back.
     [HarmonyPatch(typeof(ImmuneAbility), "TryRespawnDeadPlayer")]
     public static class ImmuneAbility_TryRespawnDeadPlayer_Patch

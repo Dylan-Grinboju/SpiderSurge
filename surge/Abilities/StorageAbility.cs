@@ -12,15 +12,15 @@ namespace SpiderSurge
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
-        public override float UltimateBaseDuration => Consts.Values.Storage.UltimateBaseDuration;
+        public override float UltimateBaseDuration => 0f;
         public override float UltimateBaseCooldown => Consts.Values.Storage.UltimateBaseCooldown;
         public override float AbilityCooldownPerPerkLevel => Consts.Values.Storage.AbilityCooldownReductionPerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Storage.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Pocket Dimension^2";
-        public override string UltimatePerkDescription => "Adds a second storage slot (3x cooldown).";
+        public override string UltimatePerkDisplayName => "Banish";
+        public override string UltimatePerkDescription => "Pulls the nearest enemy or spider into the pocket dimension, forever.";
 
         public override float AbilityDuration
         {
@@ -39,7 +39,7 @@ namespace SpiderSurge
             }
         }
 
-        public override float UltimateDuration
+        public float BanishRange
         {
             get
             {
@@ -47,12 +47,12 @@ namespace SpiderSurge
                 int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
                 int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
 
-                float duration = UltimateBaseDuration;
-                if (durationLevel == 2) duration -= Consts.Values.Storage.UltimateDurationReductionPerLevel;
-                if (shortTermLevel > 0) duration += Consts.Values.Storage.UltimateDurationReductionPerLevel;
-                if (longTermLevel > 0) duration -= Consts.Values.Storage.UltimateDurationReductionPerLevel;
+                float range = Consts.Values.Storage.BanishBaseRange;
+                if (durationLevel == 2) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
+                if (shortTermLevel > 0) range -= Consts.Values.Storage.BanishRangeIncreasePerLevel;
+                if (longTermLevel > 0) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
 
-                return duration;
+                return range;
             }
         }
         private int _cachedMoreGunsLevel = 0;
@@ -69,7 +69,6 @@ namespace SpiderSurge
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
-        private RuntimeStoredWeapon _ultimateStoredWeaponData;
 
         protected override void Start()
         {
@@ -93,32 +92,98 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            StartCoroutine(SwapRoutine(false));
+            StartCoroutine(SwapRoutine());
         }
 
         protected override void OnActivateUltimate()
         {
-            StartCoroutine(SwapRoutine(true));
+            bool hit = TryBanishNearest();
+            SoundManager.Instance?.PlaySound(
+                Consts.SoundNames.StorageSend,
+                Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
+            );
+
+            isActive = false;
+            isUltimateActive = false;
+            StartCooldown(wasUltimate: true);
+            if (!hit)
+            {
+                ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
+            }
         }
 
-        private IEnumerator SwapRoutine(bool useUltimateStorage)
+        // Pulls the closest enemy that counts for the wave, or the closest other spider that can die, within banish range
+        private bool TryBanishNearest()
         {
-            float duration = useUltimateStorage ? UltimateDuration : AbilityDuration;
+            if (spiderHealthSystem == null) return false;
 
+            Transform body = spiderHealthSystem.transform;
+            Vector2 origin = body.position;
+            float closest = BanishRange;
+            EnemyHealthSystem enemyTarget = null;
+            SpiderHealthSystem spiderTarget = null;
+
+            if (EnemyHealthSystem.s_activeEnemies != null)
+            {
+                foreach (EnemyHealthSystem enemy in EnemyHealthSystem.s_activeEnemies)
+                {
+                    if (enemy == null || enemy.IsDead() || !enemy.needToKillToCompleteLevel || BanishedTarget.IsBanished(enemy.gameObject)) continue;
+
+                    Vector2 position = enemy.rb2D != null ? enemy.rb2D.position : (Vector2)enemy.transform.position;
+                    float distance = Vector2.Distance(origin, position);
+                    if (distance <= closest)
+                    {
+                        closest = distance;
+                        enemyTarget = enemy;
+                    }
+                }
+            }
+
+            if (SpiderHealthSystem.s_activeSpiders != null)
+            {
+                foreach (SpiderHealthSystem spider in SpiderHealthSystem.s_activeSpiders)
+                {
+                    if (!CanBanish(spider)) continue;
+
+                    float distance = Vector2.Distance(origin, spider.transform.position);
+                    if (distance <= closest)
+                    {
+                        closest = distance;
+                        spiderTarget = spider;
+                        enemyTarget = null;
+                    }
+                }
+            }
+
+            if (spiderTarget != null)
+            {
+                BanishedTarget.BeginSpider(spiderTarget, body, playerInput);
+                return true;
+            }
+            if (enemyTarget != null)
+            {
+                BanishedTarget.BeginEnemy(enemyTarget, body, playerInput);
+                return true;
+            }
+            return false;
+        }
+
+        // Teams spares teammates here when friendly fire is off
+        public bool CanBanish(SpiderHealthSystem spider)
+        {
+            return spider != null && spider != spiderHealthSystem && !BanishedTarget.IsBanished(spider.rootObject) && BanishedTarget.CanDie(spider);
+        }
+
+        private IEnumerator SwapRoutine()
+        {
             if (_weaponManager == null) yield break;
 
-            RuntimeStoredWeapon currentSlotData = useUltimateStorage ? _ultimateStoredWeaponData : _storedWeaponData;
-            GameObject storedWeaponObj = currentSlotData?.WeaponRef != null ? currentSlotData.WeaponRef.gameObject : null;
+            GameObject storedWeaponObj = _storedWeaponData?.WeaponRef != null ? _storedWeaponData.WeaponRef.gameObject : null;
             GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
 
-            RuntimeStoredWeapon newStoredData = StoreWeapon(heldWeaponObj);
+            _storedWeaponData = StoreWeapon(heldWeaponObj);
 
-            if (useUltimateStorage)
-                _ultimateStoredWeaponData = newStoredData;
-            else
-                _storedWeaponData = newStoredData;
-
-            yield return new WaitForSeconds(duration);
+            yield return new WaitForSeconds(AbilityDuration);
 
             RetrieveWeapon(storedWeaponObj);
         }
@@ -222,16 +287,11 @@ namespace SpiderSurge
 
             List<StoragePersistenceManager.SavedWeaponData> dataList = new List<StoragePersistenceManager.SavedWeaponData>();
 
-            SaveSlot(_storedWeaponData, false, isDeath, dataList);
-
-            if (HasUltimate)
-            {
-                SaveSlot(_ultimateStoredWeaponData, true, isDeath, dataList);
-            }
+            SaveSlot(_storedWeaponData, isDeath, dataList);
             StoragePersistenceManager.SaveStoredWeapons(playerId, dataList);
         }
 
-        private void SaveSlot(RuntimeStoredWeapon weaponData, bool isUltimateSlot, bool isDeath, List<StoragePersistenceManager.SavedWeaponData> dataList)
+        private void SaveSlot(RuntimeStoredWeapon weaponData, bool isDeath, List<StoragePersistenceManager.SavedWeaponData> dataList)
         {
             if (weaponData == null) return;
 
@@ -240,8 +300,7 @@ namespace SpiderSurge
                 dataList.Add(new StoragePersistenceManager.SavedWeaponData
                 {
                     WeaponName = weaponData.Name,
-                    Ammo = weaponData.Ammo,
-                    IsUltimateSlot = isUltimateSlot
+                    Ammo = weaponData.Ammo
                 });
             }
         }
@@ -358,22 +417,13 @@ namespace SpiderSurge
                     newWeaponObj.transform.localPosition = Vector3.zero;
                     newWeaponObj.SetActive(false);
 
-                    if (data.IsUltimateSlot)
-                        _ultimateStoredWeaponData = new RuntimeStoredWeapon
-                        {
-                            WeaponRef = newWeapon,
-                            Name = newWeapon.serializationWeaponName,
-                            Ammo = newWeapon.ammo,
-                            Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
-                        };
-                    else
-                        _storedWeaponData = new RuntimeStoredWeapon
-                        {
-                            WeaponRef = newWeapon,
-                            Name = newWeapon.serializationWeaponName,
-                            Ammo = newWeapon.ammo,
-                            Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
-                        };
+                    _storedWeaponData = new RuntimeStoredWeapon
+                    {
+                        WeaponRef = newWeapon,
+                        Name = newWeapon.serializationWeaponName,
+                        Ammo = newWeapon.ammo,
+                        Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
+                    };
                 }
                 else
                 {

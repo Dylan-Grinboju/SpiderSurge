@@ -395,6 +395,30 @@ namespace StatsMod
             }
         }
 
+        // SpiderSurge's Banish removes the enemy without a death; the caster gets the kill
+        public static void OnEnemyBanished(EnemyHealthSystem enemy, PlayerInput caster)
+        {
+            if (enemy == null || !GameSessionManager.Instance.IsActive) return;
+            EnemiesTracker.Instance.IncrementEnemiesKilled();
+
+            int id = enemy.GetInstanceID();
+            rollerFuses.Remove(id);
+            lastEnemyHits.Remove(id);
+            if (caster == null) return;
+
+            Logger.LogInfo($"Recording kill for {PlayerLabel(caster)}, target:{enemy.name}, banished");
+            PlayerTracker.Instance.IncrementPlayerKill(caster);
+
+            if (enemyDisplayNames.TryGetValue(enemy.serializationEnemyName, out string displayName))
+            {
+                PlayerTracker.Instance.IncrementEnemyKillByName(caster, displayName);
+            }
+            else
+            {
+                Logger.LogWarning($"No kill category for enemy {enemy.name} ({enemy.serializationEnemyName})");
+            }
+        }
+
         public static void OnEnemyShieldDestroyed(EnemyHealthSystem enemy)
         {
             if (!GameSessionManager.Instance.IsActive) return;
@@ -436,6 +460,22 @@ namespace StatsMod
             else PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
             PlayerTracker.Instance.IncrementEnemyKillByName(hit.Player, "Player");
+        }
+
+        // SpiderSurge's Banish kills the spider right after this, so its own death finds no hit to credit
+        public static void OnPlayerBanished(SpiderHealthSystem spider, PlayerInput caster)
+        {
+            if (spider == null || !GameSessionManager.Instance.IsActive) return;
+            lastPlayerHits.Remove(spider.GetInstanceID());
+
+            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            if (caster == null || victim == null || victim == caster) return;
+
+            bool friendly = PlayerRelations.AreTeammates(caster, victim);
+            Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(caster)}, banished");
+            if (friendly) PlayerTracker.Instance.IncrementFriendlyKill(caster);
+            else PlayerTracker.Instance.IncrementPlayerKill(caster);
+            PlayerTracker.Instance.IncrementEnemyKillByName(caster, "Player");
         }
 
         private static void StoreHit(Dictionary<int, HitRecord> hits, int targetId, PlayerInput player, string weaponName)
