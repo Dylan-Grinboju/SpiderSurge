@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -105,6 +106,7 @@ namespace SpiderSurge
                         CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
                     }
                 }
+                CustomEnemies.CreateWaspCocoon();
 
                 CustomEnemies.CreateLaserVariants(survivalConfig.enemies.Select(e => e.enemyObject).Concat(CustomEnemies.CustomBasePrefabs), shieldSource);
 
@@ -155,6 +157,16 @@ namespace SpiderSurge
                 if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
                 {
                     surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
+                }
+
+                if (CustomEnemies.WaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("WaspCocoon", out var cocoonStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.WaspCocoonPrefab, cocoonStats.Cost, cocoonStats.MinWave, cocoonStats.MaxWave));
+                }
+
+                if (CustomEnemies.ShieldedWaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedWaspCocoon", out var shieldedCocoonStats))
+                {
+                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedWaspCocoonPrefab, shieldedCocoonStats.Cost, shieldedCocoonStats.MinWave, shieldedCocoonStats.MaxWave));
                 }
 
                 foreach (var laser in CustomEnemies.LaserPrefabs)
@@ -315,5 +327,35 @@ namespace SpiderSurge
             }
         }
 
+    }
+
+    // Cocoon wasps don't count toward the live enemy cap that holds back a wave's spawns; the burst spawn that waits for an empty arena and the wave's end still count them
+    [HarmonyPatch]
+    public class SurvivalMode_SpawnEnemies_Patch
+    {
+        static MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "SpawnEnemies"));
+
+        // EnemiesAlive is stored once and read by the cap check first, so only that first read leaves the wasps out
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo enemiesAlive = AccessTools.Method(typeof(SurvivalMode), "EnemiesAlive");
+            bool patched = false;
+            int stage = 0;
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+                if (patched) continue;
+                if (stage == 0 && instruction.Calls(enemiesAlive)) stage = 1;
+                else if (stage == 1 && instruction.IsStloc()) stage = 2;
+                else if (stage == 2 && instruction.IsLdloc())
+                {
+                    yield return CodeInstruction.Call(typeof(SurvivalMode_SpawnEnemies_Patch), nameof(WithoutHatchlings));
+                    patched = true;
+                }
+            }
+            if (!patched) Logger.LogWarning("SurvivalMode.SpawnEnemies no longer counts live enemies; cocoon wasps count toward the enemy cap");
+        }
+
+        static int WithoutHatchlings(int alive) => alive - SpawnerBrain.CountHatchlingsAlive();
     }
 }
