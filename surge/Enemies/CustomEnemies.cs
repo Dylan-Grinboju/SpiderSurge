@@ -12,6 +12,8 @@ namespace SpiderSurge.Enemies
         public static GameObject MissileWhispPrefab;
         public static GameObject ShieldedMissileWhispPrefab;
         public static GameObject ShieldedTwinWhispPrefab;
+        public static GameObject WaspCocoonPrefab;
+        public static GameObject ShieldedWaspCocoonPrefab;
 
         public static void CreateTwinWhisp(GameObject original, GameObject shieldSourceEnemy = null)
         {
@@ -68,6 +70,40 @@ namespace SpiderSurge.Enemies
             {
                 ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp", Consts.Values.Colors.MissileWhispShieldColor);
             }
+        }
+
+        // A stationary cocoon from Parkour that hatches a Wasp, or a Shielded Wasp while its own shield is up
+        public static void CreateWaspCocoon()
+        {
+            if (WaspCocoonPrefab != null && ShieldedWaspCocoonPrefab != null) return;
+
+            GameObject cocoon = FindEnemyPrefab("ParkourTarget");
+            GameObject wasp = FindEnemyPrefab("Wasp");
+            GameObject shieldedWasp = FindEnemyPrefab("Wasp Shielded");
+            if (cocoon == null || wasp == null)
+            {
+                Logger.LogWarning($"[SpiderSurge] Missing prefabs for WaspCocoon. ParkourTarget: {cocoon != null}, Wasp: {wasp != null}");
+                return;
+            }
+
+            if (WaspCocoonPrefab == null)
+            {
+                WaspCocoonPrefab = CreateBaseEnemy(cocoon, "WaspCocoon");
+                WaspCocoonPrefab.tag = "Untagged";
+                WaspCocoonPrefab.AddComponent<SpawnerBrain>().Initialize(wasp, shieldedWasp, Consts.Values.Enemies.CocoonSpawnInterval, Consts.Values.Enemies.CocoonMaxWasps);
+            }
+
+            if (shieldedWasp != null && ShieldedWaspCocoonPrefab == null)
+            {
+                ShieldedWaspCocoonPrefab = CreateShieldedEnemy(WaspCocoonPrefab, shieldedWasp, "ShieldedWaspCocoon");
+                ShieldedWaspCocoonPrefab.GetComponent<EnemyHealthSystem>().serializationEnemyName = SerializationEnemyName.ShieldedWasp;
+            }
+        }
+
+        private static GameObject FindEnemyPrefab(string name)
+        {
+            return Resources.FindObjectsOfTypeAll<EnemyHealthSystem>()
+                .FirstOrDefault(e => e.name == name && !e.gameObject.scene.IsValid())?.gameObject;
         }
 
         private static GameObject CreateBaseEnemy(GameObject original, string name, Color? color = null)
@@ -385,6 +421,7 @@ namespace SpiderSurge.Enemies
 
             if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
             if (powerMeleeWhispPrefab != null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
+            CreateWaspCocoon();
         }
     }
 }

@@ -19,6 +19,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Twin Whisp**: A black/red Whisp that fires dual projectiles simultaneously.
     - **Missile Whisp**: Uses the RocketTurret's body while flying and launching rockets. Cyan when unshielded and purple when shielded.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
+    - **Wasp Cocoon**: A stationary cocoon that hatches a Wasp every 10 seconds until it's destroyed, with at most 2 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps while its shield holds.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It opens on the first launch, and the backtick key (**`**) opens it at any time.
