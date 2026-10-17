@@ -117,6 +117,11 @@ namespace SpiderSurge
                 {
                     spiderController.gameObject.AddComponent<StorageAbility>();
                 }
+
+                if (spiderController.GetComponent<FreezeAbility>() == null)
+                {
+                    spiderController.gameObject.AddComponent<FreezeAbility>();
+                }
             }
             catch (System.Exception ex)
             {

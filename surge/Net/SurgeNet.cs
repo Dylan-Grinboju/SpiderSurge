@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SpiderSurge.Common;
+using SpiderSurge.Enemies;
+using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -13,12 +15,20 @@ namespace SpiderSurge
         Ammo = 1,
         Pulse = 2,
         Storage = 3,
+        Freeze = 4,
     }
 
     public enum SurgeFx : byte
     {
         PulseRing = 0,
         Immune = 1,
+        Freeze = 2,
+    }
+
+    public enum EnemyFx : byte
+    {
+        Frozen = 0,
+        LaserPhase = 1,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -28,6 +38,7 @@ namespace SpiderSurge
         private const string StateChannel = "surge.state";
         private const string AbilityChannel = "surge.ability";
         private const string FxChannel = "surge.fx";
+        private const string EnemyChannel = "surge.enemy";
 
         private static bool _initialized;
         private static bool _dirty;
@@ -44,8 +55,8 @@ namespace SpiderSurge
             Net.Register(StateChannel, OnState);
             Net.Register(AbilityChannel, OnAbility);
             Net.Register(FxChannel, OnFx);
+            Net.Register(EnemyChannel, OnEnemyFx);
             Net.PeerReady += OnPeerReady;
-            Net.ClientJoined += StorageAbility.HideStoredWeaponsFrom;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
         }
@@ -60,8 +71,8 @@ namespace SpiderSurge
             Net.Unregister(StateChannel);
             Net.Unregister(AbilityChannel);
             Net.Unregister(FxChannel);
+            Net.Unregister(EnemyChannel);
             Net.PeerReady -= OnPeerReady;
-            Net.ClientJoined -= StorageAbility.HideStoredWeaponsFrom;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
         }
@@ -120,6 +131,21 @@ namespace SpiderSurge
                 writer.Write(position);
                 writer.Write(radius);
                 writer.Write(flag);
+            });
+        }
+
+        // Effects on an enemy that only the host runs: the freeze tint and the laser ring's timing
+        public static void SendEnemyFx(EnemyFx fx, NetworkObject target, float value)
+        {
+            if (!Net.HasRemotePlayers || target == null || !target.IsSpawned)
+            {
+                return;
+            }
+            Net.SendToAll(EnemyChannel, writer =>
+            {
+                writer.Write((byte)fx);
+                writer.Write(target.NetworkObjectId);
+                writer.Write(value);
             });
         }
 
@@ -308,6 +334,33 @@ namespace SpiderSurge
                     break;
                 case SurgeFx.Immune:
                     ImmuneAbility.ShowRemoteImmunity(playerId, flag);
+                    break;
+                case SurgeFx.Freeze:
+                    FreezeAbility.DrawRemote(playerId, position, radius, flag);
+                    break;
+            }
+        }
+
+        private static void OnEnemyFx(ulong sender, BinaryReader reader)
+        {
+            if (!Net.IsRemoteClient || sender != 0)
+            {
+                return;
+            }
+            var fx = (EnemyFx)reader.ReadByte();
+            ulong objectId = reader.ReadUInt64();
+            float value = reader.ReadSingle();
+            if (!Net.Manager.SpawnManager.SpawnedObjects.TryGetValue(objectId, out NetworkObject target) || target == null)
+            {
+                return;
+            }
+            switch (fx)
+            {
+                case EnemyFx.Frozen:
+                    FrozenEnemy.ShowFrozen(target.GetComponent<EnemyHealthSystem>(), value);
+                    break;
+                case EnemyFx.LaserPhase:
+                    target.GetComponentInChildren<LaserRing>(true)?.Sync(value);
                     break;
             }
         }

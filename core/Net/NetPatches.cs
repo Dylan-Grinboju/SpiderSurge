@@ -31,6 +31,48 @@ namespace SpiderSurge.Common
         }
     }
 
+    // Netcode 1.0.0-pre makes a joining client an observer of every object and syncs them all, whatever CheckObjectVisibility says
+    [HarmonyPatch(typeof(NetworkSpawnManager), "UpdateObservedNetworkObjects")]
+    public static class NetworkSpawnManager_UpdateObservedNetworkObjects_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(NetworkSpawnManager __instance, ulong clientId)
+        {
+            try
+            {
+                foreach (NetworkObject networkObject in __instance.SpawnedObjectsList)
+                {
+                    if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility(clientId))
+                    {
+                        networkObject.Observers.Remove(clientId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"SpiderSurge could not apply object visibility for client {clientId}: {ex.Message}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(SceneEventData), "AddSpawnedNetworkObjects")]
+    public static class SceneEventData_AddSpawnedNetworkObjects_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(SceneEventData __instance)
+        {
+            try
+            {
+                ulong target = __instance.TargetClientId;
+                __instance.m_NetworkObjectsSync.RemoveAll(networkObject => networkObject != null && !networkObject.Observers.Contains(target));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"SpiderSurge could not filter the join sync: {ex.Message}");
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(LobbyController), "ConnectionApprovalCallback")]
     public static class LobbyController_ConnectionApprovalCallback_Patch
     {

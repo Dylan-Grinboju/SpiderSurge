@@ -33,7 +33,6 @@ namespace SpiderSurge.Common
 
         public static event Action<ulong> PeerReady;
         public static event Action<ulong> PeerLeft;
-        public static event Action<ulong> ClientJoined;
         public static event Action JoinedHost;
         public static event Action LeftHost;
 
@@ -268,10 +267,6 @@ namespace SpiderSurge.Common
                 if (IsRemoteClient && clientId == LocalClientId)
                 {
                     Send(HelloChannel, Net.ServerId, Payload(writer => writer.Write(SpiderSurgeMod.Version)));
-                }
-                else if (IsHost && clientId != Net.ServerId)
-                {
-                    Raise(ClientJoined, clientId);
                 }
             }
             catch (Exception ex)

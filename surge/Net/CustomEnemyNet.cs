@@ -92,6 +92,20 @@ namespace SpiderSurge.Enemies
             }
         }
 
+        // A clone of something the game never registers for the network (the Parkour cocoon) has no base enemy a vanilla client could build
+        public static void PrepareForSpawn(NetworkObject instance)
+        {
+            var manager = NetworkManager.Singleton;
+            if (instance == null || manager == null || !_byHash.TryGetValue(instance.GlobalObjectIdHash, out var entry))
+            {
+                return;
+            }
+            if (!manager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(entry.OriginalHash))
+            {
+                instance.CheckObjectVisibility = Net.ClientRunsMod;
+            }
+        }
+
         public static uint HashForClient(uint hash, ulong targetClientId)
         {
             if (!_byHash.TryGetValue(hash, out var entry) || Net.ClientRunsMod(targetClientId))

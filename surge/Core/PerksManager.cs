@@ -31,13 +31,13 @@ namespace SpiderSurge
         }
 
         // Ability perks - shown in special ability selection screen
-        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ImmuneAbility, Consts.PerkNames.AmmoAbility, Consts.PerkNames.PulseAbility, Consts.PerkNames.StorageAbility };
+        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ImmuneAbility, Consts.PerkNames.AmmoAbility, Consts.PerkNames.PulseAbility, Consts.PerkNames.StorageAbility, Consts.PerkNames.FreezeAbility };
 
         // Upgrade perks - shown in normal perk selection
         private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
-        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ImmuneAbilityUltimate, Consts.PerkNames.AmmoAbilityUltimate, Consts.PerkNames.PulseAbilityUltimate, Consts.PerkNames.StorageAbilityUltimate };
+        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ImmuneAbilityUltimate, Consts.PerkNames.AmmoAbilityUltimate, Consts.PerkNames.PulseAbilityUltimate, Consts.PerkNames.StorageAbilityUltimate, Consts.PerkNames.FreezeAbilityUltimate };
 
 
 
@@ -47,6 +47,7 @@ namespace SpiderSurge
             [Consts.PerkNames.AmmoAbility] = 1,
             [Consts.PerkNames.PulseAbility] = 1,
             [Consts.PerkNames.StorageAbility] = 1,
+            [Consts.PerkNames.FreezeAbility] = 1,
             [Consts.PerkNames.AbilityCooldown] = 2,
             [Consts.PerkNames.AbilityDuration] = 2,
             [Consts.PerkNames.ShortTermInvestment] = 1,
@@ -56,7 +57,8 @@ namespace SpiderSurge
             [Consts.PerkNames.ImmuneAbilityUltimate] = 1,
             [Consts.PerkNames.AmmoAbilityUltimate] = 1,
             [Consts.PerkNames.PulseAbilityUltimate] = 1,
-            [Consts.PerkNames.StorageAbilityUltimate] = 1
+            [Consts.PerkNames.StorageAbilityUltimate] = 1,
+            [Consts.PerkNames.FreezeAbilityUltimate] = 1
         };
 
         private readonly Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
@@ -65,6 +67,7 @@ namespace SpiderSurge
             [Consts.PerkNames.AmmoAbility] = new List<string>(),
             [Consts.PerkNames.PulseAbility] = new List<string>(),
             [Consts.PerkNames.StorageAbility] = new List<string>(),
+            [Consts.PerkNames.FreezeAbility] = new List<string>(),
             [Consts.PerkNames.AbilityCooldown] = new List<string>(),
             [Consts.PerkNames.AbilityDuration] = new List<string>(),
             [Consts.PerkNames.ShortTermInvestment] = new List<string>(),
@@ -74,7 +77,8 @@ namespace SpiderSurge
             [Consts.PerkNames.ImmuneAbilityUltimate] = new List<string> { Consts.PerkNames.ImmuneAbility },
             [Consts.PerkNames.AmmoAbilityUltimate] = new List<string> { Consts.PerkNames.AmmoAbility },
             [Consts.PerkNames.PulseAbilityUltimate] = new List<string> { Consts.PerkNames.PulseAbility },
-            [Consts.PerkNames.StorageAbilityUltimate] = new List<string> { Consts.PerkNames.StorageAbility }
+            [Consts.PerkNames.StorageAbilityUltimate] = new List<string> { Consts.PerkNames.StorageAbility },
+            [Consts.PerkNames.FreezeAbilityUltimate] = new List<string> { Consts.PerkNames.FreezeAbility }
         };
 
         private readonly Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -121,6 +125,11 @@ namespace SpiderSurge
             EnableAbility<StorageAbility>(Consts.PerkNames.StorageAbility);
         }
 
+        public static void EnableFreezeAbility()
+        {
+            EnableAbility<FreezeAbility>(Consts.PerkNames.FreezeAbility);
+        }
+
         public static void EnableImmuneUltimate()
         {
             EnableUltimate<ImmuneAbility>(Consts.PerkNames.ImmuneAbilityUltimate);
@@ -139,6 +148,11 @@ namespace SpiderSurge
         public static void EnableStorageUltimate()
         {
             EnableUltimate<StorageAbility>(Consts.PerkNames.StorageAbilityUltimate);
+        }
+
+        public static void EnableFreezeUltimate()
+        {
+            EnableUltimate<FreezeAbility>(Consts.PerkNames.FreezeAbilityUltimate);
         }
 
         private static void EnableAbility<T>(string perkName) where T : BaseAbility
@@ -261,7 +275,7 @@ namespace SpiderSurge
 
         public bool HasAnyAbilityUnlocked()
         {
-            return GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0 || GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.PulseAbility) > 0 || GetPerkLevel(Consts.PerkNames.StorageAbility) > 0;
+            return GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0 || GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.PulseAbility) > 0 || GetPerkLevel(Consts.PerkNames.StorageAbility) > 0 || GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0;
         }
 
         private bool HasAnyUltimate()
@@ -269,7 +283,8 @@ namespace SpiderSurge
             return GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
                    GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
                    GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
-                   GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0;
+                   GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0 ||
+                   GetPerkLevel(Consts.PerkNames.FreezeAbilityUltimate) > 0;
         }
 
         public string GetChosenAbilityUltimate()
@@ -278,6 +293,7 @@ namespace SpiderSurge
             if (GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return Consts.PerkNames.AmmoAbilityUltimate;
             if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return Consts.PerkNames.PulseAbilityUltimate;
             if (GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return Consts.PerkNames.StorageAbilityUltimate;
+            if (GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0) return Consts.PerkNames.FreezeAbilityUltimate;
             return null;
         }
 
@@ -332,10 +348,12 @@ namespace SpiderSurge
                 [Consts.PerkNames.AmmoAbility] = EnableAmmoAbility,
                 [Consts.PerkNames.PulseAbility] = EnablePulseAbility,
                 [Consts.PerkNames.StorageAbility] = EnableStorageAbility,
+                [Consts.PerkNames.FreezeAbility] = EnableFreezeAbility,
                 [Consts.PerkNames.ImmuneAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.ImmuneAbilityUltimate, EnableImmuneUltimate),
                 [Consts.PerkNames.AmmoAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.AmmoAbilityUltimate, EnableAmmoUltimate),
                 [Consts.PerkNames.PulseAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.PulseAbilityUltimate, EnablePulseUltimate),
-                [Consts.PerkNames.StorageAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.StorageAbilityUltimate, EnableStorageUltimate)
+                [Consts.PerkNames.StorageAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.StorageAbilityUltimate, EnableStorageUltimate),
+                [Consts.PerkNames.FreezeAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.FreezeAbilityUltimate, EnableFreezeUltimate)
             };
         }
 
