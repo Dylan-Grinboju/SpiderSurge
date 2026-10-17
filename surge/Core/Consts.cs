@@ -199,6 +199,42 @@ namespace SpiderSurge
                 public const float TwinWhispShotMargin = 5f;
             }
 
+            public static class LaserRing
+            {
+                public const float Period = 5f;
+                public const float WarningDuration = 1f;
+                public const float ActiveDuration = 1f;
+                public const float Radius = 30f;
+                public const float Width = 3.5f;
+                public const float WarningWidth = 1f;
+                public const float WarningMinAlpha = 0.1f;
+                public const float WarningMaxAlpha = 0.35f;
+                public const float Power = 100f;
+                public const int Segments = 72;
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(1f, 0.09f, 0.09f, 1f);
+
+                // Base enemy name -> laser variant name; enemies left out (ExplodingRoller, shielded ones) get no ring
+                public static readonly Dictionary<string, string> Variants = new Dictionary<string, string>
+                {
+                    { "Wasp", "LaserWasp" },
+                    { "Roller", "LaserRoller" },
+                    { "Whisp", "LaserWhisp" },
+                    { "MeleeWhisp", "LaserMeleeWhisp" },
+                    { "Khepri", "LaserKhepri" },
+                    { "PowerWhisp Variant", "LaserPowerWhisp" },
+                    { "PowerWasp Variant", "LaserPowerWasp" },
+                    { "TwinBladeMeleeWhisp", "LaserTwinBladeMeleeWhisp" },
+                    { "PowerRoller Variant", "LaserPowerRoller" },
+                    { "PowerKhepri Variant", "LaserPowerKhepri" },
+                    { "PowerMeleeWhisp Variant", "LaserPowerMeleeWhisp" },
+                    { "TwinWhisp", "LaserTwinWhisp" },
+                    { "Hornet_Shaman Variant", "LaserHornetShaman" },
+                    { "TwinBladePowerMeleeWhisp", "LaserTwinBladePowerMeleeWhisp" },
+                    { "Hornet Variant", "LaserHornet" },
+                    { "MissileWhisp", "LaserMissileWhisp" },
+                };
+            }
+
             public static class Colors
             {
                 public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f);
@@ -255,6 +291,23 @@ namespace SpiderSurge
                     { "MissileWhisp", new EnemySpawnConfig(7f, 19, 25) },
                     { "Shielded Hornet Variant", new EnemySpawnConfig(8f, 20, 0) },
                     { "ShieldedMissileWhisp", new EnemySpawnConfig(9f, 21, 0) },
+
+                    { "LaserWasp", new EnemySpawnConfig(4.5f, 12, 19) },
+                    { "LaserRoller", new EnemySpawnConfig(4.5f, 13, 21) },
+                    { "LaserWhisp", new EnemySpawnConfig(6f, 14, 22) },
+                    { "LaserMeleeWhisp", new EnemySpawnConfig(6f, 15, 22) },
+                    { "LaserKhepri", new EnemySpawnConfig(7.5f, 16, 36) },
+                    { "LaserPowerWhisp", new EnemySpawnConfig(9f, 18, 0) },
+                    { "LaserPowerWasp", new EnemySpawnConfig(9f, 19, 28) },
+                    { "LaserTwinBladeMeleeWhisp", new EnemySpawnConfig(12f, 20, 28) },
+                    { "LaserPowerRoller", new EnemySpawnConfig(12f, 21, 0) },
+                    { "LaserPowerKhepri", new EnemySpawnConfig(12f, 22, 0) },
+                    { "LaserPowerMeleeWhisp", new EnemySpawnConfig(12f, 23, 32) },
+                    { "LaserTwinWhisp", new EnemySpawnConfig(12f, 24, 32) },
+                    { "LaserHornetShaman", new EnemySpawnConfig(18f, 26, 0) },
+                    { "LaserTwinBladePowerMeleeWhisp", new EnemySpawnConfig(18f, 27, 0) },
+                    { "LaserHornet", new EnemySpawnConfig(18f, 30, 37) },
+                    { "LaserMissileWhisp", new EnemySpawnConfig(21f, 31, 37) },
                 };
 
             public struct EnemySpawnConfig
