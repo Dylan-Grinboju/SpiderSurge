@@ -28,7 +28,7 @@ namespace SpiderSurge.Enemies
                 if (renderers[i] == null) continue;
                 Color color = Color.Lerp(unshieldedColors[i], shieldColor, 0.7f);
                 color.a = unshieldedColors[i].a;
-                renderers[i].color = color;
+                FrozenEnemy.SetBaseColor(renderers[i], color);
             }
         }
 
@@ -38,7 +38,7 @@ namespace SpiderSurge.Enemies
 
             for (int i = 0; i < renderers.Length; i++)
             {
-                if (renderers[i] != null) renderers[i].color = unshieldedColors[i];
+                if (renderers[i] != null) FrozenEnemy.SetBaseColor(renderers[i], unshieldedColors[i]);
             }
         }
     }

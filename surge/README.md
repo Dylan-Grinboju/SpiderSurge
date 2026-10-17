@@ -15,6 +15,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
     - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
     - **Null Field**: Become immune to all damage for a short time.
+    - **Freeze Time**: Freeze every enemy in a large area for 5 seconds. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
 - **Custom Enemies**:
     - **Twin Whisp**: A black/red Whisp that fires dual projectiles simultaneously.
     - **Missile Whisp**: Uses the RocketTurret's body while flying and launching rockets. Cyan when unshielded and purple when shielded.
