@@ -19,6 +19,7 @@ namespace StatsMod
         {
             UIManager.Initialize();
             Logger.LogInfo("UI Manager initialized");
+            StatsNet.Initialize();
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -28,6 +29,7 @@ namespace StatsMod
 
         protected internal override void OnStop()
         {
+            StatsNet.Shutdown();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)
             {

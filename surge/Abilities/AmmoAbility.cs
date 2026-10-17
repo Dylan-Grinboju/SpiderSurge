@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Reflection;
 using Unity.Netcode;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 using UnityEngine.SceneManagement;
 
@@ -11,22 +12,23 @@ namespace SpiderSurge
 {
     public class AmmoAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, AmmoAbility> playerAmmoAbilities = new Dictionary<PlayerInput, AmmoAbility>();
+        public static Dictionary<int, AmmoAbility> playerAmmoAbilities = new Dictionary<int, AmmoAbility>();
 
         public static float GetWeaponAmmoFloor(Weapon weapon)
         {
             if (weapon == null || !weapon.equipped || weapon.owner == null) return -1f;
 
-            PlayerInput pi = weapon.owner.GetComponentInParent<PlayerInput>();
-            if (pi == null) return -1f;
+            int playerId = Players.IdOf(weapon.owner);
+            if (playerId < 0) return -1f;
 
-            if (!playerAmmoAbilities.TryGetValue(pi, out AmmoAbility ability) || ability == null || !ability.isActive)
+            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive)
                 return -1f;
 
             return ability.GetHeldWeaponFloorAmmo(weapon);
         }
 
         public override string PerkName => Consts.PerkNames.AmmoAbility;
+        public override AbilityKind Kind => AbilityKind.Ammo;
 
         public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown;
@@ -59,10 +61,6 @@ namespace SpiderSurge
         protected override void Awake()
         {
             base.Awake();
-            if (playerInput != null)
-            {
-                playerAmmoAbilities[playerInput] = this;
-            }
 
             if (networkAmmoField == null)
             {
@@ -79,6 +77,10 @@ namespace SpiderSurge
         protected override void Start()
         {
             base.Start();
+            if (PlayerId >= 0)
+            {
+                playerAmmoAbilities[PlayerId] = this;
+            }
             weaponManager = GetComponentInChildren<SpiderWeaponManager>();
             if (weaponManager == null && playerController != null)
             {
@@ -186,7 +188,7 @@ namespace SpiderSurge
 
         private void SetWeaponAmmo(Weapon weapon, float value)
         {
-            if (weapon == null) return;
+            if (weapon == null || !IsAuthority) return;
 
             weapon.ammo = value;
 
@@ -208,7 +210,7 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.AmmoAbility,
@@ -254,10 +256,10 @@ namespace SpiderSurge
         {
             if (manager == null || weapon == null) return;
 
-            PlayerInput playerInput = manager.GetComponentInParent<PlayerInput>();
-            if (playerInput == null) return;
+            int playerId = Players.IdOf(manager);
+            if (playerId < 0) return;
 
-            if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability == null)
+            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null)
                 return;
 
             if (!ability.isActive)
@@ -270,10 +272,10 @@ namespace SpiderSurge
         {
             if (manager == null || weapon == null) return;
 
-            PlayerInput playerInput = manager.GetComponentInParent<PlayerInput>();
-            if (playerInput == null) return;
+            int playerId = Players.IdOf(manager);
+            if (playerId < 0) return;
 
-            if (!playerAmmoAbilities.TryGetValue(playerInput, out AmmoAbility ability) || ability == null)
+            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null)
             {
                 return;
             }
@@ -298,7 +300,7 @@ namespace SpiderSurge
                 lastResolvedWeapon = weapon;
                 lastResolvedFrame = Time.frameCount;
 
-                if (ShouldDisintegrateOnRemoval(weapon))
+                if (IsAuthority && ShouldDisintegrateOnRemoval(weapon))
                 {
                     weapon.Disintegrate();
                 }
@@ -326,11 +328,13 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            // Ultimate does not grant ammo locking - it only spawns weapons
-            SoundManager.Instance?.PlaySound(
+            if (!IsRemote)
+            {
+                SoundManager.Instance?.PlaySound(
                     Consts.SoundNames.AmmoAbility,
                     Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
                 );
+            }
 
             SpawnWeaponsAtSpawnPoints();
 
@@ -456,9 +460,9 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (playerInput != null && playerAmmoAbilities.ContainsKey(playerInput))
+            if (playerAmmoAbilities.TryGetValue(PlayerId, out var registered) && registered == this)
             {
-                playerAmmoAbilities.Remove(playerInput);
+                playerAmmoAbilities.Remove(PlayerId);
             }
         }
     }

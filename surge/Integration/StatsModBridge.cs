@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using SpiderSurge.Common;
 using StatsMod;
-using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge.Integration
@@ -25,7 +24,7 @@ namespace SpiderSurge.Integration
 
                 foreach (var ps in snapshot.PlayerStats)
                 {
-                    string playerName = $"Player {ps.PlayerIndex + 1}";
+                    string playerName = $"Player {ps.PlayerId + 1}";
                     lines.Add($"  {playerName}:");
                     lines.Add($"    Ability Activations: {ps.AbilityActivationCount}");
                     lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");
@@ -70,7 +69,7 @@ namespace SpiderSurge.Integration
 
         private class LeaderInfo
         {
-            public PlayerInput Player;
+            public PlayerController Player;
             public int Value;
             public bool HasStat;
             public string Description;
@@ -132,7 +131,7 @@ namespace SpiderSurge.Integration
             int topValue = selector(ranked[0]);
             bool isTied = ranked.Count > 1 && selector(ranked[0]) == selector(ranked[1]);
 
-            var player = isTied ? null : PlayerInput.all.FirstOrDefault(p => p.playerIndex == ranked[0].PlayerIndex);
+            var player = isTied ? null : Players.ById(ranked[0].PlayerId);
 
             string label = descending ? "Most" : "Least";
             return new LeaderInfo
@@ -182,7 +181,7 @@ namespace SpiderSurge.Integration
                     leaderReqs.Add((requirement.Leader, requirement.ReqName));
             }
 
-            PlayerInput primaryPlayer = null;
+            PlayerController primaryPlayer = null;
             bool allHaveStats = true;
             var allReqNames = new List<string>();
             var descriptions = new List<string>();

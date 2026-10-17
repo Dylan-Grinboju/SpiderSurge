@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
 
 namespace StatsMod
 {
@@ -11,7 +10,7 @@ namespace StatsMod
         public GameMode GameMode { get; set; }
         public TimeSpan CurrentSessionTime { get; set; }
         public TimeSpan LastGameDuration { get; set; }
-        public Dictionary<PlayerInput, PlayerTracker.PlayerData> ActivePlayers { get; set; } = new Dictionary<PlayerInput, PlayerTracker.PlayerData>();
+        public Dictionary<PlayerController, PlayerTracker.PlayerData> ActivePlayers { get; set; } = new Dictionary<PlayerController, PlayerTracker.PlayerData>();
         public int EnemiesKilled { get; set; }
         public List<TitleEntry> Titles { get; set; } = new List<TitleEntry>();
         public int PainLevel { get; set; }

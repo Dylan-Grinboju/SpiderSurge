@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
+using System.IO;
+using SpiderSurge.Common;
+using UnityEngine;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -33,6 +35,10 @@ namespace StatsMod
         private bool restartRequested = false;
         private bool pauseAfterRestartOnNextSessionStart = false;
 
+        private float remoteSessionSeconds;
+        private float remoteReceivedAt;
+        private bool remoteRestartRequested;
+
         public bool IsActive => isSurvivalActive || isVersusActive;
         public GameMode CurrentGameMode => currentGameMode;
         public GameMode LastGameMode => lastGameMode;
@@ -58,6 +64,7 @@ namespace StatsMod
 
         private void StartSession(GameMode mode)
         {
+            if (Net.IsRemoteClient) return;
             if (IsActive)
             {
                 Logger.LogWarning($"Attempting to start {mode} session while one is already active");
@@ -70,6 +77,7 @@ namespace StatsMod
             sessionStartTime = DateTime.Now;
 
             HitLogic.Clear();
+            playerTracker.RefreshIdentities();
             playerTracker.ResetPlayerStats();
             enemiesTracker.ResetEnemiesKilled();
             playerTracker.StartAllAliveTimers();
@@ -96,6 +104,7 @@ namespace StatsMod
                 pauseAfterRestartOnNextSessionStart = false;
             }
 
+            StatsNet.SendSnapshot(SnapshotReason.Started);
         }
 
         public void StopSurvivalSession()
@@ -110,6 +119,7 @@ namespace StatsMod
 
         private void StopSession(GameMode mode)
         {
+            if (Net.IsRemoteClient) return;
             bool isCorrectMode = (mode == GameMode.Survival && isSurvivalActive) ||
                                  (mode == GameMode.Versus && isVersusActive);
 
@@ -133,6 +143,8 @@ namespace StatsMod
 
             TitlesManager.Instance.CalculateAndStoreTitles(statsSnapshot);
             statsSnapshot.Titles = TitlesManager.Instance.AllTitles;
+            StatsNet.SendSnapshot(SnapshotReason.Stopped);
+            StatsNet.SendTitles();
 
             if (ModConfig.SaveStatsToFile)
             {
@@ -173,6 +185,8 @@ namespace StatsMod
 
         public TimeSpan GetCurrentSessionTime()
         {
+            if (Net.IsRemoteClient)
+                return TimeSpan.FromSeconds(remoteSessionSeconds + (IsActive ? Time.unscaledTime - remoteReceivedAt : 0f));
             if (!IsActive)
                 return TimeSpan.Zero;
 
@@ -182,7 +196,7 @@ namespace StatsMod
 
         public void PauseTimers()
         {
-            if (isPaused || !IsActive)
+            if (isPaused || !IsActive || Net.IsRemoteClient)
                 return;
 
             isPaused = true;
@@ -192,7 +206,7 @@ namespace StatsMod
 
         public void ResumeTimers()
         {
-            if (!isPaused || !IsActive)
+            if (!isPaused || !IsActive || Net.IsRemoteClient)
                 return;
 
             TimeSpan pausedDuration = DateTime.Now - pauseStartTime;
@@ -207,7 +221,7 @@ namespace StatsMod
 
         public void RecordMap(string mapName)
         {
-            if (!IsActive) return;
+            if (!IsActive || !Net.IsAuthority) return;
             if (string.IsNullOrEmpty(mapName)) return;
 
             mapsPlayed.Add(mapName);
@@ -215,7 +229,7 @@ namespace StatsMod
 
         public void RecordPerk(string perkName)
         {
-            if (!IsActive) return;
+            if (!IsActive || !Net.IsAuthority) return;
             if (string.IsNullOrEmpty(perkName)) return;
 
             perksChosen.Add(perkName);
@@ -223,7 +237,7 @@ namespace StatsMod
 
         public void RecordPainLevel()
         {
-            if (!IsActive) return;
+            if (!IsActive || !Net.IsAuthority) return;
 
             try
             {
@@ -244,14 +258,14 @@ namespace StatsMod
 
         public void CheckWaveClutch()
         {
-            if (!isSurvivalActive)
+            if (!isSurvivalActive || !Net.IsAuthority)
                 return;
 
             var players = playerTracker.GetActivePlayers();
             if (players.Count < 2)
                 return;
 
-            PlayerInput clutchPlayer = playerTracker.GetOnlyAlivePlayer();
+            PlayerController clutchPlayer = playerTracker.GetOnlyAlivePlayer();
             if (clutchPlayer != null)
             {
                 playerTracker.IncrementWaveClutch(clutchPlayer);
@@ -271,12 +285,101 @@ namespace StatsMod
                 GameMode = currentGameMode,
                 CurrentSessionTime = GetCurrentSessionTime(),
                 LastGameDuration = lastGameDuration,
-                ActivePlayers = new Dictionary<PlayerInput, PlayerTracker.PlayerData>(playerTracker.GetActivePlayers()),
+                ActivePlayers = new Dictionary<PlayerController, PlayerTracker.PlayerData>(playerTracker.GetActivePlayers()),
                 EnemiesKilled = enemiesTracker.EnemiesKilled,
                 PainLevel = painLevel,
                 MapsPlayed = new List<string>(mapsPlayed),
                 PerksChosen = new List<string>(perksChosen)
             };
+        }
+
+        #endregion
+
+        #region Online
+
+        public void WriteSession(BinaryWriter writer)
+        {
+            writer.Write(isSurvivalActive);
+            writer.Write(isVersusActive);
+            writer.Write((int)currentGameMode);
+            writer.Write((int)lastGameMode);
+            writer.Write((float)GetCurrentSessionTime().TotalSeconds);
+            writer.Write((float)lastGameDuration.TotalSeconds);
+            writer.Write(painLevel);
+            writer.Write(enemiesTracker.EnemiesKilled);
+            writer.Write(restartRequested);
+            writer.Write(mapsPlayed.Count);
+            foreach (string map in mapsPlayed) writer.WriteText(map);
+            writer.Write(perksChosen.Count);
+            foreach (string perk in perksChosen) writer.WriteText(perk);
+        }
+
+        public void ReadSession(BinaryReader reader)
+        {
+            isSurvivalActive = reader.ReadBoolean();
+            isVersusActive = reader.ReadBoolean();
+            currentGameMode = (GameMode)reader.ReadInt32();
+            lastGameMode = (GameMode)reader.ReadInt32();
+            remoteSessionSeconds = reader.ReadSingle();
+            remoteReceivedAt = Time.unscaledTime;
+            lastGameDuration = TimeSpan.FromSeconds(reader.ReadSingle());
+            painLevel = reader.ReadInt32();
+            enemiesTracker.SetEnemiesKilled(reader.ReadInt32());
+            remoteRestartRequested = reader.ReadBoolean();
+            mapsPlayed.Clear();
+            int maps = reader.ReadInt32();
+            for (int i = 0; i < maps; i++) mapsPlayed.Add(reader.ReadString());
+            perksChosen.Clear();
+            int perks = reader.ReadInt32();
+            for (int i = 0; i < perks; i++) perksChosen.Add(reader.ReadString());
+        }
+
+        // Mirrors what StartSession does to the UI; the end-of-session UI waits for the titles message
+        public void OnRemoteSnapshot(SnapshotReason reason)
+        {
+            if (reason != SnapshotReason.Started) return;
+
+            bool keepEndOfGameTitlesVisible = pauseAfterRestartOnNextSessionStart &&
+                                             TitlesManager.Instance.HasGameEndedTitles &&
+                                             TitlesManager.Instance.TitleCount > 0;
+            UIManager.OnGameSessionStarted(keepEndOfGameTitlesVisible);
+            pauseAfterRestartOnNextSessionStart = false;
+        }
+
+        public void OnRemoteTitles(int titleCount)
+        {
+            int playerCount = playerTracker.GetActivePlayers().Count;
+            bool shouldShowTitles = ModConfig.TitlesEnabled &&
+                                    playerCount > 1 &&
+                                    TitlesManager.Instance.HasGameEndedTitles &&
+                                    TitlesManager.Instance.TitleCount > 0;
+
+            if (shouldShowTitles && remoteRestartRequested)
+            {
+                UIManager.AutoShowTitles(animate: false);
+                pauseAfterRestartOnNextSessionStart = true;
+            }
+            else if (!shouldShowTitles)
+            {
+                UIManager.AutoPullHUD();
+            }
+        }
+
+        public void ClearRemote()
+        {
+            isSurvivalActive = false;
+            isVersusActive = false;
+            isPaused = false;
+            currentGameMode = GameMode.None;
+            lastGameMode = GameMode.None;
+            lastGameDuration = TimeSpan.Zero;
+            remoteSessionSeconds = 0f;
+            remoteRestartRequested = false;
+            pauseAfterRestartOnNextSessionStart = false;
+            painLevel = -1;
+            mapsPlayed.Clear();
+            perksChosen.Clear();
+            enemiesTracker.ResetEnemiesKilled();
         }
 
         #endregion

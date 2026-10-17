@@ -26,6 +26,9 @@ namespace SpiderSurge.Common
 
         public virtual bool HasSettings => false;
 
+        // Keys or prefixes whose values the host sends to its clients while they are connected
+        public virtual IEnumerable<string> SharedSettings => Array.Empty<string>();
+
         protected internal virtual void OnStart()
         {
         }
@@ -54,6 +57,25 @@ namespace SpiderSurge.Common
         private static Harmony _core;
 
         public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Where(part => part.CanDisable).Select(part =>new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
+
+        public static bool IsShared(string key)
+        {
+            foreach (Part part in All)
+            {
+                if (!part.Running)
+                {
+                    continue;
+                }
+                foreach (string shared in part.SharedSettings)
+                {
+                    if (Settings.Affects(shared, key))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         public static void StartAll()
         {

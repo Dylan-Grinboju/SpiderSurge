@@ -38,6 +38,11 @@ namespace StatsMod
             EnemiesKilled = 0;
         }
 
+        public void SetEnemiesKilled(int count)
+        {
+            EnemiesKilled = count;
+        }
+
     }
 
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -14,6 +15,13 @@ namespace SpiderSurge
         protected PlayerController playerController;
         protected SpiderHealthSystem spiderHealthSystem;
         protected InputInterceptor inputInterceptor;
+
+        public abstract AbilityKind Kind { get; }
+
+        // A proxy for a player another machine controls: it takes no input; the host runs its effects, clients draw them
+        protected bool IsRemote => playerController != null && !playerController.IsOwner;
+        protected bool IsAuthority => Net.IsAuthority;
+        public int PlayerId => playerController != null ? playerController.playerID.Value : -1;
 
         protected bool isActive = false;
         protected bool onCooldown = false;
@@ -152,8 +160,7 @@ namespace SpiderSurge
             // Start initialization coroutine to wait for dependencies
             StartCoroutine(WaitForInit());
 
-            // Set up Ultimate activation inputs if this ability has Ultimate
-            if (HasUltimate)
+            if (HasUltimate && playerInput != null)
             {
                 SetupUltimateInputs();
             }
@@ -161,21 +168,16 @@ namespace SpiderSurge
 
         private IEnumerator WaitForInit()
         {
-            while (spiderHealthSystem == null || inputInterceptor == null || !inputInterceptor.IsReady)
+            while (spiderHealthSystem == null || (playerInput != null && (inputInterceptor == null || !inputInterceptor.IsReady)))
             {
                 if (playerController != null && spiderHealthSystem == null)
                 {
                     spiderHealthSystem = playerController.spiderHealthSystem;
                 }
 
-                if (inputInterceptor == null)
+                if (inputInterceptor == null && playerInput != null)
                 {
                     inputInterceptor = GetComponentInParent<InputInterceptor>();
-                }
-
-                if (spiderHealthSystem != null && inputInterceptor != null && inputInterceptor.IsReady)
-                {
-                    break;
                 }
 
                 yield return null;
@@ -191,7 +193,7 @@ namespace SpiderSurge
             {
                 RegisterWithInputInterceptor();
             }
-            else if (inputInterceptor == null)
+            else if (inputInterceptor == null && playerInput != null)
             {
                 Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex} after waiting.");
             }
@@ -395,10 +397,11 @@ namespace SpiderSurge
             isActive = true;
             OnActivate();
 
-            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
             {
-                SpiderSurgeStatsManager.Instance.LogAbilityActivation(playerInput.playerIndex);
+                SpiderSurgeStatsManager.Instance.LogAbilityActivation(PlayerId);
             }
+            SurgeNet.SendAbility(PlayerId, Kind, false);
 
             if (AbilityDuration > 0)
             {
@@ -458,10 +461,11 @@ namespace SpiderSurge
             isUltimateActive = true;
             OnActivateUltimate();
 
-            if (playerInput != null && SpiderSurgeStatsManager.Instance != null)
+            if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
             {
-                SpiderSurgeStatsManager.Instance.LogUltimateActivation(playerInput.playerIndex);
+                SpiderSurgeStatsManager.Instance.LogUltimateActivation(PlayerId);
             }
+            SurgeNet.SendAbility(PlayerId, Kind, true);
 
             if (UltimateDuration > 0)
             {
@@ -470,6 +474,19 @@ namespace SpiderSurge
                     StopCoroutine(durationCoroutine);
                 }
                 durationCoroutine = StartCoroutine(UltimateDurationCoroutine());
+            }
+        }
+
+        // The host runs a client's request through the same checks its own press would pass
+        public void ActivateFromNetwork(bool ultimate)
+        {
+            if (ultimate)
+            {
+                ActivateUltimate();
+            }
+            else
+            {
+                Activate();
             }
         }
 
@@ -590,7 +607,7 @@ namespace SpiderSurge
             }
             else
             {
-                if (inputInterceptor == null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
+                if (inputInterceptor == null && playerInput != null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
             }
         }
 
@@ -635,7 +652,8 @@ namespace SpiderSurge
 
         private void PlayAbilityNotReadySound()
         {
-            int playerId = playerInput?.playerIndex ?? -1;
+            if (IsRemote) return;
+            int playerId = PlayerId;
 
             // Get last sound time for this player (default to 0 if not found)
             float lastSoundTime = 0f;
@@ -670,7 +688,7 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
-                if (ShouldPlayAbilityEndedSound(wasUltimate))
+                if (!IsRemote && ShouldPlayAbilityEndedSound(wasUltimate))
                 {
                     PlayAbilityEndedSound();
                 }
@@ -687,7 +705,7 @@ namespace SpiderSurge
             if (isActive)
             {
                 Deactivate();
-                if (ShouldPlayAbilityEndedSound(wasUltimate))
+                if (!IsRemote && ShouldPlayAbilityEndedSound(wasUltimate))
                 {
                     PlayAbilityEndedSound();
                 }
@@ -727,7 +745,7 @@ namespace SpiderSurge
             onCooldown = false;
             cooldownEndTime = 0f;
 
-            if (SoundManager.Instance != null && IsUnlocked())
+            if (SoundManager.Instance != null && IsUnlocked() && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.AbilityReady,

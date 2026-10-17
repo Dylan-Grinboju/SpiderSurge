@@ -93,7 +93,7 @@ namespace SpiderSurge.Logging
             {
                 foreach (var player in stats.PlayerStats)
                 {
-                    sb.AppendLine($"  Player {player.PlayerIndex + 1}:");
+                    sb.AppendLine($"  Player {player.PlayerId + 1}:");
                     sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
                     sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
                     sb.AppendLine();

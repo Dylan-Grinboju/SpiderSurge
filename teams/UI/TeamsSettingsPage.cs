@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 
 namespace SpiderTeams
 {
@@ -16,6 +17,12 @@ namespace SpiderTeams
             page.Choice("Friendly fire", FriendlyFireLabel(ModConfig.FriendlyFire),
                 () => ModConfig.SetFriendlyFire((FriendlyFireMode)(((int)ModConfig.FriendlyFire + 2) % 3)), CycleFriendlyFire);
             page.Note(FriendlyFireDescription(ModConfig.FriendlyFire));
+            if (Net.IsRemoteClient)
+            {
+                page.Note(Net.HostHasMod
+                    ? "You are in another player's match: their team settings apply until you leave."
+                    : "The host has no SpiderSurge, so there are no teams in this match.");
+            }
             page.PlacePrimaryControls();
 
             page.Spacer();
@@ -32,9 +39,9 @@ namespace SpiderTeams
             page.Button($"Team button (keyboard): {KeyboardLabel()}", CycleKeyboardBinding);
 
             var manager = TeamManager.Instance;
-            if (manager != null && TeamManager.IsHost && ModConfig.TeamsEnabled)
+            if (manager != null && ModConfig.TeamsEnabled && (TeamManager.IsHost || Net.HostHasMod))
             {
-                AddRoster(page, manager);
+                AddRoster(page, manager, readOnly: Net.IsRemoteClient || !manager.PicksOpen);
             }
 
             AddSurge(page);
@@ -43,7 +50,7 @@ namespace SpiderTeams
             page.ConfirmButton("Reset Teams settings to defaults", ModConfig.ResetToDefaults);
         }
 
-        private static void AddRoster(VersusTeamsPage page, TeamManager manager)
+        private static void AddRoster(VersusTeamsPage page, TeamManager manager, bool readOnly)
         {
             var players = TeamManager.Players;
             if (players == null || players.Count == 0)
@@ -64,10 +71,21 @@ namespace SpiderTeams
                 for (int i = 0; i < _members.Count; i++)
                 {
                     PlayerController member = _members[i];
-                    page.Button($"{TeamManager.RichName(member)} > {next}", () => MovePlayer(member));
+                    if (readOnly)
+                    {
+                        page.Paragraph(TeamManager.RichName(member));
+                    }
+                    else
+                    {
+                        page.Button($"{TeamManager.RichName(member)} > {next}", () => MovePlayer(member));
+                    }
                 }
             }
 
+            if (readOnly)
+            {
+                return;
+            }
             page.Button("Shuffle teams", () => manager.Shuffle());
             page.Button("Balance teams", () => manager.Balance());
         }
@@ -114,7 +132,7 @@ namespace SpiderTeams
             page.Note(Consts.Surge.LongTermDescription);
 
             page.Note("Ability: Q or L1 (hold Start and double-tap a button to remap it). Ultimate: C, or L3 and R3 together. Changes apply from the next round.");
-            page.Note("Abilities only work for players on the host's machine, so a match with anyone online plays without them.");
+            page.Note("Abilities need SpiderSurge on every player's machine; a match with a player who lacks it plays without them.");
         }
 
         private static void CycleSurgeAbility()

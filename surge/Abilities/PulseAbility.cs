@@ -5,15 +5,17 @@ using System.Reflection;
 using Unity.Netcode;
 using Interfaces;
 using HarmonyLib;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
     public class PulseAbility : BaseAbility
     {
-        public static Dictionary<PlayerInput, PulseAbility> playerPulseAbilities = new Dictionary<PlayerInput, PulseAbility>();
+        public static Dictionary<int, PulseAbility> playerPulseAbilities = new Dictionary<int, PulseAbility>();
 
         public override string PerkName => Consts.PerkNames.PulseAbility;
+        public override AbilityKind Kind => AbilityKind.Pulse;
 
         public override float AbilityBaseCooldown => Consts.Values.Pulse.AbilityBaseCooldown;
         public override float AbilityBaseDuration => Consts.Values.Pulse.AbilityBaseDuration;
@@ -95,7 +97,7 @@ namespace SpiderSurge
             return speed;
         }
 
-        private float GetDeathRadius(bool isUlt)
+        private static float GetDeathRadius(bool isUlt)
         {
             if (!isUlt)
             {
@@ -122,14 +124,18 @@ namespace SpiderSurge
         private Collider2D[] _pulseResults = new Collider2D[64];
 
         private readonly HashSet<EnemyHealthSystem> _enemiesToLaunch = new HashSet<EnemyHealthSystem>();
+        protected override void Start()
+        {
+            base.Start();
+            if (PlayerId >= 0)
+            {
+                playerPulseAbilities[PlayerId] = this;
+            }
+        }
 
         protected override void Awake()
         {
             base.Awake();
-            if (playerInput != null)
-            {
-                playerPulseAbilities[playerInput] = this;
-            }
 
             pulseLayers = LayerMask.GetMask("Player", "Item", "Weapon", "Enemy", "EnemyWeapon", "DynamicWorld");
 
@@ -144,8 +150,7 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            // Play pulse ability sound (only for regular ability, not ultimate)
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.PulseAbility,
@@ -192,20 +197,33 @@ namespace SpiderSurge
 
             PulseParams pulseParams = CalculatePulseParameters(deadly);
 
-            // Visual effects
-            ApplyCameraEffects(deadly, pulseParams.KnockBackRadius);
-            SpawnRingVisual(pulseParams.Position, pulseParams.KnockBackRadius);
-
-            if (deadly)
+            DrawPulse(pulseParams.Position, pulseParams.KnockBackRadius, deadly, GetExplosionPrefab(spiderHealthSystem), playerController);
+            if (Net.IsHost)
             {
-                SpawnExplosionVFX(pulseParams.Position, GetDeathRadius(deadly));
+                SurgeNet.SendFx(SurgeFx.PulseRing, PlayerId, pulseParams.Position, pulseParams.KnockBackRadius, deadly);
             }
 
-            // Physics (Host only)
-            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            if (IsAuthority)
             {
                 ApplyPulsePhysics(pulseParams, deadly);
             }
+        }
+
+        // Everything a machine shows for a pulse; the physics stays with the host
+        private static void DrawPulse(Vector3 position, float radius, bool deadly, GameObject explosionPrefab, PlayerController owner)
+        {
+            ApplyCameraEffects(deadly, radius);
+            SpawnRingVisual(position, radius);
+            if (deadly)
+            {
+                SpawnExplosionVFX(position, GetDeathRadius(true), explosionPrefab, owner);
+            }
+        }
+
+        public static void DrawRemotePulse(int playerId, Vector3 position, float radius, bool deadly)
+        {
+            var owner = Players.ById(playerId);
+            DrawPulse(position, radius, deadly, GetExplosionPrefab(Players.HealthOf(playerId)), owner);
         }
 
         private PulseParams CalculatePulseParameters(bool deadly)
@@ -220,7 +238,7 @@ namespace SpiderSurge
             };
         }
 
-        private void ApplyCameraEffects(bool deadly, float radius)
+        private static void ApplyCameraEffects(bool deadly, float radius)
         {
             try
             {
@@ -234,7 +252,7 @@ namespace SpiderSurge
             }
         }
 
-        internal static PlayerInput CasterOf(PulseAbility ability) => ability.playerInput;
+        internal static PlayerController CasterOf(PulseAbility ability) => ability.playerController;
 
         private void ApplyPulsePhysics(PulseParams p, bool deadly)
         {
@@ -496,7 +514,7 @@ namespace SpiderSurge
             }
         }
 
-        private void SpawnRingVisual(Vector3 position, float radius)
+        private static void SpawnRingVisual(Vector3 position, float radius)
         {
             try
             {
@@ -512,11 +530,10 @@ namespace SpiderSurge
             }
         }
 
-        private void SpawnExplosionVFX(Vector3 position, float radius = 1f)
+        private static void SpawnExplosionVFX(Vector3 position, float radius, GameObject explosionPrefab, PlayerController owner)
         {
             try
             {
-                GameObject explosionPrefab = GetExplosionPrefab();
                 if (explosionPrefab == null)
                 {
                     Logger.LogWarning("PulseAbility: Could not get pulse prefab");
@@ -527,11 +544,11 @@ namespace SpiderSurge
                 float vfxScale = Mathf.Clamp(radius / Consts.Values.Pulse.UltimateBaseDeathRadius, 0.5f, 2f);
                 explosionVFX.transform.localScale *= vfxScale;
 
-                if (playerController != null)
+                if (owner != null)
                 {
                     try
                     {
-                        Color playerColor = playerController.playerColor.Value;
+                        Color playerColor = owner.playerColor.Value;
                         var changeColor = explosionVFX.GetComponent<ChangeExplosionColor>();
                         if (changeColor != null)
                         {
@@ -552,7 +569,7 @@ namespace SpiderSurge
 
         private static FieldInfo _deadExplosionPrefabField;
 
-        private GameObject GetExplosionPrefab()
+        private static GameObject GetExplosionPrefab(SpiderHealthSystem spiderHealthSystem)
         {
             if (cachedExplosionPrefab != null) return cachedExplosionPrefab;
 
@@ -587,9 +604,9 @@ namespace SpiderSurge
         {
             base.OnDestroy();
 
-            if (playerInput != null && playerPulseAbilities.ContainsKey(playerInput))
+            if (playerPulseAbilities.TryGetValue(PlayerId, out var registered) && registered == this)
             {
-                playerPulseAbilities.Remove(playerInput);
+                playerPulseAbilities.Remove(PlayerId);
             }
         }
     }
