@@ -55,6 +55,7 @@ namespace SpiderSurge.Integration
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return "Pulse";
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return "Ammo";
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return "Storage";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0) return "Freeze";
             return null;
         }
 
@@ -65,6 +66,7 @@ namespace SpiderSurge.Integration
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0) return "Pulse";
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0) return "Ammo";
             if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0) return "Storage";
+            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.FreezeAbilityUltimate) > 0) return "Freeze";
             return null;
         }
 

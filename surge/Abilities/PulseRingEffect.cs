@@ -17,9 +17,14 @@ namespace SpiderSurge
 
         public void Setup(float targetRadius)
         {
+            Setup(targetRadius, Consts.Values.Pulse.RingColor);
+        }
+
+        public void Setup(float targetRadius, Color color)
+        {
             this.maxRadius = targetRadius;
             this.speed = Consts.Values.Pulse.RingSpeed;
-            CreateLine(Consts.Values.Pulse.RingColor);
+            CreateLine(color);
         }
 
         // Starts at the radius and closes on the followed transform, speeding up like Banish's pull

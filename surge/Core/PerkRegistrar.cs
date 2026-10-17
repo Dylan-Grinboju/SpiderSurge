@@ -26,6 +26,8 @@ namespace SpiderSurge
                     { Consts.PerkNames.StorageAbilityUltimate, "storage_ability" },
                     { Consts.PerkNames.PulseAbility, "pulse_ability" },
                     { Consts.PerkNames.PulseAbilityUltimate, "pulse_ability" },
+                    { Consts.PerkNames.FreezeAbility, "freeze_ability" },
+                    { Consts.PerkNames.FreezeAbilityUltimate, "freeze_ability" },
                     { Consts.PerkNames.AbilityCooldown, "cooldown_perk" },
                     { Consts.PerkNames.AbilityDuration, "duration_perk" },
                     { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },

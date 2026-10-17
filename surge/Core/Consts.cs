@@ -10,11 +10,13 @@ namespace SpiderSurge
             public const string AmmoAbility = "ammo";
             public const string PulseAbility = "pulse";
             public const string StorageAbility = "storage";
+            public const string FreezeAbility = "freeze";
 
             public const string ImmuneAbilityUltimate = "immuneUltimate";
             public const string AmmoAbilityUltimate = "ammoUltimate";
             public const string PulseAbilityUltimate = "pulseUltimate";
             public const string StorageAbilityUltimate = "storageUltimate";
+            public const string FreezeAbilityUltimate = "freezeUltimate";
 
             public const string AbilityCooldown = "abilityCooldown";
             public const string AbilityDuration = "abilityDuration";
@@ -185,6 +187,27 @@ namespace SpiderSurge
                 public const float SpawnDistance = 50f;
             }
 
+            public static class Freeze
+            {
+                public const float AbilityBaseCooldown = 15f;
+                public const float AbilityCooldownReductionPerLevel = 4f;
+                public const float AbilityBaseDuration = 5f;
+                public const float AbilityDurationIncreasePerLevel = 2f;
+                public const float UltimateBaseCooldown = 45f;
+                public const float UltimateCooldownReductionPerLevel = 10f;
+                public const float AbilityBaseRange = 175f;
+                public const float AbilityRangeIncreasePerLevel = 50f;
+                public const float UltimateBaseRange = 125f;
+                public const float UltimateRangeIncreasePerLevel = 50f;
+                public const float RewindRingTime = 0.4f;
+                public const float TintStrength = 0.6f;
+                public const string WaspName = "Wasp";
+                public const string ShieldedWaspName = "Wasp Shielded";
+                public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.7f, 0.95f, 1f, 0.9f);
+                public static readonly UnityEngine.Color RewindRingColor = new UnityEngine.Color(1f, 0.8f, 0.3f, 0.9f);
+                public static readonly UnityEngine.Color TintColor = new UnityEngine.Color(0.55f, 0.85f, 1f, 1f);
+            }
+
             public static class Luck
             {
                 public const float Level1Chance = 0.15f;
@@ -300,6 +323,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "Bottomless Clip",
                 [PerkNames.PulseAbility] = "Kinetic Pulse",
                 [PerkNames.StorageAbility] = "Pocket Dimension",
+                [PerkNames.FreezeAbility] = "Freeze Time",
                 [PerkNames.AbilityCooldown] = "Ability Cooldown",
                 [PerkNames.AbilityDuration] = "Ability Duration",
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
@@ -309,7 +333,8 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "Care Package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Banish"
+                [PerkNames.StorageAbilityUltimate] = "Banish",
+                [PerkNames.FreezeAbilityUltimate] = "Rewind"
             };
 
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
@@ -318,6 +343,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
                 [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
+                [PerkNames.FreezeAbility] = "Freeze every enemy in a large area for a few seconds",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
                 [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
@@ -326,7 +352,8 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Pull the nearest enemy or spider into the pocket dimension, forever</color>"
+                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Pull the nearest enemy or spider into the pocket dimension, forever</color>",
+                [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn back time on nearby enemies, turning them into wasps. Shields stay</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
@@ -335,6 +362,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "",
                 [PerkNames.PulseAbility] = "",
                 [PerkNames.StorageAbility] = "",
+                [PerkNames.FreezeAbility] = "",
                 [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
                 [PerkNames.AbilityDuration] = "Increases ultimate duration",
                 [PerkNames.ShortTermInvestment] = "",
@@ -343,18 +371,22 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "",
                 [PerkNames.AmmoAbilityUltimate] = "",
                 [PerkNames.PulseAbilityUltimate] = "",
-                [PerkNames.StorageAbilityUltimate] = ""
+                [PerkNames.StorageAbilityUltimate] = "",
+                [PerkNames.FreezeAbilityUltimate] = ""
             };
 
             // Custom display names for Duration perk based on active ability
             private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
             private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+            private const string DURATION_NAME_WITH_FREEZE = "Deep Freeze";
 
             // Custom descriptions for Duration perk based on active ability
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases banish range";
+            private const string DURATION_DESC_WITH_FREEZE = "Freezes enemies for longer and farther away";
+            private const string DURATION_UPGRADE_DESC_WITH_FREEZE = "Increases rewind range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
@@ -368,6 +400,10 @@ namespace SpiderSurge
                     if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                     {
                         return DURATION_NAME_WITH_STORAGE;
+                    }
+                    if (perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
+                    {
+                        return DURATION_NAME_WITH_FREEZE;
                     }
                 }
                 return displayNames.ContainsKey(name) ? displayNames[name] : name;
@@ -385,6 +421,10 @@ namespace SpiderSurge
                 {
                     return DURATION_DESC_WITH_STORAGE;
                 }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
+                {
+                    return DURATION_DESC_WITH_FREEZE;
+                }
                 return descriptions.ContainsKey(name) ? descriptions[name] : "";
             }
 
@@ -399,6 +439,10 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_STORAGE;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
+                {
+                    return DURATION_UPGRADE_DESC_WITH_FREEZE;
                 }
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
                 {
