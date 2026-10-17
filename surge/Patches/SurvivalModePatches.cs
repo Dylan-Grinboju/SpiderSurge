@@ -318,20 +318,25 @@ namespace SpiderSurge
 
     }
 
-    // Cocoon wasps don't count toward the live enemy cap that holds back a wave's spawns; the wave still waits for them to die
+    // Cocoon wasps don't count toward the live enemy cap that holds back a wave's spawns; the burst spawn that waits for an empty arena and the wave's end still count them
     [HarmonyPatch]
     public class SurvivalMode_SpawnEnemies_Patch
     {
         static MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "SpawnEnemies"));
 
+        // EnemiesAlive is stored once and read by the cap check first, so only that first read leaves the wasps out
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo enemiesAlive = AccessTools.Method(typeof(SurvivalMode), "EnemiesAlive");
             bool patched = false;
+            int stage = 0;
             foreach (CodeInstruction instruction in instructions)
             {
                 yield return instruction;
-                if (instruction.Calls(enemiesAlive))
+                if (patched) continue;
+                if (stage == 0 && instruction.Calls(enemiesAlive)) stage = 1;
+                else if (stage == 1 && instruction.IsStloc()) stage = 2;
+                else if (stage == 2 && instruction.IsLdloc())
                 {
                     yield return CodeInstruction.Call(typeof(SurvivalMode_SpawnEnemies_Patch), nameof(WithoutHatchlings));
                     patched = true;

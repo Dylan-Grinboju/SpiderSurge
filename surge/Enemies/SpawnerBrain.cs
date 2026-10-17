@@ -57,9 +57,10 @@ namespace SpiderSurge.Enemies
 
             IgnoreEnemiesInside();
 
-            timer += Time.fixedDeltaTime;
             hatchlings.RemoveAll(h => h == null || h.IsDead());
-            if (timer < interval || hatching || hatchlings.Count >= maxHatchlings) return;
+            if (hatching || hatchlings.Count >= maxHatchlings) return;
+            timer += Time.fixedDeltaTime;
+            if (timer < interval) return;
             timer = 0f;
 
             GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
@@ -79,6 +80,11 @@ namespace SpiderSurge.Enemies
             float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
             spawnEffectRpc.Invoke(spawner, new object[] { transform.position, delay, false });
             yield return new WaitForSeconds(delay);
+            if (health.IsDead())
+            {
+                hatching = false;
+                yield break;
+            }
 
             GameObject hatchling = Instantiate(prefab, transform.position, transform.rotation);
             EnemyHealthSystem hatchlingHealth = hatchling.GetComponent<EnemyHealthSystem>();
@@ -105,6 +111,8 @@ namespace SpiderSurge.Enemies
                 if (((Vector2)(enemy.transform.position - transform.position)).sqrMagnitude > 0.01f) continue;
 
                 ignored.Add(enemy);
+                EnemyHealthSystem enemyHealth = enemy.GetComponent<EnemyHealthSystem>();
+                if (enemyHealth != null && enemyHealth.serializationEnemyName == SerializationEnemyName.FriendlyWasp) continue;
                 foreach (Collider2D other in enemy.GetComponentsInChildren<Collider2D>(true))
                 {
                     foreach (Collider2D own in colliders)
