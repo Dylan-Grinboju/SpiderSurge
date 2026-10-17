@@ -160,7 +160,8 @@ namespace SpiderSurge.Enemies
                 Collider2D hit = hits[i];
                 Bounds bounds = hit.bounds;
                 Vector2 offset = (Vector2)bounds.center - center;
-                if (offset.magnitude + bounds.extents.magnitude < radius - halfWidth) continue;
+                float bodyRadius = Mathf.Max(bounds.extents.x, bounds.extents.y);
+                if (offset.magnitude + bodyRadius < radius - halfWidth) continue;
 
                 IDamageable damageable = hit.GetComponent<IDamageable>() ?? hit.attachedRigidbody?.GetComponent<IDamageable>();
                 if (damageable == null) continue;
