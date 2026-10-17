@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 using HarmonyLib;
 using Unity.Netcode;
@@ -73,7 +72,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.BeginEnemy))]
     class EnemyBanishedPatch
     {
-        static void Prefix(EnemyHealthSystem enemy, PlayerInput caster)
+        static void Prefix(EnemyHealthSystem enemy, PlayerController caster)
         {
             try
             {
@@ -126,7 +125,7 @@ namespace StatsMod
                 gameObject.GetComponent<Rigidbody2D>().AddForce(__instance.transform.up * __instance.shotForce, ForceMode2D.Impulse);
 
                 // **THIS IS OUR ADDITION** - Track the disc owner
-                PlayerInput ownerPlayer = __instance.owner?.healthSystem?.GetComponentInParent<PlayerInput>();
+                PlayerController ownerPlayer = __instance.owner?.healthSystem?.GetComponentInParent<PlayerController>();
                 HitLogic.RegisterDiscOwner(gameObject, ownerPlayer);
                 AccuracyTracker.Fire(__instance, gameObject);
 

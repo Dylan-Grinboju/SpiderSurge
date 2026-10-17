@@ -2,7 +2,6 @@ using Logger = Silk.Logger;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.InputSystem;
 namespace StatsMod;
 
 /// <summary>
@@ -55,7 +54,7 @@ public static class StatsModApi
     /// <param name="leaderHasStat">Confirms the explicitly-requested leader actually achieved your custom stat (typically passed as true if the mod already did validation).</param>
     /// <param name="bonusPriority">An additional boost to the title's display priority score (Base priority is 10 per requirement).</param>
     /// <returns>True if successfully registered, false if validation failed.</returns>
-    public static bool RegisterCustomTitle(string titleName, string description, string[] requirementNames, PlayerInput leader, bool leaderHasStat, int bonusPriority)
+    public static bool RegisterCustomTitle(string titleName, string description, string[] requirementNames, PlayerController leader, bool leaderHasStat, int bonusPriority)
     {
         if (string.IsNullOrEmpty(titleName) || titleName.Length > MAX_TITLE_LENGTH || requirementNames == null || requirementNames.Length == 0) return false;
 
@@ -75,7 +74,7 @@ public static class StatsModApi
                 return false;
             }
 
-            var kvp = new KeyValuePair<PlayerInput, PlayerTracker.PlayerData>(leader, playerData);
+            var kvp = new KeyValuePair<PlayerController, PlayerTracker.PlayerData>(leader, playerData);
             title = new TitleEntry(kvp)
             {
                 TitleName = titleName,

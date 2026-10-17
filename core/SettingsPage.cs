@@ -477,7 +477,7 @@ namespace SpiderSurge.Common
 
         public void Toggle(string label, string key)
         {
-            Checkbox(label, Settings.GetBool(key), value => Settings.Set(key, value));
+            Checkbox(Settings.IsRemote(key) ? label + " (set by host)" : label, Settings.GetBool(key), value => Settings.Set(key, value));
         }
 
         public void Button(string label, Action onClick)

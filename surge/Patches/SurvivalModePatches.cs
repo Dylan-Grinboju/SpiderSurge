@@ -274,30 +274,7 @@ namespace SpiderSurge
 
                 if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
                 {
-                    // Reset cooldowns for all abilities for all active players
-                    if (PlayerAbilityHandler.ActiveSpiderControllers != null)
-                    {
-                        for (int i = PlayerAbilityHandler.ActiveSpiderControllers.Count - 1; i >= 0; i--)
-                        {
-                            var controller = PlayerAbilityHandler.ActiveSpiderControllers[i];
-                            if (controller == null)
-                            {
-                                PlayerAbilityHandler.ActiveSpiderControllers.RemoveAt(i);
-                                continue;
-                            }
-
-                            var playerAbilities = controller.GetComponents<BaseAbility>();
-                            foreach (var ability in playerAbilities)
-                            {
-                                if (ability is ImmuneAbility)
-                                {
-                                    ability.ReduceCooldown(Consts.Values.Immune.AbilityBaseCooldown);
-                                    continue;
-                                }
-                                ability.SetCooldownToZero();
-                            }
-                        }
-                    }
+                    PlayerAbilityHandler.OnWaveStarted(value);
 
                     // At wave 30 (Ult Upgrade), set flag for special perk selection
                     if (value == Consts.Values.Waves.UltUpgradeWave)
@@ -317,12 +294,7 @@ namespace SpiderSurge
                         }
                     }
 
-                    // Update StorageAbility cache
-                    var abilities = UnityEngine.Object.FindObjectsOfType<StorageAbility>();
-                    foreach (var ab in abilities)
-                    {
-                        ab.UpdateCachedModifierLevels();
-                    }
+                    SurgeNet.SendStateNow();
                 }
             }
         }

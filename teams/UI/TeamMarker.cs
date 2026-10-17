@@ -86,11 +86,11 @@ namespace SpiderTeams
 
         private static bool ShouldShow()
         {
-            if (!ModConfig.ShowMarker || !ModConfig.TeamsEnabled || !TeamManager.IsHost)
+            if (!ModConfig.ShowMarker || !ModConfig.TeamsEnabled || !(TeamManager.IsHost || SpiderSurge.Common.Net.HostHasMod))
             {
                 return false;
             }
-            return LobbyController.inLobby || TeamManager.TeamMatchActive;
+            return LobbyController.inLobby || LobbyController.inWaitingRoom || TeamManager.TeamMatchActive;
         }
 
         private void Sync(bool show)

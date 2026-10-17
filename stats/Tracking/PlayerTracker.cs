@@ -5,7 +5,7 @@ using System.Reflection;
 using HarmonyLib;
 using Silk;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -15,11 +15,7 @@ namespace StatsMod
         private static readonly Lazy<PlayerTracker> _lazy = new Lazy<PlayerTracker>(() => new PlayerTracker());
         public static PlayerTracker Instance => _lazy.Value;
 
-        private Dictionary<PlayerInput, PlayerData> activePlayers = new Dictionary<PlayerInput, PlayerData>();
-
-        private Dictionary<ulong, PlayerInput> playerIds = new Dictionary<ulong, PlayerInput>();
-
-        private ulong nextLocalPlayerId = 0;
+        private Dictionary<PlayerController, PlayerData> activePlayers = new Dictionary<PlayerController, PlayerData>();
 
         // Cache for expensive player lookups
         private static PlayerController[] cachedPlayerControllers;
@@ -31,7 +27,8 @@ namespace StatsMod
 
         public class PlayerData
         {
-            public ulong PlayerId { get; set; }
+            public int PlayerId { get; set; }
+            internal bool? RemoteAlive { get; set; }
             public int Deaths { get; set; }
             public int LavaDeaths { get; set; }
             public int Kills { get; set; }
@@ -68,7 +65,7 @@ namespace StatsMod
             public Dictionary<string, int> EnemyKills { get; set; }
             public Dictionary<string, int> DeathsPerMap { get; set; }
 
-            public PlayerData(ulong id, string name = "Player")
+            public PlayerData(int id, string name = "Player")
             {
                 PlayerId = id;
                 Deaths = 0;
@@ -135,7 +132,7 @@ namespace StatsMod
                 DeathsPerMap = new Dictionary<string, int>();
             }
 
-            public bool IsAlive => CurrentAliveStartTime.HasValue || WasAliveWhenPaused;
+            public bool IsAlive => RemoteAlive ?? (CurrentAliveStartTime.HasValue || WasAliveWhenPaused);
 
             public TimeSpan GetCurrentAliveTime()
             {
@@ -199,7 +196,7 @@ namespace StatsMod
         }
 
 
-        public void RegisterPlayer(PlayerInput player)
+        public void RegisterPlayer(PlayerController player)
         {
             if (player == null) return;
 
@@ -208,10 +205,7 @@ namespace StatsMod
                 return;
             }
 
-            ulong playerId = nextLocalPlayerId++;
-
-            string playerName = $"Player {player.playerIndex + 1}";
-            PlayerData playerData = new PlayerData(playerId, playerName);
+            PlayerData playerData = new PlayerData(player.playerID.Value, NameFor(player));
 
             // Try to get the spider customizer and set the initial colors
             SpiderCustomizer customizer = player.GetComponentInChildren<SpiderCustomizer>();
@@ -230,19 +224,47 @@ namespace StatsMod
             }
 
             activePlayers[player] = playerData;
-            playerIds[playerId] = player;
 
             RefreshPlayerCache();
         }
 
+        private static string NameFor(PlayerController player)
+        {
+            return Net.IsOnline ? Players.NameOf(player) : $"Player {player.playerID.Value + 1}";
+        }
 
-        public void UnregisterPlayer(PlayerInput player)
+        // playerID can still be unset when the lobby adds a player, so ids and names are re-read when a session starts
+        public void RefreshIdentities()
+        {
+            if (!Net.IsAuthority) return;
+            foreach (var entry in activePlayers)
+            {
+                if (entry.Key == null || entry.Value.PlayerId == entry.Key.playerID.Value) continue;
+                entry.Value.PlayerId = entry.Key.playerID.Value;
+                entry.Value.PlayerName = NameFor(entry.Key);
+            }
+        }
+
+        // On a client the host's snapshot is read straight into the data of the matching player
+        internal PlayerData RemoteDataFor(int playerId)
+        {
+            PlayerController player = Players.ById(playerId);
+            if (player == null) return null;
+            if (!activePlayers.TryGetValue(player, out PlayerData data))
+            {
+                RegisterPlayer(player);
+                activePlayers.TryGetValue(player, out data);
+            }
+            return data;
+        }
+
+
+        public void UnregisterPlayer(PlayerController player)
         {
             if (player == null) return;
 
             if (activePlayers.TryGetValue(player, out PlayerData playerData))
             {
-                playerIds.Remove(playerData.PlayerId);
                 activePlayers.Remove(player);
 
                 RefreshPlayerCache();
@@ -261,17 +283,13 @@ namespace StatsMod
 
             try
             {
-                PlayerInput playerInput = null;
-                if (spiderHealth.rootObject != null)
-                {
-                    playerInput = spiderHealth.rootObject.GetComponentInParent<PlayerInput>();
-                }
-                else
+                PlayerController playerInput = Players.Of(spiderHealth.rootObject);
+                if (spiderHealth.rootObject == null)
                 {
                     Logger.LogWarning("SpiderHealthSystem has null rootObject");
                 }
 
-                if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+                if (Net.IsAuthority && playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
                 {
                     data.Deaths++;
                     data.KillStreak = 0;
@@ -307,13 +325,9 @@ namespace StatsMod
 
             try
             {
-                PlayerInput playerInput = null;
-                if (spiderHealth.rootObject != null)
-                {
-                    playerInput = spiderHealth.rootObject.GetComponentInParent<PlayerInput>();
-                }
+                PlayerController playerInput = Players.Of(spiderHealth.rootObject);
 
-                if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+                if (Net.IsAuthority && playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
                 {
                     data.Deaths--;
                     data.AstralReturns++;
@@ -340,6 +354,7 @@ namespace StatsMod
         {
             foreach (var entry in activePlayers)
             {
+                entry.Value.RemoteAlive = null;
                 entry.Value.ShootingAccuracy.Reset();
                 entry.Value.AccuracyByWeapon.Clear();
                 entry.Value.Deaths = 0;
@@ -377,12 +392,13 @@ namespace StatsMod
             }
         }
 
-        public Dictionary<PlayerInput, PlayerData> GetActivePlayers()
+        public Dictionary<PlayerController, PlayerData> GetActivePlayers()
         {
-            return new Dictionary<PlayerInput, PlayerData>(activePlayers);
+            RefreshIdentities();
+            return new Dictionary<PlayerController, PlayerData>(activePlayers);
         }
 
-        internal bool TryGetPlayer(PlayerInput player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
+        internal bool TryGetPlayer(PlayerController player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
 
         public bool IsOnlyOnePlayerAlive()
         {
@@ -390,7 +406,7 @@ namespace StatsMod
             return aliveCount == 1;
         }
 
-        public PlayerInput GetOnlyAlivePlayer()
+        public PlayerController GetOnlyAlivePlayer()
         {
             if (!IsOnlyOnePlayerAlive())
                 return null;
@@ -398,14 +414,14 @@ namespace StatsMod
             return activePlayers.FirstOrDefault(p => p.Value.IsAlive).Key;
         }
 
-        private bool HasLivingTeammate(PlayerInput player)
+        private bool HasLivingTeammate(PlayerController player)
         {
             return activePlayers.Any(p => p.Value.IsAlive && PlayerRelations.AreTeammates(player, p.Key));
         }
 
-        public void IncrementPlayerKill(PlayerInput player)
+        public void IncrementPlayerKill(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.Kills++;
 
@@ -440,57 +456,57 @@ namespace StatsMod
             }
         }
 
-        public void IncrementFriendlyKill(PlayerInput player)
+        public void IncrementFriendlyKill(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyKills++;
             }
         }
 
-        public void IncrementWaveClutch(PlayerInput player)
+        public void IncrementWaveClutch(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.WaveClutches++;
             }
         }
 
-        public void IncrementEnemyShieldsTakenDown(PlayerInput player)
+        public void IncrementEnemyShieldsTakenDown(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.EnemyShieldsTakenDown++;
             }
         }
 
-        public void IncrementFriendlyShieldsHit(PlayerInput player)
+        public void IncrementFriendlyShieldsHit(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyShieldsHit++;
             }
         }
 
-        public void IncrementShieldsLost(PlayerInput player)
+        public void IncrementShieldsLost(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.ShieldsLost++;
             }
         }
 
-        public void IncrementLavaDeaths(PlayerInput player)
+        public void IncrementLavaDeaths(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.LavaDeaths++;
             }
         }
 
-        public void IncrementWeaponHit(PlayerInput player, string weaponName)
+        public void IncrementWeaponHit(PlayerController player, string weaponName)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 if (data.WeaponHits.ContainsKey(weaponName))
                 {
@@ -503,9 +519,9 @@ namespace StatsMod
             }
         }
 
-        public void IncrementEnemyKillByName(PlayerInput player, string enemyName)
+        public void IncrementEnemyKillByName(PlayerController player, string enemyName)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 if (data.EnemyKills.ContainsKey(enemyName))
                 {
@@ -518,17 +534,17 @@ namespace StatsMod
             }
         }
 
-        public void IncrementWebSwings(PlayerInput player)
+        public void IncrementWebSwings(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.WebSwings++;
             }
         }
 
-        public void StartWebSwingTimer(PlayerInput player)
+        public void StartWebSwingTimer(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 if (data.CurrentWebSwingStartTime.HasValue)
                 {
@@ -538,17 +554,17 @@ namespace StatsMod
             }
         }
 
-        public void StopWebSwingTimer(PlayerInput player)
+        public void StopWebSwingTimer(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.StopWebSwingTimer();
             }
         }
 
-        public void StartAirborneTimer(PlayerInput player)
+        public void StartAirborneTimer(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 if (data.CurrentAirborneStartTime.HasValue)
                 {
@@ -558,25 +574,25 @@ namespace StatsMod
             }
         }
 
-        public void StopAirborneTimer(PlayerInput player)
+        public void StopAirborneTimer(PlayerController player)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.StopAirborneTimer();
             }
         }
 
-        public void UpdatePlayerColor(PlayerInput player, Color color)
+        public void UpdatePlayerColor(PlayerController player, Color color)
         {
-            if (player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.PlayerColor = color;
             }
         }
 
-        public void UpdateHighestPoint(PlayerInput player, SpiderController spider)
+        public void UpdateHighestPoint(PlayerController player, SpiderController spider)
         {
-            if (player != null && spider != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (Net.IsAuthority && player != null && spider != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 if (spider.bodyRigidbody2D != null)
                 {
@@ -603,23 +619,9 @@ namespace StatsMod
             }
         }
 
-        public static PlayerInput FindPlayerInputByPlayerId(ulong playerId)
+        public static PlayerController FindPlayerById(ulong playerId)
         {
-            PlayerController[] playerControllers = GetCachedPlayerControllers();
-
-            foreach (PlayerController controller in playerControllers)
-            {
-                if (controller != null && (ulong)controller.playerID.Value == playerId)
-                {
-                    PlayerInput playerInput = controller.GetComponentInParent<PlayerInput>();
-                    if (playerInput != null)
-                    {
-                        return playerInput;
-                    }
-                }
-            }
-
-            return null;
+            return playerId <= int.MaxValue ? Players.ById((int)playerId) : null;
         }
 
 
@@ -632,8 +634,9 @@ namespace StatsMod
             }
         }
 
-        public void StartAliveTimer(PlayerInput playerInput)
+        public void StartAliveTimer(PlayerController playerInput)
         {
+            if (!Net.IsAuthority) return;
             if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
             {
                 if (data.CurrentAliveStartTime.HasValue)
@@ -777,15 +780,7 @@ namespace StatsMod
 
             try
             {
-                PlayerInput playerInput = playerController.GetComponentInParent<PlayerInput>();
-                if (playerInput != null)
-                {
-                    StartAliveTimer(playerInput);
-                }
-                else
-                {
-                    Logger.LogError($"Could not find PlayerInput for respawn event");
-                }
+                StartAliveTimer(playerController);
             }
             catch (Exception ex)
             {

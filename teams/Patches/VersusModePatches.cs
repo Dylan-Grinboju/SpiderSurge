@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using Logger = Silk.Logger;
 
@@ -9,14 +10,14 @@ namespace SpiderTeams
     public static class VersusMode_StartMatch_Patch
     {
         [HarmonyPostfix]
-        public static void Postfix(VersusMode __instance)
+        public static void Postfix(VersusMode __instance, bool waitingRoom)
         {
             try
             {
                 var manager = TeamManager.Instance;
                 if (manager != null && __instance.GameModeActive())
                 {
-                    manager.BeginMatch();
+                    manager.BeginMatch(!waitingRoom);
                 }
                 SurgeVersus.OnMatchStarted();
             }
@@ -41,8 +42,12 @@ namespace SpiderTeams
                     return;
                 }
 
-                manager.OnRoundStarting();
                 bool waitingRoom = ReflectionCache.IsWaitingRoom(__instance);
+                if (!waitingRoom)
+                {
+                    manager.LockRoster();
+                }
+                manager.OnRoundStarting();
                 if (TeamVisuals.Instance != null && !waitingRoom)
                 {
                     TeamVisuals.Instance.ApplyBeforeSpawn();
@@ -66,7 +71,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (!RoundRules.Available || !TeamManager.TeamMatchActive)
+                if (!RoundRules.Available || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
                 {
                     return true;
                 }
@@ -95,7 +100,7 @@ namespace SpiderTeams
             bool active;
             try
             {
-                active = RoundRules.Available && TeamManager.TeamMatchActive;
+                active = RoundRules.Available && TeamManager.IsHost && TeamManager.TeamMatchActive;
             }
             catch (Exception ex)
             {
@@ -140,7 +145,7 @@ namespace SpiderTeams
             __state = false;
             try
             {
-                __state = RoundRules.Available && TeamManager.TeamMatchActive;
+                __state = RoundRules.Available && TeamManager.IsHost && TeamManager.TeamMatchActive;
             }
             catch (Exception ex)
             {
@@ -162,6 +167,7 @@ namespace SpiderTeams
                 if (__state)
                 {
                     MatchSnapshot.Capture(celebrate);
+                    TeamNet.BroadcastSnapshot(MatchSnapshot.Current);
                 }
 
                 var manager = TeamManager.Instance;
@@ -196,6 +202,8 @@ namespace SpiderTeams
                     return;
                 }
 
+                // BeginMatch only runs on the host, so a client drops the last match's team result here
+                MatchSnapshot.Clear();
                 var manager = TeamManager.Instance;
                 if (manager != null)
                 {

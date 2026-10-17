@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -9,6 +10,7 @@ namespace SpiderSurge
     public class StorageAbility : BaseAbility
     {
         public override string PerkName => Consts.PerkNames.StorageAbility;
+        public override AbilityKind Kind => AbilityKind.Storage;
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
@@ -90,14 +92,22 @@ namespace SpiderSurge
             UpdateCachedModifierLevels();
         }
 
+        // Weapons are network objects, so only the host moves them; a client plays the sounds for its own press
         protected override void OnActivate()
         {
-            StartCoroutine(SwapRoutine());
+            if (IsAuthority)
+            {
+                StartCoroutine(SwapRoutine());
+            }
+            else if (!IsRemote)
+            {
+                StartCoroutine(SwapSoundsOnly());
+            }
         }
 
         protected override void OnActivateUltimate()
         {
-            bool hit = TryBanishNearest();
+            bool hit = IsAuthority && TryBanishNearest();
             SpawnBanishRing();
             SoundManager.Instance?.PlaySound(
                 Consts.SoundNames.StorageSend,
@@ -107,9 +117,30 @@ namespace SpiderSurge
             isActive = false;
             isUltimateActive = false;
             StartCooldown(wasUltimate: true);
-            if (!hit)
+            if (IsAuthority && !hit)
             {
                 ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
+            }
+        }
+
+        private bool _clientSlotFilled;
+
+        private IEnumerator SwapSoundsOnly()
+        {
+            bool hadWeapon = _weaponManager != null && _weaponManager.equippedWeapon != null;
+            bool hadStored = _clientSlotFilled;
+            _clientSlotFilled = hadWeapon;
+
+            if (hadWeapon && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume);
+            }
+
+            yield return new WaitForSeconds(AbilityDuration);
+
+            if (hadStored && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume);
             }
         }
 
@@ -168,12 +199,12 @@ namespace SpiderSurge
 
             if (spiderTarget != null)
             {
-                BanishedTarget.BeginSpider(spiderTarget, body, playerInput);
+                BanishedTarget.BeginSpider(spiderTarget, body, playerController);
                 return true;
             }
             if (enemyTarget != null)
             {
-                BanishedTarget.BeginEnemy(enemyTarget, body, playerInput);
+                BanishedTarget.BeginEnemy(enemyTarget, body, playerController);
                 return true;
             }
             return false;
@@ -208,6 +239,7 @@ namespace SpiderSurge
 
             _weaponManager.UnEquipWeapon();
 
+            HideFromClients(heldWeaponObj);
             heldWeaponObj.transform.SetParent(transform);
             heldWeaponObj.transform.localPosition = Vector3.zero;
             heldWeaponObj.SetActive(false);
@@ -246,6 +278,7 @@ namespace SpiderSurge
 
             storedWeaponObj.SetActive(true);
             storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
+            ShowToClients(storedWeaponObj);
 
             Weapon weapon = storedWeaponObj.GetComponent<Weapon>();
             if (weapon != null)
@@ -266,6 +299,51 @@ namespace SpiderSurge
                     Consts.SoundNames.StorageRetrieve,
                     Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
                 );
+            }
+        }
+
+        // Netcode doesn't sync SetActive, so a stored weapon is despawned on clients until it comes back out
+        private static bool HiddenFromClients(ulong clientId) => clientId == Net.ServerId;
+
+        private static void HideFromClients(GameObject weaponObj)
+        {
+            var no = weaponObj.GetComponent<NetworkObject>();
+            if (no == null || !Net.IsHost)
+            {
+                return;
+            }
+            no.CheckObjectVisibility = HiddenFromClients;
+            if (!no.IsSpawned)
+            {
+                return;
+            }
+            foreach (ulong client in new List<ulong>(Net.Manager.ConnectedClientsIds))
+            {
+                if (client != Net.ServerId && no.IsNetworkVisibleTo(client))
+                {
+                    no.NetworkHide(client);
+                }
+            }
+            }
+
+        private static void ShowToClients(GameObject weaponObj)
+        {
+            var no = weaponObj.GetComponent<NetworkObject>();
+            if (no == null || !Net.IsHost)
+            {
+                return;
+            }
+            no.CheckObjectVisibility = null;
+            if (!no.IsSpawned)
+            {
+                return;
+            }
+            foreach (ulong client in new List<ulong>(Net.Manager.ConnectedClientsIds))
+            {
+                if (client != Net.ServerId && !no.IsNetworkVisibleTo(client))
+                {
+                    no.NetworkShow(client);
+                }
             }
         }
 
@@ -291,9 +369,9 @@ namespace SpiderSurge
 
         private void SaveWeapons(bool isDeath)
         {
-            if (PerksManager.Instance == null) return;
+            if (PerksManager.Instance == null || !IsAuthority) return;
 
-            int playerId = playerInput != null ? playerInput.playerIndex : -1;
+            int playerId = PlayerId;
             if (playerId == -1) return;
 
             List<StoragePersistenceManager.SavedWeaponData> dataList = new List<StoragePersistenceManager.SavedWeaponData>();
@@ -364,9 +442,9 @@ namespace SpiderSurge
 
         private void RestoreWeapons()
         {
-            if (PerksManager.Instance == null) return;
+            if (PerksManager.Instance == null || !IsAuthority) return;
 
-            int playerId = playerInput != null ? playerInput.playerIndex : -1;
+            int playerId = PlayerId;
             List<StoragePersistenceManager.SavedWeaponData> dataList = StoragePersistenceManager.GetStoredWeapons(playerId);
 
             if (dataList == null || dataList.Count == 0) return;
@@ -415,7 +493,11 @@ namespace SpiderSurge
                     if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost))
                     {
                         var no = newWeaponObj.GetComponent<NetworkObject>();
-                        if (no != null) no.Spawn(true);
+                        if (no != null)
+                        {
+                            no.CheckObjectVisibility = HiddenFromClients;
+                            no.Spawn(true);
+                        }
                     }
 
                     Weapon newWeapon = newWeaponObj.GetComponent<Weapon>();

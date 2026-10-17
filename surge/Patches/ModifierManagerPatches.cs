@@ -433,6 +433,9 @@ namespace SpiderSurge
                     Consts.SoundVolumes.LuckyUpgrade * Consts.SoundVolumes.MasterVolume
                 );
             }
+
+            // The cards go out as a ClientRpc right after this, so clients need the lucky keys and phase first
+            SurgeNet.SendStateNow();
         }
     }
 }

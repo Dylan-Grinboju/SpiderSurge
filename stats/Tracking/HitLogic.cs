@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 
@@ -23,7 +23,7 @@ namespace StatsMod
 
         private struct HitRecord
         {
-            public PlayerInput Player;
+            public PlayerController Player;
             public string Weapon;
             public float Time;
             public float FootingSince;
@@ -32,7 +32,7 @@ namespace StatsMod
 
         private struct Owner
         {
-            public PlayerInput Player;
+            public PlayerController Player;
             public float Time;
         }
 
@@ -41,11 +41,11 @@ namespace StatsMod
         {
             internal bool Saved;
             internal object Source;
-            internal Func<object, PlayerInput> FindPlayer;
+            internal Func<object, PlayerController> FindPlayer;
             internal bool PlayerFound;
-            internal PlayerInput Player;
+            internal PlayerController Player;
             internal string Weapon;
-            internal PlayerInput EnclosingPlayer;
+            internal PlayerController EnclosingPlayer;
 
             internal bool Active => FindPlayer != null;
         }
@@ -87,9 +87,9 @@ namespace StatsMod
         // or knocks back counts as hit by its player, since a knockback can push the target into lava.
         // Explosions nobody owns, weapons no player holds and enemy saws run as attacks without a player.
         // The player is looked up only once the attack hits something.
-        public static AttackScope BeginAttack(object source, Func<object, PlayerInput> findPlayer, string weaponName)
+        public static AttackScope BeginAttack(object source, Func<object, PlayerController> findPlayer, string weaponName)
         {
-            PlayerInput enclosing = CurrentAttacker;
+            PlayerController enclosing = CurrentAttacker;
             AttackScope previous = current;
             previous.Saved = true;
             current = new AttackScope { Source = source, FindPlayer = findPlayer, Weapon = weaponName, EnclosingPlayer = enclosing };
@@ -101,7 +101,7 @@ namespace StatsMod
             if (previous.Saved) current = previous;
         }
 
-        public static PlayerInput CurrentAttacker
+        public static PlayerController CurrentAttacker
         {
             get
             {
@@ -114,7 +114,7 @@ namespace StatsMod
             }
         }
 
-        public static PlayerInput EnclosingAttacker => current.EnclosingPlayer;
+        public static PlayerController EnclosingAttacker => current.EnclosingPlayer;
 
         public static bool HasPlayerHits => lastPlayerHits.Count > 0;
 
@@ -133,11 +133,11 @@ namespace StatsMod
         // from the last player who hit the enemy. Bumps from enemies, pulls and portals outside an attack don't.
         public static void OnEnemyHit(EnemyHealthSystem enemy, bool damage)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
             AccuracyTracker.EnemyHit(current.Source);
 
-            PlayerInput attacker = CurrentAttacker;
+            PlayerController attacker = CurrentAttacker;
             if (attacker != null)
             {
                 StoreHit(lastEnemyHits, enemy.GetInstanceID(), attacker, current.Weapon);
@@ -186,11 +186,11 @@ namespace StatsMod
         // its own attack) replaces that record, and so does a stun from an attack. Bumps outside an attack don't.
         public static void OnPlayerHit(SpiderHealthSystem spider, bool damage, bool stun)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
-            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            PlayerController victim = Players.Of(spider.rootObject);
             if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(current.Source, victim);
             int id = spider.GetInstanceID();
-            PlayerInput attacker = CurrentAttacker;
+            PlayerController attacker = CurrentAttacker;
             if (attacker == null)
             {
                 if (damage || (current.Active && stun)) lastPlayerHits.Remove(id);
@@ -267,7 +267,7 @@ namespace StatsMod
             try
             {
                 AccuracyTracker.Transfer(source, explosion);
-                PlayerInput player;
+                PlayerController player;
                 if (source is BasicProjectile projectile) player = GetOwner(projectileOwners, projectile.GetInstanceID());
                 else if (source is BoomSpear spear) player = WeaponPlayer(spear);
                 else player = GetOwner(explosiveArmers, source.GetInstanceID());
@@ -285,7 +285,7 @@ namespace StatsMod
 
         public static void OnExplosiveArmed(Weapon explosive, bool byHolder)
         {
-            PlayerInput player = byHolder ? Holder(explosive) : CurrentAttacker;
+            PlayerController player = byHolder ? Holder(explosive) : CurrentAttacker;
             if (player != null)
             {
                 StoreOwner(explosiveArmers, explosive.GetInstanceID(), player);
@@ -297,7 +297,7 @@ namespace StatsMod
             projectile.projectileOwnerId = ownerId;
             try
             {
-                PlayerInput player = WeaponPlayer(launcher as Weapon);
+                PlayerController player = WeaponPlayer(launcher as Weapon);
                 if (player != null)
                 {
                     StoreOwner(projectileOwners, projectile.GetInstanceID(), player);
@@ -309,12 +309,12 @@ namespace StatsMod
             }
         }
 
-        public static PlayerInput GetExplosionOwner(Explosion explosion)
+        public static PlayerController GetExplosionOwner(Explosion explosion)
         {
             return GetOwner(explosionOwners, explosion.GetInstanceID());
         }
 
-        public static void RegisterDiscOwner(GameObject disc, PlayerInput owner)
+        public static void RegisterDiscOwner(GameObject disc, PlayerController owner)
         {
             if (disc != null && owner != null)
             {
@@ -322,12 +322,12 @@ namespace StatsMod
             }
         }
 
-        public static PlayerInput GetDiscOwner(GameObject disc)
+        public static PlayerController GetDiscOwner(GameObject disc)
         {
             return disc != null ? GetOwner(discOwners, disc.GetInstanceID()) : null;
         }
 
-        public static void OnBallReflected(EnergyBall ball, PlayerInput reflector)
+        public static void OnBallReflected(EnergyBall ball, PlayerController reflector)
         {
             AccuracyTracker.Forget(ball);
             if (reflector != null)
@@ -340,35 +340,35 @@ namespace StatsMod
             }
         }
 
-        public static PlayerInput GetBallReflector(EnergyBall ball)
+        public static PlayerController GetBallReflector(EnergyBall ball)
         {
             return GetOwner(ballReflectors, ball.GetInstanceID());
         }
 
-        public static PlayerInput WeaponPlayer(Weapon weapon)
+        public static PlayerController WeaponPlayer(Weapon weapon)
         {
             if (weapon == null) return null;
 
-            PlayerInput holder = Holder(weapon);
+            PlayerController holder = Holder(weapon);
             if (holder != null) return holder;
 
             // Thrown weapons keep the playerID WeaponEquipPatch gave them, and launched blades get their launcher's.
             // Weapons only AI spiders held have none
-            return weapon.ownerWeaponClientId != ulong.MaxValue ? PlayerTracker.FindPlayerInputByPlayerId(weapon.ownerWeaponClientId) : null;
+            return weapon.ownerWeaponClientId != ulong.MaxValue ? PlayerTracker.FindPlayerById(weapon.ownerWeaponClientId) : null;
         }
 
         // The game keeps a weapon's owner after it is dropped or thrown
-        private static PlayerInput Holder(Weapon weapon)
+        private static PlayerController Holder(Weapon weapon)
         {
             WeaponManager owner = weapon.owner;
             return weapon.equipped && owner != null && owner.healthSystem != null
-                ? owner.healthSystem.GetComponentInParent<PlayerInput>()
+                ? owner.healthSystem.GetComponentInParent<PlayerController>()
                 : null;
         }
 
         public static void OnEnemyDeath(EnemyHealthSystem enemy)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
 
@@ -396,9 +396,9 @@ namespace StatsMod
         }
 
         // SpiderSurge's Banish removes the enemy without a death; the caster gets the kill
-        public static void OnEnemyBanished(EnemyHealthSystem enemy, PlayerInput caster)
+        public static void OnEnemyBanished(EnemyHealthSystem enemy, PlayerController caster)
         {
-            if (enemy == null || !GameSessionManager.Instance.IsActive) return;
+            if (enemy == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
 
             int id = enemy.GetInstanceID();
@@ -421,7 +421,7 @@ namespace StatsMod
 
         public static void OnEnemyShieldDestroyed(EnemyHealthSystem enemy)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             if (!TryGetRecentHit(lastEnemyHits, enemy.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
             Logger.LogDebug($"Recording shield hit on enemy {enemy.name} by {PlayerLabel(hit.Player)}");
@@ -431,10 +431,10 @@ namespace StatsMod
 
         public static void OnPlayerShieldBroken(SpiderHealthSystem spider)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             if (!TryGetRecentHit(lastPlayerHits, spider.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
-            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            PlayerController victim = Players.Of(spider.rootObject);
             if (victim == null) return;
 
             bool friendly = PlayerRelations.AreTeammates(hit.Player, victim);
@@ -446,12 +446,12 @@ namespace StatsMod
 
         public static void OnPlayerDeath(SpiderHealthSystem spider)
         {
-            if (!GameSessionManager.Instance.IsActive) return;
+            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             // Lava and falling out of the map mark the spider as dying before it dies, a damage kill happens on the hit
             float? window = ReflectionCache.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
             if (!TryTakeHit(lastPlayerHits, spider.GetInstanceID(), window, out HitRecord hit, out _)) return;
 
-            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            PlayerController victim = Players.Of(spider.rootObject);
             if (victim == null) return;
 
             bool friendly = PlayerRelations.AreTeammates(hit.Player, victim);
@@ -463,12 +463,12 @@ namespace StatsMod
         }
 
         // SpiderSurge's Banish kills the spider right after this, so its own death finds no hit to credit
-        public static void OnPlayerBanished(SpiderHealthSystem spider, PlayerInput caster)
+        public static void OnPlayerBanished(SpiderHealthSystem spider, PlayerController caster)
         {
-            if (spider == null || !GameSessionManager.Instance.IsActive) return;
+            if (spider == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             lastPlayerHits.Remove(spider.GetInstanceID());
 
-            PlayerInput victim = spider.rootObject != null ? spider.rootObject.GetComponentInParent<PlayerInput>() : null;
+            PlayerController victim = Players.Of(spider.rootObject);
             if (caster == null || victim == null || victim == caster) return;
 
             bool friendly = PlayerRelations.AreTeammates(caster, victim);
@@ -478,19 +478,19 @@ namespace StatsMod
             PlayerTracker.Instance.IncrementEnemyKillByName(caster, "Player");
         }
 
-        private static void StoreHit(Dictionary<int, HitRecord> hits, int targetId, PlayerInput player, string weaponName)
+        private static void StoreHit(Dictionary<int, HitRecord> hits, int targetId, PlayerController player, string weaponName)
         {
             PruneIfDue();
             hits[targetId] = new HitRecord { Player = player, Weapon = weaponName, Time = Time.time, FootingSince = -1f };
         }
 
-        private static void StoreOwner(Dictionary<int, Owner> owners, int id, PlayerInput player)
+        private static void StoreOwner(Dictionary<int, Owner> owners, int id, PlayerController player)
         {
             PruneIfDue();
             owners[id] = new Owner { Player = player, Time = Time.time };
         }
 
-        private static PlayerInput GetOwner(Dictionary<int, Owner> owners, int id)
+        private static PlayerController GetOwner(Dictionary<int, Owner> owners, int id)
         {
             return owners.TryGetValue(id, out Owner owner) ? owner.Player : null;
         }
@@ -556,9 +556,9 @@ namespace StatsMod
             return true;
         }
 
-        private static string PlayerLabel(PlayerInput player)
+        private static string PlayerLabel(PlayerController player)
         {
-            return player != null ? $"Player {player.playerIndex + 1}" : "unknown player";
+            return player != null ? $"Player {player.playerID.Value + 1}" : "unknown player";
         }
     }
 }

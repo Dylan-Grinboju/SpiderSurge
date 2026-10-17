@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -11,7 +11,7 @@ namespace StatsMod
     {
         private sealed class Shot
         {
-            public PlayerInput Player;
+            public PlayerController Player;
             public WeaponAccuracy Weapon;
             public WeaponAccuracy Total;
             public bool Hit;
@@ -26,7 +26,7 @@ namespace StatsMod
             try
             {
                 if (weapon == null || source == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost || !GameSessionManager.Instance.IsActive) return;
-                PlayerInput player = HitLogic.WeaponPlayer(weapon);
+                PlayerController player = HitLogic.WeaponPlayer(weapon);
                 if (player == null || !PlayerTracker.Instance.TryGetPlayer(player, out var data)) return;
 
                 string name = weapon.serializationWeaponName.ToString();
@@ -74,13 +74,13 @@ namespace StatsMod
 
         public static void EnemyHit(object source) => Hit(source, null);
 
-        public static void PlayerHit(object source, PlayerInput victim)
+        public static void PlayerHit(object source, PlayerController victim)
         {
             if (victim != null) Hit(source, victim);
         }
 
         // Outside versus every player counts as a teammate, so only enemies and opponents make a shot hit.
-        private static void Hit(object source, PlayerInput victim)
+        private static void Hit(object source, PlayerController victim)
         {
             try
             {

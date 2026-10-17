@@ -167,6 +167,7 @@ namespace SpiderSurge.Enemies
             }
 
             AddToEnemyList(newEnemyObj);
+            CustomEnemyNet.Register(newEnemyObj, name);
             return newEnemyObj;
         }
 

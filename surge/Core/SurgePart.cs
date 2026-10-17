@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
 
@@ -18,9 +19,12 @@ namespace SpiderSurge
         public override bool CanDisable => false;
         public override bool HasSettings => true;
 
+        public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey };
+
         protected internal override void OnStart()
         {
             Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();
+            SurgeNet.Initialize();
 
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             new GameObject("PerksManager").AddComponent<PerksManager>();
@@ -36,6 +40,7 @@ namespace SpiderSurge
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
+            SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);
 

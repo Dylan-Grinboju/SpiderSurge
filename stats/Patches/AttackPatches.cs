@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -35,7 +34,7 @@ namespace StatsMod
         private struct Attack
         {
             public string Weapon;
-            public Func<object, PlayerInput> Owner;
+            public Func<object, PlayerController> Owner;
         }
 
         private static readonly Dictionary<MethodBase, Attack> attacks = new Dictionary<MethodBase, Attack>();
@@ -53,13 +52,13 @@ namespace StatsMod
             Add<EnergyBall>("OnCollisionEnter2D", "EnergyBall", EnergyBallOwner);
             Add<KhepriStaff>("Zap", "KhepriStaff", HitLogic.WeaponPlayer);
             Add<Explosion>("KnockBack", "Explosions", ExplosionOwner);
-            Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerInput>());
+            Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerController>());
             Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer);
             Add<WhispBrain>("ProcessCollision", null, whisp => null);
             Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", "Pulse", SpiderSurge.PulseAbility.CasterOf);
         }
 
-        private static void Add<T>(string method, string weapon, Func<T, PlayerInput> owner)
+        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner)
         {
             MethodInfo target = PatchTargets.Find(typeof(T), method);
             if (target != null)
@@ -86,14 +85,14 @@ namespace StatsMod
 
         static void Finalizer(HitLogic.AttackScope __state) => HitLogic.EndAttack(__state);
 
-        private static PlayerInput RailShotOwner(RailShot shot)
+        private static PlayerController RailShotOwner(RailShot shot)
         {
             foreach (GameObject ignored in shot.ignore)
             {
                 if (ignored == null) continue;
 
                 SpiderHealthSystem spider = ignored.GetComponentInParent<SpiderHealthSystem>();
-                if (spider != null) return spider.GetComponentInParent<PlayerInput>();
+                if (spider != null) return spider.GetComponentInParent<PlayerController>();
 
                 Weapon weapon = ignored.GetComponentInParent<Weapon>();
                 if (weapon != null) return HitLogic.WeaponPlayer(weapon);
@@ -101,17 +100,17 @@ namespace StatsMod
             return null;
         }
 
-        private static PlayerInput EnergyBallOwner(EnergyBall ball)
+        private static PlayerController EnergyBallOwner(EnergyBall ball)
         {
-            PlayerInput reflector = HitLogic.GetBallReflector(ball);
+            PlayerController reflector = HitLogic.GetBallReflector(ball);
             if (reflector != null) return reflector;
-            return ball.owner != null ? ball.owner.GetComponentInParent<PlayerInput>() : null;
+            return ball.owner != null ? ball.owner.GetComponentInParent<PlayerController>() : null;
         }
 
         // SpiderSurge's ultimate Pulse runs an explosion without an owner inside the pulse, it keeps the pulse's player
-        private static PlayerInput ExplosionOwner(Explosion explosion)
+        private static PlayerController ExplosionOwner(Explosion explosion)
         {
-            PlayerInput owner = HitLogic.GetExplosionOwner(explosion);
+            PlayerController owner = HitLogic.GetExplosionOwner(explosion);
             return owner != null ? owner : HitLogic.EnclosingAttacker;
         }
     }

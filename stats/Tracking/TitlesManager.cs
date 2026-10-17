@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ public class TitleEntry
 {
     public TitleEntry() { }
 
-    public TitleEntry(KeyValuePair<PlayerInput, PlayerTracker.PlayerData> playerData)
+    public TitleEntry(KeyValuePair<PlayerController, PlayerTracker.PlayerData> playerData)
     {
         if (playerData.Value != null)
         {
@@ -19,6 +18,7 @@ public class TitleEntry
             PrimaryColor = playerData.Value.PlayerColor;
             SecondaryColor = playerData.Value.SecondaryColor;
             Player = playerData.Key;
+            PlayerId = Player != null ? Player.playerID.Value : -1;
         }
     }
 
@@ -27,7 +27,8 @@ public class TitleEntry
     public string PlayerName { get; set; }
     public Color PrimaryColor { get; set; }
     public Color SecondaryColor { get; set; }
-    public PlayerInput Player { get; set; }
+    public PlayerController Player { get; set; }
+    public int PlayerId { get; set; } = -1;
     public int Priority { get; set; }
     public HashSet<string> Requirements { get; set; } = new HashSet<string>();
 }
@@ -35,7 +36,7 @@ public class TitleEntry
 public class TitleBuilder
 {
     private readonly StatLeaders _leaders;
-    private KeyValuePair<PlayerInput, PlayerTracker.PlayerData> _primaryLeader;
+    private KeyValuePair<PlayerController, PlayerTracker.PlayerData> _primaryLeader;
     private readonly HashSet<string> _requirements = new HashSet<string>();
     private string _titleName;
     private string _description;
@@ -46,7 +47,7 @@ public class TitleBuilder
         _leaders = leaders;
     }
 
-    public TitleBuilder ForLeader(Func<StatLeaders, KeyValuePair<PlayerInput, PlayerTracker.PlayerData>> leaderSelector, string requirementName)
+    public TitleBuilder ForLeader(Func<StatLeaders, KeyValuePair<PlayerController, PlayerTracker.PlayerData>> leaderSelector, string requirementName)
     {
         _primaryLeader = leaderSelector(_leaders);
         _requirements.Add(requirementName);
@@ -87,7 +88,7 @@ public class TitleBuilder
         };
     }
 
-    public static bool SamePlayer(params KeyValuePair<PlayerInput, PlayerTracker.PlayerData>[] leaders)
+    public static bool SamePlayer(params KeyValuePair<PlayerController, PlayerTracker.PlayerData>[] leaders)
     {
         if (leaders.Length == 0) return false;
         var firstPlayer = leaders[0].Key;
@@ -132,39 +133,39 @@ public static class Req
 
 public class StatLeaders
 {
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostWebSwings { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastWebSwings { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> HighestPoint { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LowestPoint { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostAirborneTime { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastAirborneTime { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostKillsWhileAirborne { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostKillsWhileSolo { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostWaveClutches { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MaxKillStreak { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MaxKillStreakWhileSolo { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostAliveTime { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWebSwings { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastWebSwings { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> HighestPoint { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LowestPoint { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAirborneTime { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastAirborneTime { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKillsWhileAirborne { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKillsWhileSolo { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWaveClutches { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MaxKillStreak { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MaxKillStreakWhileSolo { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAliveTime { get; set; }
 
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostOffense { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastOffense { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostDamageTaken { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastDamageTaken { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostFriendlyFire { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastFriendlyFire { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostShieldsLost { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastShieldsLost { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostDeaths { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastDeaths { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostLavaDeaths { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> LeastLavaDeaths { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostOffense { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastOffense { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostDamageTaken { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastDamageTaken { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostFriendlyFire { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastFriendlyFire { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostShieldsLost { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastShieldsLost { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostDeaths { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastDeaths { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostLavaDeaths { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastLavaDeaths { get; set; }
 
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostGunsKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostExplosionsKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostBladeKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostHornetKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostWhispKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostKhepriKills { get; set; }
-    public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> MostAstralReturns { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostGunsKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostExplosionsKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostBladeKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostHornetKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWhispKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKhepriKills { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAstralReturns { get; set; }
 }
 
 public class TitlesManager
@@ -332,7 +333,7 @@ public class TitlesManager
         }
     }
 
-    private StatLeaders CalculateStatLeaders(List<KeyValuePair<PlayerInput, PlayerTracker.PlayerData>> players)
+    private StatLeaders CalculateStatLeaders(List<KeyValuePair<PlayerController, PlayerTracker.PlayerData>> players)
     {
         var leaders = new StatLeaders();
 
@@ -431,6 +432,15 @@ public class TitlesManager
         OnTitlesUpdated?.Invoke();
     }
 
+    public void SetRemoteTitles(List<TitleEntry> current, List<TitleEntry> all)
+    {
+        currentTitles = current ?? new List<TitleEntry>();
+        allTitles = all ?? new List<TitleEntry>();
+        hasGameEndedTitles = currentTitles.Count > 0;
+        Logger.LogInfo($"Received {currentTitles.Count} titles from the host");
+        OnTitlesUpdated?.Invoke();
+    }
+
 
     private void RemoveDominatedTitles()
     {
@@ -505,10 +515,10 @@ public class TitlesManager
         }
     }
 
-    private (PlayerInput player, List<string> descriptions, bool valid) ValidateExternalRequirements(
+    private (PlayerController player, List<string> descriptions, bool valid) ValidateExternalRequirements(
         TitleEntry title, Dictionary<string, StatCondition> conditions)
     {
-        PlayerInput resolvedPlayer = title.Player;
+        PlayerController resolvedPlayer = title.Player;
         var descriptions = new List<string>();
 
         foreach (var req in title.Requirements)
@@ -545,7 +555,7 @@ public class TitlesManager
         return (resolvedPlayer, descriptions, true);
     }
 
-    private void ResolvePlayerInfo(TitleEntry title, PlayerInput player)
+    private void ResolvePlayerInfo(TitleEntry title, PlayerController player)
     {
         title.Player = player;
         var activePlayers = PlayerTracker.Instance.GetActivePlayers();
@@ -569,7 +579,7 @@ public class TitlesManager
 
     private class StatCondition
     {
-        public StatCondition(string requirementName, KeyValuePair<PlayerInput, PlayerTracker.PlayerData> leader, bool hasStat, string formattedDescription)
+        public StatCondition(string requirementName, KeyValuePair<PlayerController, PlayerTracker.PlayerData> leader, bool hasStat, string formattedDescription)
         {
             RequirementName = requirementName;
             Leader = leader;
@@ -578,7 +588,7 @@ public class TitlesManager
         }
 
         public string RequirementName { get; }
-        public KeyValuePair<PlayerInput, PlayerTracker.PlayerData> Leader { get; }
+        public KeyValuePair<PlayerController, PlayerTracker.PlayerData> Leader { get; }
         public bool HasStat { get; }
         public string FormattedDescription { get; }
     }
@@ -587,7 +597,7 @@ public class TitlesManager
     {
         var conditions = new Dictionary<string, StatCondition>();
 
-        void Add(string req, KeyValuePair<PlayerInput, PlayerTracker.PlayerData> leader, bool hasStat, string desc)
+        void Add(string req, KeyValuePair<PlayerController, PlayerTracker.PlayerData> leader, bool hasStat, string desc)
         {
             conditions[req] = new StatCondition(req, leader, hasStat, desc);
         }

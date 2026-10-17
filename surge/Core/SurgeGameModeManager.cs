@@ -17,6 +17,7 @@ namespace SpiderSurge
         internal static void SelectMode(bool surge)
         {
             IsModeEnabled = surge;
+            SurgeNet.MarkDirty();
         }
 
         public static bool IsSurgeRunActive => Instance != null && Instance.IsActive;
@@ -43,11 +44,13 @@ namespace SpiderSurge
             {
                 RunUsedSurge = true;
             }
+            SurgeNet.MarkDirty();
         }
 
         internal void ForceActive(bool active)
         {
             IsActive = active;
+            SurgeNet.MarkDirty();
         }
 
         public void ResetRun()
@@ -56,5 +59,15 @@ namespace SpiderSurge
             RunUsedSurge = false;
         }
 
+        internal void ApplyRemote(bool active, bool runUsedSurge)
+        {
+            IsActive = active;
+            RunUsedSurge = runUsedSurge;
+        }
+
+        private void LateUpdate()
+        {
+            SurgeNet.Flush();
+        }
     }
 }

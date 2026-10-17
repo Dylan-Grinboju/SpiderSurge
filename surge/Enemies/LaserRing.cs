@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Interfaces;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -26,6 +27,7 @@ namespace SpiderSurge.Enemies
         private Phase phase;
         private float startTime;
         private int playerMask;
+        private bool synced;
 
         public void Initialize(EnemyHealthSystem enemyHealth, LaserCannon laserCannon, DeathRay deathRay)
         {
@@ -72,6 +74,7 @@ namespace SpiderSurge.Enemies
         {
             startTime = Time.time;
             phase = Phase.Idle;
+            synced = Net.IsAuthority;
             playerMask = LayerMask.GetMask("Player");
             if (points == null) points = new Vector3[Consts.Values.LaserRing.Segments];
             if (line != null) line.enabled = false;
@@ -87,12 +90,16 @@ namespace SpiderSurge.Enemies
 
         private void FixedUpdate()
         {
-            if (health == null || health.IsDead()) return;
+            if (health == null || health.IsDead() || !synced) return;
 
             Phase next = CurrentPhase();
             if (next != phase)
             {
                 phase = next;
+                if (phase == Phase.Warning && Net.IsHost)
+                {
+                    SurgeNet.SendEnemyFx(EnemyFx.LaserPhase, health.GetComponent<NetworkObject>(), (Time.time - startTime) % Consts.Values.LaserRing.Period);
+                }
                 if (phase == Phase.Warning) StartWarning();
                 else if (phase == Phase.Active) StartBeam();
                 else StopBeam();
@@ -102,6 +109,13 @@ namespace SpiderSurge.Enemies
             {
                 DamagePlayers();
             }
+        }
+
+        // A client starts its cycle from the host's each time the warning starts, so the beam it draws is the one that hurts
+        public void Sync(float timeIntoPeriod)
+        {
+            startTime = Time.time - timeIntoPeriod;
+            synced = true;
         }
 
         private Phase CurrentPhase()
