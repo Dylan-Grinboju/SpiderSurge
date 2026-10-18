@@ -1,6 +1,7 @@
 using HarmonyLib;
 using Doozy.Engine.UI;
 using Unity.Netcode;
+using UnityEngine.UI;
 
 namespace SpiderSurge
 {
@@ -15,13 +16,12 @@ namespace SpiderSurge
                 return true;
             }
 
-            UIButton component = null;
-            if (__instance.restart != null && __instance.restart.gameObject.activeInHierarchy)
+            if (!HudControllerPatches.IsPauseMenuButton(__instance, __instance.restart))
             {
-                component = __instance.restart.GetComponent<UIButton>();
+                return true;
             }
 
-            Announcer.ConfirmationPopup("Are you sure?", component, delegate
+            Announcer.ConfirmationPopup("Are you sure?", __instance.restart.GetComponent<UIButton>(), delegate
             {
                 __instance.Resume();
                 GameController.Restart();
@@ -37,18 +37,29 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(HudController __instance)
         {
-            UIButton component = null;
-            if (__instance.mainMenuButton != null && __instance.mainMenuButton.gameObject.activeInHierarchy)
+            if (!HudControllerPatches.IsPauseMenuButton(__instance, __instance.mainMenuButton))
             {
-                component = __instance.mainMenuButton.GetComponent<UIButton>();
+                return true;
             }
 
-            Announcer.ConfirmationPopup("Are you sure?", component, delegate
+            Announcer.ConfirmationPopup("Are you sure?", __instance.mainMenuButton.GetComponent<UIButton>(), delegate
             {
                 __instance.OpenLobby(false);
             }, null, null, true, false);
 
             return false;
+        }
+    }
+
+    public static class HudControllerPatches
+    {
+        // Only the pause menu's buttons ask first; the game-over and versus countdowns and other callers go straight through
+        public static bool IsPauseMenuButton(HudController hud, Button button)
+        {
+            return button != null
+                && button.gameObject.activeInHierarchy
+                && hud.pauseView != null
+                && hud.pauseView.IsVisible;
         }
     }
 }
