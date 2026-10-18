@@ -19,6 +19,9 @@ namespace SpiderSurge.Common
         // A file that can't be written (read-only, or locked by a sync tool) is tried again this often
         private const float RetryDelay = 5f;
         private static bool _writeFailing;
+        // Set while Silk holds the defaults because it couldn't rewrite the file on load; the file's own values are read from _fileRoot then
+        private static bool _loadFellBack;
+        private static object _fileRoot;
 
         private static readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
         private static readonly List<string> _keys = new List<string>();
@@ -82,12 +85,77 @@ namespace SpiderSurge.Common
                 KeepBrokenFile(problem);
             }
 
-            Config.LoadModConfig(FileId, BuildTree(_defaults));
-            _cache.Clear();
+            LoadFromFile(problem == null);
             if (problem == null)
             {
                 Logger.LogInfo($"SpiderSurge settings loaded from {FilePath}");
             }
+        }
+
+        // Silk loads the defaults when it can't rewrite the file while loading, so nothing is written until the file can be loaded again
+        private static void LoadFromFile(bool parsed)
+        {
+            bool fellBack = parsed && File.Exists(FilePath) && !CanWrite();
+            Config.LoadModConfig(FileId, BuildTree(_defaults));
+            _cache.Clear();
+            if (fellBack && !_loadFellBack)
+            {
+                Logger.LogWarning($"{FilePath} can't be written, so its values are used but changes wait until it can be written");
+            }
+            _loadFellBack = fellBack;
+            _fileRoot = fellBack ? ReadFileRoot() : null;
+        }
+
+        private static bool CanWrite()
+        {
+            try
+            {
+                using (new FileStream(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)) { }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        // A write goes ahead only once Silk holds the file's values, so the retry never writes its fallback defaults over them
+        private static bool Writable()
+        {
+            if (_loadFellBack && CanWrite())
+            {
+                LoadFromFile(FileProblem() == null);
+                if (!_loadFellBack)
+                {
+                    Logger.LogInfo($"{FilePath} can be written again; settings reloaded from it");
+                }
+            }
+            return !_loadFellBack;
+        }
+
+        private static object ReadFileRoot()
+        {
+            try
+            {
+                return new DeserializerBuilder().Build().Deserialize<object>(File.ReadAllText(FilePath));
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static object FileValue(string key)
+        {
+            object node = _fileRoot;
+            foreach (string part in key.Split('.'))
+            {
+                if (!(node is IDictionary<object, object> map) || !map.TryGetValue(part, out node))
+                {
+                    return null;
+                }
+            }
+            return node;
         }
 
         // Returns why the file was not taken as it is, or null
@@ -104,15 +172,17 @@ namespace SpiderSurge.Common
             _unsaved.Clear();
             _saveAt = -1f;
             _warned.Clear();
-            Config.LoadModConfig(FileId, BuildTree(_defaults));
-            _cache.Clear();
+            LoadFromFile(true);
 
             var reasons = new List<string>();
             foreach (var hold in held)
             {
                 if (!Equals(Typed(hold.key), hold.value))
                 {
-                    Config.SetModConfigValue(FileId, hold.key, hold.value);
+                    if (!Writable() || !TryWrite(hold.key, hold.value))
+                    {
+                        Retry(new[] { new KeyValuePair<string, object>(hold.key, hold.value) });
+                    }
                     _cache.Remove(hold.key);
                     reasons.Add(hold.reason);
                 }
@@ -179,7 +249,7 @@ namespace SpiderSurge.Common
                 return;
             }
             _unsaved.Remove(key);
-            if (!TryWrite(key, value))
+            if (!Writable() || !TryWrite(key, value))
             {
                 Retry(new[] { new KeyValuePair<string, object>(key, value) });
             }
@@ -332,6 +402,10 @@ namespace SpiderSurge.Common
         // Silk writes the whole file on every set, so all values but the last go straight into the sections it holds
         private static bool Save(IList<KeyValuePair<string, object>> values)
         {
+            if (!Writable())
+            {
+                return false;
+            }
             for (int i = 0; i < values.Count; i++)
             {
                 string key = values[i].Key;
@@ -385,6 +459,14 @@ namespace SpiderSurge.Common
                 string message = ex.Message;
                 int cut = message.IndexOf("): ", StringComparison.Ordinal);
                 return $"line {ex.Start.Line}: {(cut >= 0 ? message.Substring(cut + 3) : message)}";
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
             }
             catch (Exception ex)
             {
@@ -442,8 +524,10 @@ namespace SpiderSurge.Common
             {
                 return remote;
             }
-            object raw = _unsaved.TryGetValue(key, out object pending) ? pending : Config.GetModConfigValue<object>(FileId, key, null);
-            if (raw == null || raw is IDictionary<string, object>)
+            object raw = _unsaved.TryGetValue(key, out object pending) ? pending
+                : _loadFellBack ? FileValue(key)
+                : Config.GetModConfigValue<object>(FileId, key, null);
+            if (raw == null || raw is IDictionary<string, object> || raw is IDictionary<object, object>)
             {
                 return null;
             }

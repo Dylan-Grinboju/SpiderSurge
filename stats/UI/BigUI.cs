@@ -62,6 +62,7 @@ namespace StatsMod
             new Column { Label = "Accuracy", Width = 110f, Shown = () => ModConfig.ShowAccuracy("overall"), Accuracy = p => p.ShootingAccuracy },
 
             Enemy("Wasp", "Wasp", () => ModConfig.BigUIShowWaspKills),
+            Enemy("Wasp Cocoon", "Wasp Cocoon", () => ModConfig.BigUIShowWaspCocoonKills),
             Enemy("Power Wasp", "Power Wasp", () => ModConfig.BigUIShowPowerWaspKills),
             Enemy("Roller", "Roller", () => ModConfig.BigUIShowRollerKills),
             Enemy("Whisp", "Whisp", () => ModConfig.BigUIShowWhispKills),

@@ -286,7 +286,7 @@ namespace StatsMod
             ulong id = (ulong)player.playerID.Value;
             foreach (Weapon weapon in UnityEngine.Object.FindObjectsOfType<Weapon>())
             {
-                if (weapon.owner == null && weapon.ownerWeaponClientId == id)
+                if (weapon.ownerWeaponClientId == id)
                 {
                     weapon.ownerWeaponClientId = ulong.MaxValue;
                 }

@@ -282,6 +282,7 @@ namespace SpiderTeams
             {
                 writer.Write(_teamScores[team]);
             }
+            writer.Write(_teamsAtLock);
         }
 
         public void ReadState(BinaryReader reader)
@@ -305,6 +306,7 @@ namespace SpiderTeams
                     _teamScores[team] = score;
                 }
             }
+            _teamsAtLock = reader.BaseStream.Position < reader.BaseStream.Length ? reader.ReadInt32() : 0;
             // A client keeps the host's team count in force through MatchLocked, whose TeamCount reads _matchTeamCount
             _matchTeamCount = Mathf.Max(1, teamCount);
             MatchLocked = locked || Net.IsRemoteClient;
