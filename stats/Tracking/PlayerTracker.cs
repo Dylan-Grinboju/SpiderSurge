@@ -25,6 +25,9 @@ namespace StatsMod
 
         private bool isPaused = false;
 
+        // Changes whenever a player joins, leaves or gets a new playerID
+        public int RosterVersion { get; private set; }
+
         // Raised with +1 when a tracked player's death is recorded and -1 when one is undone
         public event Action<int> DeathCountChanged;
 
@@ -62,6 +65,7 @@ namespace StatsMod
             public int KillStreakWhileSolo { get; set; }
             public int MaxKillStreakWhileSolo { get; set; }
             public string PlayerName { get; set; }
+            internal bool HasLocalName { get; set; }
             public float JoinTime { get; set; }
             public Color PlayerColor { get; set; }
             public float? CurrentAliveStartTime { get; set; }
@@ -242,6 +246,7 @@ namespace StatsMod
             }
 
             activePlayers[player] = playerData;
+            RosterVersion++;
 
             RefreshPlayerCache();
         }
@@ -255,12 +260,17 @@ namespace StatsMod
         public void RefreshIdentities()
         {
             if (!Net.IsAuthority) return;
+            bool online = Net.IsOnline;
             foreach (var entry in activePlayers)
             {
                 if (entry.Key == null) continue;
+                int id = entry.Key.playerID.Value;
+                if (!online && entry.Value.HasLocalName && entry.Value.PlayerId == id) continue;
+                if (entry.Value.PlayerId != id) RosterVersion++;
                 // Names change too when a local game goes online (Player 1 becomes the account name)
-                entry.Value.PlayerId = entry.Key.playerID.Value;
+                entry.Value.PlayerId = id;
                 entry.Value.PlayerName = NameFor(entry.Key);
+                entry.Value.HasLocalName = !online;
             }
         }
 
@@ -285,6 +295,7 @@ namespace StatsMod
             if (activePlayers.TryGetValue(player, out PlayerData playerData))
             {
                 activePlayers.Remove(player);
+                RosterVersion++;
                 ForgetLooseWeapons(player);
 
                 RefreshPlayerCache();
@@ -332,7 +343,8 @@ namespace StatsMod
                     data.KillStreak = 0;
                     data.KillStreakWhileSolo = 0;
                     data.StopAliveTimer();
-                    StopWebSwingTimer(playerInput);
+                    data.StopWebSwingTimer();
+                    data.StopAirborneTimer();
 
                     // Track death on the current map
                     string currentMap = GameSessionManager.Instance.CurrentMapName;
@@ -430,10 +442,16 @@ namespace StatsMod
             }
         }
 
+        // In playerID order, so tables list players the same way after someone leaves and another joins
         public Dictionary<PlayerController, PlayerData> GetActivePlayers()
         {
             RefreshIdentities();
-            return new Dictionary<PlayerController, PlayerData>(activePlayers);
+            var players = new Dictionary<PlayerController, PlayerData>(activePlayers.Count);
+            foreach (var entry in activePlayers.OrderBy(p => p.Value.PlayerId))
+            {
+                players.Add(entry.Key, entry.Value);
+            }
+            return players;
         }
 
         internal bool TryGetPlayer(PlayerController player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
@@ -820,6 +838,18 @@ namespace StatsMod
                 {
                     entry.Value.WasAirborneWhenPaused = false;
                 }
+            }
+        }
+
+        // A session that stops while paused never sees the unpause, so the next one must not start paused
+        public void ClearPause()
+        {
+            isPaused = false;
+            foreach (var entry in activePlayers)
+            {
+                entry.Value.WasAliveWhenPaused = false;
+                entry.Value.WasSwingingWhenPaused = false;
+                entry.Value.WasAirborneWhenPaused = false;
             }
         }
 

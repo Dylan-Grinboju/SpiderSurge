@@ -107,6 +107,8 @@ namespace StatsMod
         {
             try
             {
+                // GameController.CancelEverything ends the match on every survival start and lobby return too
+                if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus) return;
                 GameSessionManager.Instance.StopVersusSession();
             }
             catch (Exception ex)
@@ -116,14 +118,36 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(HudController), "Restart")]
-    public class HudControllerRestartPatch
+    // Surge's "Are you sure?" popup and the pause menu both restart through here, and only once the restart really happens
+    [HarmonyPatch(typeof(GameController), nameof(GameController.Restart))]
+    public class GameControllerRestartPatch
     {
         static void Prefix()
         {
             try
             {
                 GameSessionManager.Instance.MarkRestartRequested();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error in GameController.Restart patch: {ex.Message}");
+            }
+        }
+    }
+
+    // GameController.Restart is small enough for Mono to inline into HudController.Restart, so that path is marked here too
+    [HarmonyPatch(typeof(HudController), nameof(HudController.Restart))]
+    public class HudControllerRestartPatch
+    {
+        [HarmonyPriority(Priority.Last)]
+        static void Prefix(bool __runOriginal)
+        {
+            try
+            {
+                if (__runOriginal)
+                {
+                    GameSessionManager.Instance.MarkRestartRequested();
+                }
             }
             catch (Exception ex)
             {

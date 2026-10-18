@@ -317,12 +317,45 @@ namespace StatsMod
             }
         }
 
+        // A spider removed by a respawn or a level reload stops its airborne and swing timers and leaves the cache
+        internal static void Forget(Stabilizer stabilizer)
+        {
+            PlayerController player;
+            lock (_cacheLock)
+            {
+                if (!_componentCache.TryGetValue(stabilizer, out var cached)) return;
+                _componentCache.Remove(stabilizer);
+                player = cached.Item1;
+            }
+            if (player != null)
+            {
+                PlayerTracker.Instance.StopAirborneTimer(player);
+                PlayerTracker.Instance.StopWebSwingTimer(player);
+            }
+        }
+
         // Call this when players are removed to clean up cache
         public static void ClearCache()
         {
             lock (_cacheLock)
             {
                 _componentCache.Clear();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Stabilizer), "OnDestroy")]
+    public class StabilizerOnDestroyPatch
+    {
+        static void Prefix(Stabilizer __instance)
+        {
+            try
+            {
+                StabilizerFixedUpdatePatch.Forget(__instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error in Stabilizer.OnDestroy patch: {ex.Message}");
             }
         }
     }
