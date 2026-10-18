@@ -60,14 +60,18 @@ namespace SpiderTeams
 
             page.Spacer();
             page.Header("Teams");
+            if (!readOnly)
+            {
+                page.Note("Use the arrows next to a player to move them to another team.");
+            }
             int count = manager.TeamCount;
             for (int team = 0; team < count; team++)
             {
                 manager.CollectMembers(team, _members);
                 string hex = TeamPalette.Hex(TeamPalette.TeamColor(team));
-                page.Paragraph($"<size=115%><color=#{hex}><b>{TeamPalette.TeamName(team)}</b></color> ({Plural(_members.Count, "player")})</size>");
+                string name = $"<color=#{hex}>{TeamPalette.TeamName(team)}</color>";
+                page.Paragraph($"<size=115%><b>{name}</b> ({Plural(_members.Count, "player")})</size>");
 
-                string next = TeamPalette.TeamName((team + 1) % count);
                 for (int i = 0; i < _members.Count; i++)
                 {
                     PlayerController member = _members[i];
@@ -77,7 +81,7 @@ namespace SpiderTeams
                     }
                     else
                     {
-                        page.Button($"{TeamManager.RichName(member)} > {next}", () => MovePlayer(member));
+                        page.Choice(TeamManager.RichName(member), name, () => MovePlayer(member, -1), () => MovePlayer(member, 1));
                     }
                 }
             }
@@ -151,10 +155,10 @@ namespace SpiderTeams
             return (level + 1) % (Consts.Surge.MaxPerkLevel + 1);
         }
 
-        private static void MovePlayer(PlayerController player)
+        private static void MovePlayer(PlayerController player, int step)
         {
             var manager = TeamManager.Instance;
-            if (player != null && manager != null && manager.CycleTeam(player))
+            if (player != null && manager != null && manager.CycleTeam(player, step))
             {
                 Announcements.QueuePick(player.playerID.Value);
             }

@@ -16,6 +16,12 @@ namespace SpiderTeams
     {
         private const float RowWidth = 720f;
         private const float RowHeight = 30f;
+        private const float ArrowWidth = 40f;
+        private const float ValueWidth = 224f;
+        private const float ColumnSpacing = 8f;
+        private const float LabelWidth = RowWidth - ValueWidth - 2f * ArrowWidth - 3f * ColumnSpacing;
+        private const float FontSize = 19f;
+        private const float MinFontSize = 12f;
 
         private enum Kind { Spacer, Text, Choice, Button }
 
@@ -31,6 +37,7 @@ namespace SpiderTeams
         private readonly List<Transform> _originals = new List<Transform>();
         private readonly List<GameObject> _created = new List<GameObject>();
         private readonly Dictionary<Selectable, Navigation> _navigation = new Dictionary<Selectable, Navigation>();
+        private readonly List<Action> _undo = new List<Action>();
         private List<Entry> _entries = new List<Entry>();
         private List<Entry> _building;
         private int _primaryCount;
@@ -157,7 +164,13 @@ namespace SpiderTeams
             AddScrollbar();
             foreach (Transform child in _originals)
             {
-                if (child != _title && child != _back.transform) child.SetParent(content, false);
+                if (child == _title || child == _back.transform) continue;
+                child.SetParent(content, false);
+                if (IsChoiceRow(child))
+                {
+                    Remember(child);
+                    StyleRow(child);
+                }
             }
             _content = content;
             if (gameObject.activeInHierarchy) Show();
@@ -276,6 +289,7 @@ namespace SpiderTeams
             float focusTop = selected != null ? TopInViewport(selected.transform) : 0f;
             int selection = selected != null ? _created.FindIndex(item => selected.transform.IsChildOf(item.transform)) : -1;
             int column = selection >= 0 ? Array.FindIndex(_created[selection].GetComponentsInChildren<Selectable>(), control => control.gameObject == selected) : 0;
+            string selectedRow = selection >= 0 ? _created[selection].name : null;
             float offset = _content.anchoredPosition.y;
 
             foreach (GameObject item in _created)
@@ -295,12 +309,19 @@ namespace SpiderTeams
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
             SetOffset(offset);
-            if (selection >= 0) Select(selection, column);
+            if (selection >= 0) Select(Follow(selectedRow, selection), column);
             GameObject now = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             if (selected != null && now != null && now.transform.IsChildOf(_content))
             {
                 SetOffset(_content.anchoredPosition.y + focusTop - TopInViewport(now.transform));
             }
+        }
+
+        // A row that moved, such as a player who changed team, keeps the selection when its name is unique.
+        private int Follow(string rowName, int fallback)
+        {
+            int first = _created.FindIndex(item => item.name == rowName);
+            return first >= 0 && first == _created.FindLastIndex(item => item.name == rowName) ? first : fallback;
         }
 
         private void Select(int index, int column)
@@ -422,17 +443,9 @@ namespace SpiderTeams
             row.name = "Teams - " + entry.Label;
             row.gameObject.SetActive(true);
             row.localScale = Vector3.one;
-            ((RectTransform)row).sizeDelta = new Vector2(RowWidth, RowHeight);
-            var layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.spacing = 8f;
-            TMP_Text title = row.Find("Label").GetComponent<TMP_Text>();
-            TMP_Text setting = row.Find("Setting").GetComponent<TMP_Text>();
-            SettingsPage.SetText(title, entry.Label);
-            SettingsPage.SetText(setting, entry.Value);
-            StyleText(title, 360f);
-            StyleText(setting, 220f);
+            StyleRow(row);
+            SettingsPage.SetText(row.Find("Label").GetComponent<TMP_Text>(), entry.Label);
+            SettingsPage.SetText(row.Find("Setting").GetComponent<TMP_Text>(), entry.Value);
             PrepareButton(row.Find("Button - Back").gameObject, index, true);
             PrepareButton(row.Find("Button - Forward").gameObject, index, false);
             return row.gameObject;
@@ -460,10 +473,6 @@ namespace SpiderTeams
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(() => Run(index, previous));
             button.interactable = true;
-            var size = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
-            size.minWidth = size.preferredWidth = target.name.StartsWith("Button -", StringComparison.Ordinal) ? 40f : RowWidth;
-            size.minHeight = size.preferredHeight = RowHeight;
-            size.flexibleWidth = size.flexibleHeight = 0f;
             foreach (TMP_Text text in target.GetComponentsInChildren<TMP_Text>()) SettingsPage.SetText(text, text.text);
         }
 
@@ -482,15 +491,116 @@ namespace SpiderTeams
             Refresh();
         }
 
-        private static void StyleText(TMP_Text text, float width)
+        private static bool IsChoiceRow(Transform row)
         {
-            text.fontSize = 19f;
-            text.enableAutoSizing = false;
+            return row.GetComponent<HorizontalLayoutGroup>() != null && row.Find("Label") != null && row.Find("Setting") != null;
+        }
+
+        // The game's rows and the Teams rows share one set of columns, so their edges line up.
+        private static void StyleRow(Transform row)
+        {
+            ((RectTransform)row).sizeDelta = new Vector2(RowWidth, RowHeight);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.spacing = ColumnSpacing;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            foreach (Transform child in row)
+            {
+                TMP_Text text = child.GetComponent<TMP_Text>();
+                if (child.name == "Label" && text != null) StyleText(text, LabelWidth, TextAlignmentOptions.MidlineLeft);
+                else if (child.name == "Setting" && text != null) StyleText(text, ValueWidth, TextAlignmentOptions.Midline);
+                else if (child.GetComponent<Selectable>() != null) SetSize(child.gameObject, ArrowWidth);
+            }
+        }
+
+        private static void StyleText(TMP_Text text, float width, TextAlignmentOptions alignment)
+        {
+            text.fontSize = FontSize;
+            text.fontSizeMax = FontSize;
+            text.fontSizeMin = MinFontSize;
+            text.enableAutoSizing = true;
             text.enableWordWrapping = false;
-            text.alignment = TextAlignmentOptions.MidlineLeft;
-            var layout = text.GetComponent<LayoutElement>() ?? text.gameObject.AddComponent<LayoutElement>();
-            layout.minWidth = layout.preferredWidth = width;
-            layout.flexibleWidth = 0f;
+            text.alignment = alignment;
+            SetSize(text.gameObject, width);
+        }
+
+        private static void SetSize(GameObject target, float width)
+        {
+            var size = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
+            size.minWidth = size.preferredWidth = width;
+            size.minHeight = size.preferredHeight = RowHeight;
+            size.flexibleWidth = size.flexibleHeight = 0f;
+        }
+
+        // Records a game row's layout before StyleRow changes it, so Restore can put it back.
+        private void Remember(Transform row)
+        {
+            var rect = (RectTransform)row;
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            Vector2 rowSize = rect.sizeDelta;
+            RectOffset padding = layout.padding;
+            float spacing = layout.spacing;
+            TextAnchor alignment = layout.childAlignment;
+            bool controlWidth = layout.childControlWidth, controlHeight = layout.childControlHeight;
+            bool expandWidth = layout.childForceExpandWidth, expandHeight = layout.childForceExpandHeight;
+            _undo.Add(() =>
+            {
+                if (layout == null) return;
+                layout.padding = padding;
+                layout.spacing = spacing;
+                layout.childAlignment = alignment;
+                layout.childControlWidth = controlWidth;
+                layout.childControlHeight = controlHeight;
+                layout.childForceExpandWidth = expandWidth;
+                layout.childForceExpandHeight = expandHeight;
+                rect.sizeDelta = rowSize;
+            });
+
+            foreach (Transform child in row)
+            {
+                var childRect = (RectTransform)child;
+                Vector2 childSize = childRect.sizeDelta;
+                LayoutElement element = child.GetComponent<LayoutElement>();
+                float[] sizes = element != null ? new[] { element.minWidth, element.preferredWidth, element.minHeight, element.preferredHeight, element.flexibleWidth, element.flexibleHeight } : null;
+                _undo.Add(() =>
+                {
+                    if (childRect == null) return;
+                    childRect.sizeDelta = childSize;
+                    LayoutElement now = childRect.GetComponent<LayoutElement>();
+                    if (now == null) return;
+                    if (sizes == null)
+                    {
+                        Object.Destroy(now);
+                        return;
+                    }
+                    now.minWidth = sizes[0];
+                    now.preferredWidth = sizes[1];
+                    now.minHeight = sizes[2];
+                    now.preferredHeight = sizes[3];
+                    now.flexibleWidth = sizes[4];
+                    now.flexibleHeight = sizes[5];
+                });
+
+                TMP_Text text = child.GetComponent<TMP_Text>();
+                if (text == null) continue;
+                float fontSize = text.fontSize, fontMin = text.fontSizeMin, fontMax = text.fontSizeMax;
+                bool autoSize = text.enableAutoSizing, wrap = text.enableWordWrapping;
+                TextAlignmentOptions textAlignment = text.alignment;
+                _undo.Add(() =>
+                {
+                    if (text == null) return;
+                    text.enableAutoSizing = autoSize;
+                    text.fontSizeMin = fontMin;
+                    text.fontSizeMax = fontMax;
+                    text.fontSize = fontSize;
+                    text.enableWordWrapping = wrap;
+                    text.alignment = textAlignment;
+                });
+            }
         }
 
         // Explicit links keep Up and Down on the visible rows; rerun whenever a native control turns on or off.
@@ -553,6 +663,8 @@ namespace SpiderTeams
                 child.SetAsLastSibling();
             }
             foreach (var entry in _navigation) if (entry.Key != null) entry.Key.navigation = entry.Value;
+            foreach (Action undo in _undo) undo();
+            _undo.Clear();
             if (_title != null)
             {
                 _title.anchorMin = _titleAnchorMin;

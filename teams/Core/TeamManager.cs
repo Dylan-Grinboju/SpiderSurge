@@ -503,7 +503,7 @@ namespace SpiderTeams
             return -1;
         }
 
-        public bool CycleTeam(PlayerController player)
+        public bool CycleTeam(PlayerController player, int step = 1)
         {
             if (player == null || !PicksOpen)
             {
@@ -515,7 +515,8 @@ namespace SpiderTeams
                 return false;
             }
 
-            _teamOf[player.playerID.Value] = (GetTeam(player) + 1) % TeamCount;
+            int count = TeamCount;
+            _teamOf[player.playerID.Value] = ((GetTeam(player) + step) % count + count) % count;
             MarkRosterChanged();
             return true;
         }
