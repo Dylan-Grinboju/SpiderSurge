@@ -20,10 +20,12 @@ namespace SpiderSurge.Enemies
         private readonly List<EnemyHealthSystem> hatchlings = new List<EnemyHealthSystem>();
         private bool hatching;
         private float timer;
+        private Vector3 telegraphPosition;
 
         private static readonly List<EnemyHealthSystem> allHatchlings = new List<EnemyHealthSystem>();
         private static readonly MethodInfo spawnEffectRpc = AccessTools.Method(typeof(EnemySpawner), "InstantiateEnemySpawnEffectClientRpc");
         private static readonly MethodInfo spawnCosmeticRpc = AccessTools.Method(typeof(EnemySpawner), "SpawnObjectCosmeticClientRpc");
+        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
 
         public void Initialize(GameObject prefab, GameObject shieldedPrefab, float spawnInterval, int maxAlive)
         {
@@ -57,32 +59,47 @@ namespace SpiderSurge.Enemies
 
             IgnoreEnemiesInside();
 
+            if (SpawningStopped)
+            {
+                if (hatching) CancelHatch();
+                return;
+            }
+
             hatchlings.RemoveAll(h => h == null || h.IsDead());
             if (hatching || hatchlings.Count >= maxHatchlings || Held) return;
             timer += Time.fixedDeltaTime;
             if (timer < interval) return;
             timer = 0f;
 
-            GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
-                ? shieldedSpawnPrefab
-                : spawnPrefab;
-            if (prefab != null)
+            if (spawnPrefab != null || shieldedSpawnPrefab != null)
             {
-                StartCoroutine(Hatch(prefab));
+                StartCoroutine(Hatch());
             }
         }
 
         // EnemySpawner.SpawnObject without keeping the spawned enemy, so this follows it to count its own wasps
-        private IEnumerator Hatch(GameObject prefab)
+        private IEnumerator Hatch()
         {
             hatching = true;
             EnemySpawner spawner = EnemySpawner.instance;
-            float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
-            spawnEffectRpc.Invoke(spawner, new object[] { transform.position, delay, false });
-            yield return new WaitForSeconds(delay);
-            // A banished cocoon is removed at the end of its pull, so it waits like a frozen one and never hatches
-            while (Held && !health.IsDead()) yield return null;
-            if (health.IsDead())
+            // A hold that outlasts the telegraph starts it again, so a wasp never appears without one
+            do
+            {
+                float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
+                telegraphPosition = transform.position;
+                spawnEffectRpc.Invoke(spawner, new object[] { telegraphPosition, delay, false });
+                yield return new WaitForSeconds(delay);
+                if (!Held) break;
+                // A banished cocoon is removed at the end of its pull, so it waits like a frozen one and never hatches
+                while (Held && !health.IsDead()) yield return null;
+            }
+            while (!health.IsDead());
+
+            // The cocoon's shield when the wasp appears decides its kind, so breaking it during the telegraph counts
+            GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
+                ? shieldedSpawnPrefab
+                : spawnPrefab;
+            if (health.IsDead() || prefab == null)
             {
                 hatching = false;
                 yield break;
@@ -96,6 +113,25 @@ namespace SpiderSurge.Enemies
             hatchling.GetComponent<NetworkObject>().Spawn(destroyWithScene: true);
             spawnCosmeticRpc.Invoke(spawner, null);
             hatching = false;
+        }
+
+        // Once a survival wave is lost or over, the game's own pending spawns are stopped too
+        private static bool SpawningStopped => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && !WaveInProgress(SurvivalMode.instance);
+
+        private void CancelHatch()
+        {
+            StopAllCoroutines();
+            hatching = false;
+            GameObject effect = EnemySpawner.instance.spawnEffect;
+            if (effect == null) return;
+            string effectName = effect.name + "(Clone)";
+            foreach (ParticleSystem particles in FindObjectsOfType<ParticleSystem>())
+            {
+                if (particles.name == effectName && ((Vector2)(particles.transform.position - telegraphPosition)).sqrMagnitude < 0.01f)
+                {
+                    Destroy(particles.gameObject);
+                }
+            }
         }
 
         private bool Held => FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(gameObject);
