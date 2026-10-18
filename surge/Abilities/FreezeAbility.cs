@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -9,6 +10,7 @@ namespace SpiderSurge
     public class FreezeAbility : BaseAbility
     {
         public override string PerkName => Consts.PerkNames.FreezeAbility;
+        public override AbilityKind Kind => AbilityKind.Freeze;
 
         public override float AbilityBaseDuration => Consts.Values.Freeze.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Freeze.AbilityBaseCooldown;
@@ -60,18 +62,25 @@ namespace SpiderSurge
         // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when enemies thaw
         protected override void OnActivate()
         {
-            SoundManager.Instance?.PlaySound(
-                Consts.SoundNames.ImmuneAbility,
-                Consts.SoundVolumes.ImmuneAbility * Consts.SoundVolumes.MasterVolume
-            );
+            if (!IsRemote)
+            {
+                SoundManager.Instance?.PlaySound(
+                    Consts.SoundNames.ImmuneAbility,
+                    Consts.SoundVolumes.ImmuneAbility * Consts.SoundVolumes.MasterVolume
+                );
+            }
 
             if (spiderHealthSystem == null) return;
 
             Vector2 origin = spiderHealthSystem.transform.position;
             float range = FreezeRange;
             SpawnRing(origin, range);
+            if (Net.IsHost)
+            {
+                SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, origin, range, false);
+            }
 
-            if (!IsHost()) return;
+            if (!IsAuthority) return;
 
             float duration = AbilityDuration;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
@@ -82,20 +91,25 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            SoundManager.Instance?.PlaySound(
-                Consts.SoundNames.StorageRetrieve,
-                Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
-            );
+            if (!IsRemote)
+            {
+                SoundManager.Instance?.PlaySound(
+                    Consts.SoundNames.StorageRetrieve,
+                    Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
+                );
+            }
 
             if (spiderHealthSystem != null)
             {
                 Transform body = spiderHealthSystem.transform;
                 float range = RewindRange;
-                GameObject ring = new GameObject("RewindRing");
-                ring.transform.position = body.position;
-                ring.AddComponent<PulseRingEffect>().SetupInward(range, Consts.Values.Freeze.RewindRingColor, Consts.Values.Freeze.RewindRingTime, body);
+                SpawnRewindRing(body, range);
+                if (Net.IsHost)
+                {
+                    SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, body.position, range, true);
+                }
 
-                if (IsHost())
+                if (IsAuthority)
                 {
                     RewindEnemies(body.position, range);
                 }
@@ -106,16 +120,33 @@ namespace SpiderSurge
             StartCooldown(wasUltimate: true);
         }
 
-        private static bool IsHost()
+        // The rings other players' casts draw on a client; the host decides what they hit
+        public static void DrawRemote(int playerId, Vector3 position, float radius, bool rewind)
         {
-            return NetworkManager.Singleton != null && (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer);
+            if (!rewind)
+            {
+                SpawnRing(position, radius);
+                return;
+            }
+            SpiderHealthSystem health = Players.HealthOf(playerId);
+            if (health != null)
+            {
+                SpawnRewindRing(health.transform, radius);
+            }
         }
 
-        private void SpawnRing(Vector2 origin, float range)
+        private static void SpawnRing(Vector2 origin, float range)
         {
             GameObject ring = new GameObject("FreezeRing");
             ring.transform.position = origin;
             ring.AddComponent<PulseRingEffect>().Setup(range, Consts.Values.Freeze.RingColor);
+        }
+
+        private static void SpawnRewindRing(Transform body, float range)
+        {
+            GameObject ring = new GameObject("RewindRing");
+            ring.transform.position = body.position;
+            ring.AddComponent<PulseRingEffect>().SetupInward(range, Consts.Values.Freeze.RewindRingColor, Consts.Values.Freeze.RewindRingTime, body);
         }
 
         private static List<EnemyHealthSystem> EnemiesInRange(Vector2 origin, float range)

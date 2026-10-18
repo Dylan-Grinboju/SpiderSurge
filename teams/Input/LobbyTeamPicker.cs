@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Logger = Silk.Logger;
@@ -33,7 +34,9 @@ namespace SpiderTeams
         private void Update()
         {
             var manager = TeamManager.Instance;
-            bool wanted = manager != null && !manager.MatchLocked && ModConfig.TeamsEnabled && LobbyController.inLobby && TeamManager.IsHost;
+            bool room = LobbyController.inLobby || LobbyController.inWaitingRoom;
+            bool authority = TeamManager.IsHost || Net.HostHasMod;
+            bool wanted = manager != null && manager.PicksOpen && ModConfig.TeamsEnabled && room && authority;
             if (wanted == _active)
             {
                 return;
@@ -201,7 +204,7 @@ namespace SpiderTeams
 
                 var game = GameController.instance;
                 var manager = TeamManager.Instance;
-                if (manager == null || manager.MatchLocked || (game != null && !game.acceptingInputs))
+                if (manager == null || !manager.PicksOpen || (game != null && !game.acceptingInputs))
                 {
                     return;
                 }

@@ -132,7 +132,7 @@ namespace SpiderTeams
 
         private static bool ShouldTint(bool inLevel)
         {
-            if (!ModConfig.RecolorSpiders || !TeamManager.TeamMatchActive)
+            if (!ModConfig.RecolorSpiders || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
             {
                 return false;
             }

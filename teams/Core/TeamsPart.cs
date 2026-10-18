@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -12,12 +13,14 @@ namespace SpiderTeams
         public override string Description => "Team versus: pick teams in the lobby, friendly fire rules, team colors, and Surge abilities in versus.";
         public override string Namespace => "SpiderTeams";
         public override bool OnByDefault => false;
+        public override IEnumerable<string> SharedSettings => new[] { Consts.Keys.TeamsEnabled };
 
         protected internal override void OnStart()
         {
             ModConfig.Initialize();
             CreateManager();
             ReflectionCache.ReportMissing();
+            TeamNet.Initialize();
         }
 
         protected internal override void OnStop()
@@ -43,6 +46,7 @@ namespace SpiderTeams
             }
 
             VersusTeamsPage.RemoveAll();
+            TeamNet.Shutdown();
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();

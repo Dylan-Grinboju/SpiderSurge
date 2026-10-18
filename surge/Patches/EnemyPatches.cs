@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SpiderSurge.Enemies;
 using Unity.Netcode;
 using System;
 
@@ -66,6 +67,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static void Prefix(NetworkObject __instance)
         {
+            CustomEnemyNet.PrepareForSpawn(__instance);
             if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive) return;
 
             // Ensure custom enemies (and any other modded objects) are active when spawned.
@@ -79,6 +81,17 @@ namespace SpiderSurge
                     __instance.gameObject.SetActive(true);
                 }
             }
+        }
+    }
+
+    // Every spawn and join sync describes an object through this, once per target client
+    [HarmonyPatch(typeof(NetworkObject), "GetMessageSceneObject")]
+    public class NetworkObject_GetMessageSceneObject_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(ulong targetClientId, ref NetworkObject.SceneObject __result)
+        {
+            __result.Header.Hash = CustomEnemyNet.HashForClient(__result.Header.Hash, targetClientId);
         }
     }
 

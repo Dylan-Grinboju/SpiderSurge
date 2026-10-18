@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using System.Linq;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using Logger = Silk.Logger;
 
@@ -13,6 +14,7 @@ namespace SpiderSurge
         private static Dictionary<SpiderHealthSystem, ImmuneAbility> immuneByHealthSystem = new Dictionary<SpiderHealthSystem, ImmuneAbility>();
 
         public override string PerkName => Consts.PerkNames.ImmuneAbility;
+        public override AbilityKind Kind => AbilityKind.Immune;
 
         public override float AbilityBaseDuration => Consts.Values.Immune.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Immune.AbilityBaseCooldown;
@@ -120,7 +122,7 @@ namespace SpiderSurge
 
             ApplyImmunity(true);
 
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.ImmuneAbility,
@@ -131,7 +133,7 @@ namespace SpiderSurge
 
         protected override void OnDeactivate()
         {
-            if (spiderHealthSystem != null)
+            if (spiderHealthSystem != null && IsAuthority)
             {
                 if (hadBarrierOnSessionStart && wasHitDuringSession)
                 {
@@ -154,7 +156,7 @@ namespace SpiderSurge
             isUltimateCastPending = true;
             hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.ImmuneUlt,
@@ -281,12 +283,29 @@ namespace SpiderSurge
             }
         }
 
+        // Clients other than the caster only hear about the glow; the host tells them when it starts and ends
+        public static void ShowRemoteImmunity(int playerId, bool on)
+        {
+            foreach (var ability in immuneByHealthSystem.Values)
+            {
+                if (ability != null && ability.PlayerId == playerId)
+                {
+                    ability.ApplyRadiance(on);
+                    return;
+                }
+            }
+        }
+
         private void ApplyImmunity(bool enable)
         {
             if (spiderHealthSystem == null) return;
             IsImmune = enable;
 
             ApplyRadiance(enable);
+            if (Net.IsHost)
+            {
+                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
+            }
 
             if (enable)
             {
@@ -534,12 +553,12 @@ namespace SpiderSurge
                 }
                 else
                 {
-                    Logger.LogWarning($"Could not find BreakShieldClientRpc method for player {playerInput.playerIndex}");
+                    Logger.LogWarning($"Could not find BreakShieldClientRpc method for player {PlayerId}");
                 }
             }
             catch (System.Exception e)
             {
-                Logger.LogError($"Failed to trigger immune barrier burst for player {playerInput.playerIndex}: {e.Message}");
+                Logger.LogError($"Failed to trigger immune barrier burst for player {PlayerId}: {e.Message}");
             }
         }
     }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using SpiderSurge.Common;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace SpiderSurge
@@ -25,6 +27,7 @@ namespace SpiderSurge
         private float _thawTime;
         private float? _fuseLeft;
         private bool _held;
+        private bool _visualOnly;
         private readonly List<EnemyBrain> _brains = new List<EnemyBrain>();
         private readonly List<EnemyBrain> _disabledBrains = new List<EnemyBrain>();
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
@@ -66,6 +69,19 @@ namespace SpiderSurge
         // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
         public static bool Freeze(EnemyHealthSystem enemy, float duration)
         {
+            if (!Apply(enemy, duration, visualOnly: false)) return false;
+            SurgeNet.SendEnemyFx(EnemyFx.Frozen, enemy.GetComponent<NetworkObject>(), duration);
+            return true;
+        }
+
+        // Online clients only tint the enemy; the host holds it and its position syncs
+        public static void ShowFrozen(EnemyHealthSystem enemy, float duration)
+        {
+            Apply(enemy, duration, visualOnly: true);
+        }
+
+        private static bool Apply(EnemyHealthSystem enemy, float duration, bool visualOnly)
+        {
             if (!CanFreeze(enemy) || duration <= 0f) return false;
 
             FrozenEnemy frozen = enemy.GetComponent<FrozenEnemy>();
@@ -77,6 +93,7 @@ namespace SpiderSurge
 
             frozen = enemy.gameObject.AddComponent<FrozenEnemy>();
             frozen._enemy = enemy;
+            frozen._visualOnly = visualOnly;
             frozen._thawTime = Time.time + duration;
             frozen.Hold();
             return true;
@@ -87,6 +104,12 @@ namespace SpiderSurge
             _enemyId = _enemy.GetInstanceID();
             FrozenEnemyIds.Add(_enemyId);
             _held = true;
+
+            if (_visualOnly)
+            {
+                TintAll();
+                return;
+            }
 
             foreach (EnemyBrain brain in Brains(_enemy))
             {
@@ -117,6 +140,11 @@ namespace SpiderSurge
                 body.constraints = RigidbodyConstraints2D.FreezeAll;
             }
 
+            TintAll();
+        }
+
+        private void TintAll()
+        {
             foreach (SpriteRenderer sprite in _enemy.GetComponentsInChildren<SpriteRenderer>(true))
             {
                 SetBaseColor(sprite, sprite.color);
@@ -135,6 +163,12 @@ namespace SpiderSurge
             if (!_held) return;
             _held = false;
             Release();
+
+            if (_visualOnly)
+            {
+                RestoreTints();
+                return;
+            }
 
             // Banish took it while frozen and holds it itself until it is gone
             if (BanishedTarget.IsBanished(gameObject)) return;
@@ -155,6 +189,11 @@ namespace SpiderSurge
                     RollerTimeToExplode(roller) = Time.time + (_fuseLeft ?? RollerFuse);
                 }
             }
+            RestoreTints();
+        }
+
+        private void RestoreTints()
+        {
             foreach (var pair in _tints)
             {
                 if (pair.Key != null) pair.Key.color = pair.Value;

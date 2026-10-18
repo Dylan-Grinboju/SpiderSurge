@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace SpiderSurge
 {
@@ -14,7 +13,7 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
             AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
 
-        public PlayerInput Caster { get; private set; }
+        public PlayerController Caster { get; private set; }
 
         private EnemyHealthSystem _enemy;
         private SpiderHealthSystem _spider;
@@ -25,7 +24,7 @@ namespace SpiderSurge
         private Vector3 _startScale;
         private float _elapsed;
 
-        public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerInput caster)
+        public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerController caster)
         {
             if (enemy == null || IsBanished(enemy.gameObject)) return;
 
@@ -36,7 +35,7 @@ namespace SpiderSurge
             banished.StartPull(target);
         }
 
-        public static void BeginSpider(SpiderHealthSystem spider, Transform target, PlayerInput caster)
+        public static void BeginSpider(SpiderHealthSystem spider, Transform target, PlayerController caster)
         {
             if (spider == null || spider.rootObject == null || IsBanished(spider.rootObject)) return;
 
@@ -62,7 +61,7 @@ namespace SpiderSurge
         }
 
         // Banish ignores shields; Stats credits the caster with this kill
-        public static void KillSpider(SpiderHealthSystem spider, PlayerInput caster)
+        public static void KillSpider(SpiderHealthSystem spider, PlayerController caster)
         {
             spider.DisableShield();
             spider.Disintegrate();

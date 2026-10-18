@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
 using HarmonyLib;
@@ -83,7 +82,7 @@ namespace SpiderSurge.Logging
 
         public void StartTracking()
         {
-            if (!ModConfig.EnableStatsLogging) return;
+            if (!ModConfig.EnableStatsLogging || !Net.IsAuthority) return;
 
             _matchStartTime = DateTime.Now;
             _abilityActivationsPerPlayer.Clear();
@@ -111,11 +110,11 @@ namespace SpiderSurge.Logging
             TimeSpan duration = DateTime.Now - _matchStartTime;
 
             bool statsTracked = Parts.Stats.Running;
-
+            var players = Players.All;
             var snapshot = new SpiderSurgeStatsSnapshot
             {
                 MatchDuration = duration,
-                PlayerCount = PlayerInput.all.Count,
+                PlayerCount = players != null ? players.Count : 0,
                 WavesSurvived = GetWavesSurvived(),
                 PainLevel = GetCurrentPainLevel(),
                 GlobalPerks = GetGlobalPerks(),
@@ -128,35 +127,39 @@ namespace SpiderSurge.Logging
                 Waves = new List<WaveRecord>(_waves)
             };
 
-            foreach (var player in PlayerInput.all)
+            if (players != null)
             {
-                int pIndex = player.playerIndex;
-                var stats = new PlayerStats
+                foreach (var player in players)
                 {
-                    PlayerIndex = pIndex,
-                    AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(pIndex, out int abilities) ? abilities : 0,
-                    UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(pIndex, out int ultimates) ? ultimates : 0
-                };
-
-                if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
-                {
-                    stats.Deaths = data.Deaths;
-                    stats.LavaDeaths = data.LavaDeaths;
-                    stats.Kills = data.Kills;
-                    stats.FriendlyKills = data.FriendlyKills;
-                    stats.ShotsFired = data.ShootingAccuracy.ShotsFired;
-                    stats.ShotsHit = data.ShootingAccuracy.ShotsHit;
-                    stats.AliveSeconds = (int)data.GetCurrentAliveTime().TotalSeconds;
-                    if (data.EnemyKills != null)
+                    if (player == null) continue;
+                    int playerId = player.playerID.Value;
+                    var stats = new PlayerStats
                     {
-                        foreach (var entry in data.EnemyKills.Where(entry => entry.Value > 0))
+                        PlayerId = playerId,
+                        AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(playerId, out int abilities) ? abilities : 0,
+                        UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0
+                    };
+
+                    if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
+                    {
+                        stats.Deaths = data.Deaths;
+                        stats.LavaDeaths = data.LavaDeaths;
+                        stats.Kills = data.Kills;
+                        stats.FriendlyKills = data.FriendlyKills;
+                        stats.ShotsFired = data.ShootingAccuracy.ShotsFired;
+                        stats.ShotsHit = data.ShootingAccuracy.ShotsHit;
+                        stats.AliveSeconds = (int)data.GetCurrentAliveTime().TotalSeconds;
+                        if (data.EnemyKills != null)
                         {
-                            stats.EnemyKills[entry.Key] = entry.Value;
+                            foreach (var entry in data.EnemyKills.Where(entry => entry.Value > 0))
+                            {
+                                stats.EnemyKills[entry.Key] = entry.Value;
+                            }
                         }
                     }
-                }
 
-                snapshot.PlayerStats.Add(stats);
+                    snapshot.PlayerStats.Add(stats);
+                }
             }
 
             SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
@@ -182,26 +185,26 @@ namespace SpiderSurge.Logging
             }
         }
 
-        public void LogAbilityActivation(int playerIndex)
+        public void LogAbilityActivation(int playerId)
         {
             if (!_isTracking) return;
 
-            if (!_abilityActivationsPerPlayer.ContainsKey(playerIndex))
+            if (!_abilityActivationsPerPlayer.ContainsKey(playerId))
             {
-                _abilityActivationsPerPlayer[playerIndex] = 0;
+                _abilityActivationsPerPlayer[playerId] = 0;
             }
-            _abilityActivationsPerPlayer[playerIndex]++;
+            _abilityActivationsPerPlayer[playerId]++;
         }
 
-        public void LogUltimateActivation(int playerIndex)
+        public void LogUltimateActivation(int playerId)
         {
             if (!_isTracking) return;
 
-            if (!_ultimateActivationsPerPlayer.ContainsKey(playerIndex))
+            if (!_ultimateActivationsPerPlayer.ContainsKey(playerId))
             {
-                _ultimateActivationsPerPlayer[playerIndex] = 0;
+                _ultimateActivationsPerPlayer[playerId] = 0;
             }
-            _ultimateActivationsPerPlayer[playerIndex]++;
+            _ultimateActivationsPerPlayer[playerId]++;
         }
 
         public void IncrementWave()

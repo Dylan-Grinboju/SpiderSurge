@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -24,42 +24,35 @@ namespace StatsMod
             AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
     }
 
-    [HarmonyPatch(typeof(PlayerInput), "OnEnable")]
-    public class PlayerInputEnablePatch
+    // Local and remote players alike enter the lobby's list once their PlayerController has spawned
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.AddPlayer))]
+    public class LobbyAddPlayerPatch
     {
-        static void Postfix(PlayerInput __instance)
+        static void Postfix(PlayerController player)
         {
             try
             {
-                // Guard against race condition: if the player left before OnEnable completed
-                // Happens when playing with controllers and in the pause menu of a match you use mouse/keyboard
-                if (__instance == null || !__instance.enabled || !__instance.gameObject.activeInHierarchy)
-                {
-                    Logger.LogDebug($"Skipping registration for inactive/destroyed player: {__instance}");
-                    return;
-                }
-
-                PlayerTracker.Instance.RegisterPlayer(__instance);
+                PlayerTracker.Instance.RegisterPlayer(player);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error in PlayerInput.OnEnable patch: {ex.Message}");
+                Logger.LogError($"Error in LobbyController.AddPlayer patch: {ex.Message}");
             }
         }
     }
 
-    [HarmonyPatch(typeof(PlayerInput), "OnDisable")]
-    public class PlayerInputDisablePatch
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.RemovePlayer))]
+    public class LobbyRemovePlayerPatch
     {
-        static void Prefix(PlayerInput __instance)
+        static void Prefix(PlayerController player)
         {
             try
             {
-                PlayerTracker.Instance.UnregisterPlayer(__instance);
+                PlayerTracker.Instance.UnregisterPlayer(player);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error in PlayerInput.OnDisable patch: {ex.Message}");
+                Logger.LogError($"Error in LobbyController.RemovePlayer patch: {ex.Message}");
             }
         }
     }
@@ -85,7 +78,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.KillSpider))]
     public class SpiderBanishedPatch
     {
-        static void Prefix(SpiderHealthSystem spider, PlayerInput caster)
+        static void Prefix(SpiderHealthSystem spider, PlayerController caster)
         {
             try
             {
@@ -129,10 +122,10 @@ namespace StatsMod
                     SpiderSurge.BanishedTarget.IsBanished(__instance.rootObject))
                     return;
 
-                PlayerInput playerInput = __instance.rootObject.GetComponentInParent<PlayerInput>();
+                PlayerController playerInput = __instance.rootObject.GetComponentInParent<PlayerController>();
                 if (playerInput != null)
                 {
-                    Logger.LogInfo($"Lava death for Player {playerInput.playerIndex + 1} at {__instance.transform.position}");
+                    Logger.LogInfo($"Lava death for Player {playerInput.playerID.Value + 1} at {__instance.transform.position}");
                     PlayerTracker.Instance.IncrementLavaDeaths(playerInput);
                 }
             }
@@ -150,7 +143,7 @@ namespace StatsMod
         {
             try
             {
-                PlayerInput playerInput = __instance.GetComponentInParent<PlayerInput>();
+                PlayerController playerInput = __instance.GetComponentInParent<PlayerController>();
                 if (playerInput != null && ReflectionCache.PrimaryColorField != null)
                 {
                     Color primaryColor = (Color)ReflectionCache.PrimaryColorField.GetValue(__instance);
@@ -193,10 +186,10 @@ namespace StatsMod
                 if (!GameSessionManager.Instance.IsActive) return;
                 if (__instance.rootObject != null)
                 {
-                    PlayerInput victimPlayerInput = __instance.rootObject.GetComponentInParent<PlayerInput>();
-                    if (victimPlayerInput != null)
+                    PlayerController victimPlayerController = __instance.rootObject.GetComponentInParent<PlayerController>();
+                    if (victimPlayerController != null)
                     {
-                        PlayerTracker.Instance.IncrementShieldsLost(victimPlayerInput);
+                        PlayerTracker.Instance.IncrementShieldsLost(victimPlayerController);
                     }
                 }
                 HitLogic.OnPlayerShieldBroken(__instance);
@@ -222,7 +215,7 @@ namespace StatsMod
 
                 if (__instance.spiderController != null && GameSessionManager.Instance.IsActive)
                 {
-                    PlayerInput playerInput = __instance.spiderController.GetComponentInParent<PlayerInput>();
+                    PlayerController playerInput = __instance.spiderController.GetComponentInParent<PlayerController>();
                     if (playerInput != null)
                     {
                         PlayerTracker.Instance.IncrementWebSwings(playerInput);
@@ -246,7 +239,7 @@ namespace StatsMod
             {
                 if (__instance.spiderController != null)
                 {
-                    PlayerInput playerInput = __instance.spiderController.GetComponentInParent<PlayerInput>();
+                    PlayerController playerInput = __instance.spiderController.GetComponentInParent<PlayerController>();
                     if (playerInput != null)
                     {
                         PlayerTracker.Instance.StopWebSwingTimer(playerInput);
@@ -264,7 +257,7 @@ namespace StatsMod
     public class StabilizerFixedUpdatePatch
     {
         // Cache to avoid expensive GetComponentInParent calls every FixedUpdate
-        private static readonly Dictionary<Stabilizer, (PlayerInput, SpiderController)> _componentCache = new Dictionary<Stabilizer, (PlayerInput, SpiderController)>();
+        private static readonly Dictionary<Stabilizer, (PlayerController, SpiderController)> _componentCache = new Dictionary<Stabilizer, (PlayerController, SpiderController)>();
         private static readonly object _cacheLock = new object();
 
         static void Postfix(Stabilizer __instance)
@@ -294,7 +287,7 @@ namespace StatsMod
             }
         }
 
-        private static (PlayerInput, SpiderController) GetCachedComponents(Stabilizer stabilizer)
+        private static (PlayerController, SpiderController) GetCachedComponents(Stabilizer stabilizer)
         {
             lock (_cacheLock)
             {
@@ -309,7 +302,7 @@ namespace StatsMod
                 if (stabilizer.TryGetComponent(out SpiderController spider) ||
                     (spider = stabilizer.GetComponentInParent<SpiderController>()) != null)
                 {
-                    PlayerInput playerInput = spider.GetComponentInParent<PlayerInput>();
+                    PlayerController playerInput = spider.GetComponentInParent<PlayerController>();
                     if (playerInput != null && spider != null)
                     {
                         var components = (playerInput, spider);

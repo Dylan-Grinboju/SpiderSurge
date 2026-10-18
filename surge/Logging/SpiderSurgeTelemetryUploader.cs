@@ -219,7 +219,7 @@ namespace SpiderSurge.Logging
                 .Select(entry => "\"" + EscapeJson(entry.Key) + "\":" + entry.Value)) + "}";
 
             return "{" +
-                "\"playerIndex\":" + player.PlayerIndex + "," +
+                "\"playerIndex\":" + player.PlayerId + "," +
                 "\"abilityActivationCount\":" + player.AbilityActivationCount + "," +
                 "\"ultimateActivationCount\":" + player.UltimateActivationCount + "," +
                 "\"deaths\":" + player.Deaths + "," +
