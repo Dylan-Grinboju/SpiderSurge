@@ -123,6 +123,7 @@ namespace SpiderSurge.Logging
                 MaxLives = GetMaxLives(),
                 StatsTracked = statsTracked,
                 UnlimitedPerkTime = ModConfig.UnlimitedPerkChoosingTime,
+                AbilitiesOn = SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.NoAbilitiesThisRun,
                 PerkChoices = new List<PerkChoiceRecord>(_perkChoices),
                 Waves = new List<WaveRecord>(_waves)
             };

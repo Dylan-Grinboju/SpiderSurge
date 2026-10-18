@@ -14,6 +14,7 @@ namespace SpiderSurge.Logging
         public int MaxLives { get; set; }
         public bool StatsTracked { get; set; }
         public bool UnlimitedPerkTime { get; set; }
+        public bool AbilitiesOn { get; set; } = true;
         public List<PlayerStats> PlayerStats { get; set; } = new List<PlayerStats>();
         public List<string> GlobalPerks { get; set; } = new List<string>();
         public List<PerkChoiceRecord> PerkChoices { get; set; } = new List<PerkChoiceRecord>();

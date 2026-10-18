@@ -12,6 +12,8 @@ namespace SpiderSurge
 
         public bool RunUsedSurge { get; private set; }
 
+        public bool NoAbilitiesThisRun { get; private set; }
+
         public static bool IsModeEnabled { get; private set; }
 
         internal static void SelectMode(bool surge)
@@ -23,6 +25,9 @@ namespace SpiderSurge
         public static bool IsSurgeRunActive => Instance != null && Instance.IsActive;
 
         public static bool WasSurgeRunUsed => Instance != null && Instance.RunUsedSurge;
+
+        // Read once when a Surge Survival run starts, so changing the setting mid-run waits for the next run
+        public static bool AbilitiesDisabled => IsSurgeRunActive && Instance.NoAbilitiesThisRun;
 
         private void Awake()
         {
@@ -43,6 +48,7 @@ namespace SpiderSurge
             if (active)
             {
                 RunUsedSurge = true;
+                NoAbilitiesThisRun = IsActive && ModConfig.NoAbilities;
             }
             SurgeNet.MarkDirty();
         }
@@ -50,6 +56,7 @@ namespace SpiderSurge
         internal void ForceActive(bool active)
         {
             IsActive = active;
+            NoAbilitiesThisRun = false;
             SurgeNet.MarkDirty();
         }
 
