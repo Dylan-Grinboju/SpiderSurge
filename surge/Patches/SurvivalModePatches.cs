@@ -226,6 +226,7 @@ namespace SpiderSurge
                 {
                     if (SurgeGameModeManager.Instance == null) return;
                     SurgeGameModeManager.Instance.SetActive(true);
+                    if (SurvivalMode.instance != null) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
 
                     if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                     {
@@ -252,26 +253,7 @@ namespace SpiderSurge
             {
                 if (SurgeGameModeManager.IsSurgeRunActive && SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && value > 0)
                 {
-                    var config = ActiveConfig(SurvivalMode.instance);
-                    if (config != null)
-                    {
-                        float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;
-                        int minPotential = 0, maxPotential = 0;
-                        float minCost = float.MaxValue, maxCost = 0f;
-                        foreach (var e in config.enemies)
-                        {
-                            if (e.cost <= budget && e.minWave <= value && (e.maxWave == 0 || e.maxWave >= value))
-                            {
-                                if (e.cost < minCost) minCost = e.cost;
-                                if (e.cost > maxCost) maxCost = e.cost;
-                            }
-                        }
-                        if (minCost != float.MaxValue && minCost > 0f) maxPotential = (int)(budget / minCost);
-                        if (maxCost > 0f) minPotential = (int)(budget / maxCost);
-
-                        Logger.LogInfo($"[SpiderSurge] --- Wave {value} Started ---");
-                        Logger.LogInfo($"[SpiderSurge] Budget: {budget} | Estimated amount of enemies that will spawn: {minPotential} to {maxPotential}");
-                    }
+                    LogWaveStart(value);
                 }
 
                 if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
@@ -298,6 +280,30 @@ namespace SpiderSurge
 
                     SurgeNet.SendStateNow();
                 }
+            }
+
+            // StartGame sets wave 1 before Surge turns on, so it logs that wave itself
+            internal static void LogWaveStart(int value)
+            {
+                var config = ActiveConfig(SurvivalMode.instance);
+                if (config == null) return;
+
+                float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;
+                int minPotential = 0, maxPotential = 0;
+                float minCost = float.MaxValue, maxCost = 0f;
+                foreach (var e in config.enemies)
+                {
+                    if (e.cost <= budget && e.minWave <= value && (e.maxWave == 0 || e.maxWave >= value))
+                    {
+                        if (e.cost < minCost) minCost = e.cost;
+                        if (e.cost > maxCost) maxCost = e.cost;
+                    }
+                }
+                if (minCost != float.MaxValue && minCost > 0f) maxPotential = (int)(budget / minCost);
+                if (maxCost > 0f) minPotential = (int)(budget / maxCost);
+
+                Logger.LogInfo($"[SpiderSurge] --- Wave {value} Started ---");
+                Logger.LogInfo($"[SpiderSurge] Budget: {budget} | Estimated amount of enemies that will spawn: {minPotential} to {maxPotential}");
             }
         }
 
