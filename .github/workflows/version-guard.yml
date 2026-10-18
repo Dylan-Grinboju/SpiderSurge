@@ -1,0 +1,57 @@
+# Fails a pull request that changes version.txt or the csproj <Version>: the update check reads version.txt from main, so merging a change there tells every player a new version is out
+name: Version guard
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version unchanged
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check version.txt and SpiderSurge.csproj
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          base=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          failed=0
+          report() {
+            echo "::error file=$1,line=$2,title=Version changed::$3"
+            echo "- **$1**: $3" >> "$GITHUB_STEP_SUMMARY"
+            failed=1
+          }
+          echo "## Version guard" >> "$GITHUB_STEP_SUMMARY"
+
+          if ! git diff --quiet "$base" "$HEAD_SHA" -- version.txt; then
+            old=$(git show "$base:version.txt" 2>/dev/null | tr -d '\r\n' || true)
+            new=$(git show "$HEAD_SHA:version.txt" 2>/dev/null | tr -d '\r\n' || true)
+            announce="The mod's update check reads this file from main, so merging this announces a new version to every player."
+            if [ -z "$new" ]; then change="version.txt was deleted or emptied (it was '$old'). The mod's update check reads this file from main."
+            elif [ "$old" = "$new" ]; then change="version.txt changed, though only in whitespace (still '$new'). The mod's update check reads this file from main."
+            else change="version.txt changed from '${old:-nothing}' to '$new'. $announce"
+            fi
+            report version.txt 1 "$change"
+          fi
+
+          version() { git show "$1:SpiderSurge.csproj" 2>/dev/null | grep -o -m1 '<Version>[^<]*</Version>' | sed 's/<[^>]*>//g' || true; }
+          old=$(version "$base")
+          new=$(version "$HEAD_SHA")
+          if [ "$old" != "$new" ]; then
+            line=$(git show "$HEAD_SHA:SpiderSurge.csproj" 2>/dev/null | grep -n -m1 '<Version>' | cut -d: -f1 || true)
+            report SpiderSurge.csproj "${line:-1}" "The Version in SpiderSurge.csproj changed from '${old:-nothing}' to '${new:-nothing}'."
+          fi
+
+          if [ "$failed" -eq 1 ]; then
+            echo "This pull request changes the mod's version. Versions change only for a release." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "No version change." | tee -a "$GITHUB_STEP_SUMMARY"
