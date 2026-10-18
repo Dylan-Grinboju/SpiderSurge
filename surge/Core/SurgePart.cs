@@ -19,7 +19,7 @@ namespace SpiderSurge
         public override bool CanDisable => false;
         public override bool HasSettings => true;
 
-        public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey };
+        public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey, ModConfig.NoAbilitiesKey };
 
         protected internal override void OnStart()
         {
