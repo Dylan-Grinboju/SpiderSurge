@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using HarmonyLib;
 using Unity.Netcode;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
@@ -71,6 +72,9 @@ namespace SpiderSurge
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
+
+        // A restored weapon is stored before Weapon.Start runs, and Start fills its ammo when it comes back out
+        private static readonly Dictionary<Weapon, float> restoredAmmo = new Dictionary<Weapon, float>();
 
         protected override void Start()
         {
@@ -525,6 +529,7 @@ namespace SpiderSurge
                     if (newWeapon != null)
                     {
                         newWeapon.ammo = data.Ammo;
+                        KeepRestoredAmmo(newWeapon, data.Ammo);
                     }
 
                     newWeaponObj.transform.SetParent(transform);
@@ -548,6 +553,24 @@ namespace SpiderSurge
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
+        private static void KeepRestoredAmmo(Weapon weapon, float ammo)
+        {
+            foreach (Weapon gone in new List<Weapon>(restoredAmmo.Keys))
+            {
+                if (gone == null) restoredAmmo.Remove(gone);
+            }
+            restoredAmmo[weapon] = ammo;
+        }
+
+        public static void ApplyRestoredAmmo(Weapon weapon)
+        {
+            if (restoredAmmo.TryGetValue(weapon, out float ammo))
+            {
+                restoredAmmo.Remove(weapon);
+                weapon.ammo = ammo;
+            }
+        }
+
         public static StorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
@@ -566,6 +589,15 @@ namespace SpiderSurge
             }
             types.Add(Weapon.WeaponType.Gun);
             return types;
+        }
+    }
+
+    [HarmonyPatch(typeof(Weapon), "StartActions")]
+    public class Weapon_StartActions_StoragePatch
+    {
+        static void Postfix(Weapon __instance)
+        {
+            StorageAbility.ApplyRestoredAmmo(__instance);
         }
     }
 }
