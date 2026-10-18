@@ -7,7 +7,8 @@ using UnityEngine;
 
 namespace SpiderSurge
 {
-    // An enemy held by Freeze Time: brains off, bodies locked, contact damage and fuses held, tinted ice blue until it thaws
+    // An enemy held by Freeze Time: brains off, bodies and the shaman's cloud locked, fuses held, tinted ice blue until it thaws.
+    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact
     public class FrozenEnemy : MonoBehaviour
     {
         private static readonly HashSet<int> FrozenEnemyIds = new HashSet<int>();
@@ -16,13 +17,12 @@ namespace SpiderSurge
             AccessTools.FieldRefAccess<ExplodingRoller, bool>("_triggered");
         private static readonly AccessTools.FieldRef<ExplodingRoller, float> RollerTimeToExplode =
             AccessTools.FieldRefAccess<ExplodingRoller, float>("_timeToExplode");
-        private static readonly AccessTools.FieldRef<HornetShamanBrain, DeathCloud> ShamanCloud =
-            AccessTools.FieldRefAccess<HornetShamanBrain, DeathCloud>("_deathCloud");
-        private static readonly AccessTools.FieldRef<DeathCloud, Dictionary<GameObject, float>> CloudPlayersInRange =
-            AccessTools.FieldRefAccess<DeathCloud, Dictionary<GameObject, float>>("inRange");
         private static readonly MethodInfo WhispStopCharge = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
         private static readonly MethodInfo KhepriSwitchCharge = AccessTools.Method(typeof(KhepriBrain), "SwitchChargeAttackCosmeticsClientRpc");
         private const float RollerFuse = 2f;
+        // Enemies frozen by one cast thaw together, so their sound plays once
+        private const float ThawSoundGap = 0.15f;
+        private static float _lastThawSound = float.NegativeInfinity;
 
         private EnemyHealthSystem _enemy;
         private int _enemyId;
@@ -125,12 +125,7 @@ namespace SpiderSurge
                     _fuseLeft = RollerTimeToExplode(roller) - Time.time;
                 }
                 // The shaman's OnDisable destroys its death cloud, so it stays enabled and its updates are skipped by a patch instead
-                if (brain is HornetShamanBrain shaman)
-                {
-                    DeathCloud cloud = ShamanCloud(shaman);
-                    if (cloud != null) CloudPlayersInRange(cloud).Clear();
-                    continue;
-                }
+                if (brain is HornetShamanBrain) continue;
                 if (!brain.enabled) continue;
                 brain.enabled = false;
                 _disabledBrains.Add(brain);
@@ -184,11 +179,13 @@ namespace SpiderSurge
             if (_visualOnly)
             {
                 RestoreTints();
+                PlayThawSound();
                 return;
             }
 
             // Banish took it while frozen and holds it itself until it is gone
             if (BanishedTarget.IsBanished(gameObject)) return;
+            PlayThawSound();
 
             foreach (var pair in _bodies)
             {
@@ -207,6 +204,13 @@ namespace SpiderSurge
                 }
             }
             RestoreTints();
+        }
+
+        public static void PlayThawSound()
+        {
+            if (Time.unscaledTime - _lastThawSound < ThawSoundGap) return;
+            _lastThawSound = Time.unscaledTime;
+            SoundManager.Instance?.PlaySound(Consts.SoundNames.Unfreeze, Consts.SoundVolumes.Unfreeze * Consts.SoundVolumes.MasterVolume);
         }
 
         private void RestoreTints()
@@ -247,33 +251,24 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(WaspStinger), nameof(WaspStinger.OnCollisionEnter2D))]
-    public static class FrozenEnemy_WaspStinger_Patch
-    {
-        private static bool Prefix(WaspStinger __instance) => !FrozenEnemy.IsFrozen(__instance.enemyHealthSystem);
-    }
-
-    [HarmonyPatch(typeof(RollerStrut), nameof(RollerStrut.OnCollisionEnter2D))]
-    public static class FrozenEnemy_RollerStrut_Patch
-    {
-        private static bool Prefix(RollerStrut __instance) => !FrozenEnemy.IsFrozen(__instance.enemyHealthSystem);
-    }
-
-    [HarmonyPatch(typeof(DeathCloud), "OnTriggerStay2D")]
+    // The cloud chases its target on its own, so it stays where it is while its shaman is frozen; its poison still hurts
+    [HarmonyPatch(typeof(DeathCloud), "MoveTowardsGoal")]
     public static class FrozenEnemy_DeathCloud_Patch
     {
-        private static bool Prefix(DeathCloud __instance) =>
-            __instance.origin == null || !FrozenEnemy.IsFrozen(__instance.origin.GetComponentInParent<EnemyHealthSystem>());
+        private static bool Prefix(DeathCloud __instance)
+        {
+            if (__instance.origin == null || !FrozenEnemy.IsFrozen(__instance.origin.GetComponentInParent<EnemyHealthSystem>())) return true;
+            if (__instance.rb2d != null) __instance.rb2d.velocity = Vector2.zero;
+            return false;
+        }
     }
 
-    // Contact damage from saws and bodies runs on the brain even while it is disabled
+    // Hazard avoidance pushes the body and runs on the brain even while it is disabled
     [HarmonyPatch]
-    public static class FrozenEnemy_BrainContact_Patch
+    public static class FrozenEnemy_HazardAvoidance_Patch
     {
         private static IEnumerable<MethodBase> TargetMethods()
         {
-            MethodBase processCollision = AccessTools.Method(typeof(WhispBrain), "ProcessCollision");
-            if (processCollision != null) yield return processCollision;
             foreach (var type in new[] { typeof(WhispBrain), typeof(WaspBrain), typeof(RollerBrain), typeof(KhepriBrain), typeof(HornetShamanBrain) })
             {
                 MethodBase method = AccessTools.DeclaredMethod(type, "OnTriggerStay2D");
@@ -282,6 +277,15 @@ namespace SpiderSurge
         }
 
         private static bool Prefix(EnemyBrain __instance) => !FrozenEnemy.IsFrozenBrain(__instance);
+    }
+
+    // A whisp's saw still hits while frozen, but one frozen before its Start ran has no body to hit from
+    [HarmonyPatch(typeof(WhispBrain), "ProcessCollision")]
+    public static class FrozenEnemy_WhispSaw_Patch
+    {
+        private static readonly AccessTools.FieldRef<WhispBrain, Rigidbody2D> Body = AccessTools.FieldRefAccess<WhispBrain, Rigidbody2D>("_rigidBody2D");
+
+        private static bool Prefix(WhispBrain __instance) => !FrozenEnemy.IsFrozenBrain(__instance) || Body(__instance) != null;
     }
 
     [HarmonyPatch(typeof(HornetShamanBrain), nameof(HornetShamanBrain.FixedUpdate))]

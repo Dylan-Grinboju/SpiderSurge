@@ -130,6 +130,13 @@ namespace SpiderSurge
                 },
                 new SoundInfo
                 {
+                    Name = Consts.SoundNames.Unfreeze,
+                    DisplayName = "Unfreeze",
+                    GetVolume = () => Consts.SoundVolumes.Unfreeze,
+                    SetVolume = (v) => Consts.SoundVolumes.Unfreeze = v
+                },
+                new SoundInfo
+                {
                     Name = Consts.SoundNames.AbilityEnded,
                     DisplayName = "Ability Ended",
                     GetVolume = () => Consts.SoundVolumes.AbilityEnded,

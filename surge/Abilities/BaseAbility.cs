@@ -672,7 +672,7 @@ namespace SpiderSurge
             }
         }
 
-        private void PlayAbilityEndedSound()
+        protected virtual void PlayAbilityEndedSound(bool wasUltimate)
         {
             SoundManager.Instance?.PlaySound(
                 Consts.SoundNames.AbilityEnded,
@@ -690,7 +690,7 @@ namespace SpiderSurge
                 Deactivate();
                 if (!IsRemote && ShouldPlayAbilityEndedSound(wasUltimate))
                 {
-                    PlayAbilityEndedSound();
+                    PlayAbilityEndedSound(wasUltimate);
                 }
             }
 
@@ -707,7 +707,7 @@ namespace SpiderSurge
                 Deactivate();
                 if (!IsRemote && ShouldPlayAbilityEndedSound(wasUltimate))
                 {
-                    PlayAbilityEndedSound();
+                    PlayAbilityEndedSound(wasUltimate);
                 }
             }
 

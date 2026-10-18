@@ -53,6 +53,7 @@ namespace SpiderSurge
             public const string StorageRetrieve = "storage_retrieve";
             public const string FreezeAbility = "freeze_ability";
             public const string FreezeUlt = "freeze_ult";
+            public const string Unfreeze = "unfreeze";
             public const string AbilityEnded = "ability_ended";
         }
 
@@ -70,6 +71,7 @@ namespace SpiderSurge
             public static float StorageRetrieve = 0.7f;
             public static float FreezeAbility = 0.8f;
             public static float FreezeUlt = 0.7f;
+            public static float Unfreeze = 0.8f;
             public static float AbilityEnded = 0.7f;
 
             // Master volume multiplier
