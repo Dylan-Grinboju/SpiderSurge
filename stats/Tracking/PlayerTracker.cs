@@ -25,6 +25,9 @@ namespace StatsMod
 
         private bool isPaused = false;
 
+        // Raised with +1 when a tracked player's death is recorded and -1 when one is undone
+        public event Action<int> DeathCountChanged;
+
         public class PlayerData
         {
             public int PlayerId { get; set; }
@@ -292,6 +295,7 @@ namespace StatsMod
                 if (Net.IsAuthority && playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
                 {
                     data.Deaths++;
+                    DeathCountChanged?.Invoke(1);
                     data.KillStreak = 0;
                     data.KillStreakWhileSolo = 0;
                     data.StopAliveTimer();
@@ -331,6 +335,7 @@ namespace StatsMod
                 {
                     data.Deaths--;
                     data.AstralReturns++;
+                    DeathCountChanged?.Invoke(-1);
 
                     // Undo death on the current map
                     string currentMap = GameSessionManager.Instance.CurrentMapName;
