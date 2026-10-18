@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Logger = Silk.Logger;
+using Logger = SpiderSurge.Common.ThreadSafeLog;
 
 namespace SpiderSurge.Common
 {

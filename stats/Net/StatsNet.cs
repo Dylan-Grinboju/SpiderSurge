@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -21,6 +22,7 @@ namespace StatsMod
         private const string SnapshotChannel = "stats.snapshot";
         private const string TitlesChannel = "stats.titles";
         private const float SnapshotInterval = 1f;
+        private const int MaxMapCounts = 8;
 
         private static bool _initialized;
         private static float _nextSnapshotAt;
@@ -150,7 +152,10 @@ namespace StatsMod
             writer.Write(data.HighestPoint);
             WriteCounts(writer, data.WeaponHits);
             WriteCounts(writer, data.EnemyKills);
-            WriteCounts(writer, data.DeathsPerMap);
+            // Up to 32 players with a count per map would outgrow one message, so only the maps with the most deaths go
+            WriteCounts(writer, data.DeathsPerMap.Count <= MaxMapCounts
+                ? data.DeathsPerMap
+                : data.DeathsPerMap.OrderByDescending(pair => pair.Value).Take(MaxMapCounts).ToDictionary(pair => pair.Key, pair => pair.Value));
             writer.Write(data.ShootingAccuracy.ShotsFired);
             writer.Write(data.ShootingAccuracy.ShotsHit);
             writer.Write(data.AccuracyByWeapon.Count);
@@ -193,6 +198,8 @@ namespace StatsMod
             int playerId = reader.ReadInt32();
             var data = PlayerTracker.Instance.RemoteDataFor(playerId);
             var scratch = data ?? new PlayerTracker.PlayerData(playerId);
+            // The client registered this player before the host assigned its playerID, so the id is taken from the host
+            scratch.PlayerId = playerId;
             scratch.PlayerName = reader.ReadString();
             scratch.PlayerColor = reader.ReadColor();
             scratch.SecondaryColor = reader.ReadColor();

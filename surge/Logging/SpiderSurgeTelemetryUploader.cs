@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Logger = Silk.Logger;
+using Logger = SpiderSurge.Common.ThreadSafeLog;
 
 namespace SpiderSurge.Logging
 {
@@ -150,7 +150,9 @@ namespace SpiderSurge.Logging
 
             var perkChoiceJsons = perkChoices.Select(choice => new KeyValuePair<int, string>(choice.Wave, BuildPerkChoiceJson(choice))).ToList();
             var waveJsons = waves.Select(wave => new KeyValuePair<int, string>(wave.Wave, BuildWaveJson(wave))).ToList();
-            string playerStatsJson = "[" + string.Join(",", playerStats.Select(BuildPlayerJson)) + "]";
+            // The relay takes player indexes 0-7; with more than 8 players (InfiniteFriends) the ids can be higher, so the kept players are numbered in order instead
+            bool idsFit = playerStats.All(p => p.PlayerId >= 0 && p.PlayerId < Consts.Telemetry.MaxPlayerStats);
+            string playerStatsJson = "[" + string.Join(",", playerStats.Select((p, i) => BuildPlayerJson(p, idsFit ? p.PlayerId : i))) + "]";
 
             // The relay rejects bodies over its size limit, so the oldest perk choices and waves are dropped until the report fits
             while (true)
@@ -193,7 +195,7 @@ namespace SpiderSurge.Logging
                 "\"timestampUtc\":\"" + DateTime.UtcNow.ToString("O") + "\"," +
                 "\"modVersion\":\"" + EscapeJson(SpiderSurgeMod.Version) + "\"," +
                 "\"matchDurationSeconds\":" + Math.Max(0, (int)snapshot.MatchDuration.TotalSeconds) + "," +
-                "\"playerCount\":" + Math.Max(0, snapshot.PlayerCount) + "," +
+                "\"playerCount\":" + Math.Min(Consts.Telemetry.MaxPlayerStats, Math.Max(0, snapshot.PlayerCount)) + "," +
                 "\"wavesSurvived\":" + Math.Max(0, snapshot.WavesSurvived) + "," +
                 "\"painLevel\":" + Math.Max(1, snapshot.PainLevel) + "," +
                 "\"endReason\":\"" + EscapeJson(snapshot.EndReason) + "\"," +
@@ -212,14 +214,14 @@ namespace SpiderSurge.Logging
                 "}";
         }
 
-        private static string BuildPlayerJson(PlayerStats player)
+        private static string BuildPlayerJson(PlayerStats player, int playerIndex)
         {
             string enemyKillsJson = "{" + string.Join(",", (player.EnemyKills ?? new Dictionary<string, int>())
                 .OrderBy(entry => entry.Key, StringComparer.Ordinal)
                 .Select(entry => "\"" + EscapeJson(entry.Key) + "\":" + entry.Value)) + "}";
 
             return "{" +
-                "\"playerIndex\":" + player.PlayerId + "," +
+                "\"playerIndex\":" + playerIndex + "," +
                 "\"abilityActivationCount\":" + player.AbilityActivationCount + "," +
                 "\"ultimateActivationCount\":" + player.UltimateActivationCount + "," +
                 "\"deaths\":" + player.Deaths + "," +

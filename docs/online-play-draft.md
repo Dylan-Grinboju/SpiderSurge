@@ -1,6 +1,8 @@
 # Online play draft
 
-Status: drafted and compiling (`dotnet build SpiderSurge.csproj`, 0 warnings), not run in the game. Lives on `dylan/online-play`, rebased onto `main` after PRs 24-34; the online draft is everything under `core/Net`, `surge/Net`, `stats/Net`, `teams/Net` plus the edits listed per part below.
+Status: merged in PR #35, and first run online on 2026-10-18 with two instances on one PC: the Steam build as host and the Xbox build as client, over EOS P2P with both sides modded (see Testing below). The online draft is everything under `core/Net`, `surge/Net`, `stats/Net`, `teams/Net` plus the edits listed per part below.
+
+The first run found that a client dropped every message from the host: NGO turns the host's EOS transport id into a client id of 1 on the client, not 0. `Net.OnMessage` now names the sender `ServerId` on a client, since a client only ever hears from the host.
 
 ## Model
 
@@ -8,13 +10,14 @@ Status: drafted and compiling (`dotnet build SpiderSurge.csproj`, 0 warnings), n
 - **Identity** is `PlayerController.playerID` (the host's slot number, identical on every machine). Nothing is keyed by `PlayerInput` any more; `Players` (`core/Net/Players.cs`) wraps the lookups (`ById`, `Of`, `IdOf`, `IsLocal`, `OwnedBy`, `NameOf`).
 - **Transport** is one NGO named message (`"SpiderSurge"`) carrying a channel hash and a `BinaryWriter` payload (`core/Net/Net.cs`), at most 63,000 bytes (NGO's fragmented limit is 64,000). Handlers re-bind after each `StartHost`/`StartClient` (`core/Net/NetPatches.cs`). Vanilla peers drop the message silently, so a Hello/Welcome handshake tells each side who runs the mod (`Net.HostHasMod`, `Net.ClientHasMod`). The host only sends to modded clients.
 - **Connection data.** A modded client puts `SpiderSurge/<version>` in `NetworkConfig.ConnectionData`, and the host reads it in `LobbyController.ConnectionApprovalCallback` (`Net.ClientRunsMod`), so it knows before the join sync, which comes before the Hello.
-- **Settings.** Each part lists `SharedSettings` (`surge.unlimitedPerkTime`, `teams.enabled`); the host pushes those to clients on join and on change, and `Settings.ApplyRemote` overrides the client's values while connected (`core/Settings.cs`, `core/Parts.cs`). A shared key is read-only on a client while connected and its row says "(set by host)". Everything else (UI, keybinds, windows) stays per machine.
+- **Settings.** Each part lists `SharedSettings` (`surge.unlimitedPerkTime`, and Teams' match rules: `teams.enabled`, `count`, `friendlyFire`, `recolorSpiders`, `groupTeammates` and `teams.surge.*`); the host pushes those to clients on join and on change, and `Settings.ApplyRemote` overrides the client's values while connected (`core/Settings.cs`, `core/Parts.cs`). A shared key is read-only on a client while connected and its row says "(set by host)". Everything else (UI, keybinds, windows) stays per machine.
 - **P2P only.** On a dedicated server no mod code runs on the authority, so `HudController.StartMultiplayerMatch` shows a popup once and the parts stay off online.
 - **Authority helper.** `Net.IsAuthority` is `!IsRemoteClient`, so offline play (the game is its own host) keeps today's code paths untouched.
 
 ## Teams (`teams/Net/TeamNet.cs`)
 
-- `teams.roster` host → all: team count, lock state, mode flag, (playerId, team) pairs, scores. Sent when the roster is dirty and to every joiner.
+- `teams.roster` host → all: team count, lock state, mode flag, (playerId, team) pairs, scores. Sent when the roster is dirty and to every joiner. The host gives newcomers a team before it sends, and a client never assigns or re-normalizes teams itself, even when it loads the lobby.
+- A team match keeps its team rules when a whole team leaves mid-match (`TeamManager.StartedWithTeams`), so the team that is left wins its rounds instead of the match turning into free-for-all.
 - `teams.pick` client → host: a player's pick request. The host checks `OwnerClientId == sender`, respects `acceptingInputs`, then `CycleTeam`.
 - `teams.snapshot` host → all: the end-of-match `MatchSnapshot` (`Write`/`Read`) so clients show the same results screen.
 - Roster lock moved from `StartMatch` to the first `StartRound` that is not the waiting room, so late joiners in the waiting room can still pick. `TeamMatchActive` requires `IsHost || Net.HostHasMod`.
@@ -35,7 +38,7 @@ Status: drafted and compiling (`dotnet build SpiderSurge.csproj`, 0 warnings), n
 - Wasp Cocoon: its base, `ParkourTarget`, is not one of the game's network prefabs, so no vanilla client can build any form of it. `CustomEnemyNet.PrepareForSpawn` hides such clones from clients without the mod; they still see the wasps it hatches.
 - Object visibility: NGO 1.0.0-pre makes a joining client an observer of every object and puts every object in its join sync, ignoring `CheckObjectVisibility`. Two postfixes (`NetworkSpawnManager.UpdateObservedNetworkObjects`, `SceneEventData.AddSpawnedNetworkObjects`) apply it, so stored weapons and cocoons stay hidden from joiners too.
 - Leaving a host resets the run, perks, lucky keys and stored weapons.
-- Banish: only the host picks and pulls the target (`TryBanishNearest`); every machine draws the ring and plays the sound. The kinetic pulse's enemy launch (`PulseKnockback`) runs inside `ApplyPulsePhysics`, so it is host-only too.
+- Banish: only the host picks and pulls the target (`TryBanishNearest`); every machine draws the ring (other machines from a `surge.fx` message), and only the caster's machine plays the sound, as with the other abilities. The kinetic pulse's enemy launch (`PulseKnockback`) runs inside `ApplyPulsePhysics`, so it is host-only too.
 
 ## Stats (`stats/Net/StatsNet.cs`)
 
@@ -49,12 +52,16 @@ Status: drafted and compiling (`dotnet build SpiderSurge.csproj`, 0 warnings), n
 ## Open questions and risks
 
 1. **Cooldown drift.** A client fires an ability locally and asks the host; if the host's instance refuses (its cooldown or perk check differs), nothing tells the client. Either echo a result or make the client wait for the host's `surge.fx`/state before playing the effect.
-2. **Perk index parity.** The game's `ModSyncResponceClientRpc` syncs `_currModsState` by index, so our perks must be appended in the same order on every machine (same mod version). A version mismatch between host and client should probably disable Surge; `Net.HostVersion` is available for that check but unused.
-3. **Prefab handler path.** `CustomEnemyNet` relies on NGO calling `PrefabHandler` before the prefab lookup on clients (verified in the decompiled 1.0.0-pre `NetworkSpawnManager.CreateLocalNetworkObject`), and on `GlobalObjectIdHash` being writable at runtime. Untested.
+2. **Perk index parity.** The game's `ModSyncResponceClientRpc` syncs `_currModsState` by index, so our perks must be appended in the same order on every machine (same mod version). A version mismatch between host and client should probably disable Surge; `Net.HostVersion` is available for that check but unused. Custom enemies already check it: a client on another version gets the base enemies (`Net.ClientRunsThisVersion`).
+3. **Prefab handler path.** `CustomEnemyNet` relies on NGO calling `PrefabHandler` before the prefab lookup on clients (verified in the decompiled 1.0.0-pre `NetworkSpawnManager.CreateLocalNetworkObject`), and on `GlobalObjectIdHash` being writable at runtime. Verified with a modded client on 2026-10-18; a vanilla client is still untested.
 4. **Mid-session joiner.** A joiner gets the state/roster/snapshot at once, but the stats UI isn't told a session started (only the `Started` snapshot does that), so it stays on whatever page it was.
 5. **Stats restart.** When the host restarts without visiting the lobby, clients only show titles if `restartRequested` arrived in the stopped snapshot; verify the ordering in practice.
 6. **Pausing.** `PauseHandler` keys off `Time.timeScale`, which the host controls online. Clients ignore pause for their timers; session time on a client interpolates from the last snapshot and keeps running through a host pause until the next snapshot corrects it.
 7. **Telemetry.** `SpiderSurgeStatsManager` records only on the authority and now logs `PlayerId`; the JSON key stays `playerIndex`. The relay sees online matches as the host's.
 8. **Banish on a client.** The caster's machine cannot know whether the pull hit, so it never gets the miss refund on its cooldown, and the target's shrink while being pulled is not replicated (positions are, through the game's own sync).
 9. **Not touched:** leaderboards, the Surge versus variant beyond `SurgeVersus.AllPlayersLocal`, SpiderInspector's `act/start?surge=` on clients, and any client-side prediction.
-10. **Testing.** Needs two game instances with separate EOS logins. SpiderInspector drives one game per PC; a second PC or the Xbox build as the second instance is the practical option. Suggested order: Hello/Welcome handshake and settings push, then Teams roster/pick/snapshot, then Surge state and one ability per kind, then Stats snapshot and titles, each first with both sides modded and then with a vanilla client.
+10. **Testing.** Needs two game instances with separate EOS logins. The Steam build only runs once per PC, so the Xbox build is the second instance, with SpiderInspector on another port (`spiderinspector-port.txt` next to its DLL, or `SPIDERINSPECTOR_PORT`). The host turns online mode on (`GameSettings.SaveGameMode(true)`) and starts through `HudController.StartSurvival(config, false)` or `StartVersus(false)`; the client sets `HudController.bucketId` to the host's `GameController.bucketId` and calls `ConnectBucketId` (the first attempt sometimes fails; retry once).
+
+    Verified on 2026-10-18 with both sides modded: the handshake; shared settings, read-only on the client; Surge state and perk levels; a client's Pulse and Freeze Time run on the host; custom enemies with their names and shields; the laser ring held by Freeze Time on both sides; owned kill credit and the client's mirrored stats, ids and names; the perk vote from both players; a client leaving and rejoining mid-run (it gets the frozen enemies, stats and perks); the host leaving; the Teams roster, a client's pick, the host's team count over the client's own, a team round, and a whole team leaving mid-match.
+
+    Not yet run: a vanilla client or vanilla host, the end-of-match titles and win screen on a client, Surge versus, and more than one player per machine online.

@@ -109,10 +109,18 @@ namespace SpiderSurge
         {
             bool hit = IsAuthority && TryBanishNearest();
             SpawnBanishRing();
-            SoundManager.Instance?.PlaySound(
-                Consts.SoundNames.StorageSend,
-                Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
-            );
+            if (Net.IsHost && spiderHealthSystem != null)
+            {
+                SurgeNet.SendFx(SurgeFx.Banish, PlayerId, spiderHealthSystem.transform.position, BanishRange, false);
+            }
+            // Like the other abilities, only the caster's own machine plays the sound
+            if (!IsRemote)
+            {
+                SoundManager.Instance?.PlaySound(
+                    Consts.SoundNames.StorageSend,
+                    Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
+                );
+            }
 
             isActive = false;
             isUltimateActive = false;
@@ -147,11 +155,24 @@ namespace SpiderSurge
         private void SpawnBanishRing()
         {
             if (spiderHealthSystem == null) return;
+            SpawnBanishRing(spiderHealthSystem.transform, BanishRange);
+        }
 
-            Transform body = spiderHealthSystem.transform;
+        private static void SpawnBanishRing(Transform body, float range)
+        {
             GameObject ring = new GameObject("BanishRing");
             ring.transform.position = body.position;
-            ring.AddComponent<PulseRingEffect>().SetupInward(BanishRange, Consts.Values.Storage.RingColor, Consts.Values.Storage.BanishPullTime, body);
+            ring.AddComponent<PulseRingEffect>().SetupInward(range, Consts.Values.Storage.RingColor, Consts.Values.Storage.BanishPullTime, body);
+        }
+
+        // Another player's Banish online, drawn from the host's message
+        public static void DrawRemoteBanish(int playerId, float range)
+        {
+            SpiderHealthSystem health = Players.HealthOf(playerId);
+            if (health != null)
+            {
+                SpawnBanishRing(health.transform, range);
+            }
         }
 
         // Pulls the closest enemy that counts for the wave, or the closest other spider that can die, within banish range
@@ -244,7 +265,7 @@ namespace SpiderSurge
             heldWeaponObj.transform.localPosition = Vector3.zero;
             heldWeaponObj.SetActive(false);
 
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.StorageSend,
@@ -293,7 +314,7 @@ namespace SpiderSurge
                 _weaponManager.OnEquipWeapon(weapon);
             }
 
-            if (SoundManager.Instance != null)
+            if (SoundManager.Instance != null && !IsRemote)
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.StorageRetrieve,

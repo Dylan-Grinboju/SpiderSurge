@@ -92,6 +92,19 @@ namespace SpiderSurge.Enemies
         {
             if (health == null || health.IsDead() || !synced) return;
 
+            // Freeze Time and Banish make the enemy harmless, so the ring goes out and its cycle waits until the hold ends
+            if (FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(health.gameObject))
+            {
+                startTime += Time.fixedDeltaTime;
+                if (phase != Phase.Idle)
+                {
+                    phase = Phase.Idle;
+                    if (chargeSound != null) chargeSound.Stop();
+                    StopBeam();
+                }
+                return;
+            }
+
             Phase next = CurrentPhase();
             if (next != phase)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using Unity.Netcode;
 using Logger = Silk.Logger;
@@ -59,16 +60,28 @@ namespace SpiderSurge.Common
         }
     }
 
-    [HarmonyPatch(typeof(SceneEventData), "AddSpawnedNetworkObjects")]
+    // SceneEventData is internal, so the patch is bound by name and reaches its fields through Harmony's field access
+    [HarmonyPatch]
     public static class SceneEventData_AddSpawnedNetworkObjects_Patch
     {
+        private static readonly Type SceneEventDataType = AccessTools.TypeByName("Unity.Netcode.SceneEventData");
+        private static readonly AccessTools.FieldRef<object, ulong> TargetClientId = AccessTools.FieldRefAccess<ulong>(SceneEventDataType, "TargetClientId");
+        private static readonly AccessTools.FieldRef<object, List<NetworkObject>> ObjectsToSync = AccessTools.FieldRefAccess<List<NetworkObject>>(SceneEventDataType, "m_NetworkObjectsSync");
+        private static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = AccessTools.FieldRefAccess<NetworkObject, HashSet<ulong>>("Observers");
+
+        [HarmonyTargetMethod]
+        public static MethodBase TargetMethod()
+        {
+            return AccessTools.Method(SceneEventDataType, "AddSpawnedNetworkObjects");
+        }
+
         [HarmonyPostfix]
-        public static void Postfix(SceneEventData __instance)
+        public static void Postfix(object __instance)
         {
             try
             {
-                ulong target = __instance.TargetClientId;
-                __instance.m_NetworkObjectsSync.RemoveAll(networkObject => networkObject != null && !networkObject.Observers.Contains(target));
+                ulong target = TargetClientId(__instance);
+                ObjectsToSync(__instance)?.RemoveAll(networkObject => networkObject != null && !Observers(networkObject).Contains(target));
             }
             catch (Exception ex)
             {

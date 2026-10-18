@@ -60,6 +60,18 @@
     <Compile Remove="OtherMods\**\*.cs" />
   </ItemGroup>
 
+  <!-- The [SilkMod] attribute needs the version as a constant, so it is generated from <Version> above -->
+  <Target Name="GenerateModVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <ModVersionFile>$(IntermediateOutputPath)ModVersion.g.cs</ModVersionFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(ModVersionFile)" Lines="namespace SpiderSurge { internal static class ModVersion { public const string Value = &quot;$(Version)&quot;%3B } }" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(ModVersionFile)" />
+      <FileWrites Include="$(ModVersionFile)" />
+    </ItemGroup>
+  </Target>
+
   <!-- Embed sound files as resources in the DLL -->
   <ItemGroup>
     <EmbeddedResource Include="surge\Sounds\*.wav" />

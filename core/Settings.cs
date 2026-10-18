@@ -16,6 +16,9 @@ namespace SpiderSurge.Common
         public const string FileId = "SpiderSurge";
         private const string BrokenSuffix = ".broken";
         private const float SaveDelay = 0.75f;
+        // A file that can't be written (read-only, or locked by a sync tool) is tried again this often
+        private const float RetryDelay = 5f;
+        private static bool _writeFailing;
 
         private static readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
         private static readonly List<string> _keys = new List<string>();
@@ -176,7 +179,10 @@ namespace SpiderSurge.Common
                 return;
             }
             _unsaved.Remove(key);
-            Config.SetModConfigValue(FileId, key, value);
+            if (!TryWrite(key, value))
+            {
+                Retry(new[] { new KeyValuePair<string, object>(key, value) });
+            }
             _cache.Remove(key);
             Raise(key);
         }
@@ -205,7 +211,10 @@ namespace SpiderSurge.Common
                     values.Add(new KeyValuePair<string, object>(key, _defaults[key]));
                 }
             }
-            Save(values);
+            if (!Save(values))
+            {
+                Retry(values);
+            }
             _cache.Clear();
             _warned.Clear();
             Raise(prefix);
@@ -229,7 +238,46 @@ namespace SpiderSurge.Common
 
             var pending = _unsaved.ToList();
             _unsaved.Clear();
-            Save(pending);
+            if (!Save(pending))
+            {
+                Retry(pending);
+            }
+        }
+
+        // Values that weren't written stay in effect and are written on a later tick, so a failed write never loses them
+        private static void Retry(IEnumerable<KeyValuePair<string, object>> values)
+        {
+            foreach (var pair in values)
+            {
+                if (!_unsaved.ContainsKey(pair.Key))
+                {
+                    _unsaved[pair.Key] = pair.Value;
+                }
+            }
+            _saveAt = Time.unscaledTime + RetryDelay;
+        }
+
+        private static bool TryWrite(string key, object value)
+        {
+            try
+            {
+                Config.SetModConfigValue(FileId, key, value);
+                if (_writeFailing)
+                {
+                    _writeFailing = false;
+                    Logger.LogInfo($"{FilePath} could be written again");
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!_writeFailing)
+                {
+                    _writeFailing = true;
+                    Logger.LogError($"Could not write {FilePath} ({ex.GetBaseException().Message}); trying again every {RetryDelay:0} s");
+                }
+                return false;
+            }
         }
 
         // Silk keeps the nested maps it is given and edits them in place, so every load gets fresh ones
@@ -282,7 +330,7 @@ namespace SpiderSurge.Common
         }
 
         // Silk writes the whole file on every set, so all values but the last go straight into the sections it holds
-        private static void Save(IList<KeyValuePair<string, object>> values)
+        private static bool Save(IList<KeyValuePair<string, object>> values)
         {
             for (int i = 0; i < values.Count; i++)
             {
@@ -293,11 +341,12 @@ namespace SpiderSurge.Common
                 {
                     section[key.Substring(dot + 1)] = values[i].Value;
                 }
-                else
+                else if (!TryWrite(key, values[i].Value))
                 {
-                    Config.SetModConfigValue(FileId, key, values[i].Value);
+                    return false;
                 }
             }
+            return true;
         }
 
         private static bool IsLocked(string key)

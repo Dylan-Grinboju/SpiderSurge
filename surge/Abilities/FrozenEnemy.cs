@@ -20,6 +20,8 @@ namespace SpiderSurge
             AccessTools.FieldRefAccess<HornetShamanBrain, DeathCloud>("_deathCloud");
         private static readonly AccessTools.FieldRef<DeathCloud, Dictionary<GameObject, float>> CloudPlayersInRange =
             AccessTools.FieldRefAccess<DeathCloud, Dictionary<GameObject, float>>("inRange");
+        private static readonly MethodInfo WhispStopCharge = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
+        private static readonly MethodInfo KhepriSwitchCharge = AccessTools.Method(typeof(KhepriBrain), "SwitchChargeAttackCosmeticsClientRpc");
         private const float RollerFuse = 2f;
 
         private EnemyHealthSystem _enemy;
@@ -113,6 +115,8 @@ namespace SpiderSurge
 
             foreach (EnemyBrain brain in Brains(_enemy))
             {
+                // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
+                if (brain.IsInvoking("LaunchChargeAttack")) StopChargeCosmetics(brain);
                 brain.CancelInvoke("LaunchChargeAttack");
                 _brains.Add(brain);
                 FrozenBrainIds.Add(brain.GetInstanceID());
@@ -141,6 +145,19 @@ namespace SpiderSurge
             }
 
             TintAll();
+        }
+
+        private static void StopChargeCosmetics(EnemyBrain brain)
+        {
+            try
+            {
+                if (brain is WhispBrain) WhispStopCharge?.Invoke(brain, null);
+                else if (brain is KhepriBrain) KhepriSwitchCharge?.Invoke(brain, new object[] { false });
+            }
+            catch (System.Exception ex)
+            {
+                Silk.Logger.LogWarning($"[SpiderSurge] Could not stop {brain.name}'s charge effects: {ex.GetBaseException().Message}");
+            }
         }
 
         private void TintAll()

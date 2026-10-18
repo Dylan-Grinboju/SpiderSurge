@@ -6,7 +6,7 @@ using Logger = Silk.Logger;
 namespace SpiderSurge
 {
     // SilkMod Attribute with the format: name, authors, mod version, silk version, and identifier
-    [SilkMod(ModName, new string[] { "Dylan" }, "1.0.0", "0.7.0", "SpiderSurge_Mod", 1)]
+    [SilkMod(ModName, new string[] { "Dylan" }, ModVersion.Value, "0.7.0", "SpiderSurge_Mod", 1)]
     public class SpiderSurgeMod : SilkMod
     {
         public const string ModName = "SpiderSurge";
@@ -30,6 +30,7 @@ namespace SpiderSurge
         // Called by Silk when Unity loads this mod
         public override void Initialize()
         {
+            MainThread.Claim();
             Logger.LogInfo($"Initializing SpiderSurge {Version}...");
             if (!OldMods.Claim())
             {

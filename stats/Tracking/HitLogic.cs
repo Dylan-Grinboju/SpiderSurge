@@ -17,6 +17,8 @@ namespace StatsMod
         private const float DirectPlayerKillCreditWindow = 0.5f;
         private const float ShieldCreditWindow = 0.1f;
         private const float StaleHitAge = 30f;
+        // A lit fuse ends in an explosion or a death that removes its entry; Freeze Time can hold it far past StaleHitAge
+        private const float StaleFuseAge = 300f;
         private const float FootingRegainedTime = 0.5f;
         private const float DeathZoneGrace = 0.5f;
         private const float EnemyDissolveTime = 0.2f;
@@ -385,7 +387,7 @@ namespace StatsMod
             PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
 
-            if (enemyDisplayNames.TryGetValue(enemy.serializationEnemyName, out string displayName))
+            if (TryGetKillCategory(enemy, out string displayName))
             {
                 PlayerTracker.Instance.IncrementEnemyKillByName(hit.Player, displayName);
             }
@@ -393,6 +395,17 @@ namespace StatsMod
             {
                 Logger.LogWarning($"No kill category for enemy {enemy.name} ({enemy.serializationEnemyName})");
             }
+        }
+
+        // Surge's wasp cocoons are cloned from the parkour target and carry the Wasp enemy name, so they get their own category by name
+        private static bool TryGetKillCategory(EnemyHealthSystem enemy, out string displayName)
+        {
+            if (enemy.name.IndexOf("WaspCocoon", StringComparison.Ordinal) >= 0)
+            {
+                displayName = "Wasp Cocoon";
+                return true;
+            }
+            return enemyDisplayNames.TryGetValue(enemy.serializationEnemyName, out displayName);
         }
 
         // SpiderSurge's Banish removes the enemy without a death; the caster gets the kill
@@ -409,7 +422,7 @@ namespace StatsMod
             Logger.LogInfo($"Recording kill for {PlayerLabel(caster)}, target:{enemy.name}, banished");
             PlayerTracker.Instance.IncrementPlayerKill(caster);
 
-            if (enemyDisplayNames.TryGetValue(enemy.serializationEnemyName, out string displayName))
+            if (TryGetKillCategory(enemy, out string displayName))
             {
                 PlayerTracker.Instance.IncrementEnemyKillByName(caster, displayName);
             }
@@ -502,7 +515,7 @@ namespace StatsMod
 
             PruneStale(lastEnemyHits, hit => hit.Time, now);
             PruneStale(lastPlayerHits, hit => hit.Time, now);
-            PruneStale(rollerFuses, hit => hit.Time, now);
+            PruneStale(rollerFuses, hit => hit.Time, now, StaleFuseAge);
             foreach (Dictionary<int, Owner> owners in ownerMaps)
             {
                 PruneStale(owners, owner => owner.Time, now);
@@ -510,12 +523,12 @@ namespace StatsMod
             lastPruneTime = now;
         }
 
-        private static void PruneStale<T>(Dictionary<int, T> entries, Func<T, float> time, float now)
+        private static void PruneStale<T>(Dictionary<int, T> entries, Func<T, float> time, float now, float maxAge = StaleHitAge)
         {
             List<int> stale = null;
             foreach (var entry in entries)
             {
-                if (now - time(entry.Value) > StaleHitAge)
+                if (now - time(entry.Value) > maxAge)
                 {
                     (stale ??= new List<int>()).Add(entry.Key);
                 }

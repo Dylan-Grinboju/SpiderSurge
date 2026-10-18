@@ -127,7 +127,7 @@ namespace SpiderSurge.Enemies
             foreach (var baseEnemy in baseEnemies.ToList())
             {
                 if (baseEnemy == null || !Consts.Values.LaserRing.Variants.TryGetValue(baseEnemy.name, out string laserName)) continue;
-                if (LaserPrefabs.ContainsKey(laserName)) continue;
+                if (LaserPrefabs.ContainsKey(laserName) || FailedLaserVariants.Contains(laserName)) continue;
 
                 var baseHealth = baseEnemy.GetComponent<EnemyHealthSystem>();
                 if (baseHealth == null || (baseHealth.shield != null && baseHealth.shield.activeSelf)) continue;
@@ -137,6 +137,8 @@ namespace SpiderSurge.Enemies
                 if (laserHealth == null || laserHealth.shield == null || laserHealth.shieldShatterEffect == null)
                 {
                     Logger.LogWarning($"[SpiderSurge] Could not give {laserName} a shield.");
+                    // The copy is already made and registered, so it isn't made again on the next run
+                    FailedLaserVariants.Add(laserName);
                     continue;
                 }
 
@@ -144,6 +146,8 @@ namespace SpiderSurge.Enemies
                 LaserPrefabs[laserName] = laserEnemy;
             }
         }
+
+        private static readonly HashSet<string> FailedLaserVariants = new HashSet<string>();
 
         private static GameObject CreateBaseEnemy(GameObject original, string name, Color? color = null)
         {

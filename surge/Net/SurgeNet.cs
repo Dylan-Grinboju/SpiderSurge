@@ -23,6 +23,7 @@ namespace SpiderSurge
         PulseRing = 0,
         Immune = 1,
         Freeze = 2,
+        Banish = 3,
     }
 
     public enum EnemyFx : byte
@@ -153,6 +154,20 @@ namespace SpiderSurge
         {
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
+
+            // Players join a run already going, so they also get the enemies Freeze Time is holding right now
+            foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = frozen.TimeLeft;
+                if (target == null || !target.IsSpawned || left <= 0f) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.Frozen);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(left);
+                });
+            }
         }
 
         private static void OnJoinedHost()
@@ -337,6 +352,9 @@ namespace SpiderSurge
                     break;
                 case SurgeFx.Freeze:
                     FreezeAbility.DrawRemote(playerId, position, radius, flag);
+                    break;
+                case SurgeFx.Banish:
+                    StorageAbility.DrawRemoteBanish(playerId, radius);
                     break;
             }
         }

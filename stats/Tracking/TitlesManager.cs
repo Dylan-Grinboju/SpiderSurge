@@ -558,6 +558,7 @@ public class TitlesManager
     private void ResolvePlayerInfo(TitleEntry title, PlayerController player)
     {
         title.Player = player;
+        title.PlayerId = player != null ? player.playerID.Value : -1;
         var activePlayers = PlayerTracker.Instance.GetActivePlayers();
         if (activePlayers.TryGetValue(player, out var pData))
         {

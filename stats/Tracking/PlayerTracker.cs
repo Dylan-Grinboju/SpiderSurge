@@ -120,6 +120,7 @@ namespace StatsMod
                 EnemyKills = new Dictionary<string, int>
                 {
                     { "Wasp", 0 },
+                    { "Wasp Cocoon", 0 },
                     { "Power Wasp", 0 },
                     { "Roller", 0 },
                     { "Whisp", 0 },
@@ -242,7 +243,8 @@ namespace StatsMod
             if (!Net.IsAuthority) return;
             foreach (var entry in activePlayers)
             {
-                if (entry.Key == null || entry.Value.PlayerId == entry.Key.playerID.Value) continue;
+                if (entry.Key == null) continue;
+                // Names change too when a local game goes online (Player 1 becomes the account name)
                 entry.Value.PlayerId = entry.Key.playerID.Value;
                 entry.Value.PlayerName = NameFor(entry.Key);
             }
@@ -269,10 +271,25 @@ namespace StatsMod
             if (activePlayers.TryGetValue(player, out PlayerData playerData))
             {
                 activePlayers.Remove(player);
+                ForgetLooseWeapons(player);
 
                 RefreshPlayerCache();
 
                 StabilizerFixedUpdatePatch.ClearCache();
+            }
+        }
+
+        // A thrown weapon keeps its thrower's playerID, which the next player to join reuses, so a leaver's weapons lose their owner
+        private static void ForgetLooseWeapons(PlayerController player)
+        {
+            if (!Net.IsAuthority) return;
+            ulong id = (ulong)player.playerID.Value;
+            foreach (Weapon weapon in UnityEngine.Object.FindObjectsOfType<Weapon>())
+            {
+                if (weapon.owner == null && weapon.ownerWeaponClientId == id)
+                {
+                    weapon.ownerWeaponClientId = ulong.MaxValue;
+                }
             }
         }
 
@@ -292,7 +309,9 @@ namespace StatsMod
                     Logger.LogWarning("SpiderHealthSystem has null rootObject");
                 }
 
-                if (Net.IsAuthority && playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+                // A client mirrors the host's counts, so it records nothing itself
+                if (!Net.IsAuthority) return;
+                if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
                 {
                     data.Deaths++;
                     DeathCountChanged?.Invoke(1);

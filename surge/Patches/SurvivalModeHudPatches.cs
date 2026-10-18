@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Reflection;
 using Doozy.Engine.UI;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SpiderSurge
@@ -92,6 +93,11 @@ namespace SpiderSurge
     // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then
     public static class PerkChoiceRefresh
     {
+        // The HUD keeps these private and Mono enforces that at run time, so they are reached through Harmony's field access
+        private static readonly AccessTools.FieldRef<SurvivalModeHud, List<SurvivalModifierChoiceCard>> Cards = AccessTools.FieldRefAccess<SurvivalModeHud, List<SurvivalModifierChoiceCard>>("survivalModifierChoiceCards");
+        private static readonly AccessTools.FieldRef<SurvivalModeHud, PerkChoiseTimer> ChoiceTimer = AccessTools.FieldRefAccess<SurvivalModeHud, PerkChoiseTimer>("choiseTimerComponent");
+        private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, int> CardIndex = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, int>("cardIndex");
+
         public static void Refresh()
         {
             var hud = SurvivalModeHud.instance;
@@ -99,17 +105,22 @@ namespace SpiderSurge
             {
                 return;
             }
-            foreach (var card in hud.survivalModifierChoiceCards)
+            var cards = Cards(hud);
+            if (cards != null)
             {
-                if (card != null && card.modifier != null)
+                foreach (var card in cards)
                 {
-                    SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, card.cardIndex, false);
+                    if (card != null && card.modifier != null)
+                    {
+                        SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, CardIndex(card), false);
+                    }
                 }
             }
             SurvivalModeHud_ShowPerkChoicesClientRpc_Patch.Postfix(hud);
-            if (hud.choiseTimerComponent != null)
+            var timer = ChoiceTimer(hud);
+            if (timer != null)
             {
-                PerkChoiseTimer_SetTimerValue_Patch.Postfix(hud.choiseTimerComponent);
+                PerkChoiseTimer_SetTimerValue_Patch.Postfix(timer);
             }
         }
     }

@@ -30,6 +30,7 @@ namespace StatsMod
         private DateTime pauseStartTime;
 
         private readonly List<string> mapsPlayed = new List<string>();
+        private const int MaxMapsSent = 32;
         private readonly List<string> perksChosen = new List<string>();
         private int painLevel = -1;
         private bool restartRequested = false;
@@ -309,8 +310,10 @@ namespace StatsMod
             writer.Write(painLevel);
             writer.Write(enemiesTracker.EnemiesKilled);
             writer.Write(restartRequested);
-            writer.Write(mapsPlayed.Count);
-            foreach (string map in mapsPlayed) writer.WriteText(map);
+            // Clients only show the current map, so a long session sends its last maps and stays under the message size limit
+            int firstMap = Math.Max(0, mapsPlayed.Count - MaxMapsSent);
+            writer.Write(mapsPlayed.Count - firstMap);
+            for (int i = firstMap; i < mapsPlayed.Count; i++) writer.WriteText(mapsPlayed[i]);
             writer.Write(perksChosen.Count);
             foreach (string perk in perksChosen) writer.WriteText(perk);
         }
