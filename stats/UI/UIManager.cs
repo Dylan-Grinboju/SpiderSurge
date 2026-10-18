@@ -504,12 +504,13 @@ namespace StatsMod
             }
         }
 
-        // The small window would draw over the pause menu's player list and the perk choice
+        // The stats windows would draw over the pause and lobby menus, the perk choice and the Surge guide
         public static bool GameMenuOpen
         {
             get
             {
                 if (HudController.instance != null && HudController.instance.paused) return true;
+                if (GameController.instance != null && GameController.instance.gamePaused) return true;
                 if (SpiderSurge.TutorialUI.IsShowing) return true;
                 UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
                 return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);

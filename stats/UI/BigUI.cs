@@ -189,7 +189,7 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint || UIManager.GameMenuOpen) return;
 
             InitializeStyles();
 
