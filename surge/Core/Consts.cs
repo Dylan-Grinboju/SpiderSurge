@@ -51,6 +51,8 @@ namespace SpiderSurge
             public const string ImmuneUlt = "immune_ult";
             public const string StorageSend = "storage_send";
             public const string StorageRetrieve = "storage_retrieve";
+            public const string FreezeAbility = "freeze_ability";
+            public const string FreezeUlt = "freeze_ult";
             public const string AbilityEnded = "ability_ended";
         }
 
@@ -66,6 +68,8 @@ namespace SpiderSurge
             public static float ImmuneUlt = 0.9f;
             public static float StorageSend = 0.7f;
             public static float StorageRetrieve = 0.7f;
+            public static float FreezeAbility = 0.8f;
+            public static float FreezeUlt = 0.7f;
             public static float AbilityEnded = 0.7f;
 
             // Master volume multiplier

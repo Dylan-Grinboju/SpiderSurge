@@ -65,8 +65,8 @@ namespace SpiderSurge
             if (!IsRemote)
             {
                 SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.ImmuneAbility,
-                    Consts.SoundVolumes.ImmuneAbility * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundNames.FreezeAbility,
+                    Consts.SoundVolumes.FreezeAbility * Consts.SoundVolumes.MasterVolume
                 );
             }
 
@@ -94,8 +94,8 @@ namespace SpiderSurge
             if (!IsRemote)
             {
                 SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.StorageRetrieve,
-                    Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundNames.FreezeUlt,
+                    Consts.SoundVolumes.FreezeUlt * Consts.SoundVolumes.MasterVolume
                 );
             }
 

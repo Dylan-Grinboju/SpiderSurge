@@ -116,6 +116,20 @@ namespace SpiderSurge
                 },
                 new SoundInfo
                 {
+                    Name = Consts.SoundNames.FreezeAbility,
+                    DisplayName = "Freeze Time",
+                    GetVolume = () => Consts.SoundVolumes.FreezeAbility,
+                    SetVolume = (v) => Consts.SoundVolumes.FreezeAbility = v
+                },
+                new SoundInfo
+                {
+                    Name = Consts.SoundNames.FreezeUlt,
+                    DisplayName = "Rewind",
+                    GetVolume = () => Consts.SoundVolumes.FreezeUlt,
+                    SetVolume = (v) => Consts.SoundVolumes.FreezeUlt = v
+                },
+                new SoundInfo
+                {
                     Name = Consts.SoundNames.AbilityEnded,
                     DisplayName = "Ability Ended",
                     GetVolume = () => Consts.SoundVolumes.AbilityEnded,
