@@ -84,14 +84,39 @@ namespace SpiderSurge
         }
     }
 
-    // Every spawn and join sync describes an object through this, once per target client
+    // Every spawn and join sync describes an object through GetMessageSceneObject, once per target client. Its SceneObject
+    // type is internal and Mono refuses it in a patch signature, so the target client is remembered around the call and the
+    // hash is swapped where the game computes it (HostCheckForGlobalObjectIdHashOverride), which only involves public types.
     [HarmonyPatch(typeof(NetworkObject), "GetMessageSceneObject")]
     public class NetworkObject_GetMessageSceneObject_Patch
     {
-        [HarmonyPostfix]
-        public static void Postfix(ulong targetClientId, ref NetworkObject.SceneObject __result)
+        internal static bool HasTarget;
+        internal static ulong Target;
+
+        [HarmonyPrefix]
+        public static void Prefix(ulong targetClientId)
         {
-            __result.Header.Hash = CustomEnemyNet.HashForClient(__result.Header.Hash, targetClientId);
+            Target = targetClientId;
+            HasTarget = true;
+        }
+
+        [HarmonyFinalizer]
+        public static void Finalizer()
+        {
+            HasTarget = false;
+        }
+    }
+
+    [HarmonyPatch(typeof(NetworkObject), "HostCheckForGlobalObjectIdHashOverride")]
+    public class NetworkObject_HostCheckForGlobalObjectIdHashOverride_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(ref uint __result)
+        {
+            if (NetworkObject_GetMessageSceneObject_Patch.HasTarget)
+            {
+                __result = CustomEnemyNet.HashForClient(__result, NetworkObject_GetMessageSceneObject_Patch.Target);
+            }
         }
     }
 

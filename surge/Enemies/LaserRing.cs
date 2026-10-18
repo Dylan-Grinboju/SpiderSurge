@@ -28,6 +28,8 @@ namespace SpiderSurge.Enemies
         private float startTime;
         private int playerMask;
         private bool synced;
+        private bool held;
+        private bool remoteHold;
 
         public void Initialize(EnemyHealthSystem enemyHealth, LaserCannon laserCannon, DeathRay deathRay)
         {
@@ -75,6 +77,8 @@ namespace SpiderSurge.Enemies
             startTime = Time.time;
             phase = Phase.Idle;
             synced = Net.IsAuthority;
+            held = false;
+            remoteHold = false;
             playerMask = LayerMask.GetMask("Player");
             if (points == null) points = new Vector3[Consts.Values.LaserRing.Segments];
             if (line != null) line.enabled = false;
@@ -91,6 +95,28 @@ namespace SpiderSurge.Enemies
         private void FixedUpdate()
         {
             if (health == null || health.IsDead() || !synced) return;
+
+            // Freeze Time and Banish make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
+            if (remoteHold || FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(health.gameObject))
+            {
+                // Clients don't see Banish, so the host tells them when a hold starts; its next warning sync ends it
+                if (!held && Net.IsHost)
+                {
+                    SurgeNet.SendEnemyFx(EnemyFx.LaserHold, health.GetComponent<NetworkObject>(), 0f);
+                }
+                held = true;
+                startTime += Time.fixedDeltaTime;
+                if (phase != Phase.Idle)
+                {
+                    if (phase == Phase.Active) StopBeam();
+                    else line.enabled = false;
+                    if (chargeSound != null) chargeSound.Stop();
+                    phase = Phase.Idle;
+                    startTime = Time.time - WarningStart();
+                }
+                return;
+            }
+            held = false;
 
             Phase next = CurrentPhase();
             if (next != phase)
@@ -116,6 +142,12 @@ namespace SpiderSurge.Enemies
         {
             startTime = Time.time - timeIntoPeriod;
             synced = true;
+            remoteHold = false;
+        }
+
+        public void Hold()
+        {
+            remoteHold = true;
         }
 
         private Phase CurrentPhase()
@@ -123,11 +155,12 @@ namespace SpiderSurge.Enemies
             float period = Consts.Values.LaserRing.Period;
             float t = (Time.time - startTime) % period;
             float activeStart = period - Consts.Values.LaserRing.ActiveDuration;
-            float warningStart = activeStart - Consts.Values.LaserRing.WarningDuration;
             if (t >= activeStart) return Phase.Active;
-            if (t >= warningStart) return Phase.Warning;
+            if (t >= WarningStart()) return Phase.Warning;
             return Phase.Idle;
         }
+
+        private static float WarningStart() => Consts.Values.LaserRing.Period - Consts.Values.LaserRing.ActiveDuration - Consts.Values.LaserRing.WarningDuration;
 
         private void StartWarning()
         {
@@ -197,7 +230,7 @@ namespace SpiderSurge.Enemies
 
             if (phase == Phase.Warning)
             {
-                float warningStart = Consts.Values.LaserRing.Period - Consts.Values.LaserRing.ActiveDuration - Consts.Values.LaserRing.WarningDuration;
+                float warningStart = WarningStart();
                 float progress = Mathf.Clamp01(((Time.time - startTime) % Consts.Values.LaserRing.Period - warningStart) / Consts.Values.LaserRing.WarningDuration);
                 Color color = Consts.Values.LaserRing.Color;
                 color.a = Mathf.Lerp(Consts.Values.LaserRing.WarningMinAlpha, Consts.Values.LaserRing.WarningMaxAlpha, progress);

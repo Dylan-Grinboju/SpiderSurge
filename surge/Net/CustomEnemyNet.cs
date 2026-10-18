@@ -105,13 +105,13 @@ namespace SpiderSurge.Enemies
             }
             if (!(PrefabOverrideLinks?.GetValue(manager.NetworkConfig) is IDictionary links) || !links.Contains(entry.OriginalHash))
             {
-                instance.CheckObjectVisibility = Net.ClientRunsMod;
+                instance.CheckObjectVisibility = Net.ClientRunsThisVersion;
             }
         }
 
         public static uint HashForClient(uint hash, ulong targetClientId)
         {
-            if (!_byHash.TryGetValue(hash, out var entry) || Net.ClientRunsMod(targetClientId))
+            if (!_byHash.TryGetValue(hash, out var entry) || Net.ClientRunsThisVersion(targetClientId))
             {
                 return hash;
             }

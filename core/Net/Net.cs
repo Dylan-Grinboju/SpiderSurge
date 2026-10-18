@@ -26,6 +26,7 @@ namespace SpiderSurge.Common
         private static readonly Dictionary<uint, (string name, Handler handler)> _handlers = new Dictionary<uint, (string, Handler)>();
         private static readonly HashSet<ulong> _moddedClients = new HashSet<ulong>();
         private static readonly HashSet<ulong> _announcedClients = new HashSet<ulong>();
+        private static readonly Dictionary<ulong, string> _clientVersions = new Dictionary<ulong, string>();
         private static readonly List<ulong> _targets = new List<ulong>();
         private static CustomMessagingManager _boundTo;
         private static NetworkManager _subscribedTo;
@@ -76,6 +77,12 @@ namespace SpiderSurge.Common
             return ClientHasMod(clientId) || _announcedClients.Contains(clientId);
         }
 
+        // Another SpiderSurge version may not have the same custom enemies, so it is sent the base enemies a vanilla client gets
+        public static bool ClientRunsThisVersion(ulong clientId)
+        {
+            return clientId == Net.ServerId || (_clientVersions.TryGetValue(clientId, out string version) && version == SpiderSurgeMod.Version);
+        }
+
         internal static void PrepareConnect(NetworkManager manager)
         {
             if (manager != null)
@@ -90,9 +97,11 @@ namespace SpiderSurge.Common
             {
                 return;
             }
-            if (Encoding.UTF8.GetString(connectionData).StartsWith(ConnectPrefix, StringComparison.Ordinal))
+            string announced = Encoding.UTF8.GetString(connectionData);
+            if (announced.StartsWith(ConnectPrefix, StringComparison.Ordinal))
             {
                 _announcedClients.Add(clientId);
+                _clientVersions[clientId] = announced.Substring(ConnectPrefix.Length);
             }
         }
 
@@ -251,6 +260,7 @@ namespace SpiderSurge.Common
             bool wasJoined = HostHasMod;
             _moddedClients.Clear();
             _announcedClients.Clear();
+            _clientVersions.Clear();
             HostHasMod = false;
             HostVersion = null;
             Settings.ClearRemote();
@@ -282,6 +292,7 @@ namespace SpiderSurge.Common
                 if (IsHost)
                 {
                     _announcedClients.Remove(clientId);
+                    _clientVersions.Remove(clientId);
                     if (_moddedClients.Remove(clientId))
                     {
                         Raise(PeerLeft, clientId);
@@ -306,6 +317,7 @@ namespace SpiderSurge.Common
             }
             string version = reader.ReadString();
             _moddedClients.Add(sender);
+            _clientVersions[sender] = version;
             Logger.LogInfo($"SpiderSurge {version} joined as client {sender}");
             if (version != SpiderSurgeMod.Version)
             {
@@ -385,6 +397,12 @@ namespace SpiderSurge.Common
             uint hash = 0;
             try
             {
+                // A client only ever hears from the host, but Netcode maps the host's transport id to a client id of its own
+                // (EOS gives the host transport id 2, which becomes client id 1 on the client), so it is named ServerId here
+                if (IsRemoteClient)
+                {
+                    sender = Net.ServerId;
+                }
                 payload.ReadValueSafe(out hash);
                 payload.ReadValueSafe(out byte[] bytes);
                 Invoke(hash, sender, bytes);

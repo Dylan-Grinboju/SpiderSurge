@@ -30,6 +30,7 @@ namespace StatsMod
         private DateTime pauseStartTime;
 
         private readonly List<string> mapsPlayed = new List<string>();
+        private const int MaxListSent = 32;
         private readonly List<string> perksChosen = new List<string>();
         private int painLevel = -1;
         private bool restartRequested = false;
@@ -309,10 +310,9 @@ namespace StatsMod
             writer.Write(painLevel);
             writer.Write(enemiesTracker.EnemiesKilled);
             writer.Write(restartRequested);
-            writer.Write(mapsPlayed.Count);
-            foreach (string map in mapsPlayed) writer.WriteText(map);
-            writer.Write(perksChosen.Count);
-            foreach (string perk in perksChosen) writer.WriteText(perk);
+            // A long session sends only its last maps and perks, so the snapshot stays under the message size limit
+            WriteTail(writer, mapsPlayed);
+            WriteTail(writer, perksChosen);
         }
 
         public void ReadSession(BinaryReader reader)
@@ -334,6 +334,13 @@ namespace StatsMod
             perksChosen.Clear();
             int perks = reader.ReadInt32();
             for (int i = 0; i < perks; i++) perksChosen.Add(reader.ReadString());
+        }
+
+        private static void WriteTail(BinaryWriter writer, List<string> list)
+        {
+            int first = Math.Max(0, list.Count - MaxListSent);
+            writer.Write(list.Count - first);
+            for (int i = first; i < list.Count; i++) writer.WriteText(list[i]);
         }
 
         // Mirrors what StartSession does to the UI; the end-of-session UI waits for the titles message

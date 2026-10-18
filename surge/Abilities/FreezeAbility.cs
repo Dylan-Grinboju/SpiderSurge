@@ -89,6 +89,13 @@ namespace SpiderSurge
             }
         }
 
+        // The freeze ends with the enemies' thaw, so its sound stands in for the usual ability-ended one
+        protected override void PlayAbilityEndedSound(bool wasUltimate)
+        {
+            if (wasUltimate) base.PlayAbilityEndedSound(wasUltimate);
+            else FrozenEnemy.PlayThawSound();
+        }
+
         protected override void OnActivateUltimate()
         {
             if (!IsRemote)

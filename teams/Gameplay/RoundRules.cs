@@ -33,7 +33,7 @@ namespace SpiderTeams
 
             uint present, alive;
             TeamManager.Instance.GetTeamMasks(out present, out alive);
-            if (TeamManager.PopCount(alive) <= 1 && TeamManager.PopCount(present) > 1)
+            if (TeamManager.PopCount(alive) <= 1 && (TeamManager.PopCount(present) > 1 || TeamManager.Instance.StartedWithTeams))
             {
                 ReflectionCache.RoundEnding = true;
                 ReflectionCache.DoSlowMotion(versus);

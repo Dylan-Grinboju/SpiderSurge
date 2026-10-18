@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
@@ -364,7 +365,8 @@ namespace SpiderSurge
             try
             {
                 string currentScene = SceneManager.GetActiveScene().name;
-                if (cachedWeaponSpawners == null || cachedSceneName != currentScene)
+                // A survival run can load the same map again, which destroys the cached spawners without changing the scene name
+                if (cachedWeaponSpawners == null || cachedSceneName != currentScene || Array.Exists(cachedWeaponSpawners, spawner => spawner == null))
                 {
                     cachedWeaponSpawners = FindObjectsOfType<WeaponSpawner>();
                     cachedSceneName = currentScene;

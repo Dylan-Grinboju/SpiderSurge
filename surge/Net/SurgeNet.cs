@@ -23,12 +23,14 @@ namespace SpiderSurge
         PulseRing = 0,
         Immune = 1,
         Freeze = 2,
+        Banish = 3,
     }
 
     public enum EnemyFx : byte
     {
         Frozen = 0,
         LaserPhase = 1,
+        LaserHold = 2,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -153,6 +155,20 @@ namespace SpiderSurge
         {
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
+
+            // Players join a run already going, so they also get the enemies Freeze Time is holding right now
+            foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = frozen.TimeLeft;
+                if (target == null || !target.IsSpawned || left <= 0f) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.Frozen);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(left);
+                });
+            }
         }
 
         private static void OnJoinedHost()
@@ -338,6 +354,9 @@ namespace SpiderSurge
                 case SurgeFx.Freeze:
                     FreezeAbility.DrawRemote(playerId, position, radius, flag);
                     break;
+                case SurgeFx.Banish:
+                    StorageAbility.DrawRemoteBanish(playerId, radius);
+                    break;
             }
         }
 
@@ -361,6 +380,9 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.LaserPhase:
                     target.GetComponentInChildren<LaserRing>(true)?.Sync(value);
+                    break;
+                case EnemyFx.LaserHold:
+                    target.GetComponentInChildren<LaserRing>(true)?.Hold();
                     break;
             }
         }

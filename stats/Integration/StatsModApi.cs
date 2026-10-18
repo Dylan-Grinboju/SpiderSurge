@@ -136,6 +136,7 @@ public static class StatsModApi
                 PrimaryColor = t.PrimaryColor,
                 SecondaryColor = t.SecondaryColor,
                 Player = t.Player,
+                PlayerId = t.PlayerId,
                 Priority = t.Priority,
                 Requirements = t.Requirements != null ? new HashSet<string>(t.Requirements) : new HashSet<string>()
             });

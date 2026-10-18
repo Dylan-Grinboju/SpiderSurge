@@ -58,7 +58,7 @@ namespace SpiderSurge.Enemies
             IgnoreEnemiesInside();
 
             hatchlings.RemoveAll(h => h == null || h.IsDead());
-            if (hatching || hatchlings.Count >= maxHatchlings || FrozenEnemy.IsFrozen(health)) return;
+            if (hatching || hatchlings.Count >= maxHatchlings || Held) return;
             timer += Time.fixedDeltaTime;
             if (timer < interval) return;
             timer = 0f;
@@ -80,7 +80,8 @@ namespace SpiderSurge.Enemies
             float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
             spawnEffectRpc.Invoke(spawner, new object[] { transform.position, delay, false });
             yield return new WaitForSeconds(delay);
-            while (FrozenEnemy.IsFrozen(health) && !health.IsDead()) yield return null;
+            // A banished cocoon is removed at the end of its pull, so it waits like a frozen one and never hatches
+            while (Held && !health.IsDead()) yield return null;
             if (health.IsDead())
             {
                 hatching = false;
@@ -96,6 +97,8 @@ namespace SpiderSurge.Enemies
             spawnCosmeticRpc.Invoke(spawner, null);
             hatching = false;
         }
+
+        private bool Held => FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(gameObject);
 
         private void OnCharacterDied()
         {

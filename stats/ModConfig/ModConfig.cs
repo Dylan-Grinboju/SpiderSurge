@@ -51,6 +51,7 @@ namespace StatsMod
             ("display.bigUI.columns.astralReturns", false),
             ("display.bigUI.columns.accuracy.overall", false),
             ("display.bigUI.columns.enemyKills.wasp", false),
+            ("display.bigUI.columns.enemyKills.waspCocoon", false),
             ("display.bigUI.columns.enemyKills.powerWasp", false),
             ("display.bigUI.columns.enemyKills.roller", false),
             ("display.bigUI.columns.enemyKills.whisp", false),
@@ -122,6 +123,7 @@ namespace StatsMod
 
         // Enemy kill columns
         public static bool BigUIShowWaspKills => Column("enemyKills.wasp");
+        public static bool BigUIShowWaspCocoonKills => Column("enemyKills.waspCocoon");
         public static bool BigUIShowPowerWaspKills => Column("enemyKills.powerWasp");
         public static bool BigUIShowRollerKills => Column("enemyKills.roller");
         public static bool BigUIShowWhispKills => Column("enemyKills.whisp");

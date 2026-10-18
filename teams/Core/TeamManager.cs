@@ -57,9 +57,13 @@ namespace SpiderTeams
                 {
                     return false;
                 }
-                return manager.CountPresentTeams() >= 2;
+                return manager.StartedWithTeams || manager.CountPresentTeams() >= 2;
             }
         }
+
+        // A team match stays one after a whole team leaves online, so the team that is left wins its rounds
+        public bool StartedWithTeams => MatchLocked && _teamsAtLock >= 2;
+        private int _teamsAtLock;
 
         public static List<PlayerController> Players
         {
@@ -105,6 +109,11 @@ namespace SpiderTeams
 
             if (_rosterDirty)
             {
+                // A newcomer gets a team before the roster goes out, so clients never have to guess one
+                if (IsHost)
+                {
+                    NormalizeRoster();
+                }
                 _rosterDirty = false;
                 RaiseRosterChanged();
                 if (IsHost)
@@ -123,9 +132,12 @@ namespace SpiderTeams
             }
         }
 
+        // A client connected to a SpiderSurge host shows the host's roster and never assigns teams itself
+        private static bool HostOwnsRoster => Net.IsRemoteClient && Net.HostHasMod;
+
         private void OnConfigChanged()
         {
-            if (!MatchLocked)
+            if (!MatchLocked && !HostOwnsRoster)
             {
                 NormalizeRoster();
                 MarkRosterChanged();
@@ -167,6 +179,7 @@ namespace SpiderTeams
             _matchTeamCount = ModConfig.TeamCount;
             MatchLocked = true;
             NormalizeRoster();
+            _teamsAtLock = TeamModeThisMatch ? CountPresentTeams() : 0;
             MarkRosterChanged();
 
             if (TeamModeThisMatch)
@@ -187,6 +200,7 @@ namespace SpiderTeams
             }
             MatchLocked = false;
             TeamModeThisMatch = false;
+            _teamsAtLock = 0;
             MarkRosterChanged();
         }
 
@@ -197,6 +211,11 @@ namespace SpiderTeams
 
         public void OnLobbyLoaded()
         {
+            if (HostOwnsRoster)
+            {
+                MarkRosterChanged();
+                return;
+            }
             var versus = VersusMode.instance;
             if (MatchLocked && (versus == null || !versus.GameModeActive()))
             {
@@ -242,6 +261,7 @@ namespace SpiderTeams
             Array.Clear(_teamScores, 0, _teamScores.Length);
             MatchLocked = false;
             TeamModeThisMatch = false;
+            _teamsAtLock = 0;
             _clientNoticeShown = false;
             MarkRosterChanged();
         }
@@ -262,6 +282,7 @@ namespace SpiderTeams
             {
                 writer.Write(_teamScores[team]);
             }
+            writer.Write(_teamsAtLock);
         }
 
         public void ReadState(BinaryReader reader)
@@ -285,6 +306,7 @@ namespace SpiderTeams
                     _teamScores[team] = score;
                 }
             }
+            _teamsAtLock = reader.BaseStream.Position < reader.BaseStream.Length ? reader.ReadInt32() : 0;
             // A client keeps the host's team count in force through MatchLocked, whose TeamCount reads _matchTeamCount
             _matchTeamCount = Mathf.Max(1, teamCount);
             MatchLocked = locked || Net.IsRemoteClient;
@@ -321,6 +343,11 @@ namespace SpiderTeams
             if (_teamOf.TryGetValue(id, out team) && team >= 0 && team < count)
             {
                 return team;
+            }
+
+            if (HostOwnsRoster)
+            {
+                return SmallestTeam(count, id);
             }
 
             team = SmallestTeam(count, id);
