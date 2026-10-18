@@ -359,6 +359,18 @@ namespace StatsMod
                 AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetProjectileOwner)));
     }
 
+    // A launched blade belongs to the launcher's player
+    [HarmonyPatch]
+    class LaunchedWeaponOwnerPatch
+    {
+        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll((typeof(ProjectileLauncher), "Shoot"));
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+            OwnerStoreRewriter.Rewrite(instructions, original,
+                AccessTools.Field(typeof(Weapon), nameof(Weapon.ownerWeaponClientId)),
+                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetLaunchedWeaponOwner)));
+    }
+
     internal static class OwnerStoreRewriter
     {
         // Turns "target.field = value" into "setter(target, value, this)"; the setter does the same store

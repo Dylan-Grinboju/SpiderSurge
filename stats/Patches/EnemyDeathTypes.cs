@@ -153,7 +153,7 @@ namespace StatsMod
         }
     }
 
-    // Patch Weapon.Equip to set the correct ownerWeaponClientId after the original method runs
+    // The player who equips a weapon owns it until someone else equips it, also after it is thrown
     [HarmonyPatch(typeof(Weapon), "Equip")]
     class WeaponEquipPatch
     {
@@ -162,17 +162,8 @@ namespace StatsMod
             try
             {
                 AccuracyTracker.Forget(__instance);
-                // After the original Equip method runs, fix the ownerWeaponClientId
-                if (wm != null && wm.healthSystem != null)
-                {
-                    PlayerController playerController = wm.healthSystem.GetComponentInParent<PlayerController>();
-                    if (playerController != null)
-                    {
-                        // Override the ulong.MaxValue that was set by the original method
-                        __instance.ownerWeaponClientId = (ulong)playerController.playerID.Value;
-                    }
-
-                }
+                PlayerController playerController = wm != null && wm.healthSystem != null ? wm.healthSystem.GetComponentInParent<PlayerController>() : null;
+                HitLogic.SetWeaponPlayer(__instance, playerController);
             }
             catch (System.Exception ex)
             {

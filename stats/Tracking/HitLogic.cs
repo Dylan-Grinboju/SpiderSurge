@@ -61,6 +61,8 @@ namespace StatsMod
         private static readonly Dictionary<int, Owner> ballReflectors = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner> explosiveArmers = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner>[] ownerMaps = { explosionOwners, projectileOwners, discOwners, ballReflectors, explosiveArmers };
+        // The game's weapon owner is a network client id, the same for every local player, so the player is kept here
+        private static readonly Dictionary<Weapon, PlayerController> weaponPlayers = new Dictionary<Weapon, PlayerController>();
         // The kill credited for each player's last death, until an astral revive takes it back or the player respawns
         private static readonly Dictionary<PlayerController, PlayerTracker.KillCredit> deathCredits = new Dictionary<PlayerController, PlayerTracker.KillCredit>();
         private static float lastPruneTime = 0f;
@@ -357,9 +359,40 @@ namespace StatsMod
             PlayerController holder = Holder(weapon);
             if (holder != null) return holder;
 
-            // Thrown weapons keep the playerID WeaponEquipPatch gave them, and launched blades get their launcher's.
+            // Thrown weapons keep the player who last equipped them, and launched blades get their launcher's.
             // Weapons only AI spiders held have none
-            return weapon.ownerWeaponClientId != ulong.MaxValue ? PlayerTracker.FindPlayerById(weapon.ownerWeaponClientId) : null;
+            return weaponPlayers.TryGetValue(weapon, out PlayerController player) && player != null ? player : null;
+        }
+
+        public static void SetWeaponPlayer(Weapon weapon, PlayerController player)
+        {
+            if (weapon == null) return;
+            PruneIfDue();
+            if (player != null) weaponPlayers[weapon] = player;
+            else weaponPlayers.Remove(weapon);
+        }
+
+        public static void SetLaunchedWeaponOwner(Weapon weapon, ulong ownerId, NetworkBehaviour launcher)
+        {
+            weapon.ownerWeaponClientId = ownerId;
+            try
+            {
+                SetWeaponPlayer(weapon, WeaponPlayer(launcher as Weapon));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error recording launched weapon owner: {ex.Message}");
+            }
+        }
+
+        public static void ForgetWeaponsOf(PlayerController player)
+        {
+            List<Weapon> owned = null;
+            foreach (var entry in weaponPlayers)
+            {
+                if (entry.Value == player) (owned ??= new List<Weapon>()).Add(entry.Key);
+            }
+            owned?.ForEach(weapon => weaponPlayers.Remove(weapon));
         }
 
         // The game keeps a weapon's owner after it is dropped or thrown
@@ -547,6 +580,12 @@ namespace StatsMod
             {
                 PruneStale(owners, owner => owner.Time, now);
             }
+            List<Weapon> destroyed = null;
+            foreach (Weapon weapon in weaponPlayers.Keys)
+            {
+                if (weapon == null) (destroyed ??= new List<Weapon>()).Add(weapon);
+            }
+            destroyed?.ForEach(weapon => weaponPlayers.Remove(weapon));
             lastPruneTime = now;
         }
 

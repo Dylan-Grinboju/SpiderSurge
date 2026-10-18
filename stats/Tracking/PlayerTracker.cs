@@ -304,18 +304,10 @@ namespace StatsMod
             }
         }
 
-        // A thrown weapon keeps its thrower's playerID, which the next player to join reuses, so a leaver's weapons lose their owner
+        // A leaver's thrown weapons lose their owner
         private static void ForgetLooseWeapons(PlayerController player)
         {
-            if (!Net.IsAuthority) return;
-            ulong id = (ulong)player.playerID.Value;
-            foreach (Weapon weapon in UnityEngine.Object.FindObjectsOfType<Weapon>())
-            {
-                if (weapon.ownerWeaponClientId == id)
-                {
-                    weapon.ownerWeaponClientId = ulong.MaxValue;
-                }
-            }
+            HitLogic.ForgetWeaponsOf(player);
         }
 
         public void RecordPlayerDeath(SpiderHealthSystem spiderHealth)

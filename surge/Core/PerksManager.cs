@@ -308,7 +308,18 @@ namespace SpiderSurge
         public void SetPerkLevel(string perkKey, int level)
         {
             perkLevels[perkKey] = level;
+            SyncModifierLevel(perkKey, level);
             SurgeNet.MarkDirty();
+        }
+
+        // The game's active perk icons read its own levels, which an ultimate swap and an ultimate's base ability don't go through
+        private static void SyncModifierLevel(string key, int level)
+        {
+            ModifierManager manager = ModifierManager.instance;
+            if (manager == null) return;
+            int id = manager.GetModId(key);
+            Modifier modifier = id == -1 ? null : manager.GetModById(id);
+            if (modifier != null) modifier.levelInSurvival = level;
         }
 
         // A client takes the host's perk table as is and re-registers its local abilities against it
