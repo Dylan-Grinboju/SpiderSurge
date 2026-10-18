@@ -135,31 +135,56 @@ namespace SpiderSurge.Logging
                 .Where(perk => !string.IsNullOrWhiteSpace(perk))
                 .Select(perk => perk.Trim())
                 .ToList();
-
             var playerStats = snapshot.PlayerStats ?? new List<PlayerStats>();
-            var perkChoices = snapshot.PerkChoices ?? new List<PerkChoiceRecord>();
-            var waves = snapshot.Waves ?? new List<WaveRecord>();
+            var perkChoices = (snapshot.PerkChoices ?? new List<PerkChoiceRecord>()).ToList();
+            var waves = (snapshot.Waves ?? new List<WaveRecord>()).ToList();
 
+            bool globalPerksTruncated = globalPerks.Count > Consts.Telemetry.MaxGlobalPerks;
+            bool playerStatsTruncated = playerStats.Count > Consts.Telemetry.MaxPlayerStats;
             bool perkChoicesTruncated = perkChoices.Count > Consts.Telemetry.MaxPerkChoiceRecords;
             bool wavesTruncated = waves.Count > Consts.Telemetry.MaxWaveRecords;
-            if (perkChoicesTruncated) perkChoices = perkChoices.Skip(perkChoices.Count - Consts.Telemetry.MaxPerkChoiceRecords).ToList();
-            if (wavesTruncated) waves = waves.Skip(waves.Count - Consts.Telemetry.MaxWaveRecords).ToList();
+            if (globalPerksTruncated) globalPerks = globalPerks.Take(Consts.Telemetry.MaxGlobalPerks).ToList();
+            if (playerStatsTruncated) playerStats = playerStats.Take(Consts.Telemetry.MaxPlayerStats).ToList();
+            if (perkChoicesTruncated) perkChoices.RemoveRange(0, perkChoices.Count - Consts.Telemetry.MaxPerkChoiceRecords);
+            if (wavesTruncated) waves.RemoveRange(0, waves.Count - Consts.Telemetry.MaxWaveRecords);
 
-            return BuildEventJson(snapshot, globalPerks, playerStats, perkChoices, waves, perkChoicesTruncated, wavesTruncated);
+            var perkChoiceJsons = perkChoices.Select(choice => new KeyValuePair<int, string>(choice.Wave, BuildPerkChoiceJson(choice))).ToList();
+            var waveJsons = waves.Select(wave => new KeyValuePair<int, string>(wave.Wave, BuildWaveJson(wave))).ToList();
+            string playerStatsJson = "[" + string.Join(",", playerStats.Select(BuildPlayerJson)) + "]";
+
+            // The relay rejects bodies over its size limit, so the oldest perk choices and waves are dropped until the report fits
+            while (true)
+            {
+                string json = BuildEventJson(snapshot, globalPerks, playerStatsJson, perkChoiceJsons, waveJsons,
+                    globalPerksTruncated, playerStatsTruncated, perkChoicesTruncated, wavesTruncated);
+                int excess = Encoding.UTF8.GetByteCount(json) - Consts.Telemetry.MaxPayloadBytes;
+                if (excess <= 0 || (perkChoiceJsons.Count == 0 && waveJsons.Count == 0)) return json;
+
+                while (excess > 0 && (perkChoiceJsons.Count > 0 || waveJsons.Count > 0))
+                {
+                    bool dropPerkChoice = waveJsons.Count == 0 || (perkChoiceJsons.Count > 0 && perkChoiceJsons[0].Key < waveJsons[0].Key);
+                    var records = dropPerkChoice ? perkChoiceJsons : waveJsons;
+                    excess -= Encoding.UTF8.GetByteCount(records[0].Value) + 1;
+                    records.RemoveAt(0);
+                    if (dropPerkChoice) perkChoicesTruncated = true;
+                    else wavesTruncated = true;
+                }
+            }
         }
 
         private string BuildEventJson(
             SpiderSurgeStatsSnapshot snapshot,
             List<string> globalPerks,
-            List<PlayerStats> playerStats,
-            List<PerkChoiceRecord> perkChoices,
-            List<WaveRecord> waves,
+            string playerStatsJson,
+            List<KeyValuePair<int, string>> perkChoiceJsons,
+            List<KeyValuePair<int, string>> waveJsons,
+            bool globalPerksTruncated,
+            bool playerStatsTruncated,
             bool perkChoicesTruncated,
             bool wavesTruncated)
         {
-            string playerStatsJson = "[" + string.Join(",", playerStats.Select(BuildPlayerJson)) + "]";
-            string perkChoicesJson = "[" + string.Join(",", perkChoices.Select(BuildPerkChoiceJson)) + "]";
-            string wavesJson = "[" + string.Join(",", waves.Select(BuildWaveJson)) + "]";
+            string perkChoicesJson = "[" + string.Join(",", perkChoiceJsons.Select(entry => entry.Value)) + "]";
+            string wavesJson = "[" + string.Join(",", waveJsons.Select(entry => entry.Value)) + "]";
 
             return "{" +
                 "\"eventType\":\"spidersurge_match\"," +
@@ -176,8 +201,8 @@ namespace SpiderSurge.Logging
                 "\"maxLives\":" + Math.Max(0, snapshot.MaxLives) + "," +
                 "\"statsTracked\":" + JsonBool(snapshot.StatsTracked) + "," +
                 "\"unlimitedPerkTime\":" + JsonBool(snapshot.UnlimitedPerkTime) + "," +
-                "\"globalPerksTruncated\":false," +
-                "\"playerStatsTruncated\":false," +
+                "\"globalPerksTruncated\":" + JsonBool(globalPerksTruncated) + "," +
+                "\"playerStatsTruncated\":" + JsonBool(playerStatsTruncated) + "," +
                 "\"perkChoicesTruncated\":" + JsonBool(perkChoicesTruncated) + "," +
                 "\"wavesTruncated\":" + JsonBool(wavesTruncated) + "," +
                 "\"globalPerks\":" + JsonStringArray(globalPerks) + "," +
@@ -215,7 +240,7 @@ namespace SpiderSurge.Logging
                 "\"kind\":\"" + EscapeJson(choice.Kind) + "\"," +
                 "\"offered\":" + JsonStringArray(choice.Offered) + "," +
                 "\"lucky\":" + JsonStringArray(choice.LuckyOffered) + "," +
-                "\"picked\":\"" + EscapeJson(choice.Picked) + "\"," +
+                "\"picked\":" + (choice.Picked != null ? "\"" + EscapeJson(choice.Picked) + "\"" : "null") + "," +
                 "\"level\":" + choice.Level + "," +
                 "\"timedOut\":" + JsonBool(choice.TimedOut) + "," +
                 "\"decisionSeconds\":" + JsonSeconds(choice.DecisionSeconds) +
@@ -323,6 +348,7 @@ namespace SpiderSurge.Logging
             }
         }
 
+        // Returns false only when sending again later could succeed; a payload the relay rejects as invalid counts as done
         private async Task<bool> TryPostPayload(string relayUrl, string payload)
         {
             bool isReserved = false;
@@ -342,6 +368,14 @@ namespace SpiderSurge.Logging
                 using (var timeout = new CancellationTokenSource(Consts.Telemetry.RequestTimeoutMs))
                 {
                     var response = await _httpClient.PostAsync(relayUrl, content, timeout.Token);
+                    int status = (int)response.StatusCode;
+                    if (status >= 400 && status < 500 && status != 408 && status != 429)
+                    {
+                        string body = await response.Content.ReadAsStringAsync();
+                        ReleasePayloadInflightReservation(payload);
+                        Logger.LogWarning($"Telemetry payload rejected by the relay ({status}) and dropped: {body}");
+                        return true;
+                    }
                     response.EnsureSuccessStatusCode();
                     RegisterPayloadAsSent(payload);
                     return true;

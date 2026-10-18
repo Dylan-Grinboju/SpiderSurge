@@ -45,7 +45,6 @@ namespace SpiderSurge.Logging
         public int Level { get; set; }
         public bool TimedOut { get; set; }
         public float DecisionSeconds { get; set; }
-        public float OfferedAtRealtime { get; set; }
     }
 
     public class WaveRecord
@@ -56,7 +55,5 @@ namespace SpiderSurge.Logging
         public float Seconds { get; set; }
         public int Deaths { get; set; } = -1;
         public int LivesAtStart { get; set; }
-        public float StartTime { get; set; }
-        public int DeathsAtStart { get; set; } = -1;
     }
 }

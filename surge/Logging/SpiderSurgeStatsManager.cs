@@ -59,7 +59,11 @@ namespace SpiderSurge.Logging
         private readonly List<PerkChoiceRecord> _perkChoices = new List<PerkChoiceRecord>();
         private readonly List<WaveRecord> _waves = new List<WaveRecord>();
         private PerkChoiceRecord _pendingPerkChoice;
+        private float _pendingPerkOfferedAt;
+        private bool _pendingPerkSubmitted;
         private WaveRecord _currentWaveRecord;
+        private float _currentWaveStartTime;
+        private bool _countingDeaths = false;
         private DateTime _matchStartTime;
         private bool _isTracking = false;
         private bool _livesOut = false;
@@ -92,6 +96,7 @@ namespace SpiderSurge.Logging
             _restartRequested = false;
             _isTracking = true;
             _currentWave = 0;
+            SetDeathCounting(Parts.Stats.Running);
             Logger.LogInfo("SpiderSurge stats tracking started.");
         }
 
@@ -100,11 +105,12 @@ namespace SpiderSurge.Logging
             if (!_isTracking) return;
 
             CloseWave(WaveResults.Quit);
+            RecordUnansweredPerkChoice();
             _isTracking = false;
+            SetDeathCounting(false);
             TimeSpan duration = DateTime.Now - _matchStartTime;
 
             bool statsTracked = Parts.Stats.Running;
-            var trackedPlayers = statsTracked ? StatsMod.PlayerTracker.Instance.GetActivePlayers() : null;
 
             var snapshot = new SpiderSurgeStatsSnapshot
             {
@@ -132,7 +138,7 @@ namespace SpiderSurge.Logging
                     UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(pIndex, out int ultimates) ? ultimates : 0
                 };
 
-                if (trackedPlayers != null && trackedPlayers.TryGetValue(player, out var data))
+                if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
                 {
                     stats.Deaths = data.Deaths;
                     stats.LavaDeaths = data.LavaDeaths;
@@ -217,9 +223,17 @@ namespace SpiderSurge.Logging
                 Wave = SurvivalMode.instance.CurrentWave,
                 Map = SceneManager.GetActiveScene().name,
                 LivesAtStart = SurvivalMode.instance.Lives,
-                StartTime = Time.time,
-                DeathsAtStart = GetTotalTrackedDeaths()
+                Deaths = _countingDeaths ? 0 : -1
             };
+            _currentWaveStartTime = Time.time;
+        }
+
+        public void OnWaveReset()
+        {
+            if (_isTracking)
+            {
+                CloseWave(WaveResults.Reset);
+            }
         }
 
         public void OnWaveFailed()
@@ -245,6 +259,8 @@ namespace SpiderSurge.Logging
         {
             if (!_isTracking || modifiers == null) return;
 
+            RecordUnansweredPerkChoice();
+
             var lucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys;
             var offered = modifiers.Where(mod => mod?.data != null).Select(mod => mod.data.key).ToList();
 
@@ -253,25 +269,35 @@ namespace SpiderSurge.Logging
                 Wave = SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave,
                 Kind = GetPerkChoiceKind(PerksManager.Instance),
                 Offered = offered,
-                LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList(),
-                OfferedAtRealtime = Time.realtimeSinceStartup
+                LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList()
             };
+            _pendingPerkOfferedAt = Time.realtimeSinceStartup;
+            _pendingPerkSubmitted = false;
         }
 
-        public void OnPerkChosen(Modifier modifier, bool timedOut)
+        // The pick is submitted before the game's 0.25 s delay, so the decision time and timeout are read here
+        public void OnPerkSubmitted()
+        {
+            if (!_isTracking || _pendingPerkChoice == null || _pendingPerkSubmitted) return;
+
+            _pendingPerkSubmitted = true;
+            _pendingPerkChoice.DecisionSeconds = Time.realtimeSinceStartup - _pendingPerkOfferedAt;
+            _pendingPerkChoice.TimedOut = PerkChoiceTimerRanOut();
+        }
+
+        public void OnPerkChosen(Modifier modifier)
         {
             if (!_isTracking || _pendingPerkChoice == null || modifier?.data == null) return;
 
+            OnPerkSubmitted();
             var choice = _pendingPerkChoice;
             _pendingPerkChoice = null;
             choice.Picked = modifier.data.key;
             choice.Level = modifier.levelInSurvival;
-            choice.DecisionSeconds = Time.realtimeSinceStartup - choice.OfferedAtRealtime;
-            choice.TimedOut = timedOut;
             _perkChoices.Add(choice);
         }
 
-        public static bool PerkChoiceTimerRanOut()
+        private static bool PerkChoiceTimerRanOut()
         {
             if (ModConfig.UnlimitedPerkChoosingTime || SurvivalModeHud.instance == null) return false;
 
@@ -285,6 +311,18 @@ namespace SpiderSurge.Logging
             }
         }
 
+        private void RecordUnansweredPerkChoice()
+        {
+            if (_pendingPerkChoice == null) return;
+
+            if (!_pendingPerkSubmitted)
+            {
+                _pendingPerkChoice.DecisionSeconds = Time.realtimeSinceStartup - _pendingPerkOfferedAt;
+            }
+            _perkChoices.Add(_pendingPerkChoice);
+            _pendingPerkChoice = null;
+        }
+
         private void CloseWave(string result)
         {
             if (_currentWaveRecord == null) return;
@@ -292,29 +330,53 @@ namespace SpiderSurge.Logging
             var wave = _currentWaveRecord;
             _currentWaveRecord = null;
             wave.Result = result;
-            wave.Seconds = Time.time - wave.StartTime;
-            int deathsNow = GetTotalTrackedDeaths();
-            if (wave.DeathsAtStart >= 0 && deathsNow >= 0)
-            {
-                wave.Deaths = Math.Max(0, deathsNow - wave.DeathsAtStart);
-            }
+            wave.Seconds = Time.time - _currentWaveStartTime;
             _waves.Add(wave);
         }
 
+        private void SetDeathCounting(bool enabled)
+        {
+            if (_countingDeaths == enabled) return;
+
+            _countingDeaths = enabled;
+            if (enabled)
+            {
+                StatsMod.PlayerTracker.Instance.DeathCountChanged += OnTrackedDeathCountChanged;
+            }
+            else
+            {
+                StatsMod.PlayerTracker.Instance.DeathCountChanged -= OnTrackedDeathCountChanged;
+            }
+        }
+
+        private void OnTrackedDeathCountChanged(int change)
+        {
+            if (_currentWaveRecord != null && _currentWaveRecord.Deaths >= 0)
+            {
+                _currentWaveRecord.Deaths = Math.Max(0, _currentWaveRecord.Deaths + change);
+            }
+        }
+
+        // Same order as the Surge perk screens are built in, so the kind matches the cards shown
         private static string GetPerkChoiceKind(PerksManager perksManager)
         {
             if (perksManager == null) return PerkChoiceKinds.Perk;
-            if (perksManager.IsFirstNormalPerkSelection) return PerkChoiceKinds.Ability;
-            if (perksManager.IsUltUpgradePerkSelection) return PerkChoiceKinds.Ultimate;
             if (perksManager.IsUltSwapPerkSelection) return PerkChoiceKinds.Swap;
+            if (perksManager.IsUltUpgradePerkSelection) return PerkChoiceKinds.Ultimate;
+            if (perksManager.IsFirstNormalPerkSelection) return PerkChoiceKinds.Ability;
             return PerkChoiceKinds.Perk;
         }
 
-        // Total deaths the Stats part has counted this run, or -1 when it isn't running
-        private static int GetTotalTrackedDeaths()
+        public static void RunSafely(string hook, Action<SpiderSurgeStatsManager> action)
         {
-            if (!Parts.Stats.Running) return -1;
-            return StatsMod.PlayerTracker.Instance.GetActivePlayers().Values.Sum(data => data.Deaths);
+            try
+            {
+                action(Instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderSurge stats failed in {hook}: {ex}");
+            }
         }
 
         private static int GetMaxLives()
@@ -423,7 +485,7 @@ namespace SpiderSurge.Logging
         {
             if (__result && SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
             {
-                SpiderSurgeStatsManager.Instance.StartTracking();
+                SpiderSurgeStatsManager.RunSafely("StartGame", stats => stats.StartTracking());
             }
         }
     }
@@ -434,9 +496,9 @@ namespace SpiderSurge.Logging
         [HarmonyPrefix]
         public static void Prefix(SurvivalMode __instance)
         {
-            if (__instance.GameModeActive() && SpiderSurgeStatsManager.Instance != null)
+            if (__instance.GameModeActive())
             {
-                SpiderSurgeStatsManager.Instance.StopTrackingAndLog();
+                SpiderSurgeStatsManager.RunSafely("StopGameMode", stats => stats.StopTrackingAndLog());
             }
         }
     }
@@ -447,10 +509,7 @@ namespace SpiderSurge.Logging
         [HarmonyPrefix]
         public static void Prefix()
         {
-            if (SpiderSurgeStatsManager.Instance != null)
-            {
-                SpiderSurgeStatsManager.Instance.IncrementWave();
-            }
+            SpiderSurgeStatsManager.RunSafely("CompleteWave", stats => stats.IncrementWave());
         }
     }
 
@@ -460,7 +519,7 @@ namespace SpiderSurge.Logging
         [HarmonyPrefix]
         public static void Prefix()
         {
-            SpiderSurgeStatsManager.Instance.OnWaveStarted();
+            SpiderSurgeStatsManager.RunSafely("StartWave", stats => stats.OnWaveStarted());
         }
     }
 
@@ -470,7 +529,27 @@ namespace SpiderSurge.Logging
         [HarmonyPostfix]
         public static void Postfix()
         {
-            SpiderSurgeStatsManager.Instance.OnWaveFailed();
+            SpiderSurgeStatsManager.RunSafely("FailWave", stats => stats.OnWaveFailed());
+        }
+    }
+
+    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ResetWaveIntoRandomLevel))]
+    public class SurvivalMode_ResetWaveIntoRandomLevel_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            SpiderSurgeStatsManager.RunSafely("ResetWaveIntoRandomLevel", stats => stats.OnWaveReset());
+        }
+    }
+
+    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ResetWaveIntoCurrentLevel))]
+    public class SurvivalMode_ResetWaveIntoCurrentLevel_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            SpiderSurgeStatsManager.RunSafely("ResetWaveIntoCurrentLevel", stats => stats.OnWaveReset());
         }
     }
 
@@ -480,7 +559,7 @@ namespace SpiderSurge.Logging
         [HarmonyPrefix]
         public static void Prefix()
         {
-            SpiderSurgeStatsManager.Instance.OnRestartRequested();
+            SpiderSurgeStatsManager.RunSafely("Restart", stats => stats.OnRestartRequested());
         }
     }
 
@@ -490,7 +569,17 @@ namespace SpiderSurge.Logging
         [HarmonyPostfix]
         public static void Postfix(List<Modifier> modifiers)
         {
-            SpiderSurgeStatsManager.Instance.OnPerkChoicesShown(modifiers);
+            SpiderSurgeStatsManager.RunSafely("ShowPerkChoices", stats => stats.OnPerkChoicesShown(modifiers));
+        }
+    }
+
+    [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
+    public class SurvivalModeHud_PerkChoiceSubmit_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            SpiderSurgeStatsManager.RunSafely("PerkChoiceSubmit", stats => stats.OnPerkSubmitted());
         }
     }
 
@@ -498,15 +587,18 @@ namespace SpiderSurge.Logging
     public class SurvivalMode_ChoosePerkAndLevel_Patch
     {
         [HarmonyPrefix]
-        public static void Prefix(out bool __state)
+        public static void Prefix(NetworkVariable<bool> ____waitingForPerk, out bool __state)
         {
-            __state = SpiderSurgeStatsManager.PerkChoiceTimerRanOut();
+            __state = ____waitingForPerk != null && ____waitingForPerk.Value;
         }
 
         [HarmonyPostfix]
         public static void Postfix(Modifier modifier, bool __state)
         {
-            SpiderSurgeStatsManager.Instance.OnPerkChosen(modifier, __state);
+            if (__state)
+            {
+                SpiderSurgeStatsManager.RunSafely("ChoosePerkAndLevel", stats => stats.OnPerkChosen(modifier));
+            }
         }
     }
 

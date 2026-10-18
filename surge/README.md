@@ -90,9 +90,11 @@ Telemetry is off until you agree. The first time the game starts with Surge on, 
 One report per finished Surge Survival run, sent by the host:
 
 - **The run:** mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, and whether the perk choice timer is unlimited.
-- **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took.
+- **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took. A perk screen still open when the run ends is sent with no card picked.
 - **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, and how many spiders died in it.
 - **Each player, by slot number:** ability and ultimate presses. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills by enemy type, friendly kills, shots fired and hit, and time alive.
+
+A very long run's report leaves out its oldest perk choices and waves, so it stays within the 32 KB the relay accepts.
 
 ### Privacy and identity
 

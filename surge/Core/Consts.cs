@@ -97,6 +97,9 @@ namespace SpiderSurge
             public const int SchemaVersion = 2;
             public const int MaxPerkChoiceRecords = 60;
             public const int MaxWaveRecords = 150;
+            public const int MaxGlobalPerks = 64;
+            public const int MaxPlayerStats = 8;
+            public const int MaxPayloadBytes = 32 * 1024;
         }
 
         public static class ModUpdater

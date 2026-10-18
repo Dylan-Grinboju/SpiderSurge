@@ -119,7 +119,8 @@ namespace SpiderSurge.Logging
                 foreach (var choice in stats.PerkChoices)
                 {
                     string timedOut = choice.TimedOut ? ", timer ran out" : "";
-                    sb.AppendLine($"  Wave {choice.Wave} ({choice.Kind}): {choice.Picked} Lvl {choice.Level} from [{string.Join(", ", choice.Offered)}]{timedOut}");
+                    string picked = choice.Picked != null ? $"{choice.Picked} Lvl {choice.Level}" : "nothing (run ended)";
+                    sb.AppendLine($"  Wave {choice.Wave} ({choice.Kind}): {picked} from [{string.Join(", ", choice.Offered)}]{timedOut}");
                 }
             }
             else
