@@ -129,6 +129,11 @@ namespace SpiderSurge
         private void Update()
         {
             if (_enemy == null && _spider == null) return;
+            if (_spider != null && _spider.dead)
+            {
+                Destroy(this);
+                return;
+            }
             if (_target != null) _targetPosition = _target.position;
 
             _elapsed += Time.deltaTime;
@@ -161,6 +166,16 @@ namespace SpiderSurge
             SpiderController controller = GetComponent<SpiderController>();
             if (controller != null) controller.enabled = true;
             Destroy(this);
+        }
+    }
+
+    // The pull drags a spider through platforms, so the game's stuck-in-wall check must not kill it on the way in
+    [HarmonyPatch(typeof(SpiderHealthSystem), "StuckInWallCheck")]
+    public class SpiderHealthSystem_StuckInWallCheck_BanishPatch
+    {
+        static bool Prefix(SpiderHealthSystem __instance)
+        {
+            return !BanishedTarget.IsBanished(__instance.rootObject);
         }
     }
 }
