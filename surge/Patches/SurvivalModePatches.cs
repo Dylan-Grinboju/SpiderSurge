@@ -245,12 +245,14 @@ namespace SpiderSurge
         [HarmonyPatch(typeof(SurvivalMode), "set_CurrentWave")]
         public class SurvivalMode_set_CurrentWave_Patch
         {
+            private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
+
             [HarmonyPostfix]
             public static void Postfix(int value)
             {
                 if (SurgeGameModeManager.IsSurgeRunActive && SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && value > 0)
                 {
-                    var config = SurvivalMode.instance.GetSurvivalConfig(-1);
+                    var config = ActiveConfig(SurvivalMode.instance);
                     if (config != null)
                     {
                         float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;
@@ -258,7 +260,7 @@ namespace SpiderSurge
                         float minCost = float.MaxValue, maxCost = 0f;
                         foreach (var e in config.enemies)
                         {
-                            if (e.minWave <= value && (e.maxWave == 0 || e.maxWave >= value))
+                            if (e.cost <= budget && e.minWave <= value && (e.maxWave == 0 || e.maxWave >= value))
                             {
                                 if (e.cost < minCost) minCost = e.cost;
                                 if (e.cost > maxCost) maxCost = e.cost;
