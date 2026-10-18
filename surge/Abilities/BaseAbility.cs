@@ -376,6 +376,7 @@ namespace SpiderSurge
             {
                 return false;
             }
+            if (TutorialUI.BlocksInput) return false;
             return HudController.instance == null || !HudController.instance.paused;
         }
 
