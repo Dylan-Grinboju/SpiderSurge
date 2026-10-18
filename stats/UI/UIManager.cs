@@ -510,6 +510,7 @@ namespace StatsMod
             get
             {
                 if (HudController.instance != null && HudController.instance.paused) return true;
+                if (SpiderSurge.TutorialUI.IsShowing) return true;
                 UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
                 return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);
             }
