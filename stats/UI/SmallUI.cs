@@ -45,6 +45,7 @@ namespace StatsMod
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
+        private Vector2 homePosition;
         private GameStatsSnapshot statsSnapshot;
         #endregion
 
@@ -62,6 +63,7 @@ namespace StatsMod
         public void Initialize()
         {
             windowRect = new Rect(ModConfig.DisplayPositionX, ModConfig.DisplayPositionY, 0f, 0f);
+            homePosition = windowRect.position;
             isDisplayVisible = isDisplayVisibleAtAll;
 
             Logger.LogInfo("SmallUI initialized");
@@ -131,16 +133,17 @@ namespace StatsMod
 
             if (new Vector2(windowRect.x, windowRect.y) != oldPosition)
             {
+                homePosition = windowRect.position;
                 ClampToScreen();
                 ModConfig.SetDisplayPosition((int)windowRect.x, (int)windowRect.y, (int)windowRect.width, (int)windowRect.height);
             }
         }
 
-        // Keeps the whole window on screen after a resolution change, a new player row or a drag
+        // Places the window as close to its chosen spot as the screen allows, so it goes back there when the screen grows again
         private void ClampToScreen()
         {
-            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Mathf.Max(0f, Screen.width - windowRect.width));
-            windowRect.y = Mathf.Clamp(windowRect.y, 0f, Mathf.Max(0f, Screen.height - windowRect.height));
+            windowRect.x = Mathf.Clamp(homePosition.x, 0f, Mathf.Max(0f, Screen.width - windowRect.width));
+            windowRect.y = Mathf.Clamp(homePosition.y, 0f, Mathf.Max(0f, Screen.height - windowRect.height));
         }
 
         private void DrawStatsWindow(int windowID)
