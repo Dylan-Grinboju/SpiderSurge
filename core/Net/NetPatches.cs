@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using Unity.Netcode;
 using Logger = Silk.Logger;
@@ -35,6 +36,9 @@ namespace SpiderSurge.Common
     [HarmonyPatch(typeof(NetworkSpawnManager), "UpdateObservedNetworkObjects")]
     public static class NetworkSpawnManager_UpdateObservedNetworkObjects_Patch
     {
+        // Observers is internal and Mono enforces that at run time, so it is reached through reflection
+        private static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = AccessTools.FieldRefAccess<NetworkObject, HashSet<ulong>>("Observers");
+
         [HarmonyPostfix]
         public static void Postfix(NetworkSpawnManager __instance, ulong clientId)
         {
@@ -44,7 +48,7 @@ namespace SpiderSurge.Common
                 {
                     if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility(clientId))
                     {
-                        networkObject.Observers.Remove(clientId);
+                        Observers(networkObject).Remove(clientId);
                     }
                 }
             }

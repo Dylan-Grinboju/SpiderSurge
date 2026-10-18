@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
@@ -42,6 +44,10 @@ namespace SpiderSurge.Enemies
             public uint OriginalHash;
         }
 
+        // Netcode keeps these internal and Mono enforces that at run time, so they are reached through reflection
+        private static readonly AccessTools.FieldRef<NetworkObject, uint> GlobalObjectIdHash = AccessTools.FieldRefAccess<NetworkObject, uint>("GlobalObjectIdHash");
+        private static readonly FieldInfo PrefabOverrideLinks = AccessTools.Field(typeof(NetworkConfig), "NetworkPrefabOverrideLinks");
+
         private static readonly Dictionary<GameObject, Entry> _entries = new Dictionary<GameObject, Entry>();
         private static readonly Dictionary<uint, Entry> _byHash = new Dictionary<uint, Entry>();
 
@@ -59,13 +65,13 @@ namespace SpiderSurge.Enemies
                 Logger.LogWarning($"[SpiderSurge] {name} has no NetworkObject, clients will not see it");
                 return;
             }
-            uint originalHash = networkObject.GlobalObjectIdHash;
+            uint originalHash = GlobalObjectIdHash(networkObject);
             if (_byHash.TryGetValue(originalHash, out var parent))
             {
                 originalHash = parent.OriginalHash;
             }
             var entry = new Entry { Prefab = prefab, OriginalHash = originalHash, CustomHash = HashFor(name) };
-            networkObject.GlobalObjectIdHash = entry.CustomHash;
+            GlobalObjectIdHash(networkObject) = entry.CustomHash;
             _entries[prefab] = entry;
             _byHash[entry.CustomHash] = entry;
             AddHandler(entry);
@@ -86,21 +92,18 @@ namespace SpiderSurge.Enemies
             {
                 return;
             }
-            if (!manager.PrefabHandler.ContainsHandler(entry.CustomHash))
-            {
-                manager.PrefabHandler.AddHandler(entry.CustomHash, new Handler(entry.Prefab));
-            }
+            manager.PrefabHandler.AddHandler(entry.CustomHash, new Handler(entry.Prefab));
         }
 
         // A clone of something the game never registers for the network (the Parkour cocoon) has no base enemy a vanilla client could build
         public static void PrepareForSpawn(NetworkObject instance)
         {
             var manager = NetworkManager.Singleton;
-            if (instance == null || manager == null || !_byHash.TryGetValue(instance.GlobalObjectIdHash, out var entry))
+            if (instance == null || manager == null || !_byHash.TryGetValue(GlobalObjectIdHash(instance), out var entry))
             {
                 return;
             }
-            if (!manager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(entry.OriginalHash))
+            if (!(PrefabOverrideLinks?.GetValue(manager.NetworkConfig) is IDictionary links) || !links.Contains(entry.OriginalHash))
             {
                 instance.CheckObjectVisibility = Net.ClientRunsMod;
             }
