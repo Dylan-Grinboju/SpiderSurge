@@ -3,6 +3,7 @@ using Logger = Silk.Logger;
 using UnityEngine.InputSystem;
 using System.Collections;
 using SpiderSurge.Common;
+using Doozy.Engine.UI;
 
 namespace StatsMod
 {
@@ -63,19 +64,33 @@ namespace StatsMod
         private static float _uiScaleFactor = 1.0f;
         private static bool _scalingInitialized = false;
         private static bool _scalingLogged;
+        private static int _scaledWidth;
+        private static int _scaledHeight;
         public static int StyleVersion { get; private set; }
 
         public static float UIScaleFactor
         {
             get
             {
-                if (!_scalingInitialized) InitializeScaling();
+                if (!_scalingInitialized)
+                {
+                    InitializeScaling();
+                }
+                else if (Screen.width != _scaledWidth || Screen.height != _scaledHeight)
+                {
+                    _scalingLogged = false;
+                    InitializeScaling();
+                    StyleVersion++;
+                }
                 return _uiScaleFactor;
             }
         }
 
         private static void InitializeScaling()
         {
+            _scaledWidth = Screen.width;
+            _scaledHeight = Screen.height;
+
             if (ModConfig.AutoScale)
             {
                 // Base resolution: 1920x1080
@@ -486,6 +501,17 @@ namespace StatsMod
                 Instance.HideTitlesUI();
                 Instance.ShowSmallUI();
                 Instance.currentUIState = UIState.SmallUI;
+            }
+        }
+
+        // The small window would draw over the pause menu's player list and the perk choice
+        public static bool GameMenuOpen
+        {
+            get
+            {
+                if (HudController.instance != null && HudController.instance.paused) return true;
+                UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
+                return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);
             }
         }
 
