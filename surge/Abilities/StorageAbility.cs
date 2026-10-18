@@ -567,7 +567,7 @@ namespace SpiderSurge
             if (restoredAmmo.TryGetValue(weapon, out float ammo))
             {
                 restoredAmmo.Remove(weapon);
-                weapon.ammo = ammo;
+                weapon.ammo = Mathf.Min(ammo, weapon.maxAmmo);
             }
         }
 
