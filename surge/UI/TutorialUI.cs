@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Reflection;
+using Doozy.Engine.UI.Input;
+using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,11 +12,20 @@ namespace SpiderSurge
     {
         private const string Gold = "#FFD24A";
         private const string Cyan = "#00FFFF";
+        private const float StickDeadZone = 0.25f;
+        private const float ScrollSpeed = 900f;
 
         private static TutorialUI _instance;
         public static TutorialUI Instance => _instance;
 
+        public static bool IsShowing => _instance != null && _instance.isVisible;
+
+        // Also true until the button that closed the guide is let go, so that press doesn't reach the game
+        public static bool BlocksInput => _instance != null && (_instance.isVisible || _instance.releasePending);
+
         private bool isVisible = false;
+        private bool showPending;
+        private bool releasePending;
         private int fontVersion = -1;
         private float scale = 1f;
         private Vector2 scrollPosition = Vector2.zero;
@@ -55,19 +68,86 @@ namespace SpiderSurge
 
         private void Start()
         {
-            if (ModConfig.ShowTutorial)
+            showPending = ModConfig.ShowTutorial;
+            Settings.Changed += OnSettingChanged;
+        }
+
+        private void OnSettingChanged(string key)
+        {
+            if (key == null || key == ModConfig.ShowTutorialKey)
             {
-                Show();
-                ModConfig.SetShowTutorial(false);
+                showPending = ModConfig.ShowTutorial;
             }
         }
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.backquoteKey.wasPressedThisFrame)
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.backquoteKey.wasPressedThisFrame)
             {
                 Toggle();
             }
+
+            // Turned on in the settings, or set on first launch: shown once the menus and startup popups are closed
+            if (showPending && !isVisible && MenusClosed())
+            {
+                showPending = false;
+                Show();
+                ModConfig.SetShowTutorial(false);
+            }
+
+            if (releasePending && !CloseHeld())
+            {
+                releasePending = false;
+            }
+            if (!isVisible) return;
+
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            {
+                Close();
+                return;
+            }
+
+            float scroll = 0f;
+            var pads = Gamepad.all;
+            for (int i = 0; i < pads.Count; i++)
+            {
+                Gamepad pad = pads[i];
+                if (pad.buttonEast.wasPressedThisFrame || pad.startButton.wasPressedThisFrame)
+                {
+                    Close();
+                    return;
+                }
+                float y = Mathf.Clamp(pad.leftStick.y.ReadValue() + pad.rightStick.y.ReadValue() + pad.dpad.y.ReadValue(), -1f, 1f);
+                if (Mathf.Abs(y) > Mathf.Abs(scroll)) scroll = y;
+            }
+            if (Mathf.Abs(scroll) > StickDeadZone)
+            {
+                scrollPosition.y = Mathf.Max(0f, scrollPosition.y - scroll * ScrollSpeed * scale * Time.unscaledDeltaTime);
+            }
+        }
+
+        private void Close()
+        {
+            Hide();
+            releasePending = true;
+        }
+
+        private static bool CloseHeld()
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.isPressed) return true;
+            var pads = Gamepad.all;
+            for (int i = 0; i < pads.Count; i++)
+            {
+                if (pads[i].buttonEast.isPressed || pads[i].startButton.isPressed) return true;
+            }
+            return false;
+        }
+
+        private static bool MenusClosed()
+        {
+            return HudController.instance != null && !HudController.instance.paused
+                && LobbyController.instance != null && !LobbyController.instance.eulaStartPopup && !LobbyController.instance.newContentPopup;
         }
 
         public void Toggle()
@@ -164,7 +244,7 @@ namespace SpiderSurge
                 "• Special Abilities perks appear at the first perk choice.",
                 "• Your Ultimate is guaranteed as a choice at wave 30 and can appear in later perk choices until unlocked.",
                 "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
-                "• Choose wisely: Ultimates have longer cooldowns but high impact!",
+                "• <b>Choose wisely:</b> Ultimates have longer cooldowns but high impact!",
             });
 
             DrawSection("How to activate abilities", new string[] {
@@ -189,7 +269,7 @@ namespace SpiderSurge
             // Fixed bottom part
             GUILayout.FlexibleSpace();
             GUILayout.Space(S(10));
-            GUILayout.Label($"PRESS <color={Hud.PinkHex}>[ ` ]</color> (BACKTICK) TO TOGGLE THIS GUIDE AT ANY TIME", footerStyle);
+            GUILayout.Label($"PRESS <color={Hud.PinkHex}>[ ` ]</color> (BACKTICK) TO TOGGLE THIS GUIDE AT ANY TIME, OR <color={Hud.PinkHex}>B</color> / <color={Hud.PinkHex}>START</color> ON A GAMEPAD TO CLOSE IT", footerStyle);
 
             GUILayout.EndArea();
         }
@@ -296,7 +376,38 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
-            _instance = null;
+            Settings.Changed -= OnSettingChanged;
+            if (_instance == this) _instance = null;
         }
+    }
+
+    // The press that closes the guide would also pause the game, throw a weapon or go back in a menu
+    [HarmonyPatch(typeof(HudController), nameof(HudController.Pause))]
+    public static class TutorialUI_Pause_Patch
+    {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        public static bool Prefix() => !TutorialUI.BlocksInput;
+    }
+
+    [HarmonyPatch(typeof(BackButton), nameof(BackButton.Execute))]
+    public static class TutorialUI_Back_Patch
+    {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        public static bool Prefix() => !TutorialUI.BlocksInput;
+    }
+
+    [HarmonyPatch]
+    public static class TutorialUI_Equip_Patch
+    {
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(SpiderWeaponManager), nameof(SpiderWeaponManager.OnEquip));
+            yield return AccessTools.Method(typeof(PickUpVacuum), nameof(PickUpVacuum.OnEquip));
+        }
+
+        [HarmonyPrefix]
+        public static bool Prefix(InputValue inputValue) => !(TutorialUI.BlocksInput && inputValue.isPressed);
     }
 }

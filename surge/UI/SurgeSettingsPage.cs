@@ -22,6 +22,7 @@ namespace SpiderSurge
             page.Toggle("Ultimate on the D-pad", ModConfig.DpadUltimateKey);
             page.Note("Any D-pad direction casts the ultimate, instead of L3 and R3 together. Applies from the next run. While it's on, the D-pad doesn't switch the Stats windows.");
             page.Toggle("Show the tutorial", ModConfig.ShowTutorialKey);
+            page.Note("Opens the Surge guide once you close the menu. The ` key opens it at any time; B or Start on a gamepad closes it.");
 
             page.Spacer();
             page.Button("Ability indicator", () => page.Open("surge.indicator"));
