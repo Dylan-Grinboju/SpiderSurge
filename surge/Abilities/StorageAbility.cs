@@ -248,9 +248,11 @@ namespace SpiderSurge
             GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
 
             _storedWeaponData = StoreWeapon(heldWeaponObj);
+            _retrieving = storedWeaponObj;
 
             yield return new WaitForSeconds(AbilityDuration);
 
+            _retrieving = null;
             RetrieveWeapon(storedWeaponObj);
         }
 
@@ -371,12 +373,46 @@ namespace SpiderSurge
             }
         }
 
+        // An Astral Heckhound hit only makes a ghost, which can still be revived, so its death counts once its time runs out or it is disintegrated
         public void OnCharacterDied()
         {
-            if (_playerDied) return;
+            if (_playerDied || BecomingGhost) return;
             // Local check
             _playerDied = true;
             SaveWeapons(isDeath: true);
+            DestroyStoredWeapons();
+        }
+
+        private bool BecomingGhost => spiderHealthSystem != null && spiderHealthSystem.astralHeckhoundMod && !spiderHealthSystem.astralDead && !spiderHealthSystem.dead;
+
+        private bool Died => spiderHealthSystem != null && (spiderHealthSystem.dead || (spiderHealthSystem.astralDead && !spiderHealthSystem.astralHeckhoundMod));
+
+        private void LateUpdate()
+        {
+            if (!_playerDied && Died) OnCharacterDied();
+        }
+
+        // A ghost whose time runs out is marked dead and its spider switched off in the same frame
+        private void OnDisable()
+        {
+            if (!_playerDied && Died) OnCharacterDied();
+        }
+
+        // Stored weapons are inactive network objects under the spider, which outlive it hidden in the level; a kept one comes back as a new copy
+        private void DestroyStoredWeapons()
+        {
+            if (!IsAuthority) return;
+            GameObject stored = _storedWeaponData?.WeaponRef != null ? _storedWeaponData.WeaponRef.gameObject : null;
+            GameObject retrieving = _retrieving;
+            _storedWeaponData = null;
+            _retrieving = null;
+            foreach (GameObject weaponObj in new[] { stored, retrieving })
+            {
+                if (weaponObj == null || weaponObj.activeSelf) continue;
+                NetworkObject no = weaponObj.GetComponent<NetworkObject>();
+                if (no != null && no.IsSpawned) no.Despawn(true);
+                else Destroy(weaponObj);
+            }
         }
 
         protected override void OnDestroy()
@@ -390,6 +426,7 @@ namespace SpiderSurge
         }
 
         private bool _playerDied = false;
+        private GameObject _retrieving;
 
         private void SaveWeapons(bool isDeath)
         {
