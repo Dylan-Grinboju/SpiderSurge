@@ -3,7 +3,6 @@ using Logger = Silk.Logger;
 using UnityEngine.InputSystem;
 using System.Collections;
 using SpiderSurge.Common;
-using Doozy.Engine.UI;
 
 namespace StatsMod
 {
@@ -66,8 +65,12 @@ namespace StatsMod
         private static bool _scalingLogged;
         private static int _scaledWidth;
         private static int _scaledHeight;
+        private static Vector2Int _resizedTo;
+        private static float _resizedAt;
+        private const float ResizeSettleSeconds = 0.25f;
         public static int StyleVersion { get; private set; }
 
+        // A window being dragged to a new size changes it every frame, so the windows rescale once it has held still for a moment
         public static float UIScaleFactor
         {
             get
@@ -78,9 +81,18 @@ namespace StatsMod
                 }
                 else if (Screen.width != _scaledWidth || Screen.height != _scaledHeight)
                 {
-                    _scalingLogged = false;
-                    InitializeScaling();
-                    StyleVersion++;
+                    var size = new Vector2Int(Screen.width, Screen.height);
+                    if (size != _resizedTo)
+                    {
+                        _resizedTo = size;
+                        _resizedAt = Time.unscaledTime;
+                    }
+                    else if (Time.unscaledTime - _resizedAt >= ResizeSettleSeconds)
+                    {
+                        _scalingLogged = false;
+                        InitializeScaling();
+                        StyleVersion++;
+                    }
                 }
                 return _uiScaleFactor;
             }
@@ -199,7 +211,7 @@ namespace StatsMod
         private void HandleGamepadInput()
         {
             Gamepad gamepad = Gamepad.current;
-            if (gamepad == null) return;
+            if (gamepad == null || GameMenus.Open) return;
 
             bool cyclePressed = false;
             bool dpadPressed = gamepad.dpad.up.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame ||
@@ -501,19 +513,6 @@ namespace StatsMod
                 Instance.HideTitlesUI();
                 Instance.ShowSmallUI();
                 Instance.currentUIState = UIState.SmallUI;
-            }
-        }
-
-        // The stats windows would draw over the pause and lobby menus, the perk choice and the Surge guide
-        public static bool GameMenuOpen
-        {
-            get
-            {
-                if (HudController.instance != null && HudController.instance.paused) return true;
-                if (GameController.instance != null && GameController.instance.gamePaused) return true;
-                if (SpiderSurge.TutorialUI.IsShowing) return true;
-                UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
-                return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);
             }
         }
 

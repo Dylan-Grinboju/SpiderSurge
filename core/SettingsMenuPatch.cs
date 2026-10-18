@@ -15,11 +15,8 @@ namespace SpiderSurge.Common
                 return;
             }
             __result.onClick.RemoveAllListeners();
-            __result.onClick.AddListener(() =>
-            {
-                var page = __instance.GetComponent<SettingsPage>() ?? __instance.gameObject.AddComponent<SettingsPage>();
-                page.Build(__instance, __result);
-            });
+            __result.onClick.AddListener(() => SettingsPage.Show(__instance, __result));
+            SettingsPage.SetEntry(__instance, __result);
         }
     }
 

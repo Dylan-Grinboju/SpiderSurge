@@ -12,6 +12,8 @@ namespace StatsMod
         public const string AutoScaleKey = Prefix + "display.autoScale";
         public const string UIScaleKey = Prefix + "display.uiScale";
         public const string CycleInputKey = Prefix + "input.cycleInput";
+        public const string PositionXKey = Prefix + "display.position.xPercent";
+        public const string PositionYKey = Prefix + "display.position.yPercent";
         public const float MinScale = 0.5f;
         public const float MaxScale = 3f;
         public const float MaxRevealDelay = 10f;
@@ -27,8 +29,8 @@ namespace StatsMod
             ("display.uiScale", 1.0f),
             ("display.bigUIOpacity", 100f),
             ("display.smallUIShowBackground", false),
-            ("display.position.x", 10),
-            ("display.position.y", 10),
+            ("display.position.xPercent", 0.5f),
+            ("display.position.yPercent", 1f),
             ("display.bigUI.columns.totalOffence", true),
             ("display.bigUI.columns.totalFriendlyHits", true),
             ("display.bigUI.columns.totalHitsTaken", true),
@@ -88,8 +90,7 @@ namespace StatsMod
         public static bool ShowPlayTime => Bool("display.showPlayTime");
         public static bool ShowEnemyDeaths => Bool("display.showEnemyDeaths");
 
-        public static int DisplayPositionX => ValidatePosition(Settings.GetInt(Prefix + "display.position.x"), Screen.width, 0);
-        public static int DisplayPositionY => ValidatePosition(Settings.GetInt(Prefix + "display.position.y"), Screen.height, 0);
+        public static Vector2 DisplayPosition => new Vector2(Mathf.Clamp(Settings.GetFloat(PositionXKey), 0f, 100f), Mathf.Clamp(Settings.GetFloat(PositionYKey), 0f, 100f));
 
         // UI Scaling settings
         public static bool AutoScale => Settings.GetBool(AutoScaleKey);
@@ -179,21 +180,20 @@ namespace StatsMod
             return configured;
         }
 
-        // The small window is dragged with the mouse, so its position is saved once it stops moving
-        public static void SetDisplayPosition(int x, int y, int width, int height)
+        // The small window is dragged with the mouse, so its position is saved once it stops moving, as a percentage of the screen so a new resolution keeps it in place
+        public static void SetDisplayPosition(Vector2 position)
         {
-            Settings.SetLater(Prefix + "display.position.x", ValidatePosition(x, Screen.width, width));
-            Settings.SetLater(Prefix + "display.position.y", ValidatePosition(y, Screen.height, height));
+            Settings.SetLater(PositionXKey, Percent(position.x, Screen.width));
+            Settings.SetLater(PositionYKey, Percent(position.y, Screen.height));
+        }
+
+        public static float Percent(double pixels, int size)
+        {
+            return size > 0 ? (float)System.Math.Round(Mathf.Clamp01((float)(pixels / size)) * 100f, 3) : 0f;
         }
 
         private static bool Bool(string key) => Settings.GetBool(Prefix + key);
 
         private static bool Column(string key) => Settings.GetBool(ColumnsPrefix + key);
-
-        // The whole window stays on screen, not just its top-left corner
-        private static int ValidatePosition(int value, int limit, int size)
-        {
-            return Mathf.Clamp(value, 0, Mathf.Max(0, limit - size));
-        }
     }
 }

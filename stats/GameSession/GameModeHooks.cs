@@ -107,7 +107,6 @@ namespace StatsMod
         {
             try
             {
-                // GameController.CancelEverything ends the match on every survival start and lobby return too
                 if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus) return;
                 GameSessionManager.Instance.StopVersusSession();
             }

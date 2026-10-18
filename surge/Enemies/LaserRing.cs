@@ -100,7 +100,6 @@ namespace SpiderSurge.Enemies
         private void FixedUpdate()
         {
             if (health == null) return;
-            // A disintegrating enemy stays active for a moment after it dies
             if (health.IsDead())
             {
                 if (phase != Phase.Idle) GoOut();

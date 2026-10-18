@@ -215,7 +215,7 @@ namespace StatsMod
                     return;
                 }
 
-                if (__instance.spiderController != null && GameSessionManager.Instance.IsActive)
+                if (__instance.spiderController != null && GameSessionManager.Instance.IsActive && !IsGone(__instance.spiderHealthSystem))
                 {
                     PlayerController playerInput = __instance.spiderController.GetComponentInParent<PlayerController>();
                     if (playerInput != null)
@@ -230,6 +230,8 @@ namespace StatsMod
                 Logger.LogError($"Error tracking web swing: {ex.Message}");
             }
         }
+
+        internal static bool IsGone(SpiderHealthSystem health) => health != null && (health.dead || health.astralDead);
     }
 
     [HarmonyPatch(typeof(WebMaker), "DisconnectWeb")]
@@ -259,7 +261,7 @@ namespace StatsMod
     public class StabilizerFixedUpdatePatch
     {
         // Cache to avoid expensive GetComponentInParent calls every FixedUpdate
-        private static readonly Dictionary<Stabilizer, (PlayerController, SpiderController)> _componentCache = new Dictionary<Stabilizer, (PlayerController, SpiderController)>();
+        private static readonly Dictionary<Stabilizer, (PlayerController, SpiderController, SpiderHealthSystem)> _componentCache = new Dictionary<Stabilizer, (PlayerController, SpiderController, SpiderHealthSystem)>();
         private static readonly object _cacheLock = new object();
 
         static void Postfix(Stabilizer __instance)
@@ -269,8 +271,15 @@ namespace StatsMod
                 if (!GameSessionManager.Instance.IsActive)
                     return;
 
-                var (playerInput, spider) = GetCachedComponents(__instance);
+                var (playerInput, spider, health) = GetCachedComponents(__instance);
                 if (playerInput == null || spider == null) return;
+
+                if (WebMakerShootWebPatch.IsGone(health))
+                {
+                    PlayerTracker.Instance.StopAirborneTimer(playerInput);
+                    PlayerTracker.Instance.StopWebSwingTimer(playerInput);
+                    return;
+                }
 
                 PlayerTracker.Instance.UpdateHighestPoint(playerInput, spider);
 
@@ -289,7 +298,7 @@ namespace StatsMod
             }
         }
 
-        private static (PlayerController, SpiderController) GetCachedComponents(Stabilizer stabilizer)
+        private static (PlayerController, SpiderController, SpiderHealthSystem) GetCachedComponents(Stabilizer stabilizer)
         {
             lock (_cacheLock)
             {
@@ -307,17 +316,16 @@ namespace StatsMod
                     PlayerController playerInput = spider.GetComponentInParent<PlayerController>();
                     if (playerInput != null && spider != null)
                     {
-                        var components = (playerInput, spider);
+                        var components = (playerInput, spider, spider.GetComponentInChildren<SpiderHealthSystem>());
                         _componentCache[stabilizer] = components;
                         return components;
                     }
                 }
 
-                return (null, null);
+                return (null, null, null);
             }
         }
 
-        // A spider removed by a respawn or a level reload stops its airborne and swing timers and leaves the cache
         internal static void Forget(Stabilizer stabilizer)
         {
             PlayerController player;

@@ -317,7 +317,6 @@ namespace SpiderTeams
             }
         }
 
-        // A row that moved, such as a player who changed team, keeps the selection when its name is unique.
         private int Follow(string rowName, int fallback)
         {
             int first = _created.FindIndex(item => item.name == rowName);

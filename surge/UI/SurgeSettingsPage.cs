@@ -13,22 +13,22 @@ namespace SpiderSurge
         {
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
             if (page.Current == "surge.telemetry") { BuildTelemetry(page); return; }
+            if (page.Current == SurgeGuide.Page) { SurgeGuide.Build(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
+            page.Button("Surge guide", () => page.Open(SurgeGuide.Page));
 
             page.Spacer();
             page.Header("Play");
             page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
             page.Toggle("Ultimate on the D-pad", ModConfig.DpadUltimateKey);
             page.Note("Any D-pad direction casts the ultimate, instead of L3 and R3 together. Applies from the next run. While it's on, the D-pad doesn't switch the Stats windows.");
-            page.Toggle("Show the tutorial", ModConfig.ShowTutorialKey);
-            page.Note("Opens the Surge guide once you close the menu. The ` key opens it at any time; B or Start on a gamepad closes it.");
 
             page.Spacer();
             page.Button("Ability indicator", () => page.Open("surge.indicator"));
             page.Button("Run stats and telemetry", () => page.Open("surge.telemetry"));
             page.Spacer();
-            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
+            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey, ModConfig.ShowTutorialKey));
         }
 
         private static void BuildIndicator(SettingsPage page)
@@ -37,19 +37,17 @@ namespace SpiderSurge
             page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f);
             page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
             page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
-            ColorCycle(page, "Ready color", ModConfig.IndicatorAvailableColorKey);
-            ColorCycle(page, "Cooldown color", ModConfig.IndicatorCooldownColorKey);
-            ColorCycle(page, "Active color", ModConfig.IndicatorActiveColorKey);
+            page.Cycle("Ready color", ModConfig.IndicatorAvailableColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorAvailableColorKey));
+            page.Cycle("Cooldown color", ModConfig.IndicatorCooldownColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorCooldownColorKey));
+            page.Cycle("Active color", ModConfig.IndicatorActiveColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorActiveColorKey));
             page.Toggle("Only show when ready", ModConfig.IndicatorShowOnlyWhenReadyKey);
         }
 
-        // Shows and cycles from the color the indicator uses, so a value that isn't a color reads as the default it falls back to
-        private static void ColorCycle(SettingsPage page, string label, string key)
+        // A value that isn't a color matches the default the indicator falls back to
+        private static Func<string, bool> IsInUse(string key)
         {
             Color inUse = ModConfig.ReadColor(key);
-            int index = Array.FindIndex(Colors, value => ModConfig.TryParseColor(value, out Color color) && color == inUse);
-            string shown = index >= 0 ? ColorNames[index] : $"<noparse>{Settings.GetString(key)}</noparse>";
-            page.Button($"{label}: {shown}", () => Settings.Set(key, Colors[(index + 1) % Colors.Length]));
+            return value => ModConfig.TryParseColor(value, out Color color) && color == inUse;
         }
 
         private static void BuildTelemetry(SettingsPage page)

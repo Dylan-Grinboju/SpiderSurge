@@ -25,24 +25,74 @@ namespace StatsMod
 
         private bool isPaused = false;
 
-        // Changes whenever a player joins, leaves or gets a new playerID
         public int RosterVersion { get; private set; }
 
         // Raised with +1 when a tracked player's death is recorded and -1 when one is undone
         public event Action<int> DeathCountChanged;
 
-        // What one player kill added to its killer's stats, so an astral revive can take it back
         public struct KillCredit
         {
             public PlayerController Killer;
             public bool Friendly;
             public string Weapon;
-            internal int KillerDeaths;
             internal bool Streak;
-            internal bool RaisedMax;
+            internal int StreakSerial;
             internal bool Airborne;
             internal bool Solo;
-            internal bool RaisedSoloMax;
+            internal int SoloSerial;
+        }
+
+        internal class Streak
+        {
+            public int Current;
+            public int Max;
+            public int Serial;
+            private readonly Dictionary<int, int> ended = new Dictionary<int, int>();
+
+            public void Add()
+            {
+                Current++;
+                if (Current > Max) Max = Current;
+            }
+
+            public void End()
+            {
+                if (Current > 0) ended[Serial] = Current;
+                Serial++;
+                Current = 0;
+            }
+
+            public void Reset()
+            {
+                ended.Clear();
+                Serial++;
+                Current = 0;
+                Max = 0;
+            }
+
+            // A taken-back kill shortens the streak it was in, running or already ended, and the best streak is worked out again
+            public void Revert(int serial)
+            {
+                if (serial == Serial)
+                {
+                    if (Current > 0) Current--;
+                }
+                else if (ended.TryGetValue(serial, out int length))
+                {
+                    if (length > 1) ended[serial] = length - 1;
+                    else ended.Remove(serial);
+                }
+                else
+                {
+                    return;
+                }
+
+                Max = Current;
+                foreach (int value in ended.Values)
+                {
+                    if (value > Max) Max = value;
+                }
+            }
         }
 
         public class PlayerData
@@ -60,10 +110,12 @@ namespace StatsMod
             public int EnemyShieldsTakenDown { get; set; }
             public int FriendlyShieldsHit { get; set; }
             public int ShieldsLost { get; set; }
-            public int KillStreak { get; set; }
-            public int MaxKillStreak { get; set; }
-            public int KillStreakWhileSolo { get; set; }
-            public int MaxKillStreakWhileSolo { get; set; }
+            internal readonly Streak KillRun = new Streak();
+            internal readonly Streak SoloRun = new Streak();
+            public int KillStreak { get => KillRun.Current; set => KillRun.Current = value; }
+            public int MaxKillStreak { get => KillRun.Max; set => KillRun.Max = value; }
+            public int KillStreakWhileSolo { get => SoloRun.Current; set => SoloRun.Current = value; }
+            public int MaxKillStreakWhileSolo { get => SoloRun.Max; set => SoloRun.Max = value; }
             public string PlayerName { get; set; }
             internal bool HasLocalName { get; set; }
             public float JoinTime { get; set; }
@@ -304,7 +356,6 @@ namespace StatsMod
             }
         }
 
-        // A leaver's thrown weapons lose their owner
         private static void ForgetLooseWeapons(PlayerController player)
         {
             HitLogic.ForgetWeaponsOf(player);
@@ -332,8 +383,8 @@ namespace StatsMod
                 {
                     data.Deaths++;
                     DeathCountChanged?.Invoke(1);
-                    data.KillStreak = 0;
-                    data.KillStreakWhileSolo = 0;
+                    data.KillRun.End();
+                    data.SoloRun.End();
                     data.StopAliveTimer();
                     data.StopWebSwingTimer();
                     data.StopAirborneTimer();
@@ -413,10 +464,8 @@ namespace StatsMod
                 entry.Value.WebSwings = 0;
                 entry.Value.WebSwingTime = 0f;
                 entry.Value.AirborneTime = 0f;
-                entry.Value.KillStreak = 0;
-                entry.Value.MaxKillStreak = 0;
-                entry.Value.KillStreakWhileSolo = 0;
-                entry.Value.MaxKillStreakWhileSolo = 0;
+                entry.Value.KillRun.Reset();
+                entry.Value.SoloRun.Reset();
                 entry.Value.TotalAliveTime = 0f;
                 entry.Value.CurrentAliveStartTime = null;
                 entry.Value.CurrentWebSwingStartTime = null;
@@ -473,18 +522,13 @@ namespace StatsMod
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.Kills++;
-                credit.KillerDeaths = data.Deaths;
 
                 // A kill credited after the killer died (the target reached lava or blew up later) starts no streak
                 if (!data.IsAlive) return credit;
 
                 credit.Streak = true;
-                data.KillStreak++;
-                if (data.KillStreak > data.MaxKillStreak)
-                {
-                    data.MaxKillStreak = data.KillStreak;
-                    credit.RaisedMax = true;
-                }
+                credit.StreakSerial = data.KillRun.Serial;
+                data.KillRun.Add();
 
                 SpiderController spider = player.GetComponentInChildren<SpiderController>();
                 if (spider != null)
@@ -500,19 +544,14 @@ namespace StatsMod
                 if (!HasLivingTeammate(player))
                 {
                     credit.Solo = true;
+                    credit.SoloSerial = data.SoloRun.Serial;
                     data.KillsWhileSolo++;
-                    data.KillStreakWhileSolo++;
-                    if (data.KillStreakWhileSolo > data.MaxKillStreakWhileSolo)
-                    {
-                        data.MaxKillStreakWhileSolo = data.KillStreakWhileSolo;
-                        credit.RaisedSoloMax = true;
-                    }
+                    data.SoloRun.Add();
                 }
             }
             return credit;
         }
 
-        // A streak the killer has since lost to a death stays as it was; a streak still running loses this kill
         public void RevertKill(KillCredit credit)
         {
             if (!Net.IsAuthority || credit.Killer == null || !activePlayers.TryGetValue(credit.Killer, out PlayerData data)) return;
@@ -526,16 +565,8 @@ namespace StatsMod
                 if (data.Kills > 0) data.Kills--;
                 if (credit.Airborne && data.KillsWhileAirborne > 0) data.KillsWhileAirborne--;
                 if (credit.Solo && data.KillsWhileSolo > 0) data.KillsWhileSolo--;
-                if (credit.Streak && data.Deaths == credit.KillerDeaths)
-                {
-                    if (credit.RaisedMax && data.MaxKillStreak == data.KillStreak) data.MaxKillStreak--;
-                    if (data.KillStreak > 0) data.KillStreak--;
-                    if (credit.Solo)
-                    {
-                        if (credit.RaisedSoloMax && data.MaxKillStreakWhileSolo == data.KillStreakWhileSolo) data.MaxKillStreakWhileSolo--;
-                        if (data.KillStreakWhileSolo > 0) data.KillStreakWhileSolo--;
-                    }
-                }
+                if (credit.Streak) data.KillRun.Revert(credit.StreakSerial);
+                if (credit.Solo) data.SoloRun.Revert(credit.SoloSerial);
             }
 
             if (credit.Weapon != null && data.WeaponHits.TryGetValue(credit.Weapon, out int hits) && hits > 0)
@@ -741,7 +772,7 @@ namespace StatsMod
                 {
                     if (HasLivingTeammate(entry.Key))
                     {
-                        entry.Value.KillStreakWhileSolo = 0;
+                        entry.Value.SoloRun.End();
                     }
                 }
             }

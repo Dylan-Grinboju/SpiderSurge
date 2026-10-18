@@ -63,7 +63,7 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.display.smallUIShowBackground`: Shows a background behind the Small UI. Default is false.
 
-`stats.display.position`: You can use this to manually set the position of the Small UI. The coordinates are in pixels, with 0,0 being the top left corner of the screen. This value will be saved every time you click and drag the UI. If the UI doesn't show up on your screen, you can try setting the x and y values to 10 again.
+`stats.display.position`: The position of the Small UI's top left corner as `xPercent` and `yPercent`, percentages of the screen's width and height from 0 to 100, with 0,0 being the top left corner of the screen. Being a share of the screen, it keeps the window in the same place when the resolution or window size changes. This value is saved every time you click and drag the UI, and a position saved in pixels by an older version is converted on the next launch. If the UI doesn't show up on your screen, set both values to 1. Default: `xPercent: 0.5`, `yPercent: 1`.
 
 `stats.display.bigUI.columns`: Setting a column to true will display it in the Big UI. I don't limit you but the elements can be cut off if there are too many. 
 

@@ -73,7 +73,6 @@ namespace SpiderSurge
 
         private RuntimeStoredWeapon _storedWeaponData;
 
-        // A restored weapon is stored before Weapon.Start runs, and Start fills its ammo when it comes back out
         private static readonly Dictionary<Weapon, float> restoredAmmo = new Dictionary<Weapon, float>();
 
         protected override void Start()
@@ -562,11 +561,12 @@ namespace SpiderSurge
             restoredAmmo[weapon] = ammo;
         }
 
-        public static void ApplyRestoredAmmo(Weapon weapon)
+        // A hit before Weapon.Start also refills the ammo, and Start refills it again, so the saved ammo is kept until Start is done
+        public static void ApplyRestoredAmmo(Weapon weapon, bool started)
         {
             if (restoredAmmo.TryGetValue(weapon, out float ammo))
             {
-                restoredAmmo.Remove(weapon);
+                if (started) restoredAmmo.Remove(weapon);
                 weapon.ammo = Mathf.Min(ammo, weapon.maxAmmo);
             }
         }
@@ -597,7 +597,16 @@ namespace SpiderSurge
     {
         static void Postfix(Weapon __instance)
         {
-            StorageAbility.ApplyRestoredAmmo(__instance);
+            StorageAbility.ApplyRestoredAmmo(__instance, false);
+        }
+    }
+
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.Start))]
+    public class Weapon_Start_StoragePatch
+    {
+        static void Postfix(Weapon __instance)
+        {
+            StorageAbility.ApplyRestoredAmmo(__instance, true);
         }
     }
 }

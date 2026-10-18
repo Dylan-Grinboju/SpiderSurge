@@ -61,9 +61,7 @@ namespace StatsMod
         private static readonly Dictionary<int, Owner> ballReflectors = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner> explosiveArmers = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner>[] ownerMaps = { explosionOwners, projectileOwners, discOwners, ballReflectors, explosiveArmers };
-        // The game's weapon owner is a network client id, the same for every local player, so the player is kept here
         private static readonly Dictionary<Weapon, PlayerController> weaponPlayers = new Dictionary<Weapon, PlayerController>();
-        // The kill credited for each player's last death, until an astral revive takes it back or the player respawns
         private static readonly Dictionary<PlayerController, PlayerTracker.KillCredit> deathCredits = new Dictionary<PlayerController, PlayerTracker.KillCredit>();
         private static float lastPruneTime = 0f;
 
@@ -359,7 +357,6 @@ namespace StatsMod
             PlayerController holder = Holder(weapon);
             if (holder != null) return holder;
 
-            // Thrown weapons keep the player who last equipped them, and launched blades get their launcher's.
             // Weapons only AI spiders held have none
             return weaponPlayers.TryGetValue(weapon, out PlayerController player) && player != null ? player : null;
         }

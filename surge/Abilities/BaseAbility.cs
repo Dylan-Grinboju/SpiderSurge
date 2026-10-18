@@ -369,22 +369,11 @@ namespace SpiderSurge
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
         }
 
-        // The game turns player input off while paused, on the perk choice and while a level loads or ends
-        public static bool GameAcceptsInput()
-        {
-            if (GameController.instance != null && !GameController.instance.acceptingInputs)
-            {
-                return false;
-            }
-            if (TutorialUI.BlocksInput) return false;
-            return HudController.instance == null || !HudController.instance.paused;
-        }
-
         public virtual void Activate()
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked() || !GameAcceptsInput())
+            if (!IsUnlocked() || !GameMenus.AcceptPlayerInput)
             {
                 return;
             }
@@ -442,7 +431,7 @@ namespace SpiderSurge
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked() || !GameAcceptsInput())
+            if (!IsUnlocked() || !GameMenus.AcceptPlayerInput)
             {
                 return;
             }

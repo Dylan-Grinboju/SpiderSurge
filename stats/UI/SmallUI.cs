@@ -45,7 +45,6 @@ namespace StatsMod
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
-        private Vector2 homePosition;
         private GameStatsSnapshot statsSnapshot;
         #endregion
 
@@ -62,8 +61,6 @@ namespace StatsMod
         #region Initialization
         public void Initialize()
         {
-            windowRect = new Rect(ModConfig.DisplayPositionX, ModConfig.DisplayPositionY, 0f, 0f);
-            homePosition = windowRect.position;
             isDisplayVisible = isDisplayVisibleAtAll;
 
             Logger.LogInfo("SmallUI initialized");
@@ -121,29 +118,30 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible || UIManager.GameMenuOpen) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || GameMenus.Open) return;
 
             statsSnapshot = GameSessionManager.Instance?.GetDisplaySnapshot();
             UpdateWindowSize(statsSnapshot?.ActivePlayers?.Count ?? 0);
             InitializeStyles();
+            Vector2 saved = ModConfig.DisplayPosition;
+            windowRect.x = saved.x / 100f * Screen.width;
+            windowRect.y = saved.y / 100f * Screen.height;
             ClampToScreen();
 
-            Vector2 oldPosition = new Vector2(windowRect.x, windowRect.y);
+            Vector2 placed = windowRect.position;
             windowRect = GUI.Window(WindowId, windowRect, DrawStatsWindow, "", windowStyle);
 
-            if (new Vector2(windowRect.x, windowRect.y) != oldPosition)
+            if (windowRect.position != placed)
             {
-                homePosition = windowRect.position;
                 ClampToScreen();
-                ModConfig.SetDisplayPosition((int)windowRect.x, (int)windowRect.y, (int)windowRect.width, (int)windowRect.height);
+                ModConfig.SetDisplayPosition(windowRect.position);
             }
         }
 
-        // Places the window as close to its chosen spot as the screen allows, so it goes back there when the screen grows again
         private void ClampToScreen()
         {
-            windowRect.x = Mathf.Clamp(homePosition.x, 0f, Mathf.Max(0f, Screen.width - windowRect.width));
-            windowRect.y = Mathf.Clamp(homePosition.y, 0f, Mathf.Max(0f, Screen.height - windowRect.height));
+            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Mathf.Max(0f, Screen.width - windowRect.width));
+            windowRect.y = Mathf.Clamp(windowRect.y, 0f, Mathf.Max(0f, Screen.height - windowRect.height));
         }
 
         private void DrawStatsWindow(int windowID)

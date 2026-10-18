@@ -226,7 +226,7 @@ namespace SpiderSurge
                 {
                     if (SurgeGameModeManager.Instance == null) return;
                     SurgeGameModeManager.Instance.SetActive(true);
-                    if (SurvivalMode.instance != null) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
+                    if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
 
                     if (PlayerAbilityHandler.ActiveSpiderControllers != null)
                     {

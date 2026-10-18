@@ -140,7 +140,6 @@ namespace StatsMod
             playerTracker.StopAllWebSwingTimers();
             playerTracker.StopAllAirborneTimers();
 
-            // Quitting or restarting from the pause menu stops the session before the unpause reaches PauseHandler
             TimeSpan sessionTime = (isPaused ? pauseStartTime : DateTime.Now) - sessionStartTime;
             lastGameDuration = sessionTime;
             isSurvivalActive = false;
@@ -184,7 +183,7 @@ namespace StatsMod
 
         public void MarkRestartRequested()
         {
-            if (Net.IsRemoteClient) return;
+            if (Net.IsRemoteClient || !isSurvivalActive) return;
             restartRequested = true;
         }
 

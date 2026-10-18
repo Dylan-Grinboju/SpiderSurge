@@ -25,7 +25,6 @@ namespace SpiderSurge.Enemies
         private static readonly List<EnemyHealthSystem> allHatchlings = new List<EnemyHealthSystem>();
         private static readonly MethodInfo spawnEffectRpc = AccessTools.Method(typeof(EnemySpawner), "InstantiateEnemySpawnEffectClientRpc");
         private static readonly MethodInfo spawnCosmeticRpc = AccessTools.Method(typeof(EnemySpawner), "SpawnObjectCosmeticClientRpc");
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
 
         public void Initialize(GameObject prefab, GameObject shieldedPrefab, float spawnInterval, int maxAlive)
         {
@@ -82,7 +81,6 @@ namespace SpiderSurge.Enemies
         {
             hatching = true;
             EnemySpawner spawner = EnemySpawner.instance;
-            // A hold that outlasts the telegraph starts it again, so a wasp never appears without one
             do
             {
                 float delay = 2.5f + ModifierManager.instance.GetModLevel("interference") * 1.5f;
@@ -95,7 +93,6 @@ namespace SpiderSurge.Enemies
             }
             while (!health.IsDead());
 
-            // The cocoon's shield when the wasp appears decides its kind, so breaking it during the telegraph counts
             GameObject prefab = health.shield != null && health.shield.activeInHierarchy && shieldedSpawnPrefab != null
                 ? shieldedSpawnPrefab
                 : spawnPrefab;
@@ -115,8 +112,7 @@ namespace SpiderSurge.Enemies
             hatching = false;
         }
 
-        // Once a survival wave is lost or over, the game's own pending spawns are stopped too
-        private static bool SpawningStopped => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && !WaveInProgress(SurvivalMode.instance);
+        private static bool SpawningStopped => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && SurvivalMode.instance.CanSpawnNewPlayer();
 
         private void CancelHatch()
         {

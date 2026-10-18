@@ -149,7 +149,15 @@ namespace SpiderSurge
             enabled = false;
             if (_enemy != null) Destroy(gameObject);
             else if (CanDie(_spider)) KillSpider(_spider, Caster);
+            else if (_spider.astralDead && Time.time >= SpiderImmuneTill(_spider)) DissolveGhost();
             else Release();
+        }
+
+        // A spider that died astral on the way in already counted its death, so its ghost goes the way lava takes one
+        private void DissolveGhost()
+        {
+            _spider.DisableShield();
+            _spider.Disintegrate();
         }
 
         // A spider that became unkillable on the way in comes back where it is

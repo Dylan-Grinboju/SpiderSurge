@@ -189,7 +189,7 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint || UIManager.GameMenuOpen) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint || GameMenus.Open) return;
 
             InitializeStyles();
 
@@ -297,7 +297,6 @@ namespace StatsMod
             }
         }
 
-        // Surge keeps RunUsedSurge after the run ends, until the next survival run starts
         private static bool IsSurgeRun()
         {
             return Parts.Surge.Running && (SpiderSurge.SurgeGameModeManager.IsSurgeRunActive || SpiderSurge.SurgeGameModeManager.WasSurgeRunUsed);
