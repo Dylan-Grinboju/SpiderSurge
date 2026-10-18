@@ -61,6 +61,8 @@ namespace StatsMod
         private static readonly Dictionary<int, Owner> ballReflectors = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner> explosiveArmers = new Dictionary<int, Owner>();
         private static readonly Dictionary<int, Owner>[] ownerMaps = { explosionOwners, projectileOwners, discOwners, ballReflectors, explosiveArmers };
+        // The kill credited for each player's last death, until an astral revive takes it back or the player respawns
+        private static readonly Dictionary<PlayerController, PlayerTracker.KillCredit> deathCredits = new Dictionary<PlayerController, PlayerTracker.KillCredit>();
         private static float lastPruneTime = 0f;
 
         private static AttackScope current;
@@ -127,6 +129,7 @@ namespace StatsMod
             lastPlayerHits.Clear();
             rollerFuses.Clear();
             foreach (var owners in ownerMaps) owners.Clear();
+            deathCredits.Clear();
             current = default;
             lastPruneTime = Time.time;
         }
@@ -469,10 +472,35 @@ namespace StatsMod
 
             bool friendly = PlayerRelations.AreTeammates(hit.Player, victim);
             Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(hit.Player)}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
-            if (friendly) PlayerTracker.Instance.IncrementFriendlyKill(hit.Player);
-            else PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
+            PlayerTracker.KillCredit credit = CreditPlayerKill(hit.Player, friendly);
+            credit.Weapon = hit.Weapon;
+            deathCredits[victim] = credit;
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
             PlayerTracker.Instance.IncrementEnemyKillByName(hit.Player, "Player");
+        }
+
+        // The Astral Heckhound modifier's revive undoes the death, so it takes back the kill too
+        public static void OnPlayerRevived(SpiderHealthSystem spider)
+        {
+            if (spider == null || !Net.IsAuthority) return;
+            PlayerController victim = Players.Of(spider.rootObject);
+            if (victim == null || !deathCredits.TryGetValue(victim, out PlayerTracker.KillCredit credit)) return;
+
+            deathCredits.Remove(victim);
+            Logger.LogInfo($"{PlayerLabel(victim)} returned from the astral plane, taking back the kill from {PlayerLabel(credit.Killer)}");
+            PlayerTracker.Instance.RevertKill(credit);
+        }
+
+        public static void OnPlayerRespawned(PlayerController player)
+        {
+            if (player != null) deathCredits.Remove(player);
+        }
+
+        private static PlayerTracker.KillCredit CreditPlayerKill(PlayerController killer, bool friendly)
+        {
+            if (!friendly) return PlayerTracker.Instance.IncrementPlayerKill(killer);
+            PlayerTracker.Instance.IncrementFriendlyKill(killer);
+            return new PlayerTracker.KillCredit { Killer = killer, Friendly = true };
         }
 
         // SpiderSurge's Banish kills the spider right after this, so its own death finds no hit to credit
@@ -486,8 +514,7 @@ namespace StatsMod
 
             bool friendly = PlayerRelations.AreTeammates(caster, victim);
             Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(caster)}, banished");
-            if (friendly) PlayerTracker.Instance.IncrementFriendlyKill(caster);
-            else PlayerTracker.Instance.IncrementPlayerKill(caster);
+            deathCredits[victim] = CreditPlayerKill(caster, friendly);
             PlayerTracker.Instance.IncrementEnemyKillByName(caster, "Player");
         }
 

@@ -28,6 +28,20 @@ namespace StatsMod
         // Raised with +1 when a tracked player's death is recorded and -1 when one is undone
         public event Action<int> DeathCountChanged;
 
+        // What one player kill added to its killer's stats, so an astral revive can take it back
+        public struct KillCredit
+        {
+            public PlayerController Killer;
+            public bool Friendly;
+            public string Weapon;
+            internal int KillerDeaths;
+            internal bool Streak;
+            internal bool RaisedMax;
+            internal bool Airborne;
+            internal bool Solo;
+            internal bool RaisedSoloMax;
+        }
+
         public class PlayerData
         {
             public int PlayerId { get; set; }
@@ -443,19 +457,23 @@ namespace StatsMod
             return activePlayers.Any(p => p.Value.IsAlive && PlayerRelations.AreTeammates(player, p.Key));
         }
 
-        public void IncrementPlayerKill(PlayerController player)
+        public KillCredit IncrementPlayerKill(PlayerController player)
         {
+            KillCredit credit = new KillCredit { Killer = player };
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.Kills++;
+                credit.KillerDeaths = data.Deaths;
 
                 // A kill credited after the killer died (the target reached lava or blew up later) starts no streak
-                if (!data.IsAlive) return;
+                if (!data.IsAlive) return credit;
 
+                credit.Streak = true;
                 data.KillStreak++;
                 if (data.KillStreak > data.MaxKillStreak)
                 {
                     data.MaxKillStreak = data.KillStreak;
+                    credit.RaisedMax = true;
                 }
 
                 SpiderController spider = player.GetComponentInChildren<SpiderController>();
@@ -465,18 +483,58 @@ namespace StatsMod
                     if (stabilizer != null && !stabilizer.grounded)
                     {
                         data.KillsWhileAirborne++;
+                        credit.Airborne = true;
                     }
                 }
 
                 if (!HasLivingTeammate(player))
                 {
+                    credit.Solo = true;
                     data.KillsWhileSolo++;
                     data.KillStreakWhileSolo++;
                     if (data.KillStreakWhileSolo > data.MaxKillStreakWhileSolo)
                     {
                         data.MaxKillStreakWhileSolo = data.KillStreakWhileSolo;
+                        credit.RaisedSoloMax = true;
                     }
                 }
+            }
+            return credit;
+        }
+
+        // A streak the killer has since lost to a death stays as it was; a streak still running loses this kill
+        public void RevertKill(KillCredit credit)
+        {
+            if (!Net.IsAuthority || credit.Killer == null || !activePlayers.TryGetValue(credit.Killer, out PlayerData data)) return;
+
+            if (credit.Friendly)
+            {
+                if (data.FriendlyKills > 0) data.FriendlyKills--;
+            }
+            else
+            {
+                if (data.Kills > 0) data.Kills--;
+                if (credit.Airborne && data.KillsWhileAirborne > 0) data.KillsWhileAirborne--;
+                if (credit.Solo && data.KillsWhileSolo > 0) data.KillsWhileSolo--;
+                if (credit.Streak && data.Deaths == credit.KillerDeaths)
+                {
+                    if (credit.RaisedMax && data.MaxKillStreak == data.KillStreak) data.MaxKillStreak--;
+                    if (data.KillStreak > 0) data.KillStreak--;
+                    if (credit.Solo)
+                    {
+                        if (credit.RaisedSoloMax && data.MaxKillStreakWhileSolo == data.KillStreakWhileSolo) data.MaxKillStreakWhileSolo--;
+                        if (data.KillStreakWhileSolo > 0) data.KillStreakWhileSolo--;
+                    }
+                }
+            }
+
+            if (credit.Weapon != null && data.WeaponHits.TryGetValue(credit.Weapon, out int hits) && hits > 0)
+            {
+                data.WeaponHits[credit.Weapon] = hits - 1;
+            }
+            if (data.EnemyKills.TryGetValue("Player", out int kills) && kills > 0)
+            {
+                data.EnemyKills["Player"] = kills - 1;
             }
         }
 

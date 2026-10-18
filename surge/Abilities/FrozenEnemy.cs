@@ -176,16 +176,17 @@ namespace SpiderSurge
             _held = false;
             Release();
 
+            bool alive = _enemy != null && !_enemy.IsDead();
             if (_visualOnly)
             {
                 RestoreTints();
-                PlayThawSound();
+                if (alive) PlayThawSound();
                 return;
             }
 
             // Banish took it while frozen and holds it itself until it is gone
             if (BanishedTarget.IsBanished(gameObject)) return;
-            PlayThawSound();
+            if (alive) PlayThawSound();
 
             foreach (var pair in _bodies)
             {

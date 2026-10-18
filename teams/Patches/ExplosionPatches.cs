@@ -83,19 +83,22 @@ namespace SpiderTeams
         // An explosion set off inside another attack, like the Pulse ultimate's, belongs to that attacker.
         [HarmonyPrefix]
         [HarmonyPriority(Priority.First)]
-        public static void Prefix(Explosion __instance, out bool __state)
+        public static void Prefix(Explosion __instance, out int __state)
         {
-            __state = PatchScopes.EnterAttack(__instance, explosion =>
+            __state = DamageContext.Blast;
+            PatchScopes.EnterAttack(__instance, explosion =>
             {
                 int owner = ExplosionOwners.Resolve(explosion);
                 return owner != OwnerRegistry.Unknown ? owner : DamageContext.Current;
             });
+            DamageContext.Blast = __instance.GetInstanceID();
         }
 
         [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
+        public static void Finalizer(int __state)
         {
-            PatchScopes.ExitAttack(__state);
+            PatchScopes.ExitAttack(true);
+            DamageContext.Blast = __state;
         }
     }
 }

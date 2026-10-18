@@ -9,6 +9,9 @@ namespace SpiderTeams
 
         public static int Current => _attackers.Count > 0 ? _attackers[_attackers.Count - 1] : OwnerRegistry.Unknown;
 
+        // Instance id of the explosion whose knockback is running, or 0
+        public static int Blast { get; set; }
+
         public static void Push(int playerId)
         {
             _attackers.Add(playerId);
@@ -25,6 +28,7 @@ namespace SpiderTeams
         public static void Clear()
         {
             _attackers.Clear();
+            Blast = 0;
         }
     }
 

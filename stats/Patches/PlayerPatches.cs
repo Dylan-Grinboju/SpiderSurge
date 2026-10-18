@@ -100,6 +100,7 @@ namespace StatsMod
             {
                 if (!GameSessionManager.Instance.IsActive) return;
                 PlayerTracker.Instance.UndoPlayerDeath(__instance);
+                HitLogic.OnPlayerRevived(__instance);
             }
             catch (Exception ex)
             {
@@ -168,6 +169,7 @@ namespace StatsMod
                 {
                     PlayerTracker.Instance.RecordPlayerRespawn(__instance);
                 }
+                HitLogic.OnPlayerRespawned(__instance);
             }
             catch (Exception ex)
             {
