@@ -292,7 +292,7 @@ namespace SpiderSurge
                 heldDpadControls.Remove(context.control);
             }
 
-            if (!wasHeld && heldDpadControls.Count > 0)
+            if (!wasHeld && heldDpadControls.Count > 0 && !PlayerControlSettings.IsMenuHeld(context.control.device))
             {
                 ActivateUltimate();
             }
@@ -308,7 +308,7 @@ namespace SpiderSurge
             if (pressed)
             {
                 lastLeftStickPressTime = Time.time;
-                CheckStickCombo();
+                CheckStickCombo(context.control.device);
             }
         }
 
@@ -322,13 +322,13 @@ namespace SpiderSurge
             if (pressed)
             {
                 lastRightStickPressTime = Time.time;
-                CheckStickCombo();
+                CheckStickCombo(context.control.device);
             }
         }
 
-        private void CheckStickCombo()
+        private void CheckStickCombo(InputDevice device)
         {
-            if (leftStickPressed && rightStickPressed)
+            if (leftStickPressed && rightStickPressed && !PlayerControlSettings.IsMenuHeld(device))
             {
                 float timeDiff = Mathf.Abs(lastLeftStickPressTime - lastRightStickPressTime);
                 if (timeDiff <= COMBO_WINDOW)
@@ -369,11 +369,21 @@ namespace SpiderSurge
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
         }
 
+        // The game turns player input off while paused, on the perk choice and while a level loads or ends
+        public static bool GameAcceptsInput()
+        {
+            if (GameController.instance != null && !GameController.instance.acceptingInputs)
+            {
+                return false;
+            }
+            return HudController.instance == null || !HudController.instance.paused;
+        }
+
         public virtual void Activate()
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked())
+            if (!IsUnlocked() || !GameAcceptsInput())
             {
                 return;
             }
@@ -431,7 +441,7 @@ namespace SpiderSurge
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked())
+            if (!IsUnlocked() || !GameAcceptsInput())
             {
                 return;
             }
