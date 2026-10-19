@@ -5,10 +5,9 @@
     <!-- Mod name -->
     <Title>SpiderSurge Mod</Title>
 
-    <!-- Version -->
-    <Version>1.0.0</Version>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
+    <!-- Version: MinVer takes it from the latest vX.Y.Z tag; a build after that tag is the next patch with a dev suffix, e.g. 0.4.1-dev.12 -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerDefaultPreReleaseIdentifiers>dev</MinVerDefaultPreReleaseIdentifiers>
 
     <!-- Author -->
     <Authors>Dylan</Authors>
@@ -48,6 +47,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="MinVer" Version="8.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="SilkLoader" Version="$(SilkVersion)" />
     <PackageReference Include="MonoMod.Backports" Version="1.1.2" />
   </ItemGroup>
@@ -60,8 +63,15 @@
     <Compile Remove="OtherMods\**\*.cs" />
   </ItemGroup>
 
-  <!-- The [SilkMod] attribute needs the version as a constant, so it is generated from <Version> above -->
-  <Target Name="GenerateModVersion" BeforeTargets="CoreCompile">
+  <!-- MinVer's AssemblyVersion is only the major number; keep the whole release number, as before -->
+  <Target Name="SetAssemblyVersion" AfterTargets="MinVer">
+    <PropertyGroup>
+      <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).0</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
+
+  <!-- The [SilkMod] attribute needs the version as a constant, so it is generated from the version MinVer works out -->
+  <Target Name="GenerateModVersion" BeforeTargets="CoreCompile" DependsOnTargets="MinVer">
     <PropertyGroup>
       <ModVersionFile>$(IntermediateOutputPath)ModVersion.g.cs</ModVersionFile>
     </PropertyGroup>
