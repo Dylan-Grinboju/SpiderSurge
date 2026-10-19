@@ -45,9 +45,6 @@ namespace SpiderTeams
         public static readonly FieldInfo TimerWinPrompt = AccessTools.Field(typeof(VersusRestartTimer), "_winPromptString");
         public static readonly FieldInfo TimerFinalScore = AccessTools.Field(typeof(VersusRestartTimer), "_finalScoreString");
         public static readonly FieldInfo TimerFinalSingleScore = AccessTools.Field(typeof(VersusRestartTimer), "_finalSingleScoreString");
-        public static readonly FieldInfo LobbyScreenWinPrompt = AccessTools.Field(typeof(LobbyScreen), "_winPromptString");
-        public static readonly FieldInfo LobbyScreenFinalScore = AccessTools.Field(typeof(LobbyScreen), "_finalScoreString");
-        public static readonly FieldInfo LobbyScreenFinalSingleScore = AccessTools.Field(typeof(LobbyScreen), "_finalSingleScoreString");
         #endregion
 
         private static readonly AccessTools.FieldRef<bool> _roundInProgress = StaticRef<bool>(VersusRoundInProgress);
@@ -169,7 +166,6 @@ namespace SpiderTeams
                 { "SpiderHealthSystem._immuneTill", _immuneTill },
                 { "VersusRestartTimer.winnerview", TimerWinnerView },
                 { "VersusRestartTimer._winPromptString", TimerWinPrompt },
-                { "LobbyScreen._winPromptString", LobbyScreenWinPrompt },
             };
 
             foreach (var member in members)
