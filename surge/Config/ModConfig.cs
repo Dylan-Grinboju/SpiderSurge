@@ -28,6 +28,7 @@ namespace SpiderSurge
         public const float MinIndicatorRadius = 0.5f;
         public const float MaxIndicatorRadius = 10f;
         public const int OriginalAbilityVolume = 80;
+        public const int DefaultAbilityVolume = 50;
         public const int MaxAbilityVolume = 100;
 
         public static readonly KeyValuePair<string, object>[] Defaults =
@@ -35,7 +36,7 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(DpadUltimateKey, false),
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
             new KeyValuePair<string, object>(NoAbilitiesKey, false),
-            new KeyValuePair<string, object>(AbilityVolumeKey, OriginalAbilityVolume),
+            new KeyValuePair<string, object>(AbilityVolumeKey, DefaultAbilityVolume),
             new KeyValuePair<string, object>(ShowTutorialKey, true),
             new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
             new KeyValuePair<string, object>(StatsLoggingKey, true),

@@ -98,7 +98,7 @@ namespace StatsMod
             {
                 windowStyle = new GUIStyle();
                 headerStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
-                noPlayersStyle = Hud.Style(HEADER_FONT_SIZE, bold: true);
+                noPlayersStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
                 valueStyle = Hud.Style(VALUE_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
 
                 stylesVersion = UIManager.StyleVersion;
@@ -169,7 +169,7 @@ namespace StatsMod
 
                 if (statsSnapshot?.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
                 {
-                    Hud.Label(new Rect(Padding, y, windowRect.width - Padding * 2, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
+                    Hud.Label(new Rect(killX, y, killWidth + deathWidth, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
                 }
                 else
                 {

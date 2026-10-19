@@ -12,7 +12,6 @@ namespace SpiderSurge
         public static void Build(SettingsPage page)
         {
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
-            if (page.Current == "surge.telemetry") { BuildTelemetry(page); return; }
             if (page.Current == SurgeGuide.Page) { SurgeGuide.Build(page); return; }
             if (page.Current == AchievementsPage.Page) { AchievementsPage.Build(page); return; }
             page.Title("Surge");
@@ -30,13 +29,12 @@ namespace SpiderSurge
             page.Spacer();
             page.Header("Sound");
             page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%");
-            page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. 80% is the original volume.");
+            page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");
 
             page.Spacer();
             page.Button("Ability indicator", () => page.Open("surge.indicator"));
-            page.Button("Run stats and telemetry", () => page.Open("surge.telemetry"));
             page.Spacer();
-            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey, ModConfig.ShowTutorialKey));
+            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.StatsLoggingKey, ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey, ModConfig.ShowTutorialKey));
         }
 
         private static void BuildIndicator(SettingsPage page)
@@ -58,13 +56,18 @@ namespace SpiderSurge
             return value => ModConfig.TryParseColor(value, out Color color) && color == inUse;
         }
 
-        private static void BuildTelemetry(SettingsPage page)
+        // On the General page, since plain Survival runs are recorded and shared too
+        public static void BuildTelemetry(SettingsPage page)
         {
-            page.Title("Run stats and telemetry");
-            page.Toggle("Track ability use in each run", ModConfig.StatsLoggingKey);
-            page.Note("Logs every run's ability and ultimate use, and feeds it to the Stats titles and the telemetry.");
-            page.Toggle("Share anonymous run stats", ModConfig.TelemetryKey);
-            page.Note("Helps balance and improve the mod. No personal identifiers are sent.");
+            page.Header("Telemetry");
+            page.Toggle("Record each run", ModConfig.StatsLoggingKey);
+            page.Note("Builds a report of every Survival run: waves, perks, deaths, and each player's ability and ultimate use. Surge runs save it as a text file in Silk\\Logs\\SpiderSurge and give the Stats titles their ability counts. Sharing needs it on.");
+            page.Toggle("Share anonymous run reports", ModConfig.TelemetryKey);
+            page.Note("Uploads the report of each finished Survival run, with or without Surge, to help balance and improve the mod. No personal identifiers are sent.");
+            if (ModConfig.TelemetryEnabled && !ModConfig.EnableStatsLogging)
+            {
+                page.Warning("Nothing is shared while Record each run is off.");
+            }
             string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetAnonymousIdOrNull() ?? "not set";
             page.Paragraph($"<b>Anonymous ID:</b> <noparse>{anonId}</noparse>");
             page.ConfirmButton("Reset telemetry ID", () =>
@@ -72,8 +75,6 @@ namespace SpiderSurge
                 Logging.SpiderSurgeTelemetryUploader.Instance.ResetAnonymousId();
                 SettingsPage.RefreshOpen();
             });
-
         }
-
     }
 }
