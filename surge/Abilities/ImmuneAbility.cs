@@ -140,6 +140,10 @@ namespace SpiderSurge
                     DestroyBarrier();
                     spiderHealthSystem.DisableShield();
                 }
+                else if (wasHitDuringSession && IsPlayerAlive())
+                {
+                    Logging.SpiderSurgeStatsManager.Instance.LogAbilitySave(PlayerId);
+                }
             }
 
             if (IsImmune)

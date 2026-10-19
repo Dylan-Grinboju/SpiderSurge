@@ -77,7 +77,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 ### Logging:
 `surge.statsLogging`: Records each run's ability and ultimate use, perk choices and waves to a local file, and feeds it to the Stats titles and the telemetry. Default: `true`.
 
-`surge.telemetry`: Uploads anonymous stats for each finished Surge Survival run. See [Telemetry](#telemetry). Default: `false`.
+`surge.telemetry`: Uploads anonymous stats for each finished Survival run, with or without Surge mode. See [Telemetry](#telemetry). Default: `false`.
 
 `surge.showTelemetryPrompt`: Asks whether to share run stats a few seconds after the game starts. Answering the question turns it off. Default: `true`.
 
@@ -93,12 +93,14 @@ Telemetry is off until you agree. The first time the game starts with Surge on, 
 
 ### What is sent
 
-One report per finished Surge Survival run, sent by the host:
+One report per finished Survival run, with or without Surge mode, sent by the host. A plain Survival run sends the same report with no ability or ultimate use, and every perk choice counted as a plain perk:
 
-- **The run:** mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, whether the perk choice timer is unlimited, and whether the run had abilities.
+- **The run:** whether it was a Surge run, mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, whether the perk choice timer is unlimited, and whether the run had abilities.
 - **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took. A perk screen still open when the run ends is sent with no card picked.
-- **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, and how many spiders died in it.
-- **Each player, by slot number:** ability and ultimate presses. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills by enemy type, friendly kills, shots fired and hit, and time alive.
+- **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, how many spiders died in it, how many abilities and ultimates were used in it, and how many times Null Field blocked a hit that would have killed a spider without a shield.
+- **Each player, by slot number:** ability and ultimate presses, and how many of their deaths Null Field blocked. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills while their ability or ultimate was on, kills by enemy type, kills and shields broken by each weapon (Kinetic Pulse counts as a weapon), friendly kills, shots fired and hit, and time alive.
+
+- **Titles**, when the Stats part is on and the run had 2 or more players: every title earned at the end of the run, with the slot number of the player who earned it and whether it was one of the cards on the end screen, whether titles were shown at all, how many titles the run newly unlocked in the [title collection](../stats/README.md#title-collection), how many are unlocked on this PC in total, and how many titles exist. The collection itself, with its dates, is never sent.
 
 A very long run's report leaves out its oldest perk choices and waves, so it stays within the 32 KB the relay accepts.
 

@@ -193,8 +193,22 @@ public class TitlesManager
     public int TitleCount => currentTitles.Count;
     public event Action OnTitlesUpdated;
 
+    // Goes up every time a run's titles are worked out, so a reader can tell whether they belong to the run it saw end
+    public int CalculationCount { get; private set; }
+    public bool LastTitlesShown { get; private set; }
+    public int? LastNewlyUnlocked { get; private set; }
+
+    public void SetRunOutcome(bool shown, int? newlyUnlocked)
+    {
+        LastTitlesShown = shown;
+        LastNewlyUnlocked = newlyUnlocked;
+    }
+
     public void CalculateAndStoreTitles(GameStatsSnapshot snapshot)
     {
+        CalculationCount++;
+        LastTitlesShown = false;
+        LastNewlyUnlocked = null;
         currentTitles.Clear();
         allTitles.Clear();
 
@@ -221,7 +235,7 @@ public class TitlesManager
             {
                 currentTitles.Add(new TitleEntry(player)
                 {
-                    TitleName = "Average Joe",
+                    TitleName = TitleCatalog.AverageJoe,
                     Description = "Participated",
                     Priority = 100
                 });
@@ -651,87 +665,82 @@ public class TitlesManager
     {
         var conditions = new Dictionary<string, StatCondition>();
 
-        void Add(string req, KeyValuePair<PlayerController, PlayerTracker.PlayerData> leader, bool hasStat, string desc)
+        void Add(string req, KeyValuePair<PlayerController, PlayerTracker.PlayerData> leader, bool hasStat, string value)
         {
-            conditions[req] = new StatCondition(req, leader, hasStat, desc);
+            conditions[req] = new StatCondition(req, leader, hasStat, $"{TitleCatalog.Label(req)} ({value})");
         }
 
-        Add(Req.MostWebSwings, leaders.MostWebSwings, leaders.MostWebSwings.Value.WebSwings > 0, $"Most Web Swings ({leaders.MostWebSwings.Value.WebSwings})");
-        Add(Req.LeastWebSwings, leaders.LeastWebSwings, true, $"Least Web Swings ({leaders.LeastWebSwings.Value.WebSwings})");
-        Add(Req.HighestPoint, leaders.HighestPoint, leaders.HighestPoint.Value.HighestPoint > 0, $"Highest Point ({leaders.HighestPoint.Value.HighestPoint:F1}m)");
-        Add(Req.LowestPoint, leaders.LowestPoint, true, $"Lowest Point ({leaders.LowestPoint.Value.HighestPoint:F1}m)");
-        Add(Req.MostAirborneTime, leaders.MostAirborneTime, leaders.MostAirborneTime.Value.AirborneTime > 0f, $"Most Airborne Time ({leaders.MostAirborneTime.Value.AirborneTime:F1}s)");
-        Add(Req.LeastAirborneTime, leaders.LeastAirborneTime, true, $"Least Airborne Time ({leaders.LeastAirborneTime.Value.AirborneTime:F1}s)");
-        Add(Req.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne > 0, $"Most Kills While Airborne ({leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne})");
-        Add(Req.MostKillsWhileSolo, leaders.MostKillsWhileSolo, leaders.MostKillsWhileSolo.Value.KillsWhileSolo > 0, $"Most Kills While Solo ({leaders.MostKillsWhileSolo.Value.KillsWhileSolo})");
-        Add(Req.MostWaveClutches, leaders.MostWaveClutches, leaders.MostWaveClutches.Value.WaveClutches > 0, $"Most Wave Clutches ({leaders.MostWaveClutches.Value.WaveClutches})");
-        Add(Req.MaxKillStreak, leaders.MaxKillStreak, leaders.MaxKillStreak.Value.MaxKillStreak > 0, $"Max Kill Streak ({leaders.MaxKillStreak.Value.MaxKillStreak})");
-        Add(Req.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo > 0, $"Max Kill Streak While Solo ({leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo})");
-        Add(Req.MostAliveTime, leaders.MostAliveTime, leaders.MostAliveTime.Value.TotalAliveTime > 0f, $"Most Alive Time ({leaders.MostAliveTime.Value.TotalAliveTime:F1}s)");
+        Add(Req.MostWebSwings, leaders.MostWebSwings, leaders.MostWebSwings.Value.WebSwings > 0, leaders.MostWebSwings.Value.WebSwings.ToString());
+        Add(Req.LeastWebSwings, leaders.LeastWebSwings, true, leaders.LeastWebSwings.Value.WebSwings.ToString());
+        Add(Req.HighestPoint, leaders.HighestPoint, leaders.HighestPoint.Value.HighestPoint > 0, $"{leaders.HighestPoint.Value.HighestPoint:F1}m");
+        Add(Req.LowestPoint, leaders.LowestPoint, true, $"{leaders.LowestPoint.Value.HighestPoint:F1}m");
+        Add(Req.MostAirborneTime, leaders.MostAirborneTime, leaders.MostAirborneTime.Value.AirborneTime > 0f, $"{leaders.MostAirborneTime.Value.AirborneTime:F1}s");
+        Add(Req.LeastAirborneTime, leaders.LeastAirborneTime, true, $"{leaders.LeastAirborneTime.Value.AirborneTime:F1}s");
+        Add(Req.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne > 0, leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne.ToString());
+        Add(Req.MostKillsWhileSolo, leaders.MostKillsWhileSolo, leaders.MostKillsWhileSolo.Value.KillsWhileSolo > 0, leaders.MostKillsWhileSolo.Value.KillsWhileSolo.ToString());
+        Add(Req.MostWaveClutches, leaders.MostWaveClutches, leaders.MostWaveClutches.Value.WaveClutches > 0, leaders.MostWaveClutches.Value.WaveClutches.ToString());
+        Add(Req.MaxKillStreak, leaders.MaxKillStreak, leaders.MaxKillStreak.Value.MaxKillStreak > 0, leaders.MaxKillStreak.Value.MaxKillStreak.ToString());
+        Add(Req.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo > 0, leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo.ToString());
+        Add(Req.MostAliveTime, leaders.MostAliveTime, leaders.MostAliveTime.Value.TotalAliveTime > 0f, $"{leaders.MostAliveTime.Value.TotalAliveTime:F1}s");
 
         long mostOffenseVal = leaders.MostOffense.Value.Kills + leaders.MostOffense.Value.EnemyShieldsTakenDown;
-        Add(Req.MostOffense, leaders.MostOffense, mostOffenseVal > 0, $"Most Offense ({mostOffenseVal})");
+        Add(Req.MostOffense, leaders.MostOffense, mostOffenseVal > 0, mostOffenseVal.ToString());
 
         long leastOffenseVal = leaders.LeastOffense.Value.Kills + leaders.LeastOffense.Value.EnemyShieldsTakenDown;
-        Add(Req.LeastOffense, leaders.LeastOffense, true, $"Least Offense ({leastOffenseVal})");
+        Add(Req.LeastOffense, leaders.LeastOffense, true, leastOffenseVal.ToString());
 
         long mostDamageTakenVal = leaders.MostDamageTaken.Value.Deaths + leaders.MostDamageTaken.Value.ShieldsLost;
-        Add(Req.MostDamageTaken, leaders.MostDamageTaken, mostDamageTakenVal > 0, $"Most Damage Taken ({mostDamageTakenVal})");
+        Add(Req.MostDamageTaken, leaders.MostDamageTaken, mostDamageTakenVal > 0, mostDamageTakenVal.ToString());
 
         long leastDamageTakenVal = leaders.LeastDamageTaken.Value.Deaths + leaders.LeastDamageTaken.Value.ShieldsLost;
-        Add(Req.LeastDamageTaken, leaders.LeastDamageTaken, true, $"Least Damage Taken ({leastDamageTakenVal})");
+        Add(Req.LeastDamageTaken, leaders.LeastDamageTaken, true, leastDamageTakenVal.ToString());
 
         long mostFriendlyFireVal = leaders.MostFriendlyFire.Value.FriendlyKills + leaders.MostFriendlyFire.Value.FriendlyShieldsHit;
-        Add(Req.MostFriendlyFire, leaders.MostFriendlyFire, mostFriendlyFireVal > 0, $"Most Friendly Fire ({mostFriendlyFireVal})");
+        Add(Req.MostFriendlyFire, leaders.MostFriendlyFire, mostFriendlyFireVal > 0, mostFriendlyFireVal.ToString());
 
         long leastFriendlyFireVal = leaders.LeastFriendlyFire.Value.FriendlyKills + leaders.LeastFriendlyFire.Value.FriendlyShieldsHit;
-        Add(Req.LeastFriendlyFire, leaders.LeastFriendlyFire, true, $"Least Friendly Fire ({leastFriendlyFireVal})");
+        Add(Req.LeastFriendlyFire, leaders.LeastFriendlyFire, true, leastFriendlyFireVal.ToString());
 
-        Add(Req.MostShieldsLost, leaders.MostShieldsLost, leaders.MostShieldsLost.Value.ShieldsLost > 0, $"Most Shields Lost ({leaders.MostShieldsLost.Value.ShieldsLost})");
-        Add(Req.LeastShieldsLost, leaders.LeastShieldsLost, true, $"Least Shields Lost ({leaders.LeastShieldsLost.Value.ShieldsLost})");
-        Add(Req.MostDeaths, leaders.MostDeaths, leaders.MostDeaths.Value.Deaths > 0, $"Most Deaths ({leaders.MostDeaths.Value.Deaths})");
-        Add(Req.LeastDeaths, leaders.LeastDeaths, true, $"Least Deaths ({leaders.LeastDeaths.Value.Deaths})");
-        Add(Req.MostLavaDeaths, leaders.MostLavaDeaths, leaders.MostLavaDeaths.Value.LavaDeaths > 0, $"Most Lava Deaths ({leaders.MostLavaDeaths.Value.LavaDeaths})");
-        Add(Req.LeastLavaDeaths, leaders.LeastLavaDeaths, true, $"Least Lava Deaths ({leaders.LeastLavaDeaths.Value.LavaDeaths})");
+        Add(Req.MostShieldsLost, leaders.MostShieldsLost, leaders.MostShieldsLost.Value.ShieldsLost > 0, leaders.MostShieldsLost.Value.ShieldsLost.ToString());
+        Add(Req.LeastShieldsLost, leaders.LeastShieldsLost, true, leaders.LeastShieldsLost.Value.ShieldsLost.ToString());
+        Add(Req.MostDeaths, leaders.MostDeaths, leaders.MostDeaths.Value.Deaths > 0, leaders.MostDeaths.Value.Deaths.ToString());
+        Add(Req.LeastDeaths, leaders.LeastDeaths, true, leaders.LeastDeaths.Value.Deaths.ToString());
+        Add(Req.MostLavaDeaths, leaders.MostLavaDeaths, leaders.MostLavaDeaths.Value.LavaDeaths > 0, leaders.MostLavaDeaths.Value.LavaDeaths.ToString());
+        Add(Req.LeastLavaDeaths, leaders.LeastLavaDeaths, true, leaders.LeastLavaDeaths.Value.LavaDeaths.ToString());
 
         long gunsVal = WeaponKills(leaders.MostGunsKills.Value, GunWeapons);
-        Add(Req.MostGunsKills, leaders.MostGunsKills, gunsVal > 0, $"Most Gun Kills ({gunsVal})");
+        Add(Req.MostGunsKills, leaders.MostGunsKills, gunsVal > 0, gunsVal.ToString());
 
         long expVal = WeaponKills(leaders.MostExplosionsKills.Value, ExplosiveWeapons);
-        Add(Req.MostExplosionsKills, leaders.MostExplosionsKills, expVal > 0, $"Most Explosive Kills ({expVal})");
+        Add(Req.MostExplosionsKills, leaders.MostExplosionsKills, expVal > 0, expVal.ToString());
 
         long bladeVal = WeaponKills(leaders.MostBladeKills.Value, BladeWeapons);
-        Add(Req.MostBladeKills, leaders.MostBladeKills, bladeVal > 0, $"Most Blade Kills ({bladeVal})");
+        Add(Req.MostBladeKills, leaders.MostBladeKills, bladeVal > 0, bladeVal.ToString());
 
-        Add(Req.MostHornetKills, leaders.MostHornetKills, leaders.MostHornetKills.Value.EnemyKills["Hornet"] > 0, $"Most Hornets Killed ({leaders.MostHornetKills.Value.EnemyKills["Hornet"]})");
+        Add(Req.MostHornetKills, leaders.MostHornetKills, leaders.MostHornetKills.Value.EnemyKills["Hornet"] > 0, leaders.MostHornetKills.Value.EnemyKills["Hornet"].ToString());
 
         long whispVal = leaders.MostWhispKills.Value.EnemyKills["Whisp"] + leaders.MostWhispKills.Value.EnemyKills["Power Whisp"];
-        Add(Req.MostWhispKills, leaders.MostWhispKills, whispVal > 0, $"Most Whisps Killed ({whispVal})");
+        Add(Req.MostWhispKills, leaders.MostWhispKills, whispVal > 0, whispVal.ToString());
 
         long khepriVal = leaders.MostKhepriKills.Value.EnemyKills["Khepri"] + leaders.MostKhepriKills.Value.EnemyKills["Power Khepri"];
-        Add(Req.MostKhepriKills, leaders.MostKhepriKills, khepriVal > 0, $"Most Khepris Killed ({khepriVal})");
+        Add(Req.MostKhepriKills, leaders.MostKhepriKills, khepriVal > 0, khepriVal.ToString());
 
-        Add(Req.MostAstralReturns, leaders.MostAstralReturns, leaders.MostAstralReturns.Value.AstralReturns > 0, $"Most Astral Returns ({leaders.MostAstralReturns.Value.AstralReturns})");
+        Add(Req.MostAstralReturns, leaders.MostAstralReturns, leaders.MostAstralReturns.Value.AstralReturns > 0, leaders.MostAstralReturns.Value.AstralReturns.ToString());
 
         var accuracy = leaders.BestAccuracy.Value.ShootingAccuracy;
-        Add(Req.BestAccuracy, leaders.BestAccuracy, HasAccuracy(accuracy, MinAccuracyShots), $"Best Accuracy ({accuracy.Display})");
+        Add(Req.BestAccuracy, leaders.BestAccuracy, HasAccuracy(accuracy, MinAccuracyShots), accuracy.Display);
 
         var railvolverAccuracy = RailvolverAccuracy(leaders.BestRailvolverAccuracy.Value);
-        Add(Req.BestRailvolverAccuracy, leaders.BestRailvolverAccuracy, HasAccuracy(railvolverAccuracy, MinRailvolverShots), $"Best Railvolver Accuracy ({railvolverAccuracy.Display})");
+        Add(Req.BestRailvolverAccuracy, leaders.BestRailvolverAccuracy, HasAccuracy(railvolverAccuracy, MinRailvolverShots), railvolverAccuracy.Display);
 
         var worstAccuracy = leaders.WorstAccuracy.Value.ShootingAccuracy;
         bool hasWorstAccuracy = worstAccuracy.ShotsFired >= MinAccuracyShots && worstAccuracy.Percentage < accuracy.Percentage;
-        Add(Req.WorstAccuracy, leaders.WorstAccuracy, hasWorstAccuracy, $"Worst Accuracy ({worstAccuracy.Display})");
+        Add(Req.WorstAccuracy, leaders.WorstAccuracy, hasWorstAccuracy, worstAccuracy.Display);
 
         int mostShotsFired = leaders.MostShotsFired.Value.ShootingAccuracy.ShotsFired;
-        Add(Req.MostShotsFired, leaders.MostShotsFired, mostShotsFired > 0, $"Most Shots Fired ({mostShotsFired})");
+        Add(Req.MostShotsFired, leaders.MostShotsFired, mostShotsFired > 0, mostShotsFired.ToString());
 
         return conditions;
-    }
-
-    private void TryAddTitle(List<TitleEntry> titles, StatLeaders leaders, Dictionary<string, StatCondition> conditions, string name, params string[] reqNames)
-    {
-        TryAddTitle(titles, leaders, conditions, name, 0, reqNames);
     }
 
     private void TryAddTitle(List<TitleEntry> titles, StatLeaders leaders, Dictionary<string, StatCondition> conditions, string name, int bonusPriority, params string[] reqNames)
@@ -762,104 +771,10 @@ public class TitlesManager
 
     private void AddTitles(List<TitleEntry> titles, StatLeaders leaders, Dictionary<string, StatCondition> conditions)
     {
-        TryAddTitle(titles, leaders, conditions, "Peter Parker", Req.MostWebSwings);
-        TryAddTitle(titles, leaders, conditions, leaders.HighestPoint.Value.HighestPoint >= 1000 ? "1000 Meters Club" : "Sky Scraper", leaders.HighestPoint.Value.HighestPoint >= 1000 ? 40 : 0, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Air Dancer", Req.MostAirborneTime);
-        TryAddTitle(titles, leaders, conditions, "Sky Hunter", Req.MostKillsWhileAirborne);
-        TryAddTitle(titles, leaders, conditions, "Lone Wolf", Req.MostKillsWhileSolo);
-        TryAddTitle(titles, leaders, conditions, "Clutch Master", Req.MostWaveClutches);
-        TryAddTitle(titles, leaders, conditions, "Serial Killer", Req.MaxKillStreak);
-        TryAddTitle(titles, leaders, conditions, "Solo Rampage", Req.MaxKillStreakWhileSolo);
-        TryAddTitle(titles, leaders, conditions, "Survivor", Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "Destroyer", Req.MostOffense);
-        TryAddTitle(titles, leaders, conditions, "Punching Bag", Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Shadow", Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Confused", Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Team Player", Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Pacifist", Req.LeastOffense);
-        TryAddTitle(titles, leaders, conditions, "Gunslinger", Req.MostGunsKills);
-        TryAddTitle(titles, leaders, conditions, "Demolitionist", Req.MostExplosionsKills);
-        TryAddTitle(titles, leaders, conditions, "Blade Master", Req.MostBladeKills);
-        TryAddTitle(titles, leaders, conditions, "Slippery", Req.MostLavaDeaths);
-        TryAddTitle(titles, leaders, conditions, "Floor is Lava", Req.LeastLavaDeaths);
-        TryAddTitle(titles, leaders, conditions, "Resurrection", Req.MostAstralReturns);
-        TryAddTitle(titles, leaders, conditions, "Bullseye", Req.BestAccuracy);
-        TryAddTitle(titles, leaders, conditions, "Sniper", Req.BestRailvolverAccuracy);
-        TryAddTitle(titles, leaders, conditions, "Stormtrooper", Req.WorstAccuracy);
-
-        TryAddTitle(titles, leaders, conditions, "Orbital Strike", Req.MostOffense, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Satellite", Req.MostAirborneTime, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Glass Cannon", Req.MostOffense, Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Sword and Shield", Req.MostOffense, Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Nothing Burger", Req.LeastOffense, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "On Death's Bed", Req.MostShieldsLost, Req.LeastDeaths);
-        TryAddTitle(titles, leaders, conditions, "Perfectly Balanced", Req.MostOffense, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Spider-Man", Req.MostWebSwings, Req.MostAirborneTime);
-        TryAddTitle(titles, leaders, conditions, "Lawn-mower", Req.MostOffense, Req.LowestPoint);
-        TryAddTitle(titles, leaders, conditions, "Hit & Run", Req.MostOffense, Req.MostWebSwings);
-        TryAddTitle(titles, leaders, conditions, "Last Stand Hero", Req.MostWaveClutches, Req.MostKillsWhileSolo);
-        TryAddTitle(titles, leaders, conditions, "Kamikaze", Req.MostExplosionsKills, Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "War Machine", Req.MostGunsKills, Req.MostOffense);
-        TryAddTitle(titles, leaders, conditions, "Silent Assassin", Req.MostBladeKills, Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "I have the High Ground", Req.MostBladeKills, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Nine Lives", Req.MostDamageTaken, Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "Jedi Master", Req.MostHornetKills, Req.MostBladeKills);
-        TryAddTitle(titles, leaders, conditions, "Sharpshooter", Req.MostWhispKills, Req.MostGunsKills);
-        TryAddTitle(titles, leaders, conditions, "Pharaoh", Req.MostKhepriKills, Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Cockroach", Req.MostAliveTime, Req.LowestPoint);
-        TryAddTitle(titles, leaders, conditions, "Icarus", Req.MostLavaDeaths, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Firewalker", Req.LeastLavaDeaths, Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "Gravity Police", Req.MostKillsWhileAirborne, Req.LowestPoint);
-        TryAddTitle(titles, leaders, conditions, "Slow and Steady", Req.LeastWebSwings, Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Overkill", Req.MaxKillStreak, Req.MostOffense);
-        TryAddTitle(titles, leaders, conditions, "Insurance Policy", Req.MostShieldsLost, Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "Second Chances", Req.MostAstralReturns, Req.MostDeaths);
-        TryAddTitle(titles, leaders, conditions, "Guns Blazing", Req.MaxKillStreakWhileSolo, Req.MostGunsKills);
-        TryAddTitle(titles, leaders, conditions, "Came to Finish the Job", Req.MaxKillStreakWhileSolo, Req.MostAstralReturns);
-        TryAddTitle(titles, leaders, conditions, "Defying Gravity", Req.LeastLavaDeaths, Req.MostAirborneTime);
-        TryAddTitle(titles, leaders, conditions, "Phoenix", Req.LeastLavaDeaths, Req.MostAstralReturns);
-        TryAddTitle(titles, leaders, conditions, "Death from Above", Req.BestAccuracy, Req.HighestPoint);
-        TryAddTitle(titles, leaders, conditions, "Non-Lethal Rounds", Req.BestAccuracy, Req.LeastOffense);
-        TryAddTitle(titles, leaders, conditions, "Aimbot", Req.BestAccuracy, Req.MostOffense);
-        TryAddTitle(titles, leaders, conditions, "Steady", Req.BestAccuracy, Req.LeastAirborneTime);
-        TryAddTitle(titles, leaders, conditions, "Spray and Pray", Req.WorstAccuracy, Req.MostShotsFired);
-
-        TryAddTitle(titles, leaders, conditions, "ICBM", Req.MostExplosionsKills, Req.HighestPoint, Req.MostAirborneTime);
-        TryAddTitle(titles, leaders, conditions, "Phantom Blade", Req.MostBladeKills, Req.HighestPoint, Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Elegant Barbarian", Req.MostOffense, Req.MostDamageTaken, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "MVP", Req.MostOffense, Req.LeastDamageTaken, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Agent of Chaos", Req.MostOffense, Req.LeastDamageTaken, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Ordered Chaos", Req.MostFriendlyFire, Req.MaxKillStreakWhileSolo, Req.MostWaveClutches);
-        TryAddTitle(titles, leaders, conditions, "Traitor", Req.LeastOffense, Req.LeastDamageTaken, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "AFK", Req.MostDamageTaken, Req.LeastOffense, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Spooderman", Req.MostWebSwings, Req.MostAirborneTime, Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Basement Dweller", Req.LowestPoint, Req.LeastAirborneTime, Req.LeastWebSwings);
-        TryAddTitle(titles, leaders, conditions, "Marksman", Req.MostGunsKills, Req.MostOffense, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Mutually Assured Destruction", Req.MostExplosionsKills, Req.MostOffense, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Master of Arms", Req.MostExplosionsKills, Req.MostGunsKills, Req.MostBladeKills);
-        TryAddTitle(titles, leaders, conditions, "Sith Lord", Req.MostHornetKills, Req.MostBladeKills, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "One Man Army", Req.MaxKillStreakWhileSolo, Req.MostKillsWhileSolo, Req.MostWaveClutches);
-        TryAddTitle(titles, leaders, conditions, "Iron Spider", Req.MostWebSwings, Req.MostAirborneTime, Req.MostBladeKills);
-        TryAddTitle(titles, leaders, conditions, "Perseverance", Req.MostAstralReturns, Req.MostShieldsLost, Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "A Gust of Wind", Req.MostAstralReturns, Req.LeastOffense, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Anubis", Req.MostAstralReturns, Req.MostKhepriKills, Req.MostDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Surgical Strike", Req.BestAccuracy, Req.MostOffense, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Camper", Req.BestAccuracy, Req.LeastAirborneTime, Req.LeastWebSwings);
-        TryAddTitle(titles, leaders, conditions, "Bullet Time", Req.BestAccuracy, Req.MostAirborneTime, Req.MostKillsWhileAirborne);
-        TryAddTitle(titles, leaders, conditions, "High Noon", Req.BestAccuracy, Req.MostGunsKills, Req.MostKillsWhileSolo);
-        TryAddTitle(titles, leaders, conditions, "Deadeye", Req.BestAccuracy, Req.MostDamageTaken, Req.MostDeaths);
-        TryAddTitle(titles, leaders, conditions, "Trigger Happy", Req.WorstAccuracy, Req.MostShotsFired, Req.MostFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "Blind Rage", Req.WorstAccuracy, Req.MostOffense, Req.MaxKillStreak);
-
-        TryAddTitle(titles, leaders, conditions, "God Complex", Req.MostOffense, Req.LeastDamageTaken, Req.HighestPoint, Req.LeastFriendlyFire);
-        TryAddTitle(titles, leaders, conditions, "The Untouchable", Req.HighestPoint, Req.MostAirborneTime, Req.LeastDamageTaken, Req.MostWebSwings);
-        TryAddTitle(titles, leaders, conditions, "Nuclear Warhead", Req.MostOffense, Req.HighestPoint, Req.MostAirborneTime, Req.MostExplosionsKills);
-        TryAddTitle(titles, leaders, conditions, "Inside Job", Req.LeastOffense, Req.LeastDamageTaken, Req.MostFriendlyFire, Req.MostExplosionsKills);
-        TryAddTitle(titles, leaders, conditions, "Rambo", Req.MostOffense, Req.LeastDamageTaken, Req.LeastFriendlyFire, Req.MostGunsKills);
-        TryAddTitle(titles, leaders, conditions, "Darth Vader", Req.MostHornetKills, Req.MostBladeKills, Req.MostFriendlyFire, Req.MostLavaDeaths);
-        TryAddTitle(titles, leaders, conditions, "Bunker", Req.LowestPoint, Req.LeastAirborneTime, Req.LeastWebSwings, Req.MostAliveTime);
-        TryAddTitle(titles, leaders, conditions, "Air Superiority", Req.HighestPoint, Req.MostAirborneTime, Req.MostKillsWhileAirborne, Req.MostWebSwings);
-        TryAddTitle(titles, leaders, conditions, "Spectral Blade", Req.MostAstralReturns, Req.MostBladeKills, Req.HighestPoint, Req.LeastDamageTaken);
-        TryAddTitle(titles, leaders, conditions, "Turret", Req.BestAccuracy, Req.LeastWebSwings, Req.LeastAirborneTime, Req.LowestPoint);
+        foreach (var title in TitleCatalog.Native)
+        {
+            if (title.Requirements.Length == 0 || (title.Condition != null && !title.Condition(leaders))) continue;
+            TryAddTitle(titles, leaders, conditions, title.Name, title.BonusPriority, title.Requirements);
+        }
     }
 }

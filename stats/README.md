@@ -37,6 +37,11 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 
 <img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
 
+### Title collection
+Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Stats** > **Title collection** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed while the Surge part is on. **Reset the title collection** at the bottom of the page locks every title again.
+
+The collection is saved on your PC in the game's own save folder, so updating or reinstalling the mod or the game keeps it: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\titles.dat` for Steam (`...\SPIDERHECK\SpiderSurge\titles.dat` for the Xbox app). It holds only title names, counts and dates. Each save writes a new file and swaps it in, keeping the previous one as `titles.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `titles.dat.broken`.
+
 ## How to configure Stats
 
 ### From the Mods menu:
@@ -78,6 +83,8 @@ To stop tracking altogether, turn off the Stats part (`parts.stats`).
 
 `stats.titles.revealDelaySeconds`: Controls the delay between revealing each title card in the titles screen animation, from 0 to 10. Default is 2.0 seconds. Set to 0 for instant reveal.
 
+The title collection isn't a setting, so it isn't in this file; see [Title collection](#title-collection).
+
 ### Input:
 `stats.input.cycleInput`: Controls which input on a controller cycles the UI. Options are `dpad`, `joystick`, `both`, or `none`. The joystick input refers to pressing down either joystick. The default and recommended is `dpad`. While Surge's ultimate is on the D-pad (`surge.dpadUltimate`), `dpad` works like `none` and `both` like `joystick`.
 
@@ -109,10 +116,20 @@ Registers a custom title that participates in the native title pipeline (dominat
 | `leaderHasStat` | Set to `true` if the external mod already validated the stat. If `false` and `leader` is non-null, the title is rejected |
 | `bonusPriority` | Additional priority added on top of the base (`requirementCount × 10`). Higher priority = more likely to be displayed |
 
+#### `DescribeTitle(string titleName, string howToEarn)`
+
+Lists a title in the title collection, so players see it and how to earn it while it is still locked. Call it once at startup, with the same name you pass to `RegisterCustomTitle`. A title that is earned without being described still unlocks; it shows in the collection with a generic description.
+
+| Parameter | Description |
+|---|---|
+| `titleName` | The title's name, exactly as passed to `RegisterCustomTitle` |
+| `howToEarn` | A short line on how to earn it (up to 200 characters) |
+
 ### Important Notes
 
 - **Data is cleared** at the start of each game session — external mods should re-register their stats and titles after each game ends.
 - **Titles require 2+ players** — they are meaningless in solo play and will not be displayed.
+- **Unlocking** — a title unlocks in the collection when it shows on the end screen, so a title that is earned but loses its spot to higher-priority titles doesn't unlock that run.
 - **Titles are Survival-only** — native and external titles are skipped for Versus matches, with or without teams.
 - **Thread safety**: All API methods are synchronized internally. Safe to call from any thread.
 - **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part is off, registered stats and titles are never shown.

@@ -83,6 +83,36 @@ namespace SpiderSurge.Integration
             public string ReqName;
         }
 
+        private const string MostAbilityText = "Most Ability Activations";
+        private const string LeastAbilityText = "Least Ability Activations";
+        private const string MostUltText = "Most Ultimate Activations";
+        private const string LeastUltText = "Least Ultimate Activations";
+
+        private static readonly (string name, string mode, string[] requirements)[] SurgeTitles =
+        {
+            ("Enhanced", null, new[] { MostAbilityText }),
+            ("Ultimate Form", null, new[] { MostUltText }),
+            ("Powered Up", null, new[] { MostUltText, MostAbilityText }),
+            ("Maximum Power", null, new[] { MostUltText, LeastAbilityText }),
+            ("Simple is Better", null, new[] { MostAbilityText, LeastUltText }),
+            ("Vanilla", null, new[] { LeastUltText, LeastAbilityText }),
+            ("Ability Destroyer", null, new[] { MostAbilityText, TitleCatalog.Label(Req.MostOffense) }),
+            ("Wasn't Fast Enough", "Immune ability", new[] { MostAbilityText, TitleCatalog.Label(Req.MostDamageTaken) }),
+            ("Down with the Ship", "Pulse ability", new[] { MostAbilityText, TitleCatalog.Label(Req.MostLavaDeaths) }),
+            ("Boom Boom", "Pulse ultimate", new[] { MostUltText, TitleCatalog.Label(Req.MostExplosionsKills) }),
+            ("Self Sacrifice", "Immune ultimate", new[] { MostUltText, TitleCatalog.Label(Req.MostDamageTaken) }),
+        };
+
+        // Lists Surge's titles in the Stats title collection, so they show before anyone earns them
+        public static void DescribeSurgeTitles()
+        {
+            foreach (var (name, mode, requirements) in SurgeTitles)
+            {
+                string where = mode == null ? "Surge mode" : $"Surge mode with the {mode}";
+                StatsModApi.DescribeTitle(name, $"{where}: {string.Join(" + ", requirements)}");
+            }
+        }
+
         public static void SendSurgeTitles(Logging.SpiderSurgeStatsSnapshot snapshot)
         {
             if (!StatsRunning || snapshot == null) return;

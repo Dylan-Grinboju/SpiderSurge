@@ -15,6 +15,7 @@ public static class StatsModApi
     private static readonly ReaderWriterLockSlim _syncLock = new ReaderWriterLockSlim();
     private static readonly List<string> externalStatLines = new();
     private static readonly List<TitleEntry> externalTitles = new();
+    private static readonly List<TitleDefinition> describedTitles = new();
 
     private const int MAX_STATS_LINES = 100;
     private const int MAX_TITLE_PRIORITY = 1000;
@@ -108,6 +109,44 @@ public static class StatsModApi
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Lists a title in the title collection in the Mods menu, so players can see it and how to earn it before they unlock it.
+    /// Call once at startup; registering the same name again replaces its text.
+    /// </summary>
+    /// <param name="titleName">The title's name, exactly as passed to RegisterCustomTitle.</param>
+    /// <param name="howToEarn">A short line on how to earn it.</param>
+    /// <returns>True if the title was listed, false if the inputs were invalid.</returns>
+    public static bool DescribeTitle(string titleName, string howToEarn)
+    {
+        if (string.IsNullOrEmpty(titleName) || titleName.Length > MAX_TITLE_LENGTH || howToEarn == null || howToEarn.Length > MAX_TITLE_LENGTH * 2) return false;
+
+        _syncLock.EnterWriteLock();
+        try
+        {
+            describedTitles.RemoveAll(t => t.Name == titleName);
+            if (describedTitles.Count >= MAX_STATS_LINES) return false;
+            describedTitles.Add(new TitleDefinition(titleName, howToEarn));
+        }
+        finally
+        {
+            _syncLock.ExitWriteLock();
+        }
+        return true;
+    }
+
+    public static List<TitleDefinition> GetDescribedTitles()
+    {
+        _syncLock.EnterReadLock();
+        try
+        {
+            return new List<TitleDefinition>(describedTitles);
+        }
+        finally
+        {
+            _syncLock.ExitReadLock();
+        }
     }
 
     public static List<string> GetExternalStats()

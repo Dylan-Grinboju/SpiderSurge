@@ -14,11 +14,29 @@ namespace SpiderSurge.Logging
         public int MaxLives { get; set; }
         public bool StatsTracked { get; set; }
         public bool UnlimitedPerkTime { get; set; }
+        public bool SurgeMode { get; set; }
         public bool AbilitiesOn { get; set; } = true;
         public List<PlayerStats> PlayerStats { get; set; } = new List<PlayerStats>();
         public List<string> GlobalPerks { get; set; } = new List<string>();
         public List<PerkChoiceRecord> PerkChoices { get; set; } = new List<PerkChoiceRecord>();
         public List<WaveRecord> Waves { get; set; } = new List<WaveRecord>();
+        public TitlesReport Titles { get; set; }
+    }
+
+    public class TitlesReport
+    {
+        public bool Shown { get; set; }
+        public int? NewlyUnlocked { get; set; }
+        public int? UnlockedTotal { get; set; }
+        public int CatalogSize { get; set; }
+        public List<EarnedTitle> Earned { get; set; } = new List<EarnedTitle>();
+    }
+
+    public class EarnedTitle
+    {
+        public string Name { get; set; }
+        public int PlayerId { get; set; }
+        public bool OnScreen { get; set; }
     }
 
     public class PlayerStats
@@ -33,7 +51,10 @@ namespace SpiderSurge.Logging
         public int ShotsFired { get; set; }
         public int ShotsHit { get; set; }
         public int AliveSeconds { get; set; }
+        public int Saves { get; set; }
+        public int KillsDuringAbility { get; set; }
         public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> WeaponHits { get; set; } = new Dictionary<string, int>();
     }
 
     public class PerkChoiceRecord
@@ -56,5 +77,8 @@ namespace SpiderSurge.Logging
         public float Seconds { get; set; }
         public int Deaths { get; set; } = -1;
         public int LivesAtStart { get; set; }
+        public int AbilityUses { get; set; }
+        public int UltimateUses { get; set; }
+        public int Saves { get; set; }
     }
 }
