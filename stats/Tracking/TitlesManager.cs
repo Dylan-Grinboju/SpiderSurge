@@ -129,6 +129,10 @@ public static class Req
     public const string MostWhispKills = nameof(StatLeaders.MostWhispKills);
     public const string MostKhepriKills = nameof(StatLeaders.MostKhepriKills);
     public const string MostAstralReturns = nameof(StatLeaders.MostAstralReturns);
+    public const string BestAccuracy = nameof(StatLeaders.BestAccuracy);
+    public const string BestRailvolverAccuracy = nameof(StatLeaders.BestRailvolverAccuracy);
+    public const string WorstAccuracy = nameof(StatLeaders.WorstAccuracy);
+    public const string MostShotsFired = nameof(StatLeaders.MostShotsFired);
 }
 
 public class StatLeaders
@@ -166,6 +170,11 @@ public class StatLeaders
     public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWhispKills { get; set; }
     public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKhepriKills { get; set; }
     public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAstralReturns { get; set; }
+
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> BestAccuracy { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> BestRailvolverAccuracy { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> WorstAccuracy { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostShotsFired { get; set; }
 }
 
 public class TitlesManager
@@ -412,8 +421,52 @@ public class TitlesManager
         var astralReturnsRanked = players.OrderByDescending(p => p.Value.AstralReturns).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
         leaders.MostAstralReturns = astralReturnsRanked[0];
 
+        leaders.BestAccuracy = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots)[0];
+        leaders.BestRailvolverAccuracy = RankByAccuracy(players, RailvolverAccuracy, MinRailvolverShots)[0];
+        leaders.WorstAccuracy = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots, lowestFirst: true)[0];
+
+        var shotsFiredRanked = players.OrderByDescending(p => p.Value.ShootingAccuracy.ShotsFired).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
+        leaders.MostShotsFired = shotsFiredRanked[0];
+
         return leaders;
     }
+
+    private const int MinAccuracyShots = 10;
+    private const int MinRailvolverShots = 5;
+    private static readonly string[] RailvolverWeapons = { "Railvolver", "DoubleRailvolver" };
+
+    // Players below the shot minimum rank last, so a couple of lucky shots can't win an accuracy title.
+    private static List<KeyValuePair<PlayerController, PlayerTracker.PlayerData>> RankByAccuracy(
+        List<KeyValuePair<PlayerController, PlayerTracker.PlayerData>> players, Func<PlayerTracker.PlayerData, WeaponAccuracy> accuracy, int minShots, bool lowestFirst = false)
+    {
+        var ranked = players
+            .Select(p => (Player: p, Accuracy: accuracy(p.Value)))
+            .OrderByDescending(p => p.Accuracy.ShotsFired >= minShots);
+        ranked = lowestFirst ? ranked.ThenBy(p => p.Accuracy.Percentage ?? -1) : ranked.ThenByDescending(p => p.Accuracy.Percentage ?? -1);
+        return ranked
+            .ThenByDescending(p => p.Accuracy.ShotsFired)
+            .ThenByDescending(p => p.Player.Value.TotalAliveTime)
+            .Select(p => p.Player)
+            .ToList();
+    }
+
+    private static WeaponAccuracy RailvolverAccuracy(PlayerTracker.PlayerData data)
+    {
+        int fired = 0, hit = 0;
+        foreach (string weapon in RailvolverWeapons)
+        {
+            if (data.AccuracyByWeapon.TryGetValue(weapon, out var accuracy))
+            {
+                fired += accuracy.ShotsFired;
+                hit += accuracy.ShotsHit;
+            }
+        }
+        var combined = new WeaponAccuracy();
+        combined.Set(fired, hit);
+        return combined;
+    }
+
+    private static bool HasAccuracy(WeaponAccuracy accuracy, int minShots) => accuracy.ShotsFired >= minShots && accuracy.ShotsHit > 0;
 
     private static readonly string[] GunWeapons = { "Shotgun", "RailShot", "DeathRay", "EnergyBall", "Laser Cannon", "SawDisc" };
     private static readonly string[] ExplosiveWeapons = { "Explosions", "Laser Cube", "DeathCube", "Snowball", "Pulse" };
@@ -660,6 +713,19 @@ public class TitlesManager
 
         Add(Req.MostAstralReturns, leaders.MostAstralReturns, leaders.MostAstralReturns.Value.AstralReturns > 0, $"Most Astral Returns ({leaders.MostAstralReturns.Value.AstralReturns})");
 
+        var accuracy = leaders.BestAccuracy.Value.ShootingAccuracy;
+        Add(Req.BestAccuracy, leaders.BestAccuracy, HasAccuracy(accuracy, MinAccuracyShots), $"Best Accuracy ({accuracy.Display})");
+
+        var railvolverAccuracy = RailvolverAccuracy(leaders.BestRailvolverAccuracy.Value);
+        Add(Req.BestRailvolverAccuracy, leaders.BestRailvolverAccuracy, HasAccuracy(railvolverAccuracy, MinRailvolverShots), $"Best Railvolver Accuracy ({railvolverAccuracy.Display})");
+
+        var worstAccuracy = leaders.WorstAccuracy.Value.ShootingAccuracy;
+        bool hasWorstAccuracy = worstAccuracy.ShotsFired >= MinAccuracyShots && worstAccuracy.Percentage < accuracy.Percentage;
+        Add(Req.WorstAccuracy, leaders.WorstAccuracy, hasWorstAccuracy, $"Worst Accuracy ({worstAccuracy.Display})");
+
+        int mostShotsFired = leaders.MostShotsFired.Value.ShootingAccuracy.ShotsFired;
+        Add(Req.MostShotsFired, leaders.MostShotsFired, mostShotsFired > 0, $"Most Shots Fired ({mostShotsFired})");
+
         return conditions;
     }
 
@@ -717,6 +783,9 @@ public class TitlesManager
         TryAddTitle(titles, leaders, conditions, "Slippery", Req.MostLavaDeaths);
         TryAddTitle(titles, leaders, conditions, "Floor is Lava", Req.LeastLavaDeaths);
         TryAddTitle(titles, leaders, conditions, "Resurrection", Req.MostAstralReturns);
+        TryAddTitle(titles, leaders, conditions, "Bullseye", Req.BestAccuracy);
+        TryAddTitle(titles, leaders, conditions, "Sniper", Req.BestRailvolverAccuracy);
+        TryAddTitle(titles, leaders, conditions, "Stormtrooper", Req.WorstAccuracy);
 
         TryAddTitle(titles, leaders, conditions, "Orbital Strike", Req.MostOffense, Req.HighestPoint);
         TryAddTitle(titles, leaders, conditions, "Satellite", Req.MostAirborneTime, Req.HighestPoint);
@@ -749,6 +818,11 @@ public class TitlesManager
         TryAddTitle(titles, leaders, conditions, "Came to Finish the Job", Req.MaxKillStreakWhileSolo, Req.MostAstralReturns);
         TryAddTitle(titles, leaders, conditions, "Defying Gravity", Req.LeastLavaDeaths, Req.MostAirborneTime);
         TryAddTitle(titles, leaders, conditions, "Phoenix", Req.LeastLavaDeaths, Req.MostAstralReturns);
+        TryAddTitle(titles, leaders, conditions, "Death from Above", Req.BestAccuracy, Req.HighestPoint);
+        TryAddTitle(titles, leaders, conditions, "Non-Lethal Rounds", Req.BestAccuracy, Req.LeastOffense);
+        TryAddTitle(titles, leaders, conditions, "Aimbot", Req.BestAccuracy, Req.MostOffense);
+        TryAddTitle(titles, leaders, conditions, "Steady", Req.BestAccuracy, Req.LeastAirborneTime);
+        TryAddTitle(titles, leaders, conditions, "Spray and Pray", Req.WorstAccuracy, Req.MostShotsFired);
 
         TryAddTitle(titles, leaders, conditions, "ICBM", Req.MostExplosionsKills, Req.HighestPoint, Req.MostAirborneTime);
         TryAddTitle(titles, leaders, conditions, "Phantom Blade", Req.MostBladeKills, Req.HighestPoint, Req.LeastDamageTaken);
@@ -769,6 +843,13 @@ public class TitlesManager
         TryAddTitle(titles, leaders, conditions, "Perseverance", Req.MostAstralReturns, Req.MostShieldsLost, Req.MostAliveTime);
         TryAddTitle(titles, leaders, conditions, "A Gust of Wind", Req.MostAstralReturns, Req.LeastOffense, Req.LeastFriendlyFire);
         TryAddTitle(titles, leaders, conditions, "Anubis", Req.MostAstralReturns, Req.MostKhepriKills, Req.MostDamageTaken);
+        TryAddTitle(titles, leaders, conditions, "Surgical Strike", Req.BestAccuracy, Req.MostOffense, Req.LeastFriendlyFire);
+        TryAddTitle(titles, leaders, conditions, "Camper", Req.BestAccuracy, Req.LeastAirborneTime, Req.LeastWebSwings);
+        TryAddTitle(titles, leaders, conditions, "Bullet Time", Req.BestAccuracy, Req.MostAirborneTime, Req.MostKillsWhileAirborne);
+        TryAddTitle(titles, leaders, conditions, "High Noon", Req.BestAccuracy, Req.MostGunsKills, Req.MostKillsWhileSolo);
+        TryAddTitle(titles, leaders, conditions, "Deadeye", Req.BestAccuracy, Req.MostDamageTaken, Req.MostDeaths);
+        TryAddTitle(titles, leaders, conditions, "Trigger Happy", Req.WorstAccuracy, Req.MostShotsFired, Req.MostFriendlyFire);
+        TryAddTitle(titles, leaders, conditions, "Blind Rage", Req.WorstAccuracy, Req.MostOffense, Req.MaxKillStreak);
 
         TryAddTitle(titles, leaders, conditions, "God Complex", Req.MostOffense, Req.LeastDamageTaken, Req.HighestPoint, Req.LeastFriendlyFire);
         TryAddTitle(titles, leaders, conditions, "The Untouchable", Req.HighestPoint, Req.MostAirborneTime, Req.LeastDamageTaken, Req.MostWebSwings);
@@ -779,5 +860,6 @@ public class TitlesManager
         TryAddTitle(titles, leaders, conditions, "Bunker", Req.LowestPoint, Req.LeastAirborneTime, Req.LeastWebSwings, Req.MostAliveTime);
         TryAddTitle(titles, leaders, conditions, "Air Superiority", Req.HighestPoint, Req.MostAirborneTime, Req.MostKillsWhileAirborne, Req.MostWebSwings);
         TryAddTitle(titles, leaders, conditions, "Spectral Blade", Req.MostAstralReturns, Req.MostBladeKills, Req.HighestPoint, Req.LeastDamageTaken);
+        TryAddTitle(titles, leaders, conditions, "Turret", Req.BestAccuracy, Req.LeastWebSwings, Req.LeastAirborneTime, Req.LowestPoint);
     }
 }
