@@ -33,7 +33,10 @@ namespace SpiderSurge.Logging
         public int ShotsFired { get; set; }
         public int ShotsHit { get; set; }
         public int AliveSeconds { get; set; }
+        public int Saves { get; set; }
+        public int KillsDuringAbility { get; set; }
         public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> WeaponHits { get; set; } = new Dictionary<string, int>();
     }
 
     public class PerkChoiceRecord
@@ -56,5 +59,8 @@ namespace SpiderSurge.Logging
         public float Seconds { get; set; }
         public int Deaths { get; set; } = -1;
         public int LivesAtStart { get; set; }
+        public int AbilityUses { get; set; }
+        public int UltimateUses { get; set; }
+        public int Saves { get; set; }
     }
 }

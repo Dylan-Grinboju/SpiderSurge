@@ -40,6 +40,7 @@ namespace StatsMod
             internal bool Airborne;
             internal bool Solo;
             internal int SoloSerial;
+            internal bool DuringAbility;
         }
 
         internal class Streak
@@ -104,6 +105,7 @@ namespace StatsMod
             public int Kills { get; set; }
             public int KillsWhileAirborne { get; set; }
             public int KillsWhileSolo { get; set; }
+            public int KillsDuringAbility { get; set; }
             public int FriendlyKills { get; set; }
             public int WaveClutches { get; set; }
             public int AstralReturns { get; set; }
@@ -146,6 +148,7 @@ namespace StatsMod
                 Kills = 0;
                 KillsWhileAirborne = 0;
                 KillsWhileSolo = 0;
+                KillsDuringAbility = 0;
                 FriendlyKills = 0;
                 WaveClutches = 0;
                 AstralReturns = 0;
@@ -455,6 +458,7 @@ namespace StatsMod
                 entry.Value.Kills = 0;
                 entry.Value.KillsWhileAirborne = 0;
                 entry.Value.KillsWhileSolo = 0;
+                entry.Value.KillsDuringAbility = 0;
                 entry.Value.FriendlyKills = 0;
                 entry.Value.WaveClutches = 0;
                 entry.Value.AstralReturns = 0;
@@ -523,6 +527,12 @@ namespace StatsMod
             {
                 data.Kills++;
 
+                if (SpiderSurge.PlayerAbilityHandler.HasActiveAbility(player.playerID.Value))
+                {
+                    data.KillsDuringAbility++;
+                    credit.DuringAbility = true;
+                }
+
                 // A kill credited after the killer died (the target reached lava or blew up later) starts no streak
                 if (!data.IsAlive) return credit;
 
@@ -565,6 +575,7 @@ namespace StatsMod
                 if (data.Kills > 0) data.Kills--;
                 if (credit.Airborne && data.KillsWhileAirborne > 0) data.KillsWhileAirborne--;
                 if (credit.Solo && data.KillsWhileSolo > 0) data.KillsWhileSolo--;
+                if (credit.DuringAbility && data.KillsDuringAbility > 0) data.KillsDuringAbility--;
                 if (credit.Streak) data.KillRun.Revert(credit.StreakSerial);
                 if (credit.Solo) data.SoloRun.Revert(credit.SoloSerial);
             }
