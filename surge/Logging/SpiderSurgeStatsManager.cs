@@ -261,14 +261,16 @@ namespace SpiderSurge.Logging
             if (_currentWaveRecord != null) _currentWaveRecord.UltimateUses++;
         }
 
-        // A Null Field that blocked a hit while the spider had no shield, so the hit would have killed it
-        public void LogAbilitySave(int playerId)
+        public WaveRecord CurrentWaveRecord => _isTracking ? _currentWaveRecord : null;
+
+        // A Null Field that blocked a hit while the spider had no shield, so the hit would have killed it; it counts in the wave the hit landed in
+        public void LogAbilitySave(int playerId, WaveRecord wave)
         {
             if (!_isTracking) return;
 
             _savesPerPlayer.TryGetValue(playerId, out int saves);
             _savesPerPlayer[playerId] = saves + 1;
-            if (_currentWaveRecord != null) _currentWaveRecord.Saves++;
+            if (wave != null && (wave == _currentWaveRecord || _waves.Contains(wave))) wave.Saves++;
         }
 
         public void IncrementWave()
@@ -364,7 +366,7 @@ namespace SpiderSurge.Logging
             _perkChoices.Add(choice);
         }
 
-        private static bool PerkChoiceTimerRanOut()
+        internal static bool PerkChoiceTimerRanOut()
         {
             if (ModConfig.UnlimitedPerkChoosingTime || SurvivalModeHud.instance == null) return false;
 

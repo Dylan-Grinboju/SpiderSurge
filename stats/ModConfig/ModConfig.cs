@@ -18,6 +18,9 @@ namespace StatsMod
         public const float MaxScale = 3f;
         public const float MaxRevealDelay = 10f;
         public static readonly string[] CycleInputs = { "dpad", "joystick", "both", "none" };
+        private static readonly Dictionary<string, string> _keys = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _columnKeys = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _accuracyKeys = new Dictionary<string, string>();
 
         public static readonly KeyValuePair<string, object>[] Defaults = new (string key, object value)[]
         {
@@ -82,7 +85,7 @@ namespace StatsMod
         }.Select(pair => new KeyValuePair<string, object>(Prefix + pair.key, pair.value))
             .Concat(WeaponAccuracy.Weapons.Select(weapon => new KeyValuePair<string, object>(ColumnsPrefix + "accuracy." + weapon.Key, false))).ToArray();
 
-        internal static bool ShowAccuracy(string weapon) => Column("accuracy." + weapon);
+        internal static bool ShowAccuracy(string weapon) => Settings.GetBool(FullKey(_accuracyKeys, ColumnsPrefix + "accuracy.", weapon));
 
         // Display settings
         public static bool ShowStatsWindow => Bool("display.showStatsWindow");
@@ -192,8 +195,19 @@ namespace StatsMod
             return size > 0 ? (float)System.Math.Round(Mathf.Clamp01((float)(pixels / size)) * 100f, 3) : 0f;
         }
 
-        private static bool Bool(string key) => Settings.GetBool(Prefix + key);
+        private static bool Bool(string key) => Settings.GetBool(FullKey(_keys, Prefix, key));
 
-        private static bool Column(string key) => Settings.GetBool(ColumnsPrefix + key);
+        private static bool Column(string key) => Settings.GetBool(FullKey(_columnKeys, ColumnsPrefix, key));
+
+        // The stats windows read these every frame, so each full key is joined once
+        private static string FullKey(Dictionary<string, string> keys, string prefix, string key)
+        {
+            if (!keys.TryGetValue(key, out string full))
+            {
+                full = prefix + key;
+                keys[key] = full;
+            }
+            return full;
+        }
     }
 }

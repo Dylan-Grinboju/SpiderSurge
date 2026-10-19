@@ -58,7 +58,7 @@ namespace SpiderSurge
             new Achievement(Doomsday, "Doomsday Scenario", "Send an armed Biggest Grenade into the Pocket Dimension."),
             new Achievement(Begone, "Begone", "Knock an enemy into lava with Kinetic Pulse."),
             new Achievement(UnstoppableForce, "Unstoppable Force Against Immovable Object", "Survive a Biggest Grenade blast inside Null Field."),
-            new Achievement(Healer, "Healer", "Revive the same player twice in one wave or round with Neural Backup."),
+            new Achievement(Healer, "Healer", "Revive the same teammate twice in one wave or round with Neural Backup."),
             new Achievement(YayIGuess, "Yay I Guess?", "Pick the Nothing perk when Luck made it a Lucky Upgrade."),
             new Achievement(NotDoneYet, "You Are Not Done Yet", "Revive an astral ghost with Neural Backup."),
             new Achievement(KissOfDeath, "Kiss of Death", "Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability."),

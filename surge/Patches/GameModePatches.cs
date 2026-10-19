@@ -59,6 +59,19 @@ namespace SpiderSurge
         }
     }
 
+    [HarmonyPatch(typeof(LobbyController), "OnPlayerLeft", new[] { typeof(UnityEngine.InputSystem.PlayerInput) })]
+    public class LobbyController_OnPlayerLeft_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(UnityEngine.InputSystem.PlayerInput playerInput)
+        {
+            if (playerInput != null)
+            {
+                PlayerControlSettings.ForgetPlayer(playerInput.playerIndex);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(PainLevelsScreen), "RefreshScreen")]
     public class PainLevelsScreen_RefreshScreen_Patch
     {

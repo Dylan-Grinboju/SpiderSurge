@@ -56,11 +56,25 @@ namespace StatsMod
                 if (Current > Max) Max = Current;
             }
 
-            public void End()
+            public int End()
             {
+                int serial = Serial;
                 if (Current > 0) ended[Serial] = Current;
                 Serial++;
                 Current = 0;
+                return serial;
+            }
+
+            // Takes back the End that returned this serial, as long as nothing has moved the streak on since
+            public void UndoEnd(int serial)
+            {
+                if (serial < 0 || Serial != serial + 1 || Current > 0) return;
+                Serial = serial;
+                if (ended.TryGetValue(serial, out int length))
+                {
+                    ended.Remove(serial);
+                    Current = length;
+                }
             }
 
             public void Reset()
@@ -114,6 +128,8 @@ namespace StatsMod
             public int ShieldsLost { get; set; }
             internal readonly Streak KillRun = new Streak();
             internal readonly Streak SoloRun = new Streak();
+            internal int KillRunDeathSerial = -1;
+            internal int SoloRunDeathSerial = -1;
             public int KillStreak { get => KillRun.Current; set => KillRun.Current = value; }
             public int MaxKillStreak { get => KillRun.Max; set => KillRun.Max = value; }
             public int KillStreakWhileSolo { get => SoloRun.Current; set => SoloRun.Current = value; }
@@ -386,8 +402,8 @@ namespace StatsMod
                 {
                     data.Deaths++;
                     DeathCountChanged?.Invoke(1);
-                    data.KillRun.End();
-                    data.SoloRun.End();
+                    data.KillRunDeathSerial = data.KillRun.End();
+                    data.SoloRunDeathSerial = data.SoloRun.End();
                     data.StopAliveTimer();
                     data.StopWebSwingTimer();
                     data.StopAirborneTimer();
@@ -436,6 +452,12 @@ namespace StatsMod
                         if (data.DeathsPerMap[currentMap] == 0)
                             data.DeathsPerMap.Remove(currentMap);
                     }
+
+                    // The revive takes the death back, so the streaks it ended carry on
+                    data.KillRun.UndoEnd(data.KillRunDeathSerial);
+                    data.SoloRun.UndoEnd(data.SoloRunDeathSerial);
+                    data.KillRunDeathSerial = -1;
+                    data.SoloRunDeathSerial = -1;
 
                     StartAliveTimer(playerInput);
                 }

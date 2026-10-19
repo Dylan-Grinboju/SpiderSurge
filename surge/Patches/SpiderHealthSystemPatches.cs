@@ -5,18 +5,19 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SpiderHealthSystem))]
     public static class SpiderHealthSystemPatches
     {
+        // A hit another prefix cancelled (Teams friendly fire) never reached the spider, so Null Field doesn't count it
         [HarmonyPatch("Damage")]
         [HarmonyPrefix]
-        public static void Damage_Prefix(SpiderHealthSystem __instance)
+        public static void Damage_Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
-            TryRecordHit(__instance);
+            if (__runOriginal) TryRecordHit(__instance);
         }
 
         [HarmonyPatch("Disintegrate")]
         [HarmonyPrefix]
-        public static void Disintegrate_Prefix(SpiderHealthSystem __instance)
+        public static void Disintegrate_Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
-            TryRecordHit(__instance);
+            if (__runOriginal) TryRecordHit(__instance);
         }
 
         [HarmonyPatch("ExplodeInDirection")]

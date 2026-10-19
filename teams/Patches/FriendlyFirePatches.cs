@@ -97,6 +97,25 @@ namespace SpiderTeams
         }
     }
 
+    [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Impact), new[] { typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
+    public static class SpiderHealthSystem_Impact_Patch
+    {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        public static bool Prefix(SpiderHealthSystem __instance)
+        {
+            try
+            {
+                return FriendlyFireGate.AllowImpact(__instance);
+            }
+            catch (Exception ex)
+            {
+                PatchScopes.Report("friendly fire knockback gate", ex);
+                return true;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(ForceField), "Damage", new[] { typeof(Collision2D) })]
     public static class ForceField_Damage_Patch
     {

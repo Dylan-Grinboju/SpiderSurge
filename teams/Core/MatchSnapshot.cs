@@ -33,13 +33,6 @@ namespace SpiderTeams
             Current = null;
         }
 
-        public static MatchSnapshot Consume()
-        {
-            var snapshot = Current;
-            Current = null;
-            return snapshot;
-        }
-
         public static void SetRemote(MatchSnapshot snapshot)
         {
             Current = snapshot;

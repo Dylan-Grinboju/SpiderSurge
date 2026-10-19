@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using HarmonyLib;
 using SpiderSurge.Common;
@@ -16,6 +17,7 @@ namespace SpiderSurge
         public const string NothingPerk = "nothing";
         public const float LowBladeDurability = 0.15f;
         public const int ThermalTeammateKills = 3;
+        public const float BlastSurvivalMargin = 0.25f;
 
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
 
@@ -169,18 +171,42 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Damage))]
     public static class SpiderHealthSystem_Damage_Achievement_Patch
     {
+        private static readonly AccessTools.FieldRef<Explosion, float> BlastEnd = AccessTools.FieldRefAccess<Explosion, float>("_stopAt");
+        private static readonly HashSet<(int spider, int blast)> Watched = new HashSet<(int, int)>();
+
         [HarmonyPrefix]
-        public static void Prefix(SpiderHealthSystem __instance)
+        public static void Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
             Explosion explosion = AchievementTracker.CurrentExplosion;
-            if (explosion == null || !explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal)) return;
+            if (!__runOriginal || explosion == null || !explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal)) return;
 
             AchievementTracker.Run("Null Field", () =>
             {
                 ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(__instance);
-                if (nullField != null && nullField.IsImmune && !AchievementTracker.Gone(__instance))
+                if (nullField == null || !nullField.IsImmune || !nullField.isActiveAndEnabled || AchievementTracker.Gone(__instance)) return;
+
+                var key = (__instance.GetInstanceID(), explosion.GetInstanceID());
+                if (Watched.Add(key))
                 {
-                    SurgeAchievements.Unlock(SurgeAchievements.UnstoppableForce, Players.Of(__instance));
+                    nullField.StartCoroutine(UnlockIfSurvived(__instance, key, BlastEnd(explosion)));
+                }
+            });
+        }
+
+        // The blast keeps hitting every tick and Null Field can run out first, so the spider has to outlive the blast
+        private static IEnumerator UnlockIfSurvived(SpiderHealthSystem spider, (int, int) key, float blastEnd)
+        {
+            while (Time.time < blastEnd + AchievementTracker.BlastSurvivalMargin)
+            {
+                yield return null;
+            }
+            Watched.Remove(key);
+
+            AchievementTracker.Run("Null Field", () =>
+            {
+                if (!AchievementTracker.Gone(spider))
+                {
+                    SurgeAchievements.Unlock(SurgeAchievements.UnstoppableForce, Players.Of(spider));
                 }
             });
         }
@@ -194,11 +220,15 @@ namespace SpiderSurge
         [HarmonyPriority(Priority.First)]
         public static void Prefix(out List<PlayerController> __state)
         {
-            __state = new List<PlayerController>();
-            foreach (PlayerController player in Players.All)
+            var ghosts = new List<PlayerController>();
+            AchievementTracker.Run("Neural Backup", () =>
             {
-                if (ImmuneAbility.IsGhost(player)) __state.Add(player);
-            }
+                foreach (PlayerController player in Players.All)
+                {
+                    if (ImmuneAbility.IsGhost(player)) ghosts.Add(player);
+                }
+            });
+            __state = ghosts;
         }
 
         [HarmonyPostfix]
@@ -215,7 +245,7 @@ namespace SpiderSurge
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.NotDoneYet, caster);
                 }
-                if (AchievementTracker.CountRevive(caster, revived) >= 2)
+                if (revived != caster && AchievementTracker.CountRevive(caster, revived) >= 2)
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.Healer, caster);
                 }
@@ -323,7 +353,17 @@ namespace SpiderSurge
         }
     }
 
-    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and it was picked
+    // The perk timer picks a card itself when it runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
+    [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
+    public static class SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch
+    {
+        public static bool TimedOut;
+
+        [HarmonyPrefix]
+        public static void Prefix() => AchievementTracker.Run("Luck", () => TimedOut = Logging.SpiderSurgeStatsManager.PerkChoiceTimerRanOut());
+    }
+
+    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and a player picked it
     [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
     public static class SurvivalMode_ChoosePerk_Achievement_Patch
     {
@@ -334,7 +374,8 @@ namespace SpiderSurge
         {
             AchievementTracker.Run("Luck", () =>
             {
-                if (SurgeGameModeManager.IsSurgeRunActive && WaitingForPerk(__instance).Value && modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
+                if (SurgeGameModeManager.IsSurgeRunActive && WaitingForPerk(__instance).Value && !SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch.TimedOut &&
+                    modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
                     modifier.levelInSurvival == 0 && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(AchievementTracker.NothingPerk))
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.YayIGuess, null);

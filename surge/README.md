@@ -14,7 +14,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
     - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
-    - **Null Field**: Become immune to all damage for a short time.
+    - **Null Field**: Become immune to all damage for a short time. Its Ultimate, **Neural Backup**, brings back a random dead player after a 10 second cast, or summons 3 friendly Wasps when nobody is dead. An Astral Heckhound ghost counts as dead and comes back where it floats, even when it is the caster's own ghost.
     - **Freeze Time**: Freeze every enemy in a large area for 5 seconds. Frozen enemies don't move, shoot or explode, but their blades, saws and poison clouds still hurt on contact. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
 - **Custom Enemies**:
     - **Twin Whisp**: A black/red Whisp that fires dual projectiles simultaneously.
@@ -25,11 +25,11 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with the backtick key (**`**) at any time. It also opens on the first launch.
-- **Achievements**: 11 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements**. See [Achievements](../README.md#achievements).
+- **Achievements**: 11 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together, or any D-pad direction if you turn that on.
-    - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key.
+    - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
     - **Reset**: Hold **Start/Menu** for 3 seconds to reset to default (L1).
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
@@ -37,6 +37,24 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
 <img width="1600" alt="The Surge guide" src="../docs/images/surge-guide.jpg" />
+
+## Achievements
+
+SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements**. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+
+| Achievement | How to unlock it |
+|---|---|
+| Black Hole | Banish a Hornet Shaman |
+| Total Destruction | Kill 3 teammates with one Thermal Detonation |
+| I Will Keep You Safe | Banish a teammate |
+| Unlimited Power | Use Bottomless Clip while holding a Particle Blade that appeared with Size Matters and Thick Blades both at level 2 |
+| Doomsday Scenario | Send an armed Biggest Grenade into the Pocket Dimension |
+| Begone | Knock an enemy into lava with Kinetic Pulse, so Stats credits you the kill. Needs Stats on |
+| Unstoppable Force Against Immovable Object | Survive a Biggest Grenade blast inside Null Field |
+| Healer | Revive the same teammate twice in one wave (or Team Versus round) with Neural Backup |
+| Yay I Guess? | Pick the Nothing perk when Luck made it a Lucky Upgrade |
+| You Are Not Done Yet | Revive an Astral Heckhound ghost with Neural Backup, your own included |
+| Kiss of Death | Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability |
 
 ## How to configure Surge
 

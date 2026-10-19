@@ -24,6 +24,7 @@ namespace SpiderSurge.Common
 
         private const float FontRetryInterval = 3f;
         private static readonly Dictionary<Color, Texture2D> _solids = new Dictionary<Color, Texture2D>();
+        private static readonly string[] _numbers = new string[1000];
         private static Texture2D _white;
         private static Font _regular;
         private static Font _bold;
@@ -144,6 +145,16 @@ namespace SpiderSurge.Common
         public static float FitScale(float scale, float baseWidth, float baseHeight, float maxWidthPercent, float maxHeightPercent)
         {
             return Mathf.Min(scale, Screen.width * maxWidthPercent / baseWidth, Screen.height * maxHeightPercent / baseHeight);
+        }
+
+        // Stat numbers are drawn every frame, so each one is turned into text once
+        public static string Number(int value)
+        {
+            if (value < 0 || value >= _numbers.Length)
+            {
+                return value.ToString();
+            }
+            return _numbers[value] ??= value.ToString();
         }
 
         public static float Width(GUIStyle style, string text) => style.CalcSize(new GUIContent(text)).x;

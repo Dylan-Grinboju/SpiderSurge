@@ -34,6 +34,12 @@ namespace SpiderSurge.Common
 
         private delegate bool Parser<T>(string raw, out T value);
 
+        // The windows read settings every frame, so each parser is one delegate rather than a new one per read
+        private static readonly Parser<bool> BoolParser = TryParseBool;
+        private static readonly Parser<int> IntParser = TryParseInt;
+        private static readonly Parser<float> FloatParser = TryParseFloat;
+        private static readonly Parser<string> StringParser = TryParseString;
+
         public static event Action<string> Changed;
 
         public static string FilePath => Config.GetModConfigPath(FileId);
@@ -234,13 +240,13 @@ namespace SpiderSurge.Common
 
         public static string Raw(string key) => ReadRaw(key, false);
 
-        public static bool GetBool(string key) => Get<bool>(key, TryParseBool);
+        public static bool GetBool(string key) => Get(key, BoolParser);
 
-        public static int GetInt(string key) => Get<int>(key, TryParseInt);
+        public static int GetInt(string key) => Get(key, IntParser);
 
-        public static float GetFloat(string key) => Get<float>(key, TryParseFloat);
+        public static float GetFloat(string key) => Get(key, FloatParser);
 
-        public static string GetString(string key) => Get<string>(key, TryParseString);
+        public static string GetString(string key) => Get(key, StringParser);
 
         public static void Set(string key, object value)
         {

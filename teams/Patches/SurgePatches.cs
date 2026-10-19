@@ -14,11 +14,13 @@ namespace SpiderTeams
         public static void Prefix(Component __instance, out bool __state)
         {
             __state = PatchScopes.EnterAttack(__instance, ability => OwnerRegistry.OfPlayer(ability.GetComponentInParent<PlayerController>()));
+            FriendlyFireGate.PulseDepth++;
         }
 
         [HarmonyFinalizer]
         public static void Finalizer(bool __state)
         {
+            FriendlyFireGate.PulseDepth--;
             PatchScopes.ExitAttack(__state);
         }
     }

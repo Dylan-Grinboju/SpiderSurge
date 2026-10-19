@@ -8,7 +8,7 @@ namespace SpiderTeams
     [HarmonyPatch(typeof(LobbyController), "OnSceneLoaded")]
     public static class LobbyController_OnSceneLoaded_Patch
     {
-        // Runs before the new lobby's LobbyScreen.Start, so the win snapshot is left for it to consume.
+        // Every scene drops the owner records; the lobby also ends Surge versus and puts the team colors and lobby label back.
         [HarmonyPostfix]
         public static void Postfix(Scene scene)
         {

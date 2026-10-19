@@ -131,6 +131,7 @@ namespace StatsMod
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private readonly List<Column> visibleColumns = new List<Column>();
+        private readonly Dictionary<(Column, int), (long Seconds, string Text)> timeTexts = new Dictionary<(Column, int), (long Seconds, string Text)>();
         #endregion
 
         #region GUI Styles
@@ -284,17 +285,30 @@ namespace StatsMod
             {
                 x -= tileWidth;
                 int enemiesKilled = statsSnapshot.EnemiesKilled;
-                DrawTile(new Rect(x, row.y, tileWidth, row.height), LABEL_ENEMIES_KILLED, enemiesKilled.ToString(), enemiesKilled > 0 ? Hud.Good : Hud.Muted, captionHeight);
+                DrawTile(new Rect(x, row.y, tileWidth, row.height), LABEL_ENEMIES_KILLED, Hud.Number(enemiesKilled), enemiesKilled > 0 ? Hud.Good : Hud.Muted, captionHeight);
             }
             if (ModConfig.ShowPlayTime)
             {
                 x -= tileWidth;
                 string value = live
-                    ? TimeFormatUtils.FormatTimeSpan(statsSnapshot.CurrentSessionTime)
-                    : statsSnapshot.LastGameDuration.TotalSeconds > 0 ? TimeFormatUtils.FormatTimeSpan(statsSnapshot.LastGameDuration) : LABEL_NO_GAMES;
+                    ? TimeText(null, -1, statsSnapshot.CurrentSessionTime)
+                    : statsSnapshot.LastGameDuration.TotalSeconds > 0 ? TimeText(null, -1, statsSnapshot.LastGameDuration) : LABEL_NO_GAMES;
                 string timeCaption = !live ? LABEL_LAST_GAME : mode == GameMode.Versus ? LABEL_MATCH_TIME : LABEL_RUN_TIME;
                 DrawTile(new Rect(x, row.y, tileWidth, row.height), timeCaption, value, live ? Hud.Text : Hud.Muted, captionHeight);
             }
+        }
+
+        // A time's text changes once a second, so it is formatted only then
+        private string TimeText(Column column, int player, TimeSpan time)
+        {
+            long seconds = time.Ticks / TimeSpan.TicksPerSecond;
+            var key = (column, player);
+            if (!timeTexts.TryGetValue(key, out var cached) || cached.Seconds != seconds || cached.Text == null)
+            {
+                cached = (seconds, TimeFormatUtils.FormatTimeSpan(time));
+                timeTexts[key] = cached;
+            }
+            return cached.Text;
         }
 
         private static bool IsSurgeRun()
@@ -365,12 +379,12 @@ namespace StatsMod
                     else if (column.Time != null)
                     {
                         TimeSpan time = column.Time(playerData);
-                        Hud.Label(cell, TimeFormatUtils.FormatTimeSpan(time), valueStyle, time.TotalSeconds >= 1 ? Hud.Text : Hud.Dim);
+                        Hud.Label(cell, TimeText(column, playerData.PlayerId, time), valueStyle, time.TotalSeconds >= 1 ? Hud.Text : Hud.Dim);
                     }
                     else
                     {
                         int value = column.Count(playerData);
-                        Hud.Label(cell, value.ToString(), valueStyle, value > 0 ? ToneColor(column.Tone) : Hud.Dim);
+                        Hud.Label(cell, Hud.Number(value), valueStyle, value > 0 ? ToneColor(column.Tone) : Hud.Dim);
                     }
                     x += width;
                 }

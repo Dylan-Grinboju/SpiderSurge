@@ -46,6 +46,7 @@ namespace StatsMod
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
         private GameStatsSnapshot statsSnapshot;
+        private GUI.WindowFunction drawWindow;
         #endregion
 
         #region GUI Styles
@@ -129,7 +130,7 @@ namespace StatsMod
             ClampToScreen();
 
             Vector2 placed = windowRect.position;
-            windowRect = GUI.Window(WindowId, windowRect, DrawStatsWindow, "", windowStyle);
+            windowRect = GUI.Window(WindowId, windowRect, drawWindow ??= DrawStatsWindow, "", windowStyle);
 
             if (windowRect.position != placed)
             {
@@ -180,8 +181,8 @@ namespace StatsMod
                         float alpha = sessionActive && !playerData.IsAlive ? DEAD_PLAYER_ALPHA : 1f;
 
                         Hud.Fill(new Rect(Padding, y + barInset, Scaled(BASE_BAR_WIDTH), PlayerRowHeight - barInset * 2), Hud.WithAlpha(Hud.Readable(playerData.PlayerColor), alpha));
-                        Hud.Label(new Rect(killX, y, killWidth, PlayerRowHeight), playerData.Kills.ToString(), valueStyle, Hud.WithAlpha(playerData.Kills > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
-                        Hud.Label(new Rect(deathX, y, deathWidth, PlayerRowHeight), playerData.Deaths.ToString(), valueStyle, Hud.WithAlpha(playerData.Deaths > 0 ? Hud.Pink : Hud.Muted, alpha), shadow);
+                        Hud.Label(new Rect(killX, y, killWidth, PlayerRowHeight), Hud.Number(playerData.Kills), valueStyle, Hud.WithAlpha(playerData.Kills > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
+                        Hud.Label(new Rect(deathX, y, deathWidth, PlayerRowHeight), Hud.Number(playerData.Deaths), valueStyle, Hud.WithAlpha(playerData.Deaths > 0 ? Hud.Pink : Hud.Muted, alpha), shadow);
                         y += PlayerRowHeight;
                     }
                 }
