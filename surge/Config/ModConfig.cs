@@ -11,6 +11,8 @@ namespace SpiderSurge
     {
         public const string DpadUltimateKey = "surge.dpadUltimate";
         public const string UnlimitedPerkTimeKey = "surge.unlimitedPerkTime";
+        public const string NoAbilitiesKey = "surge.noAbilities";
+        public const string AbilityVolumeKey = "surge.abilityVolume";
         public const string ShowTutorialKey = "surge.showTutorial";
         public const string ShowTelemetryPromptKey = "surge.showTelemetryPrompt";
         public const string StatsLoggingKey = "surge.statsLogging";
@@ -25,11 +27,15 @@ namespace SpiderSurge
 
         public const float MinIndicatorRadius = 0.5f;
         public const float MaxIndicatorRadius = 10f;
+        public const int OriginalAbilityVolume = 80;
+        public const int MaxAbilityVolume = 100;
 
         public static readonly KeyValuePair<string, object>[] Defaults =
         {
             new KeyValuePair<string, object>(DpadUltimateKey, false),
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
+            new KeyValuePair<string, object>(NoAbilitiesKey, false),
+            new KeyValuePair<string, object>(AbilityVolumeKey, OriginalAbilityVolume),
             new KeyValuePair<string, object>(ShowTutorialKey, true),
             new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
             new KeyValuePair<string, object>(StatsLoggingKey, true),
@@ -59,6 +65,11 @@ namespace SpiderSurge
         public static bool UltimateUseDpadActivation => Settings.GetBool(DpadUltimateKey);
 
         public static bool UnlimitedPerkChoosingTime => Settings.GetBool(UnlimitedPerkTimeKey);
+
+        public static bool NoAbilities => Settings.GetBool(NoAbilitiesKey);
+
+        // The slider's 80 plays every Surge sound at its original volume
+        public static float AbilityVolume => Mathf.Clamp(Settings.GetInt(AbilityVolumeKey), 0, MaxAbilityVolume) / (float)OriginalAbilityVolume;
 
         public static bool EnableStatsLogging => Settings.GetBool(StatsLoggingKey);
         public static bool TelemetryEnabled => Settings.GetBool(TelemetryKey);

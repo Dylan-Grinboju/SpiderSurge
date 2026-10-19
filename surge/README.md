@@ -41,7 +41,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Ultimate on the D-pad**, which applies from the next run. **Reset Surge settings to defaults** at the bottom keeps your telemetry choice.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities** and **Ultimate on the D-pad**, which apply from the next run. **Reset Surge settings to defaults** at the bottom keeps your telemetry choice.
 
 ### Using the Yaml file:
 
@@ -56,6 +56,11 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 `surge.dpadUltimate`: If true, any D-pad direction casts the ultimate, instead of L3 and R3 together. While it's on, the D-pad doesn't switch the Stats windows. Default: `false`.
 
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. Default: `true`.
+
+`surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
+
+### Sound:
+`surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `80`.
 
 ### UI:
 `surge.showTutorial`: Opens the Surge guide in the lobby on the next launch, then turns itself off. Resetting the Surge settings leaves it as it is. Default: `true`.
@@ -89,7 +94,7 @@ Telemetry is off until you agree. The first time the game starts with Surge on, 
 
 One report per finished Surge Survival run, sent by the host:
 
-- **The run:** mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, and whether the perk choice timer is unlimited.
+- **The run:** mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, whether the perk choice timer is unlimited, and whether the run had abilities.
 - **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took. A perk screen still open when the run ends is sent with no card picked.
 - **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, and how many spiders died in it.
 - **Each player, by slot number:** ability and ultimate presses. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills by enemy type, friendly kills, shots fired and hit, and time alive.

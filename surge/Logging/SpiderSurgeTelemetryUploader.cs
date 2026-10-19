@@ -203,6 +203,7 @@ namespace SpiderSurge.Logging
                 "\"maxLives\":" + Math.Max(0, snapshot.MaxLives) + "," +
                 "\"statsTracked\":" + JsonBool(snapshot.StatsTracked) + "," +
                 "\"unlimitedPerkTime\":" + JsonBool(snapshot.UnlimitedPerkTime) + "," +
+                "\"abilities\":" + JsonBool(snapshot.AbilitiesOn) + "," +
                 "\"globalPerksTruncated\":" + JsonBool(globalPerksTruncated) + "," +
                 "\"playerStatsTruncated\":" + JsonBool(playerStatsTruncated) + "," +
                 "\"perkChoicesTruncated\":" + JsonBool(perkChoicesTruncated) + "," +

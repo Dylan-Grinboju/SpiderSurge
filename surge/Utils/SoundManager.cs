@@ -291,9 +291,10 @@ namespace SpiderSurge
                     // Fallback if GameSettings is not ready
                 }
 
-                if (sfxVolume <= 0f) return;
+                float abilityVolume = ModConfig.AbilityVolume;
+                if (sfxVolume <= 0f || abilityVolume <= 0f) return;
 
-                _audioSource.PlayOneShot(clip, volume * sfxVolume);
+                _audioSource.PlayOneShot(clip, volume * sfxVolume * abilityVolume);
             }
             else
             {

@@ -21,11 +21,8 @@ class AwardedTitle:
     player: int
 
 
-TITLE_BLOCK_RE = re.compile(
-    r"titles\.Add\(new TitleBuilder\(leaders\)(?P<body>.*?)\.Build\(\)\);",
-    re.DOTALL,
-)
-NAME_RE = re.compile(r'\.WithName\("(?P<name>(?:[^"\\]|\\.)*)"\)')
+TITLE_BLOCK_RE = re.compile(r"TryAddTitle\(titles, leaders, conditions, (?P<body>.*?)\);")
+NAME_RE = re.compile(r'"(?P<name>(?:[^"\\]|\\.)*)"')
 REQ_RE = re.compile(r"Req\.(?P<req>[A-Za-z_][A-Za-z0-9_]*)")
 
 

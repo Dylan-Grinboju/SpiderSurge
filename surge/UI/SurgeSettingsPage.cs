@@ -21,8 +21,15 @@ namespace SpiderSurge
             page.Spacer();
             page.Header("Play");
             page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
+            page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
+            page.Note("Surge Survival runs have no abilities, no ultimates and no ability perks: the first perk choice is a normal one, and waves 30 and 60 bring no ultimate choice. Luck still appears. Applies from the next run.");
             page.Toggle("Ultimate on the D-pad", ModConfig.DpadUltimateKey);
             page.Note("Any D-pad direction casts the ultimate, instead of L3 and R3 together. Applies from the next run. While it's on, the D-pad doesn't switch the Stats windows.");
+
+            page.Spacer();
+            page.Header("Sound");
+            page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%");
+            page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. 80% is the original volume.");
 
             page.Spacer();
             page.Button("Ability indicator", () => page.Open("surge.indicator"));

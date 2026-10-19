@@ -14,19 +14,19 @@ namespace SpiderSurge
 
         public bool IsFirstNormalPerkSelection
         {
-            get => _isFirstNormalPerkSelection;
+            get => _isFirstNormalPerkSelection && !SurgeGameModeManager.AbilitiesDisabled;
             set { _isFirstNormalPerkSelection = value; SurgeNet.MarkDirty(); }
         }
 
         public bool IsUltUpgradePerkSelection
         {
-            get => _isUltUpgradePerkSelection;
+            get => _isUltUpgradePerkSelection && !SurgeGameModeManager.AbilitiesDisabled;
             set { _isUltUpgradePerkSelection = value; SurgeNet.MarkDirty(); }
         }
 
         public bool IsUltSwapPerkSelection
         {
-            get => _isUltSwapPerkSelection;
+            get => _isUltSwapPerkSelection && !SurgeGameModeManager.AbilitiesDisabled;
             set { _isUltSwapPerkSelection = value; SurgeNet.MarkDirty(); }
         }
 
@@ -250,6 +250,8 @@ namespace SpiderSurge
         public bool IsAvailable(string perkName)
         {
             if (!maxLevels.TryGetValue(perkName, out int maxLevel)) return false;
+            // Luck is the only Surge perk that doesn't act through an ability
+            if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck) return false;
             int level = GetPerkLevel(perkName);
             if (level >= maxLevel) return false;
             if (dependencies.TryGetValue(perkName, out var deps))

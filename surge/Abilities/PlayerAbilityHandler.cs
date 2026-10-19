@@ -54,6 +54,11 @@ namespace SpiderSurge
                     return;
                 }
 
+                if (SurgeGameModeManager.AbilitiesDisabled)
+                {
+                    return;
+                }
+
                 PlayerController playerController = playerObject.GetComponentInParent<PlayerController>();
                 if (playerController == null)
                 {

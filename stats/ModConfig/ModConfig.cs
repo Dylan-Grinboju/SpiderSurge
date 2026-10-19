@@ -165,7 +165,7 @@ namespace StatsMod
             }
         }
 
-        public static bool DpadTakenBySurge => Parts.Surge.Running && (SpiderSurge.BaseAbility.DpadUltimateBound ?? SpiderSurge.ModConfig.UltimateUseDpadActivation);
+        public static bool DpadTakenBySurge => Parts.Surge.Running && (SpiderSurge.BaseAbility.DpadUltimateBound ?? (SpiderSurge.ModConfig.UltimateUseDpadActivation && !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled));
 
         public static string CycleInput => CycleInputFor(ConfiguredCycleInput);
 
