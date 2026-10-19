@@ -12,7 +12,7 @@ namespace SpiderSurge
 
         public static SpiderSurgeMod Instance { get; private set; }
 
-        // The release number from the build's vX.Y.Z tag; a build between releases carries a dev suffix, e.g. 0.4.1-dev.12
+        // The release number from the build's vX.Y.Z tag; a build between releases carries a dev suffix, e.g. 0.4.1-dev.12, and a build made outside GitHub Actions ends in +local
         public static string Version => ModVersion.Value;
 
         // Called by Silk when Unity loads this mod
