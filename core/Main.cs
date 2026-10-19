@@ -1,4 +1,3 @@
-using System.Reflection;
 using Silk;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
@@ -13,19 +12,8 @@ namespace SpiderSurge
 
         public static SpiderSurgeMod Instance { get; private set; }
 
-        private static string _version;
-        public static string Version
-        {
-            get
-            {
-                if (_version == null)
-                {
-                    var version = Assembly.GetExecutingAssembly().GetName().Version;
-                    _version = $"{version.Major}.{version.Minor}.{version.Build}";
-                }
-                return _version;
-            }
-        }
+        // The release number from the build's vX.Y.Z tag; a build between releases carries a dev suffix, e.g. 0.4.1-dev.12
+        public static string Version => ModVersion.Value;
 
         // Called by Silk when Unity loads this mod
         public override void Initialize()

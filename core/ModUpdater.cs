@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Logger = SpiderSurge.Common.ThreadSafeLog;
@@ -12,7 +13,9 @@ namespace SpiderSurge.Common
         public const string CheckForUpdatesKey = "general.checkForUpdates";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
 
-        private const string LatestVersionUrl = "https://raw.githubusercontent.com/Dylan-Grinboju/SpiderSurge/main/version.txt";
+        // Only a published release counts, so merging to main announces nothing; version.txt on main stays for 0.4.0 and older, which read it
+        private const string LatestReleaseUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases/latest";
+        private static readonly Regex TagName = new Regex("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
         private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
         private const int StartDelayMs = 15000;
         private const int RequestTimeoutMs = 5000;
@@ -72,21 +75,28 @@ namespace SpiderSurge.Common
         private static async Task<string> GetLatestVersionAsync()
         {
             using (var timeout = new CancellationTokenSource(RequestTimeoutMs))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl))
             {
-                using (var response = await _httpClient.GetAsync(LatestVersionUrl, timeout.Token))
+                request.Headers.UserAgent.ParseAdd("SpiderSurge");
+                request.Headers.Accept.ParseAdd("application/vnd.github+json");
+                using (var response = await _httpClient.SendAsync(request, timeout.Token))
                 {
                     response.EnsureSuccessStatusCode();
-                    var content = await response.Content.ReadAsStringAsync();
-                    return content.Trim();
+                    var match = TagName.Match(await response.Content.ReadAsStringAsync());
+                    if (!match.Success) throw new FormatException("the latest release has no tag name");
+                    return match.Groups[1].Value.Trim();
                 }
             }
         }
 
+        // A dev build (0.4.1-dev.12) counts as older than the release with the same number
         private static bool IsNewerVersion(string latestVersion, string currentVersion)
         {
             try
             {
-                return new Version(latestVersion) > new Version(currentVersion);
+                var latest = new Version(ReleaseNumber(latestVersion));
+                var current = new Version(ReleaseNumber(currentVersion));
+                return latest > current || (latest == current && IsDevBuild(currentVersion) && !IsDevBuild(latestVersion));
             }
             catch (Exception ex)
             {
@@ -94,6 +104,10 @@ namespace SpiderSurge.Common
                 return false;
             }
         }
+
+        private static string ReleaseNumber(string version) => version.Split('-', '+')[0];
+
+        private static bool IsDevBuild(string version) => version.Contains("-");
 
         private static void ShowUpdatePrompt(string latestVersion)
         {

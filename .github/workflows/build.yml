@@ -1,0 +1,60 @@
+# Builds SpiderSurge.dll for every pull request and push to main; publishing a release builds it from the release's tag, with that version, and attaches it to the release
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: dotnet build SpiderSurge.csproj -c Release
+
+      - name: Check the version
+        shell: pwsh
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $version = ((Get-Item bin/Release/net472/SpiderSurge.dll).VersionInfo.ProductVersion -split '\+')[0]
+          "SpiderSurge.dll is version $version" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if ($env:TAG -and $version -ne $env:TAG.TrimStart('v')) {
+            "::error title=Version mismatch::The release tag $env:TAG built version $version. A release tag must look like v1.2.3 and be on the released commit."
+            exit 1
+          }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: SpiderSurge
+          path: bin/Release/net472/SpiderSurge.dll
+          if-no-files-found: error
+
+  attach:
+    name: Attach to the release
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: SpiderSurge
+
+      - name: Upload SpiderSurge.dll
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" SpiderSurge.dll --clobber --repo "$GITHUB_REPOSITORY"
