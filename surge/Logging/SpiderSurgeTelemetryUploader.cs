@@ -217,10 +217,6 @@ namespace SpiderSurge.Logging
 
         private static string BuildPlayerJson(PlayerStats player, int playerIndex)
         {
-            string enemyKillsJson = "{" + string.Join(",", (player.EnemyKills ?? new Dictionary<string, int>())
-                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-                .Select(entry => "\"" + EscapeJson(entry.Key) + "\":" + entry.Value)) + "}";
-
             return "{" +
                 "\"playerIndex\":" + playerIndex + "," +
                 "\"abilityActivationCount\":" + player.AbilityActivationCount + "," +
@@ -232,7 +228,10 @@ namespace SpiderSurge.Logging
                 "\"shotsFired\":" + player.ShotsFired + "," +
                 "\"shotsHit\":" + player.ShotsHit + "," +
                 "\"aliveSeconds\":" + Math.Max(0, player.AliveSeconds) + "," +
-                "\"enemyKills\":" + enemyKillsJson +
+                "\"saves\":" + player.Saves + "," +
+                "\"killsDuringAbility\":" + player.KillsDuringAbility + "," +
+                "\"enemyKills\":" + JsonCounts(player.EnemyKills) + "," +
+                "\"weaponHits\":" + JsonCounts(player.WeaponHits) +
                 "}";
         }
 
@@ -257,7 +256,10 @@ namespace SpiderSurge.Logging
                 "\"map\":\"" + EscapeJson(wave.Map) + "\"," +
                 "\"result\":\"" + EscapeJson(wave.Result) + "\"," +
                 "\"seconds\":" + JsonSeconds(wave.Seconds) + "," +
-                "\"livesAtStart\":" + wave.LivesAtStart +
+                "\"livesAtStart\":" + wave.LivesAtStart + "," +
+                "\"abilityUses\":" + wave.AbilityUses + "," +
+                "\"ultimateUses\":" + wave.UltimateUses + "," +
+                "\"saves\":" + wave.Saves +
                 (wave.Deaths >= 0 ? ",\"deaths\":" + wave.Deaths : "") +
                 "}";
         }
@@ -265,6 +267,13 @@ namespace SpiderSurge.Logging
         private static string JsonStringArray(IEnumerable<string> values)
         {
             return "[" + string.Join(",", (values ?? Enumerable.Empty<string>()).Select(value => "\"" + EscapeJson(value) + "\"")) + "]";
+        }
+
+        private static string JsonCounts(Dictionary<string, int> counts)
+        {
+            return "{" + string.Join(",", (counts ?? new Dictionary<string, int>())
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => "\"" + EscapeJson(entry.Key) + "\":" + entry.Value)) + "}";
         }
 
         private static string JsonBool(bool value) => value ? "true" : "false";

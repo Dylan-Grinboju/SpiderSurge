@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Logger = Silk.Logger;
 using UnityEngine;
@@ -98,10 +99,15 @@ namespace SpiderSurge.Logging
                     sb.AppendLine($"  Player {player.PlayerId + 1}:");
                     sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
                     sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
+                    sb.AppendLine($"    Null Field Saves: {player.Saves}");
                     if (stats.StatsTracked)
                     {
                         sb.AppendLine($"    Deaths: {player.Deaths} ({player.LavaDeaths} in lava)");
-                        sb.AppendLine($"    Kills: {player.Kills}");
+                        sb.AppendLine($"    Kills: {player.Kills} ({player.KillsDuringAbility} while the ability was on)");
+                        if (player.WeaponHits.Count > 0)
+                        {
+                            sb.AppendLine($"    Kills and Shields Broken by Weapon: {string.Join(", ", player.WeaponHits.Select(entry => $"{entry.Key} {entry.Value}"))}");
+                        }
                         sb.AppendLine($"    Shots Hit: {player.ShotsHit}/{player.ShotsFired}");
                         sb.AppendLine($"    Time Alive: {FormatTimeSpan(TimeSpan.FromSeconds(player.AliveSeconds))}");
                     }
@@ -135,7 +141,8 @@ namespace SpiderSurge.Logging
                 foreach (var wave in stats.Waves)
                 {
                     string deaths = wave.Deaths >= 0 ? $", {wave.Deaths} deaths" : "";
-                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}");
+                    string saves = wave.Saves > 0 ? $", {wave.Saves} saves" : "";
+                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}, {wave.AbilityUses} abilities, {wave.UltimateUses} ultimates{saves}");
                 }
             }
             else
