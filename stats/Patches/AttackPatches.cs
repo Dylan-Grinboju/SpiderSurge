@@ -55,7 +55,7 @@ namespace StatsMod
             Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerController>());
             Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer);
             Add<WhispBrain>("ProcessCollision", null, whisp => null);
-            Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", "Pulse", SpiderSurge.PulseAbility.CasterOf);
+            Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", HitLogic.PulseWeapon, SpiderSurge.PulseAbility.CasterOf);
         }
 
         private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner)
