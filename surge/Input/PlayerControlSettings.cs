@@ -120,14 +120,7 @@ namespace SpiderSurge
 
             bool pressed = context.ReadValueAsButton();
             int playerIndex = GetPlayerIndexFromDevice(control.device);
-            if (playerIndex < 0)
-            {
-                if (pressed)
-                {
-                    Logger.LogWarning($"[PlayerControlSettings] Could not find player for device: {control.device.name}");
-                }
-                return;
-            }
+            if (playerIndex < 0) return;
 
             if (pressed)
             {
@@ -273,37 +266,32 @@ namespace SpiderSurge
             }
         }
 
+        // A spider that has abilities rebinds now; in the lobby or while dead, the next spider's abilities read the new button when they are added
         private void NotifyAbilitiesOfButtonChange(int playerIndex)
         {
-            // Find all abilities for this player and re-register them
-            // Use PlayerInput to be consistent with detection logic
-            var playerInputs = InputInterceptor.ActivePlayerInputs;
-            if (playerInputs == null)
+            foreach (var input in PlayerInput.all)
             {
-                Logger.LogWarning($"[PlayerControlSettings] ActivePlayerInputs is null when trying to notify abilities for player {playerIndex}");
-                return;
-            }
+                if (input == null || input.playerIndex != playerIndex) continue;
 
-            bool matchedPlayer = false;
-
-            foreach (var input in playerInputs)
-            {
-                if (input.playerIndex == playerIndex)
+                foreach (var ability in input.GetComponentsInChildren<BaseAbility>())
                 {
-                    matchedPlayer = true;
-                    var abilities = input.GetComponentsInChildren<BaseAbility>();
-
-                    foreach (var ability in abilities)
-                    {
-                        ability.RefreshInputBindings();
-                    }
+                    ability.RefreshInputBindings();
                 }
             }
+        }
 
-            if (!matchedPlayer)
-            {
-                Logger.LogWarning($"[PlayerControlSettings] Could not find active PlayerInput for player {playerIndex} to refresh bindings!");
-            }
+        // A remap belongs to the player who made it, so whoever joins next in that slot starts on L1
+        public static void ForgetPlayer(int playerIndex)
+        {
+            playerAbilityButtons.Remove(playerIndex);
+            if (Instance == null) return;
+
+            Instance.menuButtonHeld.Remove(playerIndex);
+            Instance.menuButtonHoldStartTime.Remove(playerIndex);
+            Instance.lastButtonPressed.Remove(playerIndex);
+            Instance.lastButtonPressTime.Remove(playerIndex);
+            Instance.feedbackMessages.Remove(playerIndex);
+            Instance.feedbackEndTimes.Remove(playerIndex);
         }
 
         private void ShowFeedback(int playerIndex, string message)
@@ -318,18 +306,10 @@ namespace SpiderSurge
             );
         }
 
+        // Every joined player has a PlayerInput, in the lobby and while their spider is dead too, so the gesture works there and in any mode
         private int GetPlayerIndexFromDevice(InputDevice device)
         {
-            // Find which player this device belongs to by searching PlayerInput directly
-            // This is safer than searching for PlayerController as PlayerInput exists in Lobby too
-            var playerInputs = InputInterceptor.ActivePlayerInputs;
-            if (playerInputs == null)
-            {
-                Logger.LogWarning("[PlayerControlSettings] ActivePlayerInputs is null when trying to get player index from device");
-                return -1;
-            }
-
-            foreach (var playerInput in playerInputs)
+            foreach (var playerInput in PlayerInput.all)
             {
                 if (playerInput == null) continue;
 
