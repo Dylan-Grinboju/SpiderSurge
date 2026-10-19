@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -166,6 +167,10 @@ namespace StatsMod
                                     playerCount > 1 &&
                                     TitlesManager.Instance.HasGameEndedTitles &&
                                     TitlesManager.Instance.TitleCount > 0;
+            if (shouldShowTitles)
+            {
+                TitleCollection.Record(TitlesManager.Instance.CurrentTitles.Select(title => title.TitleName));
+            }
 
             if (shouldShowTitles && restartRequested)
             {

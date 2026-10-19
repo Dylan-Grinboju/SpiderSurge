@@ -34,6 +34,7 @@ namespace SpiderSurge
             PlayerControlSettings.Initialize();
 
             SurgeLobbyPlatform.EnsureCreated();
+            Integration.StatsModBridge.DescribeSurgeTitles();
             Settings.Changed += OnSettingsChanged;
         }
 

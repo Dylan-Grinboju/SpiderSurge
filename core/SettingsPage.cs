@@ -68,7 +68,9 @@ namespace SpiderSurge.Common
             }
         }
 
-        public static bool IsShowing(string page) => _open != null && _open._menu != null && _open._view.IsVisible && _open.Current == page;
+        public static bool IsOpen => _open != null && _open._menu != null && _open._view.IsVisible;
+
+        public static bool IsShowing(string page) => IsOpen && _open.Current == page;
 
         // Silk adds the SpiderSurge button to the Mods menu only once its update check is done
         public static bool CanShow => (_open != null && _open._menu != null) || (_entryMenu != null && _entryButton != null);
@@ -493,8 +495,8 @@ namespace SpiderSurge.Common
             }
         }
 
-        // Text the controller can select, so a page of reading scrolls with the D-pad and sticks like the other pages
-        public void Line(string text)
+        // Text the controller can select, so a page of reading scrolls with the D-pad and sticks like the other pages; with onClick, a click or the submit button runs it
+        public void Line(string text, Action onClick = null)
         {
             TMP_Text paragraph = _menu.CreateParagraph(text);
             if (paragraph == null)
@@ -517,10 +519,24 @@ namespace SpiderSurge.Common
             paragraph.enableWordWrapping = true;
             paragraph.alignment = TextAlignmentOptions.TopLeft;
             paragraph.margin = Vector4.zero;
-            paragraph.raycastTarget = false;
+            paragraph.raycastTarget = onClick != null;
             var fitter = paragraph.GetComponent<ContentSizeFitter>();
             if (fitter != null) DestroyImmediate(fitter);
-            var selectable = paragraph.gameObject.AddComponent<Selectable>();
+            Selectable selectable;
+            if (onClick != null)
+            {
+                var button = paragraph.gameObject.AddComponent<UnityEngine.UI.Button>();
+                button.onClick.AddListener(() =>
+                {
+                    button.Select();
+                    Run(onClick);
+                });
+                selectable = button;
+            }
+            else
+            {
+                selectable = paragraph.gameObject.AddComponent<Selectable>();
+            }
             selectable.transition = Selectable.Transition.None;
             _created.Add(row);
             Register(selectable);
@@ -675,7 +691,7 @@ namespace SpiderSurge.Common
         {
             _controls.Add(control);
             var settingsControl = control.gameObject.AddComponent<SettingsControl>();
-            if (!(control is UnityEngine.UI.Button))
+            if (!(control is UnityEngine.UI.Button) || control.transition == Selectable.Transition.None)
             {
                 var row = control.transform.parent.gameObject;
                 settingsControl.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
