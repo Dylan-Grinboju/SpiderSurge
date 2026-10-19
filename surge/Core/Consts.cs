@@ -100,11 +100,12 @@ namespace SpiderSurge
             public const int MaxQueuedPayloads = 50;
             public const int MinSendIntervalMs = 2000;
             public const int DuplicatePayloadWindowMinutes = 10;
-            public const int SchemaVersion = 2;
+            public const int SchemaVersion = 3;
             public const int MaxPerkChoiceRecords = 60;
             public const int MaxWaveRecords = 150;
             public const int MaxGlobalPerks = 64;
             public const int MaxPlayerStats = 8;
+            public const int MaxTitleRecords = 64;
             public const int MaxPayloadBytes = 32 * 1024;
         }
 

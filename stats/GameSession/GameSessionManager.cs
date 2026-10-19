@@ -167,10 +167,8 @@ namespace StatsMod
                                     playerCount > 1 &&
                                     TitlesManager.Instance.HasGameEndedTitles &&
                                     TitlesManager.Instance.TitleCount > 0;
-            if (shouldShowTitles)
-            {
-                TitleCollection.Record(TitlesManager.Instance.CurrentTitles.Select(title => title.TitleName));
-            }
+            int? newlyUnlocked = shouldShowTitles ? TitleCollection.Record(TitlesManager.Instance.CurrentTitles.Select(title => title.TitleName)) : null;
+            TitlesManager.Instance.SetRunOutcome(shouldShowTitles, newlyUnlocked);
 
             if (shouldShowTitles && restartRequested)
             {

@@ -153,11 +153,14 @@ namespace SpiderSurge.Logging
             // The relay takes player indexes 0-7; with more than 8 players (InfiniteFriends) the ids can be higher, so the kept players are numbered in order instead
             bool idsFit = playerStats.All(p => p.PlayerId >= 0 && p.PlayerId < Consts.Telemetry.MaxPlayerStats);
             string playerStatsJson = "[" + string.Join(",", playerStats.Select((p, i) => BuildPlayerJson(p, idsFit ? p.PlayerId : i))) + "]";
+            var playerIndexes = new Dictionary<int, int>();
+            for (int i = 0; i < playerStats.Count; i++) playerIndexes[playerStats[i].PlayerId] = idsFit ? playerStats[i].PlayerId : i;
+            string titlesJson = BuildTitlesJson(snapshot.Titles, playerIndexes);
 
             // The relay rejects bodies over its size limit, so the oldest perk choices and waves are dropped until the report fits
             while (true)
             {
-                string json = BuildEventJson(snapshot, globalPerks, playerStatsJson, perkChoiceJsons, waveJsons,
+                string json = BuildEventJson(snapshot, globalPerks, playerStatsJson, titlesJson, perkChoiceJsons, waveJsons,
                     globalPerksTruncated, playerStatsTruncated, perkChoicesTruncated, wavesTruncated);
                 int excess = Encoding.UTF8.GetByteCount(json) - Consts.Telemetry.MaxPayloadBytes;
                 if (excess <= 0 || (perkChoiceJsons.Count == 0 && waveJsons.Count == 0)) return json;
@@ -178,6 +181,7 @@ namespace SpiderSurge.Logging
             SpiderSurgeStatsSnapshot snapshot,
             List<string> globalPerks,
             string playerStatsJson,
+            string titlesJson,
             List<KeyValuePair<int, string>> perkChoiceJsons,
             List<KeyValuePair<int, string>> waveJsons,
             bool globalPerksTruncated,
@@ -203,6 +207,7 @@ namespace SpiderSurge.Logging
                 "\"maxLives\":" + Math.Max(0, snapshot.MaxLives) + "," +
                 "\"statsTracked\":" + JsonBool(snapshot.StatsTracked) + "," +
                 "\"unlimitedPerkTime\":" + JsonBool(snapshot.UnlimitedPerkTime) + "," +
+                "\"surge\":" + JsonBool(snapshot.SurgeMode) + "," +
                 "\"abilities\":" + JsonBool(snapshot.AbilitiesOn) + "," +
                 "\"globalPerksTruncated\":" + JsonBool(globalPerksTruncated) + "," +
                 "\"playerStatsTruncated\":" + JsonBool(playerStatsTruncated) + "," +
@@ -210,6 +215,7 @@ namespace SpiderSurge.Logging
                 "\"wavesTruncated\":" + JsonBool(wavesTruncated) + "," +
                 "\"globalPerks\":" + JsonStringArray(globalPerks) + "," +
                 "\"playerStats\":" + playerStatsJson + "," +
+                "\"titles\":" + titlesJson + "," +
                 "\"perkChoices\":" + perkChoicesJson + "," +
                 "\"waves\":" + wavesJson +
                 "}";
@@ -234,6 +240,32 @@ namespace SpiderSurge.Logging
                 "\"weaponHits\":" + JsonCounts(player.WeaponHits) +
                 "}";
         }
+
+        // Titles shown on the end screen come first, so a cut list still has all of them
+        private static string BuildTitlesJson(TitlesReport titles, Dictionary<int, int> playerIndexes)
+        {
+            if (titles == null) return "null";
+            var earned = (titles.Earned ?? new List<EarnedTitle>()).Where(title => !string.IsNullOrWhiteSpace(title.Name)).OrderByDescending(title => title.OnScreen).ToList();
+            bool truncated = earned.Count > Consts.Telemetry.MaxTitleRecords;
+            if (truncated) earned = earned.Take(Consts.Telemetry.MaxTitleRecords).ToList();
+
+            string earnedJson = "[" + string.Join(",", earned.Select(title => "{" +
+                "\"name\":\"" + EscapeJson(title.Name) + "\"," +
+                "\"playerIndex\":" + (playerIndexes.TryGetValue(title.PlayerId, out int index) ? index.ToString(CultureInfo.InvariantCulture) : "null") + "," +
+                "\"onScreen\":" + JsonBool(title.OnScreen) +
+                "}")) + "]";
+
+            return "{" +
+                "\"shown\":" + JsonBool(titles.Shown) + "," +
+                "\"newlyUnlocked\":" + JsonNumber(titles.NewlyUnlocked) + "," +
+                "\"unlockedTotal\":" + JsonNumber(titles.UnlockedTotal) + "," +
+                "\"catalogSize\":" + titles.CatalogSize + "," +
+                "\"truncated\":" + JsonBool(truncated) + "," +
+                "\"earned\":" + earnedJson +
+                "}";
+        }
+
+        private static string JsonNumber(int? value) => value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "null";
 
         private static string BuildPerkChoiceJson(PerkChoiceRecord choice)
         {

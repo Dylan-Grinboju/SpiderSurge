@@ -51,21 +51,22 @@ public static class TitleCollection
 
     public static bool Readable => EnsureLoaded();
 
-    // Each title counts once per run, however many players earned it
-    public static void Record(IEnumerable<string> names)
+    // Each title counts once per run, however many players earned it; returns how many were new, or null while the file can't be read
+    public static int? Record(IEnumerable<string> names)
     {
         var run = names.ToList();
         if (!EnsureLoaded())
         {
             _pending.Add((run, DateTime.UtcNow));
-            return;
+            return null;
         }
-        Add(run, DateTime.UtcNow);
+        int added = Add(run, DateTime.UtcNow);
         Save();
         Changed?.Invoke();
+        return added;
     }
 
-    private static void Add(List<string> names, DateTime now)
+    private static int Add(List<string> names, DateTime now)
     {
         var newlyUnlocked = new List<string>();
         foreach (string raw in names.Distinct(StringComparer.Ordinal))
@@ -84,6 +85,7 @@ public static class TitleCollection
             }
         }
         if (newlyUnlocked.Count > 0) Logger.LogInfo($"New titles unlocked: {string.Join(", ", newlyUnlocked)}");
+        return newlyUnlocked.Count;
     }
 
     public static void Reset()
