@@ -129,6 +129,7 @@ namespace SpiderSurge
                 public const float UltimateShieldSynergyChance = 0.5f;
                 public const int UltimateFriendlyWaspSpawnCount = 3;
                 public const int UltimateFriendlyWaspShieldBonusCount = 1;
+                public const float SaveConfirmSeconds = 1.5f;
             }
 
             public static class Ammo

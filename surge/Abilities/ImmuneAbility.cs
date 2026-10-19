@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using System.Linq;
+using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
 using Logger = Silk.Logger;
@@ -46,6 +47,7 @@ namespace SpiderSurge
         public override string UltimatePerkDisplayName => "Neural Backup";
         public override string UltimatePerkDescription => "After a cast time, revive one dead player or summon 3 friendly wasps if nobody is dead.";
 
+        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
         private static FieldInfo _spiderLightField;
@@ -54,6 +56,7 @@ namespace SpiderSurge
         private bool wasHitDuringSession = false;
         private bool isUltimateCastPending = false;
         private bool hadBarrierOnUltimateCastStart = false;
+        private Logging.WaveRecord hitWave;
 
         public bool IsImmune { get; private set; }
 
@@ -111,6 +114,7 @@ namespace SpiderSurge
         {
             if (isActive && IsImmune)
             {
+                if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
             }
         }
@@ -140,9 +144,9 @@ namespace SpiderSurge
                     DestroyBarrier();
                     spiderHealthSystem.DisableShield();
                 }
-                else if (wasHitDuringSession && IsPlayerAlive())
+                else if (wasHitDuringSession && IsPlayerAlive() && isActiveAndEnabled)
                 {
-                    Logging.SpiderSurgeStatsManager.Instance.LogAbilitySave(PlayerId);
+                    StartCoroutine(LogSaveIfSurvived(hitWave));
                 }
             }
 
@@ -153,6 +157,17 @@ namespace SpiderSurge
 
             wasHitDuringSession = false;
             hadBarrierOnSessionStart = false;
+            hitWave = null;
+        }
+
+        // Lava or a blast still hitting when Null Field ends kills a moment later, so the save counts once the spider outlives it
+        private IEnumerator LogSaveIfSurvived(Logging.WaveRecord wave)
+        {
+            yield return new WaitForSeconds(Consts.Values.Immune.SaveConfirmSeconds);
+            if (IsPlayerAlive())
+            {
+                Logging.SpiderSurgeStatsManager.Instance.LogAbilitySave(PlayerId, wave);
+            }
         }
 
         protected override void OnActivateUltimate()
@@ -401,10 +416,11 @@ namespace SpiderSurge
             return true;
         }
 
+        // A ghost already dissolving in lava or below the map is gone for good, so it isn't one to revive
         public static bool IsGhost(PlayerController player)
         {
             SpiderHealthSystem health = player != null ? player.spiderHealthSystem : null;
-            return health != null && health.astralDead && !health.dead && !BanishedTarget.IsBanished(health.rootObject);
+            return health != null && health.astralDead && !health.dead && !SpiderDying(health) && !BanishedTarget.IsBanished(health.rootObject);
         }
 
         private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)

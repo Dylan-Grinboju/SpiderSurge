@@ -23,8 +23,8 @@ namespace SpiderTeams
                 return;
             }
 
-            Prune(UnityEngine.Time.unscaledTime);
-            _records.Add(new Entry { Position = position, Owner = owner, Time = UnityEngine.Time.unscaledTime });
+            Prune(UnityEngine.Time.time);
+            _records.Add(new Entry { Position = position, Owner = owner, Time = UnityEngine.Time.time });
         }
 
         public static int Resolve(Explosion explosion)
@@ -43,7 +43,7 @@ namespace SpiderTeams
 
             owner = OwnerRegistry.Unknown;
             Vector3 position = explosion.transform.position;
-            float now = UnityEngine.Time.unscaledTime;
+            float now = UnityEngine.Time.time;
             float best = Consts.Timing.ExplosionMatchDistance * Consts.Timing.ExplosionMatchDistance;
             for (int i = 0; i < _records.Count; i++)
             {
