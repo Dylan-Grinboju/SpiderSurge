@@ -383,16 +383,28 @@ namespace SpiderSurge
                 return false;
             }
 
-            var deadPlayers = playerControllers.Where(pc => pc != null && !pc.isAlive).ToList();
+            var deadPlayers = playerControllers.Where(pc => pc != null && (!pc.isAlive || IsGhost(pc))).ToList();
             if (deadPlayers.Count == 0)
             {
                 return false;
             }
 
             revivedPlayer = deadPlayers[Random.Range(0, deadPlayers.Count)];
+            // An Astral Heckhound ghost comes back where it floats, the way the game revives ghosts at the end of a wave
+            if (IsGhost(revivedPlayer))
+            {
+                revivedPlayer.spiderHealthSystem.DisableDeathEffect();
+                return true;
+            }
             var spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
             revivedPlayer.SpawnCharacter(spawnPoint.position, spawnPoint.rotation);
             return true;
+        }
+
+        public static bool IsGhost(PlayerController player)
+        {
+            SpiderHealthSystem health = player != null ? player.spiderHealthSystem : null;
+            return health != null && health.astralDead && !health.dead && !BanishedTarget.IsBanished(health.rootObject);
         }
 
         private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)

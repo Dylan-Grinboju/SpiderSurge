@@ -15,6 +15,7 @@ namespace StatsMod
     {
         private const float KillCreditWindow = 2.5f;
         private const float DirectPlayerKillCreditWindow = 0.5f;
+        internal const string PulseWeapon = "Pulse";
         private const float ShieldCreditWindow = 0.1f;
         private const float StaleHitAge = 30f;
         // A lit fuse ends in an explosion or a death that removes its entry; Freeze Time can hold it far past StaleHitAge
@@ -419,6 +420,10 @@ namespace StatsMod
             Logger.LogInfo($"Recording kill for {PlayerLabel(hit.Player)}, target:{enemy.name}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
             PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
             PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
+            if (hit.Weapon == PulseWeapon && hit.DeathZoneDeadline.HasValue && Parts.Surge.Running)
+            {
+                SpiderSurge.SurgeAchievements.Unlock(SpiderSurge.SurgeAchievements.Begone, hit.Player);
+            }
 
             if (TryGetKillCategory(enemy, out string displayName))
             {

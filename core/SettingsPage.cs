@@ -379,6 +379,7 @@ namespace SpiderSurge.Common
             {
                 if (part.Running && part.HasSettings) Button(part.Title, () => Open(part.Key));
             }
+            if (Parts.Surge.Running) Button("Achievements", () => Open(AchievementsPage.Page));
             Button("Enable or disable parts", () => Open("parts"));
             Button("General", () => Open("general"));
             Button("About SpiderSurge", () => Open("about"));

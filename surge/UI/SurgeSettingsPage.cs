@@ -14,6 +14,7 @@ namespace SpiderSurge
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
             if (page.Current == "surge.telemetry") { BuildTelemetry(page); return; }
             if (page.Current == SurgeGuide.Page) { SurgeGuide.Build(page); return; }
+            if (page.Current == AchievementsPage.Page) { AchievementsPage.Build(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
             page.Button("Surge guide", () => page.Open(SurgeGuide.Page));
