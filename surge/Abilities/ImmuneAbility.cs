@@ -398,7 +398,8 @@ namespace SpiderSurge
                 return false;
             }
 
-            var deadPlayers = playerControllers.Where(pc => pc != null && (!pc.isAlive || IsGhost(pc))).ToList();
+            // A caster who dies late in the cast still finishes it but can't bring themselves back; a caster still floating as an astral ghost can
+            var deadPlayers = playerControllers.Where(pc => pc != null && (IsGhost(pc) || (!pc.isAlive && pc != playerController))).ToList();
             if (deadPlayers.Count == 0)
             {
                 return false;

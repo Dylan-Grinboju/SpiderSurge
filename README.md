@@ -54,7 +54,7 @@ Abilities are perks: the one you pick is shared by every player, and each spider
 
 | Ability | Ultimate |
 |---|---|
-| **Null Field**: immune to all damage for 3 s. Cooldown 12 s. While it's active a spider can't die stuck in a wall either. A shield you had when it started breaks at the end if you were hit during it | **Neural Backup**: after a 10 s cast, a random dead player comes back at a spawn point. An Astral Heckhound ghost counts as dead and comes back where it floats. If nobody is dead, 3 friendly wasps spawn instead. Cooldown 75 s |
+| **Null Field**: immune to all damage for 3 s. Cooldown 12 s. While it's active a spider can't die stuck in a wall either. A shield you had when it started breaks at the end if you were hit during it | **Neural Backup**: after a 10 s cast, a random dead player comes back at a spawn point. If nobody is dead, 3 friendly wasps spawn instead. Cooldown 75 s |
 | **Bottomless Clip**: for 5 s, shooting doesn't use ammo. When it ends, or you drop or throw the weapon, the weapon disintegrates; grenades, mines, the BoomStick, the Laser Cube and the Death Cube are exempt. Cooldown 20 s | **Care Package**: random weapons appear at half of the map's weapon spawns. Cooldown 30 s |
 | **Kinetic Pulse**: a pulse that pushes away enemies, other players, items and projectiles around you. Enemies are pushed twice as hard. Cooldown 12 s | **Thermal Detonation**: a bigger pulse whose center kills everything it reaches: enemies, projectiles and other players. Only you are spared. Cooldown 20 s |
 | **Pocket Dimension**: stores the weapon you hold. The one stored before comes back 2.5 s later and equips itself. Cooldown 12 s | **Pocket Dimension^2**: a second storage slot on the ultimate button. Weapons come back after 4 s. Cooldown 15 s |
@@ -79,24 +79,6 @@ Some of the game's perks improve an ability. Their cards are tagged **Synergized
 | Kinetic Pulse | Bigger Boom | A stronger pulse; level 2 also strengthens Thermal Detonation |
 | Kinetic Pulse | Too Cool | A larger lethal center for Thermal Detonation |
 | Pocket Dimension | More Guns, More Boom or More Particles | Level 1: stored weapons of that kind stay through a map change. Level 2: they also stay through death |
-
-## Achievements
-
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements**. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](teams/README.md).
-
-| Achievement | How to unlock it |
-|---|---|
-| Black Hole | Banish a Hornet Shaman |
-| Total Destruction | Kill 3 teammates with one Thermal Detonation |
-| I Will Keep You Safe | Banish a teammate |
-| Unlimited Power | Use Bottomless Clip while holding a Particle Blade that appeared with Size Matters and Thick Blades both at level 2 |
-| Doomsday Scenario | Send an armed Biggest Grenade into the Pocket Dimension |
-| Begone | Knock an enemy into lava with Kinetic Pulse, so Stats credits you the kill. Needs Stats on |
-| Unstoppable Force Against Immovable Object | Survive a Biggest Grenade blast inside Null Field |
-| Healer | Revive the same player twice in one wave (or Team Versus round) with Neural Backup |
-| Yay I Guess? | Pick the Nothing perk when Luck made it a Lucky Upgrade |
-| You Are Not Done Yet | Revive an Astral Heckhound ghost with Neural Backup |
-| Kiss of Death | Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability |
 
 ## Enemies
 
@@ -175,7 +157,7 @@ display:
 | `UseDpadForUltimate` | Any D-pad direction fires the ultimate, and L3 + R3 no longer does. The D-pad still moves the spider | `false` |
 | `UnlimitedPerkChoosingTime` | Removes the perk choice's countdown in Surge runs; the timer shows ∞ | `true` |
 | `EnableStatsLogging` | Writes a report of each Surge run to `...\Silk\Logs\SpiderSurge\`. SpiderStats data, the Surge titles and telemetry all need it | `true` |
-| `TelemetryEnabled` | Sends anonymous run data at the end of each Survival run, Surge or plain (see [Telemetry](#telemetry)) | `false` |
+| `TelemetryEnabled` | Sends anonymous run data at the end of each Surge run (see [Telemetry](#telemetry)) | `false` |
 | `indicator.radius` | The size of the ability dot, from 0.5 to 10 | `1.5` |
 | `indicator.offset.x`, `indicator.offset.y` | Where the dot sits relative to the spider | `3`, `8` |
 | `indicator.availableColor`, `cooldownColor`, `activeColor` | The dot's colors: `#RRGGBB`, `#RRGGBBAA`, a color name, or `r,g,b` from 0 to 1 | green, red, light blue |
@@ -191,7 +173,7 @@ Updating from 0.3.3 or older: on the first launch, the `indicator` and `display`
 
 Telemetry is off until you agree to it. On the first launch, a popup asks whether to send anonymized match data; you can change your answer in the Mods menu at any time.
 
-When it's on, the end of each Survival run, with or without Surge mode, sends whether it was a Surge run, the date and time, the mod version, the run's length, the number of players, waves survived, pain level, the perks taken, each player's ability and ultimate counts and the end-of-run titles with how many the run unlocked. It uses an anonymous random ID, stored in `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`, and never player names. Reports that fail to send are kept and sent at the next launch. Telemetry also needs `EnableStatsLogging`.
+When it's on, the end of each Surge run sends the date and time, the mod version, the run's length, the number of players, waves survived, pain level, the perks taken and each player's ability and ultimate counts. It uses an anonymous random ID, stored in `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`, and never player names. Reports that fail to send are kept and sent at the next launch. Telemetry also needs `EnableStatsLogging`.
 
 ## SpiderStats
 

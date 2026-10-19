@@ -245,7 +245,7 @@ namespace SpiderSurge
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.NotDoneYet, caster);
                 }
-                if (AchievementTracker.CountRevive(caster, revived) >= 2)
+                if (revived != caster && AchievementTracker.CountRevive(caster, revived) >= 2)
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.Healer, caster);
                 }
