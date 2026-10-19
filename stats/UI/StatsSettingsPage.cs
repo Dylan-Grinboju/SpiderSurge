@@ -9,8 +9,7 @@ namespace StatsMod
     internal static class StatsSettingsPage
     {
         private const string ColumnsPage = "stats.columns";
-        private const string TitlesPage = "stats.titles";
-        private static readonly HashSet<string> RevealedTitles = new HashSet<string>();
+        internal const string TitlesPage = "stats.titles";
         private const string AccuracyPrefix = "accuracy.";
         private const string OverallAccuracy = AccuracyPrefix + "overall";
         private static readonly string[] CycleInputNames = { "D-pad", "Stick press (L3 or R3)", "D-pad or stick press", "Nothing" };
@@ -31,7 +30,6 @@ namespace StatsMod
                 BuildColumns(page);
                 return;
             }
-            if (page.Current != TitlesPage) RevealedTitles.Clear();
             if (page.Current == TitlesPage)
             {
                 BuildTitles(page);
@@ -63,7 +61,6 @@ namespace StatsMod
             page.Header("End of run");
             page.Toggle("Titles", Key("titles.enabled"));
             page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s");
-            page.Button("Title collection", () => page.Open(TitlesPage));
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
 
             page.Spacer();
@@ -111,7 +108,7 @@ namespace StatsMod
 
         private static void BuildTitles(SettingsPage page)
         {
-            page.Title("Title collection");
+            page.Title("Titles");
             if (!TitleCollection.Readable)
             {
                 page.Warning($"The title collection can't be read right now. Close any program that has <noparse>{TitleCollection.FilePath}</noparse> open, then open this page again.");
@@ -143,18 +140,18 @@ namespace StatsMod
             foreach (var title in locked)
             {
                 string name = title.Name;
-                string requirements = RevealedTitles.Contains(name) ? $"\n<size=90%><noparse>{title.HowToEarn}</noparse></size>" : "";
-                page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{requirements}</color>", () =>
-                {
-                    if (!RevealedTitles.Remove(name)) RevealedTitles.Add(name);
-                    SettingsPage.RefreshOpen();
-                });
+                string requirements = page.Revealed(name) ? $"\n<size=90%><noparse>{title.HowToEarn}</noparse></size>" : "";
+                page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{requirements}</color>", () => page.ToggleRevealed(name));
             }
 
             page.Spacer();
             page.ConfirmButton("Reset the title collection", TitleCollection.Reset);
             page.Note($"Saved in <noparse>{TitleCollection.FilePath}</noparse>");
         }
+
+        internal static string TitlesButtonLabel => TitleCollection.Readable
+            ? $"Titles ({TitleCatalog.All.Count(title => TitleCollection.Unlocked.ContainsKey(title.Name))} of {TitleCatalog.All.Count})"
+            : "Titles";
 
         private static string UnlockedLine(string name, string howToEarn, UnlockedTitle title)
         {

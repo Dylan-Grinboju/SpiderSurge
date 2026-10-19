@@ -38,7 +38,7 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 <img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
 
 ### Title collection
-Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Stats** > **Title collection** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed while the Surge part is on. **Reset the title collection** at the bottom of the page locks every title again.
+Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Achievements** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed while the Surge part is on. **Reset the title collection** at the bottom of the page locks every title again.
 
 The collection is saved on your PC in the game's own save folder, so updating or reinstalling the mod or the game keeps it: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\titles.dat` for Steam (`...\SPIDERHECK\SpiderSurge\titles.dat` for the Xbox app). It holds only title names, counts and dates. Each save writes a new file and swaps it in, keeping the previous one as `titles.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `titles.dat.broken`.
 

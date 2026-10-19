@@ -90,6 +90,7 @@ namespace SpiderSurge
             {
                 if (FrozenEnemy.Freeze(enemy, duration)) _frozeAny = true;
             }
+            FrozenShot.FreezeAround(origin, range, duration);
         }
 
         // Frozen enemies play the thaw sound as they thaw, so a cast that froze nothing ends like any other ability

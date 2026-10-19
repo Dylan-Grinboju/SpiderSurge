@@ -96,10 +96,11 @@ Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
 - **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
-- **General**: check for updates and reload edits to the settings file without restarting the game.
+- **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
+- **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version and credits.
 
-Stats columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Surge's indicator and telemetry settings have their own pages. Every reset asks for confirmation first.
+Stats columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Surge's ability indicator has its own page. Every reset asks for confirmation first.
 
 ### Using the Yaml file:
 

@@ -97,14 +97,16 @@ namespace SpiderSurge
             if (frozen != null)
             {
                 frozen._thawTime = Mathf.Max(frozen._thawTime, Time.time + duration);
-                return true;
             }
-
-            frozen = enemy.gameObject.AddComponent<FrozenEnemy>();
-            frozen._enemy = enemy;
-            frozen._visualOnly = visualOnly;
-            frozen._thawTime = Time.time + duration;
-            frozen.Hold();
+            else
+            {
+                frozen = enemy.gameObject.AddComponent<FrozenEnemy>();
+                frozen._enemy = enemy;
+                frozen._visualOnly = visualOnly;
+                frozen._thawTime = Time.time + duration;
+                frozen.Hold();
+            }
+            if (!visualOnly) FrozenParticles.FreezeUnder(enemy.gameObject, frozen._thawTime);
             return true;
         }
 
@@ -125,6 +127,7 @@ namespace SpiderSurge
                 // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
                 if (brain.IsInvoking("LaunchChargeAttack")) StopChargeCosmetics(brain);
                 brain.CancelInvoke("LaunchChargeAttack");
+                if (brain is WhispBrain whisp) CalmChargeLight(whisp);
                 _brains.Add(brain);
                 FrozenBrainIds.Add(brain.GetInstanceID());
                 if (brain is ExplodingRoller roller && RollerTriggered(roller))
@@ -160,6 +163,18 @@ namespace SpiderSurge
             {
                 Silk.Logger.LogWarning($"[SpiderSurge] Could not stop {brain.name}'s charge effects: {ex.GetBaseException().Message}");
             }
+        }
+
+        // Only the whisp's brain turns its aiming light back from the charge's red beam, so it is set to its resting look, the one the brain returns it to
+        private static void CalmChargeLight(WhispBrain whisp)
+        {
+            Traverse light = Traverse.Create(whisp).Field("chargeLight");
+            if (!(light.GetValue() is Object value) || value == null) return;
+            light.Property("intensity").SetValue(1f);
+            light.Property("pointLightInnerAngle").SetValue(50f);
+            light.Property("pointLightOuterAngle").SetValue(100f);
+            light.Property("pointLightOuterRadius").SetValue(100f);
+            light.Property("color").SetValue(whisp.energyColor);
         }
 
         private void TintAll()

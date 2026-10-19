@@ -24,6 +24,9 @@ namespace SpiderSurge.Common
         public const string Orange = "#FFAA66";
         private const float FontSize = 19f;
         private const float RowHeight = 38f;
+        // The game's list moves 6 units per wheel notch; this makes a notch about two rows
+        private const float ScrollSensitivity = 15f;
+        public const string AchievementsHub = "achievements";
         private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade" };
 
         private static readonly Part[] MenuOrder = { Parts.Stats, Parts.Surge, Parts.Teams, Parts.Fixes };
@@ -43,6 +46,7 @@ namespace SpiderSurge.Common
         private Navigation _backNavigation;
         private GameObject _originalSelection;
         private float _originalScroll;
+        private float _originalSensitivity;
         private TMP_Text _title;
         private string _originalTitle;
         private I2.Loc.Localize _titleLocalization;
@@ -53,6 +57,7 @@ namespace SpiderSurge.Common
         private readonly List<Selectable> _controls = new List<Selectable>();
         private readonly List<GameObject> _created = new List<GameObject>();
         private readonly Stack<(string page, int selection, float scroll)> _history = new Stack<(string, int, float)>();
+        private readonly HashSet<string> _revealed = new HashSet<string>();
         private bool _subscribed;
         private bool _quiet;
         private Coroutine _pending;
@@ -129,6 +134,8 @@ namespace SpiderSurge.Common
                 _scroll = scroll;
                 _back = back;
                 _originalScroll = scroll.verticalNormalizedPosition;
+                _originalSensitivity = scroll.scrollSensitivity;
+                scroll.scrollSensitivity = ScrollSensitivity;
                 _originalSelection = view.SelectedButton;
                 _backNavigation = back.navigation;
                 Transform title = menu.transform.Find("Text (TMP)");
@@ -206,6 +213,7 @@ namespace SpiderSurge.Common
                 _scroll.StopMovement();
                 _originalContent.gameObject.SetActive(true);
                 _scroll.verticalNormalizedPosition = _originalScroll;
+                _scroll.scrollSensitivity = _originalSensitivity;
                 _back.navigation = _backNavigation;
                 _view.SelectedButton = _originalSelection;
                 if (_title != null) _title.text = _originalTitle;
@@ -216,6 +224,7 @@ namespace SpiderSurge.Common
             _title = null;
             _titleLocalization = null;
             _history.Clear();
+            _revealed.Clear();
             Settings.Flush();
             _menu = null;
             if (_open == this)
@@ -258,6 +267,7 @@ namespace SpiderSurge.Common
         // The clicked button is still handling its click, so the page changes on the next frame
         private void Show(string page, int selection, float scroll)
         {
+            _revealed.Clear();
             Current = page;
             if (_pending != null)
             {
@@ -348,6 +358,7 @@ namespace SpiderSurge.Common
             if (Current == "general") { AddGeneral(); return; }
             if (Current == "parts") { AddParts(); return; }
             if (Current == "about") { AddAbout(); return; }
+            if (Current == AchievementsHub) { AddAchievements(); return; }
             if (Current == "confirm")
             {
                 Title("Confirm reset");
@@ -379,7 +390,7 @@ namespace SpiderSurge.Common
             {
                 if (part.Running && part.HasSettings) Button(part.Title, () => Open(part.Key));
             }
-            if (Parts.Surge.Running) Button("Achievements", () => Open(AchievementsPage.Page));
+            if (Parts.Surge.Running || Parts.Stats.Running) Button("Achievements", () => Open(AchievementsHub));
             Button("Enable or disable parts", () => Open("parts"));
             Button("General", () => Open("general"));
             Button("About SpiderSurge", () => Open("about"));
@@ -392,14 +403,9 @@ namespace SpiderSurge.Common
             foreach (Part part in MenuOrder)
             {
                 Spacer();
-                if (part.CanDisable)
-                {
-                    Checkbox($"<b>{part.Title}</b>", part.Enabled, value => Settings.Set(part.SettingKey, value));
-                }
-                else
-                {
-                    Header(part.Title);
-                }
+                Header(part.Title);
+                if (part.CanDisable) Checkbox("On", part.Enabled, value => Settings.Set(part.SettingKey, value));
+                else Note("Always on.");
                 Note(part.Description);
                 if (part.BlockedBy != null)
                 {
@@ -419,10 +425,24 @@ namespace SpiderSurge.Common
         private void AddGeneral()
         {
             Title("General");
+            Header("Updates");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
+            if (Parts.Surge.Running)
+            {
+                Spacer();
+                SurgeSettingsPage.BuildTelemetry(this);
+            }
+            Spacer();
+            Header("Settings file");
             Button("Reload the settings file", ReloadFile);
-            Note($"Settings file: <noparse>{Settings.FilePath}</noparse>");
+            Note($"<noparse>{Settings.FilePath}</noparse>");
+        }
 
+        private void AddAchievements()
+        {
+            Title("Achievements");
+            if (Parts.Surge.Running) Button($"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})", () => Open(AchievementsPage.Page));
+            if (Parts.Stats.Running) Button(StatsMod.StatsSettingsPage.TitlesButtonLabel, () => Open(StatsMod.StatsSettingsPage.TitlesPage));
         }
 
         private void AddAbout()
@@ -443,6 +463,15 @@ namespace SpiderSurge.Common
             {
                 Announcer.InformationPopup(problem);
             }
+        }
+
+        public bool Revealed(string id) => _revealed.Contains(id);
+
+        // Shows or hides the hidden part of a line until the page is left
+        public void ToggleRevealed(string id)
+        {
+            if (!_revealed.Remove(id)) _revealed.Add(id);
+            RequestRebuild(null);
         }
 
         public void Header(string text)

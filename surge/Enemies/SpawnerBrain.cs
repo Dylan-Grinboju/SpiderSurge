@@ -50,6 +50,7 @@ namespace SpiderSurge.Enemies
         {
             health = GetComponent<EnemyHealthSystem>();
             colliders = GetComponentsInChildren<Collider2D>(true);
+            timer = Mathf.Max(0f, interval - Consts.Values.Enemies.CocoonFirstHatchDelay);
         }
 
         private void FixedUpdate()

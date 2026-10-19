@@ -8,17 +8,22 @@ namespace SpiderSurge
 
         public static void Build(SettingsPage page)
         {
-            page.Title("Achievements");
-            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. They are saved with this game's save file.");
+            page.Title("Surge achievements");
+            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. They are saved with this game's save file. Click a locked achievement to see how to get it.");
 
             foreach (Achievement achievement in SurgeAchievements.All)
             {
                 AchievementUnlock unlock = SurgeAchievements.UnlockOf(achievement.Id);
-                string status = unlock != null
-                    ? $"<color={SettingsPage.Green}>UNLOCKED</color> <color={SettingsPage.Gray}>{unlock.Date:yyyy-MM-dd}{(string.IsNullOrEmpty(unlock.Player) ? "" : " by <noparse>" + unlock.Player + "</noparse>")}</color>"
-                    : $"<color={SettingsPage.Gray}>LOCKED</color>";
-                string name = unlock != null ? $"<color={Hud.PinkHex}>{achievement.Name}</color>" : achievement.Name;
-                page.Line($"<b>{name}</b>\n<size=90%>{achievement.Description}</size>\n<size=85%>{status}</size>");
+                if (unlock != null)
+                {
+                    string by = string.IsNullOrEmpty(unlock.Player) ? "" : " by <noparse>" + unlock.Player + "</noparse>";
+                    page.Line($"<b><color={Hud.PinkHex}>{achievement.Name}</color></b>\n<size=90%>{achievement.Description}</size>\n<size=85%><color={SettingsPage.Green}>UNLOCKED</color> <color={SettingsPage.Gray}>{unlock.Date:yyyy-MM-dd}{by}</color></size>");
+                    continue;
+                }
+
+                string id = achievement.Id;
+                string howTo = page.Revealed(id) ? $"\n<size=90%>{achievement.Description}</size>" : "";
+                page.Line($"<b>{achievement.Name}</b>{howTo}\n<size=85%><color={SettingsPage.Gray}>LOCKED</color></size>", () => page.ToggleRevealed(id));
             }
 
             page.Spacer();

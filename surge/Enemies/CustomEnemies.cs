@@ -23,8 +23,8 @@ namespace SpiderSurge.Enemies
         {
             if (TwinWhispPrefab == null)
             {
-                TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp", Consts.Values.Colors.TwinWhispColor);
-                SetupOffScreenIndicator(TwinWhispPrefab, Consts.Values.Colors.TwinWhispColor);
+                TwinWhispPrefab = CreateBaseEnemy(original, "TwinWhisp");
+                AddTwinCore(TwinWhispPrefab);
             }
 
             // Create Shielded Variant if source is provided
@@ -173,6 +173,29 @@ namespace SpiderSurge.Enemies
             AddToEnemyList(newEnemyObj);
             CustomEnemyNet.Register(newEnemyObj, name);
             return newEnemyObj;
+        }
+
+        // Two of the whisp's own cores side by side, one behind each of its two shots, in the whisp's colors
+        private static void AddTwinCore(GameObject enemyObj)
+        {
+            var brain = enemyObj.GetComponent<WhispBrain>();
+            Transform core = brain != null && brain.core != null ? brain.core : enemyObj.transform.Find("CoreBase");
+            if (core == null)
+            {
+                Logger.LogWarning("[SpiderSurge] TwinWhisp has no core to double.");
+                return;
+            }
+
+            float offset = Consts.Values.Enemies.TwinWhispCoreOffset;
+            foreach (string part in new[] { "BaseSprite", "Eye" })
+            {
+                Transform first = core.Find(part);
+                if (first == null) continue;
+                Transform second = Object.Instantiate(first, core, false);
+                second.name = part + " (twin)";
+                second.localPosition = first.localPosition + Vector3.right * offset;
+                first.localPosition -= Vector3.right * offset;
+            }
         }
 
         private static void AddTwinBlade(GameObject enemyObj)

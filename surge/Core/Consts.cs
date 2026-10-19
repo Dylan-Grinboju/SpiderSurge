@@ -209,8 +209,8 @@ namespace SpiderSurge
                 public const float AbilityDurationIncreasePerLevel = 2f;
                 public const float UltimateBaseCooldown = 45f;
                 public const float UltimateCooldownReductionPerLevel = 10f;
-                public const float AbilityBaseRange = 175f;
-                public const float AbilityRangeIncreasePerLevel = 50f;
+                public const float AbilityBaseRange = 87.5f;
+                public const float AbilityRangeIncreasePerLevel = 25f;
                 public const float UltimateBaseRange = 125f;
                 public const float UltimateRangeIncreasePerLevel = 50f;
                 public const float RewindRingTime = 0.4f;
@@ -234,7 +234,9 @@ namespace SpiderSurge
                 public const float SpawnCountMultiplier = 1.75f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
+                public const float TwinWhispCoreOffset = 4f;
                 public const float CocoonSpawnInterval = 10f;
+                public const float CocoonFirstHatchDelay = 1f;
                 public const int CocoonMaxWasps = 2;
             }
 
@@ -276,7 +278,6 @@ namespace SpiderSurge
 
             public static class Colors
             {
-                public static readonly UnityEngine.Color TwinWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f);
                 public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.1f, 0.85f, 1f, 1f);
                 public static readonly UnityEngine.Color MissileWhispShieldColor = new UnityEngine.Color(1f, 0.1934f, 0.8608f, 1f);
             }
@@ -414,7 +415,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
                 [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
-                [PerkNames.FreezeAbility] = "Freeze every enemy in a large area for a few seconds",
+                [PerkNames.FreezeAbility] = "Freeze every enemy and shot in an area for a few seconds",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
                 [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",

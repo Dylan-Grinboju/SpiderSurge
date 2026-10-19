@@ -15,17 +15,17 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
     - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
     - **Null Field**: Become immune to all damage for a short time. Its Ultimate, **Neural Backup**, brings back a random dead player after a 10 second cast, or summons 3 friendly Wasps when nobody is dead. An Astral Heckhound ghost counts as dead and comes back where it floats, even when it is the caster's own ghost.
-    - **Freeze Time**: Freeze every enemy in a large area for 5 seconds. Frozen enemies don't move, shoot or explode, but their blades, saws and poison clouds still hurt on contact. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
+    - **Freeze Time**: Freeze every enemy, shot and effect inside the ice ring for 5 seconds. Frozen enemies don't move, shoot or explode, but their blades, saws and poison clouds still hurt on contact. Frozen shots, from enemies or players, hang in the air and still hit whatever touches them, then fly on when they thaw. Spiders and the weapons they hold aren't frozen, so a Shotgun fired into the ring still hits. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
 - **Custom Enemies**:
-    - **Twin Whisp**: A black/red Whisp that fires dual projectiles simultaneously.
+    - **Twin Whisp**: A Whisp with two cores that fires two shots at once.
     - **Missile Whisp**: Uses the RocketTurret's body while flying and launching rockets. Cyan when unshielded and purple when shielded.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
-    - **Wasp Cocoon**: A stationary cocoon that hatches a Wasp every 10 seconds until it's destroyed, with at most 2 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps while its shield holds.
+    - **Wasp Cocoon**: A stationary cocoon that starts hatching its first Wasp a second after it appears, then one every 10 seconds until it's destroyed, with at most 2 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps while its shield holds.
     - **Laser enemies**: Red-shielded versions of most enemies (not the Exploding Roller or already shielded ones). Every 5 seconds a faint ring and the Death Ray's charge sound warn for 1 second, then a Laser Cannon ring around the enemy burns for 1 second. Breaking the red shield removes the ring for good.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with the backtick key (**`**) at any time. It also opens on the first launch.
-- **Achievements**: 11 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements**. See [Achievements](#achievements).
+- **Achievements**: 11 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together, or any D-pad direction if you turn that on.
@@ -40,7 +40,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ## Achievements
 
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements**. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
 | Achievement | How to unlock it |
 |---|---|
@@ -60,7 +60,7 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities** and **Ultimate on the D-pad**, which apply from the next run. **Reset Surge settings to defaults** at the bottom keeps your telemetry choice.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities** and **Ultimate on the D-pad**, which apply from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
 
 ### Using the Yaml file:
 
@@ -79,7 +79,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 `surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
 
 ### Sound:
-`surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `80`.
+`surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
 
 ### UI:
 `surge.showTutorial`: Opens the Surge guide in the lobby on the next launch, then turns itself off. Resetting the Surge settings leaves it as it is. Default: `true`.
@@ -93,9 +93,9 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 `surge.indicator.showOnlyWhenReady`: If true, the indicator only appears when the ability is off cooldown. Default: `false`.
 
 ### Logging:
-`surge.statsLogging`: Records each run's ability and ultimate use, perk choices and waves to a local file, and feeds it to the Stats titles and the telemetry. Default: `true`.
+`surge.statsLogging`: **Record each run** on the General page. Builds a report of every Survival run (waves, perks, deaths, ability and ultimate use). Surge runs save it to a local file and feed it to the Stats titles. Telemetry sends this report, so nothing is uploaded while it's off. Default: `true`.
 
-`surge.telemetry`: Uploads anonymous stats for each finished Survival run, with or without Surge mode. See [Telemetry](#telemetry). Default: `false`.
+`surge.telemetry`: **Share anonymous run reports** on the General page. Uploads the report of each finished Survival run, with or without Surge mode. See [Telemetry](#telemetry). Default: `false`.
 
 `surge.showTelemetryPrompt`: Asks whether to share run stats a few seconds after the game starts. Answering the question turns it off. Default: `true`.
 
@@ -107,7 +107,7 @@ SpiderSurge supports optional telemetry to help track balancing and gameplay tre
 
 ### How to enable
 
-Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run stats** on the **Run stats and telemetry** page under Surge, or `surge.telemetry` in the file. Uploads also need **Track ability use in each run** (`surge.statsLogging`) on.
+Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run reports** in **Mods** > **SpiderSurge** > **General**, or `surge.telemetry` in the file. Uploads also need **Record each run** (`surge.statsLogging`) on.
 
 ### What is sent
 
@@ -127,7 +127,7 @@ A very long run's report leaves out its oldest perk choices and waves, so it sta
 - Telemetry uses an anonymous random ID, not player names.
 - The anonymous ID is generated locally and stored in:
     `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
-- The **Run stats and telemetry** page shows the ID, and **Reset telemetry ID** replaces it with a new one.
+- The **General** page shows the ID, and **Reset telemetry ID** replaces it with a new one.
 
 
 ### Local log files (non-telemetry)
