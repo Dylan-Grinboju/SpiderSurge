@@ -46,6 +46,21 @@ Under **Stats > Player table columns > Shooting accuracy**, enable overall accur
 
 Saved run statistics include overall and per-weapon percentages plus raw successful/fired counts, regardless of column visibility. Existing kill and weapon-hit counters keep their meanings. Accuracy is tracked on the host; this does not introduce client-side stats synchronization.
 
+## Titles
+
+Survival titles use two accuracy requirements. **Best Accuracy** is the highest overall accuracy among players who fired at least 10 shots. **Best Railvolver Accuracy** pools Railvolver and Double Railvolver shots (hits over shots fired across both) and needs at least 5 of them. A player below the minimum can't hold the requirement, however high their percentage, and a leader with no hits doesn't earn it.
+
+| Title | Requirements |
+|---|---|
+| Bullseye | Best Accuracy |
+| Sniper | Best Railvolver Accuracy |
+| Death from Above | Best Accuracy, Highest Point |
+| Non-Lethal Rounds | Best Accuracy, Least Offense |
+| Aimbot | Best Accuracy, Most Offense |
+| Steady | Best Accuracy, Least Airborne Time |
+
+Offense is kills plus enemy shields taken down, as in the other Offense titles. As with every title, a player's title is hidden when another of their titles has all its requirements and more, so Aimbot, Death from Above, Non-Lethal Rounds or Steady replaces Bullseye.
+
 ## Validation
 
 Built against the bundled game references with `dotnet build --no-restore`. Live tests used the Steam build and SpiderInspector in paused local sessions, with frozen targets and isolated projectile cleanup between cases.
@@ -62,3 +77,4 @@ Built against the bundled game references with `dotnet build --no-restore`. Live
 - Saved run files contained the overall and per-weapon percentages and raw counts.
 - F2 overall and per-weapon columns inspected visually, including percentages and `--` cells.
 - Original and accuracy builds both produced 30 live pellets after two overlapping Auto Shotgun volleys; the accuracy build used two separate 15-pellet emitters.
+- Titles, two-player Survival runs: 10/12 Railvolver hits with the most offense and the highest point gave Aimbot, Death from Above and Sniper, and Bullseye was hidden. 5/5 shots (3 Railvolver, 2 Double Railvolver) still earned Sniper but lost Best Accuracy to 6/12 Shotgun volleys, which with the least offense and least airtime gave Non-Lethal Rounds and Steady.
