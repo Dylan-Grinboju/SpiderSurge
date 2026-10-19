@@ -48,7 +48,14 @@ Saved run statistics include overall and per-weapon percentages plus raw success
 
 ## Titles
 
-Survival titles use two accuracy requirements. **Best Accuracy** is the highest overall accuracy among players who fired at least 10 shots. **Best Railvolver Accuracy** pools Railvolver and Double Railvolver shots (hits over shots fired across both) and needs at least 5 of them. A player below the minimum can't hold the requirement, however high their percentage, and a leader with no hits doesn't earn it.
+Survival titles use four shooting requirements:
+
+- **Best Accuracy**: the highest overall accuracy among players who fired at least 10 shots. A leader with no hits doesn't earn it.
+- **Best Railvolver Accuracy**: Railvolver and Double Railvolver shots pooled (hits over shots fired across both), with at least 5 of them. A leader with no hits doesn't earn it.
+- **Worst Accuracy**: the lowest overall accuracy among players who fired at least 10 shots. It needs a second qualifying player with better accuracy, so a lone qualifier or a tie earns nothing.
+- **Most Shots Fired**: the most shots fired overall.
+
+A player below a minimum can't hold that requirement, however high or low their percentage.
 
 | Title | Requirements |
 |---|---|
@@ -58,8 +65,18 @@ Survival titles use two accuracy requirements. **Best Accuracy** is the highest 
 | Non-Lethal Rounds | Best Accuracy, Least Offense |
 | Aimbot | Best Accuracy, Most Offense |
 | Steady | Best Accuracy, Least Airborne Time |
+| Surgical Strike | Best Accuracy, Most Offense, Least Friendly Fire |
+| Camper | Best Accuracy, Least Airborne Time, Least Web Swings |
+| Bullet Time | Best Accuracy, Most Airborne Time, Most Kills While Airborne |
+| High Noon | Best Accuracy, Most Gun Kills, Most Kills While Solo |
+| Deadeye | Best Accuracy, Most Damage Taken, Most Deaths |
+| Turret | Best Accuracy, Least Web Swings, Least Airborne Time, Lowest Point |
+| Stormtrooper | Worst Accuracy |
+| Spray and Pray | Worst Accuracy, Most Shots Fired |
+| Trigger Happy | Worst Accuracy, Most Shots Fired, Most Friendly Fire |
+| Blind Rage | Worst Accuracy, Most Offense, Max Kill Streak |
 
-Offense is kills plus enemy shields taken down, as in the other Offense titles. As with every title, a player's title is hidden when another of their titles has all its requirements and more, so Aimbot, Death from Above, Non-Lethal Rounds or Steady replaces Bullseye.
+Offense is kills plus enemy shields taken down, as in the other Offense titles. As with every title, a player's title is hidden when another of their titles has all its requirements and more, so for example Aimbot replaces Bullseye, Camper replaces Steady, and Spray and Pray replaces Stormtrooper.
 
 ## Validation
 
@@ -78,3 +95,4 @@ Built against the bundled game references with `dotnet build --no-restore`. Live
 - F2 overall and per-weapon columns inspected visually, including percentages and `--` cells.
 - Original and accuracy builds both produced 30 live pellets after two overlapping Auto Shotgun volleys; the accuracy build used two separate 15-pellet emitters.
 - Titles, two-player Survival runs: 10/12 Railvolver hits with the most offense and the highest point gave Aimbot, Death from Above and Sniper, and Bullseye was hidden. 5/5 shots (3 Railvolver, 2 Double Railvolver) still earned Sniper but lost Best Accuracy to 6/12 Shotgun volleys, which with the least offense and least airtime gave Non-Lethal Rounds and Steady.
+- Worst accuracy, two-player Survival runs: 3/15 Shotgun volleys with grenade kills for the most offense and the longest streak gave Blind Rage and Spray and Pray, Stormtrooper was hidden and Trigger Happy stayed out without friendly fire; the 8/10 Railvolver player got Bullet Time and Non-Lethal Rounds. 0/5 Shotgun volleys, below the minimum, gave no worst-accuracy title.
