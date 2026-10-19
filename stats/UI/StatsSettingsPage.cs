@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using SpiderSurge.Common;
@@ -7,6 +9,8 @@ namespace StatsMod
     internal static class StatsSettingsPage
     {
         private const string ColumnsPage = "stats.columns";
+        private const string TitlesPage = "stats.titles";
+        private static readonly HashSet<string> RevealedTitles = new HashSet<string>();
         private const string AccuracyPrefix = "accuracy.";
         private const string OverallAccuracy = AccuracyPrefix + "overall";
         private static readonly string[] CycleInputNames = { "D-pad", "Stick press (L3 or R3)", "D-pad or stick press", "Nothing" };
@@ -25,6 +29,12 @@ namespace StatsMod
             if (page.Current == ColumnsPage || page.Current.StartsWith(ColumnsPage + ".", System.StringComparison.Ordinal))
             {
                 BuildColumns(page);
+                return;
+            }
+            if (page.Current != TitlesPage) RevealedTitles.Clear();
+            if (page.Current == TitlesPage)
+            {
+                BuildTitles(page);
                 return;
             }
 
@@ -53,6 +63,7 @@ namespace StatsMod
             page.Header("End of run");
             page.Toggle("Titles", Key("titles.enabled"));
             page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s");
+            page.Button("Title collection", () => page.Open(TitlesPage));
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
 
             page.Spacer();
@@ -96,6 +107,60 @@ namespace StatsMod
                     page.Toggle(ColumnLabel(column), ModConfig.ColumnsPrefix + column);
                 }
             }
+        }
+
+        private static void BuildTitles(SettingsPage page)
+        {
+            page.Title("Title collection");
+            if (!TitleCollection.Readable)
+            {
+                page.Warning($"The title collection can't be read right now. Close any program that has <noparse>{TitleCollection.FilePath}</noparse> open, then open this page again.");
+                return;
+            }
+
+            var unlocked = TitleCollection.Unlocked;
+            var catalog = TitleCatalog.All;
+            var locked = catalog.Where(title => !unlocked.ContainsKey(title.Name)).ToList();
+            var others = unlocked.Values.Where(title => !catalog.Any(known => known.Name == title.Name)).OrderBy(title => title.FirstEarnedUtc).ToList();
+            page.Note($"{catalog.Count - locked.Count} of {catalog.Count} unlocked. A title unlocks when it shows on the end screen of a Survival run with two or more players.");
+
+            page.Spacer();
+            page.Header("Unlocked");
+            if (unlocked.Count == 0) page.Note("None yet.");
+            foreach (var title in catalog.Where(title => unlocked.ContainsKey(title.Name)))
+            {
+                page.Line(UnlockedLine(title.Name, title.HowToEarn, unlocked[title.Name]));
+            }
+            foreach (var title in others)
+            {
+                page.Line(UnlockedLine(title.Name, "From another mod or an older version", title));
+            }
+
+            page.Spacer();
+            page.Header("Locked");
+            if (locked.Count == 0) page.Note("Every title is unlocked.");
+            else page.Note("Click a locked title to see how to earn it.");
+            foreach (var title in locked)
+            {
+                string name = title.Name;
+                string requirements = RevealedTitles.Contains(name) ? $"\n<size=90%><noparse>{title.HowToEarn}</noparse></size>" : "";
+                page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{requirements}</color>", () =>
+                {
+                    if (!RevealedTitles.Remove(name)) RevealedTitles.Add(name);
+                    SettingsPage.RefreshOpen();
+                });
+            }
+
+            page.Spacer();
+            page.ConfirmButton("Reset the title collection", TitleCollection.Reset);
+            page.Note($"Saved in <noparse>{TitleCollection.FilePath}</noparse>");
+        }
+
+        private static string UnlockedLine(string name, string howToEarn, UnlockedTitle title)
+        {
+            string times = title.TimesEarned == 1 ? "Earned once" : $"Earned in {title.TimesEarned} runs";
+            string first = title.FirstEarnedUtc.ToLocalTime().ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+            return $"<b><noparse>{name}</noparse></b>\n<size=90%><color={SettingsPage.Gray}><noparse>{howToEarn}</noparse></color>\n<color={SettingsPage.Green}>{times}, first on {first}</color></size>";
         }
 
         private static string Key(string key) => ModConfig.Prefix + key;

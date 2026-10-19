@@ -295,7 +295,7 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisible || !UIManager.CanShowTitles || Event.current.type != EventType.Repaint) return;
+            if (!isDisplayVisible || !UIManager.CanShowTitles || Event.current.type != EventType.Repaint || SettingsPage.IsOpen) return;
 
             InitializeStyles();
 
