@@ -129,6 +129,11 @@ namespace SpiderSurge
         private void Update()
         {
             if (_enemy == null && _spider == null) return;
+            if (_spider != null && _spider.dead)
+            {
+                Destroy(this);
+                return;
+            }
             if (_target != null) _targetPosition = _target.position;
 
             _elapsed += Time.deltaTime;
@@ -144,7 +149,15 @@ namespace SpiderSurge
             enabled = false;
             if (_enemy != null) Destroy(gameObject);
             else if (CanDie(_spider)) KillSpider(_spider, Caster);
+            else if (_spider.astralDead && Time.time >= SpiderImmuneTill(_spider)) DissolveGhost();
             else Release();
+        }
+
+        // A spider that died astral on the way in already counted its death, so its ghost goes the way lava takes one
+        private void DissolveGhost()
+        {
+            _spider.DisableShield();
+            _spider.Disintegrate();
         }
 
         // A spider that became unkillable on the way in comes back where it is
@@ -161,6 +174,16 @@ namespace SpiderSurge
             SpiderController controller = GetComponent<SpiderController>();
             if (controller != null) controller.enabled = true;
             Destroy(this);
+        }
+    }
+
+    // The pull drags a spider through platforms, so the game's stuck-in-wall check must not kill it on the way in
+    [HarmonyPatch(typeof(SpiderHealthSystem), "StuckInWallCheck")]
+    public class SpiderHealthSystem_StuckInWallCheck_BanishPatch
+    {
+        static bool Prefix(SpiderHealthSystem __instance)
+        {
+            return !BanishedTarget.IsBanished(__instance.rootObject);
         }
     }
 }

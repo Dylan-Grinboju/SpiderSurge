@@ -15,6 +15,7 @@ namespace SpiderSurge.Common
         private const string OldTeamsId = "SpiderTeams";
         private const string BackupSuffix = ".old";
         private static readonly string[] PartKeys = { "fixes", "stats", "teams" };
+        private static readonly string[] PixelPositionKeys = { "display.position.x", "display.position.y" };
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
         {
@@ -66,7 +67,8 @@ namespace SpiderSurge.Common
                 Dictionary<string, object> surge = legacySurge && Parts.Surge.BlockedBy == null ? current : null;
                 Dictionary<string, object> stats = Parts.Stats.BlockedBy == null ? Read(statsPath) : null;
                 Dictionary<string, object> teams = Parts.Teams.BlockedBy == null ? Read(teamsPath) : null;
-                if (!legacySurge && stats == null && teams == null)
+                bool pixelPosition = current != null && PixelPositionKeys.Any(key => Find(current, "stats." + key) != null);
+                if (!legacySurge && stats == null && teams == null && !pixelPosition)
                 {
                     return;
                 }
@@ -80,6 +82,11 @@ namespace SpiderSurge.Common
                 if (stats != null)
                 {
                     moved += Map(stats, Settings.Keys.Where(key => key.StartsWith("stats.")).ToDictionary(key => key.Substring("stats.".Length)), values);
+                    MovePixelPosition(stats, "", values);
+                }
+                if (pixelPosition)
+                {
+                    MovePixelPosition(current, "stats.", values);
                 }
                 if (teams != null)
                 {
@@ -116,6 +123,10 @@ namespace SpiderSurge.Common
                         Remove(tree, key);
                     }
                 }
+                foreach (string key in PixelPositionKeys)
+                {
+                    Remove(tree, "stats." + key);
+                }
                 string yaml = new SerializerBuilder().Build().Serialize(tree);
 
                 var sources = new List<string>();
@@ -148,10 +159,29 @@ namespace SpiderSurge.Common
                 {
                     Logger.LogInfo($"Kept the legacy Surge settings because {Parts.Surge.BlockedBy} is still in the Mods folder");
                 }
+                if (pixelPosition)
+                {
+                    Logger.LogInfo("The Stats window position is now saved as a percentage of the screen");
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Could not move the old settings files into {path}: {ex.Message}");
+            }
+        }
+
+        // The small Stats window was placed in pixels; a percentage of the screen keeps its spot on any resolution
+        private static void MovePixelPosition(Dictionary<string, object> source, string prefix, Dictionary<string, object> values)
+        {
+            int[] sizes = { UnityEngine.Screen.width, UnityEngine.Screen.height };
+            string[] targets = { StatsMod.ModConfig.PositionXKey, StatsMod.ModConfig.PositionYKey };
+            for (int i = 0; i < PixelPositionKeys.Length; i++)
+            {
+                string raw = Find(source, prefix + PixelPositionKeys[i]);
+                if (raw != null && double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double pixels))
+                {
+                    values[targets[i]] = StatsMod.ModConfig.Percent(pixels, sizes[i]);
+                }
             }
         }
 

@@ -36,6 +36,11 @@ namespace StatsMod
         private bool restartRequested = false;
         private bool pauseAfterRestartOnNextSessionStart = false;
 
+        private GameStatsSnapshot displaySnapshot;
+        private float displaySnapshotTime;
+        private int displaySnapshotRoster = -1;
+        private const float DisplaySnapshotSeconds = 0.25f;
+
         private float remoteSessionSeconds;
         private float remoteReceivedAt;
         private bool remoteRestartRequested;
@@ -135,11 +140,12 @@ namespace StatsMod
             playerTracker.StopAllWebSwingTimers();
             playerTracker.StopAllAirborneTimers();
 
-            TimeSpan sessionTime = DateTime.Now - sessionStartTime;
+            TimeSpan sessionTime = (isPaused ? pauseStartTime : DateTime.Now) - sessionStartTime;
             lastGameDuration = sessionTime;
             isSurvivalActive = false;
             isVersusActive = false;
             isPaused = false;
+            playerTracker.ClearPause();
 
             GameStatsSnapshot statsSnapshot = GetStatsSnapshot();
 
@@ -177,7 +183,7 @@ namespace StatsMod
 
         public void MarkRestartRequested()
         {
-            if (Net.IsRemoteClient) return;
+            if (Net.IsRemoteClient || !isSurvivalActive) return;
             restartRequested = true;
         }
 
@@ -280,19 +286,42 @@ namespace StatsMod
 
         public GameStatsSnapshot GetStatsSnapshot()
         {
-            return new GameStatsSnapshot
+            var snapshot = new GameStatsSnapshot
             {
-                IsSurvivalActive = isSurvivalActive,
-                IsVersusActive = isVersusActive,
-                GameMode = currentGameMode,
-                CurrentSessionTime = GetCurrentSessionTime(),
-                LastGameDuration = lastGameDuration,
-                ActivePlayers = new Dictionary<PlayerController, PlayerTracker.PlayerData>(playerTracker.GetActivePlayers()),
-                EnemiesKilled = enemiesTracker.EnemiesKilled,
-                PainLevel = painLevel,
+                ActivePlayers = playerTracker.GetActivePlayers(),
                 MapsPlayed = new List<string>(mapsPlayed),
                 PerksChosen = new List<string>(perksChosen)
             };
+            FillSessionValues(snapshot);
+            return snapshot;
+        }
+
+        // The stats windows draw every frame, so they share one snapshot whose lists are rebuilt when players change and a few times a second
+        public GameStatsSnapshot GetDisplaySnapshot()
+        {
+            if (displaySnapshot == null || displaySnapshotRoster != playerTracker.RosterVersion ||
+                Time.unscaledTime - displaySnapshotTime >= DisplaySnapshotSeconds)
+            {
+                displaySnapshot = GetStatsSnapshot();
+                displaySnapshotRoster = playerTracker.RosterVersion;
+                displaySnapshotTime = Time.unscaledTime;
+            }
+            else
+            {
+                FillSessionValues(displaySnapshot);
+            }
+            return displaySnapshot;
+        }
+
+        private void FillSessionValues(GameStatsSnapshot snapshot)
+        {
+            snapshot.IsSurvivalActive = isSurvivalActive;
+            snapshot.IsVersusActive = isVersusActive;
+            snapshot.GameMode = currentGameMode;
+            snapshot.CurrentSessionTime = GetCurrentSessionTime();
+            snapshot.LastGameDuration = lastGameDuration;
+            snapshot.EnemiesKilled = enemiesTracker.EnemiesKilled;
+            snapshot.PainLevel = painLevel;
         }
 
         #endregion

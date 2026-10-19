@@ -50,6 +50,7 @@ namespace SpiderSurge
         };
 
         private static readonly Dictionary<string, (string raw, Color color)> _colors = new Dictionary<string, (string raw, Color color)>();
+        private static readonly HashSet<string> _badColors = new HashSet<string>();
 
         // Ability indicator configuration
         public static float IndicatorRadius => Mathf.Clamp(Settings.GetFloat(IndicatorRadiusKey), MinIndicatorRadius, MaxIndicatorRadius);
@@ -83,8 +84,8 @@ namespace SpiderSurge
 
         public static void ForgetColors() => _colors.Clear();
 
-        // Cached per key with the text it was read from, so a bad value warns once until it changes or the file is reloaded
-        private static Color ReadColor(string key)
+        // Cached per key with the text it was read from; a bad value falls back to the default and warns once
+        public static Color ReadColor(string key)
         {
             string raw = Settings.GetString(key);
             if (_colors.TryGetValue(key, out var cached) && cached.raw == raw)
@@ -95,7 +96,10 @@ namespace SpiderSurge
             if (!TryParseColor(raw, out Color color))
             {
                 string fallback = (string)Settings.Default(key);
-                Logger.LogWarning($"Setting {key} '{raw}' is not a color, using {fallback}");
+                if (_badColors.Add(key + "=" + raw))
+                {
+                    Logger.LogWarning($"Setting {key} '{raw}' is not a color, using {fallback}");
+                }
                 TryParseColor(fallback, out color);
             }
             _colors[key] = (raw, color);
@@ -105,6 +109,8 @@ namespace SpiderSurge
         // HTML colors (#RRGGBB, #RRGGBBAA, names) or "r,g,b" / "r,g,b,a" with channels from 0 to 1
         public static bool TryParseColor(string s, out Color color)
         {
+            color = default;
+            if (string.IsNullOrEmpty(s)) return false;
             if (ColorUtility.TryParseHtmlString(s, out color)) return true;
 
             string[] parts = s.Split(',');

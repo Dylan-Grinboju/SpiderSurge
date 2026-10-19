@@ -33,7 +33,14 @@ namespace SpiderSurge
         private readonly List<EnemyBrain> _brains = new List<EnemyBrain>();
         private readonly List<EnemyBrain> _disabledBrains = new List<EnemyBrain>();
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
-        private readonly Dictionary<SpriteRenderer, Color> _tints = new Dictionary<SpriteRenderer, Color>();
+        private readonly Dictionary<SpriteRenderer, Tint> _tints = new Dictionary<SpriteRenderer, Tint>();
+        private readonly List<SpriteRenderer> _recolored = new List<SpriteRenderer>();
+
+        private struct Tint
+        {
+            public Color Base;
+            public Color Shown;
+        }
 
         public float TimeLeft => Mathf.Max(0f, _thawTime - Time.time);
 
@@ -57,10 +64,10 @@ namespace SpiderSurge
             FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
             if (frozen != null && frozen._held)
             {
-                frozen._tints[sprite] = color;
                 Color tinted = Color.Lerp(color, Consts.Values.Freeze.TintColor, Consts.Values.Freeze.TintStrength);
                 tinted.a = color.a;
                 sprite.color = tinted;
+                frozen._tints[sprite] = new Tint { Base = color, Shown = sprite.color };
             }
             else
             {
@@ -170,22 +177,38 @@ namespace SpiderSurge
             Destroy(this);
         }
 
+        // The game recolors parts while they are frozen (a damaged roller strut turns orange); the new color becomes the one tinted and restored
+        private void LateUpdate()
+        {
+            if (!_held) return;
+            foreach (var pair in _tints)
+            {
+                if (pair.Key != null && pair.Key.color != pair.Value.Shown) _recolored.Add(pair.Key);
+            }
+            foreach (SpriteRenderer sprite in _recolored)
+            {
+                SetBaseColor(sprite, sprite.color);
+            }
+            _recolored.Clear();
+        }
+
         private void Thaw()
         {
             if (!_held) return;
             _held = false;
             Release();
 
+            bool alive = _enemy != null && !_enemy.IsDead();
             if (_visualOnly)
             {
                 RestoreTints();
-                PlayThawSound();
+                if (alive) PlayThawSound();
                 return;
             }
 
             // Banish took it while frozen and holds it itself until it is gone
             if (BanishedTarget.IsBanished(gameObject)) return;
-            PlayThawSound();
+            if (alive) PlayThawSound();
 
             foreach (var pair in _bodies)
             {
@@ -217,7 +240,7 @@ namespace SpiderSurge
         {
             foreach (var pair in _tints)
             {
-                if (pair.Key != null) pair.Key.color = pair.Value;
+                if (pair.Key != null && pair.Key.color == pair.Value.Shown) pair.Key.color = pair.Value.Base;
             }
         }
 

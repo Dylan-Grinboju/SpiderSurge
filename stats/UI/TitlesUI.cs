@@ -56,6 +56,29 @@ namespace StatsMod
         private float[] revealedAt;
         #endregion
 
+        #region Layout Cache
+        private sealed class CardLayout
+        {
+            public string Name;
+            public float TitleHeight;
+            public float DescriptionHeight;
+            public float FooterHeight;
+            public float NameWidth;
+        }
+
+        private readonly List<CardLayout> cardLayouts = new List<CardLayout>();
+        private int titlesVersion;
+        private int layoutTitlesVersion = -1;
+        private int layoutWidth = -1;
+        private int layoutHeight = -1;
+        private int layoutStyleVersion = -1;
+        private int layoutFontVersion = -1;
+        private int layoutTitleCount = -1;
+        private float layoutScale;
+        private float layoutCardHeight;
+        private float layoutContentHeight;
+        #endregion
+
         #region GUI Styles
         private GUIStyle captionStyle;
         private GUIStyle headerStyle;
@@ -80,6 +103,7 @@ namespace StatsMod
         private void UpdateTitlesCache()
         {
             _cachedTitles = TitlesManager.Instance.CurrentTitles;
+            titlesVersion++;
             hasAnimationPlayed = false;
         }
         #endregion
@@ -285,20 +309,10 @@ namespace StatsMod
             int titleCount = hasTitles ? Mathf.Min(_cachedTitles.Count, MAX_TITLES) : 0;
             int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
 
-            float baseGridWidth = GRID_COLUMNS * CARD_WIDTH + (GRID_COLUMNS - 1) * CARD_SPACING_X;
-            float scale = Hud.FitScale(UIManager.UIScaleFactor, baseGridWidth, HEADER_HEIGHT, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
-            float cardHeight = 0f;
-            float contentHeight = 0f;
-            for (int attempt = 0; attempt < 5; attempt++)
-            {
-                ApplyScale(scale);
-                cardHeight = MeasureCardHeight(titleCount, scale);
-                float gridHeight = rows == 0 ? 120f * scale : rows * cardHeight + (rows - 1) * CARD_SPACING_Y * scale;
-                contentHeight = (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale + gridHeight;
-                float fit = Screen.height * BASE_MAX_HEIGHT_PERCENT / contentHeight;
-                if (fit >= 1f || attempt == 4) break;
-                scale *= fit * 0.99f;
-            }
+            UpdateLayout(titleCount, rows);
+            float scale = layoutScale;
+            float cardHeight = layoutCardHeight;
+            float contentHeight = layoutContentHeight;
 
             float top = (Screen.height - contentHeight) * 0.5f;
             string caption = !hasTitles ? ""
@@ -321,6 +335,42 @@ namespace StatsMod
             GUI.color = originalColor;
         }
 
+        // Text is measured only when the titles, the screen or the scale change, not on every repaint
+        private void UpdateLayout(int titleCount, int rows)
+        {
+            float uiScale = UIManager.UIScaleFactor;
+            if (layoutTitlesVersion == titlesVersion && layoutTitleCount == titleCount && layoutWidth == Screen.width && layoutHeight == Screen.height &&
+                layoutStyleVersion == UIManager.StyleVersion && layoutFontVersion == Hud.FontVersion)
+            {
+                return;
+            }
+
+            float baseGridWidth = GRID_COLUMNS * CARD_WIDTH + (GRID_COLUMNS - 1) * CARD_SPACING_X;
+            float scale = Hud.FitScale(uiScale, baseGridWidth, HEADER_HEIGHT, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
+            float cardHeight = 0f;
+            float contentHeight = 0f;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                ApplyScale(scale);
+                cardHeight = MeasureCards(titleCount, scale);
+                float gridHeight = rows == 0 ? 120f * scale : rows * cardHeight + (rows - 1) * CARD_SPACING_Y * scale;
+                contentHeight = (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale + gridHeight;
+                float fit = Screen.height * BASE_MAX_HEIGHT_PERCENT / contentHeight;
+                if (fit >= 1f || attempt == 4) break;
+                scale *= fit * 0.99f;
+            }
+
+            layoutScale = scale;
+            layoutCardHeight = cardHeight;
+            layoutContentHeight = contentHeight;
+            layoutTitlesVersion = titlesVersion;
+            layoutTitleCount = titleCount;
+            layoutWidth = Screen.width;
+            layoutHeight = Screen.height;
+            layoutStyleVersion = UIManager.StyleVersion;
+            layoutFontVersion = Hud.FontVersion;
+        }
+
         private void DrawHeader(Rect header, string caption, float scale)
         {
             float captionHeight = CAPTION_FONT_SIZE * 2.2f * scale;
@@ -332,28 +382,31 @@ namespace StatsMod
         }
 
         // Measure every card before revealing any so wrapped text cannot move the grid mid-animation.
-        private float MeasureCardHeight(int count, float scale)
+        private float MeasureCards(int count, float scale)
         {
             float height = CARD_HEIGHT * scale;
             float innerWidth = (CARD_WIDTH - CARD_PADDING * 2f) * scale;
+            float chipSize = (PLAYER_SQUARE_SIZE + BORDER_SIZE * 2f) * scale;
+            float maxNameWidth = innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale;
+            while (cardLayouts.Count < count)
+            {
+                cardLayouts.Add(new CardLayout());
+            }
+
             for (int index = 0; index < count; index++)
             {
                 TitleEntry title = _cachedTitles[index];
-                float titleHeight = cardTitleStyle.CalcHeight(new GUIContent((title.TitleName ?? "").ToUpperInvariant()), innerWidth);
-                float descriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(title.Description ?? ""), innerWidth);
-                float footerHeight = MeasureFooterHeight(title, innerWidth, scale);
-                height = Mathf.Max(height, titleHeight + descriptionHeight + footerHeight
+                CardLayout layout = cardLayouts[index];
+                string playerName = title.PlayerName ?? "";
+                layout.Name = (title.TitleName ?? "").ToUpperInvariant();
+                layout.TitleHeight = cardTitleStyle.CalcHeight(new GUIContent(layout.Name), innerWidth);
+                layout.DescriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(title.Description ?? ""), innerWidth);
+                layout.FooterHeight = Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale, cardPlayerNameStyle.CalcHeight(new GUIContent(playerName), maxNameWidth));
+                layout.NameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), maxNameWidth);
+                height = Mathf.Max(height, layout.TitleHeight + layout.DescriptionHeight + layout.FooterHeight
                     + (CARD_BAND_HEIGHT + CARD_PADDING * 3f + TITLE_TO_DESCRIPTION_SPACING) * scale);
             }
             return height;
-        }
-
-        private float MeasureFooterHeight(TitleEntry title, float innerWidth, float scale)
-        {
-            float chipSize = (PLAYER_SQUARE_SIZE + BORDER_SIZE * 2f) * scale;
-            float nameWidth = innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale;
-            float nameHeight = cardPlayerNameStyle.CalcHeight(new GUIContent(title.PlayerName ?? ""), nameWidth);
-            return Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale, nameHeight);
         }
 
         private void DrawTitles(float gridTop, int count, float cardHeight, float scale)
@@ -378,12 +431,12 @@ namespace StatsMod
 
                 Color old = GUI.color;
                 GUI.color = new Color(old.r, old.g, old.b, old.a * reveal);
-                DrawTitleCard(titles[index], card, scale);
+                DrawTitleCard(titles[index], cardLayouts[index], card, scale);
                 GUI.color = old;
             }
         }
 
-        private void DrawTitleCard(TitleEntry title, Rect card, float scale)
+        private void DrawTitleCard(TitleEntry title, CardLayout layout, Rect card, float scale)
         {
             Color playerColor = Hud.Readable(title.PrimaryColor);
             Hud.Fill(card, Hud.Card);
@@ -393,22 +446,18 @@ namespace StatsMod
             float innerWidth = card.width - padding * 2;
             float y = card.y + CARD_BAND_HEIGHT * scale + padding;
 
-            string name = (title.TitleName ?? "").ToUpperInvariant();
-            float titleHeight = cardTitleStyle.CalcHeight(new GUIContent(name), innerWidth);
-            Hud.Label(new Rect(card.x + padding, y, innerWidth, titleHeight), name, cardTitleStyle, Hud.Text);
-            y += titleHeight + TITLE_TO_DESCRIPTION_SPACING * scale;
+            Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.TitleHeight), layout.Name, cardTitleStyle, Hud.Text);
+            y += layout.TitleHeight + TITLE_TO_DESCRIPTION_SPACING * scale;
 
-            string description = title.Description ?? "";
-            float descriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(description), innerWidth);
-            Hud.Label(new Rect(card.x + padding, y, innerWidth, descriptionHeight), description, cardDescriptionStyle, Hud.Muted);
+            Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.DescriptionHeight), title.Description ?? "", cardDescriptionStyle, Hud.Muted);
 
             float squareSize = PLAYER_SQUARE_SIZE * scale;
             float borderSize = BORDER_SIZE * scale;
             float chipSize = squareSize + borderSize * 2;
             string playerName = title.PlayerName ?? "";
-            float nameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale);
+            float nameWidth = layout.NameWidth;
             float groupWidth = chipSize + SQUARE_TO_NAME_SPACING * scale + nameWidth;
-            float footerHeight = MeasureFooterHeight(title, innerWidth, scale);
+            float footerHeight = layout.FooterHeight;
             float footerY = card.yMax - padding - footerHeight;
             float groupX = card.x + (card.width - groupWidth) * 0.5f;
 

@@ -137,6 +137,8 @@ namespace SpiderTeams
             public const float LobbyLabelInterval = 1f;
             public const float ExplosionMatchWindow = 2f;
             public const float ExplosionMatchDistance = 0.05f;
+            public const float FriendlyPushGap = 0.25f;
+            public const float FriendlyPushMemory = 2f;
         }
 
         public static class Palette

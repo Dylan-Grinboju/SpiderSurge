@@ -1,4 +1,6 @@
+using System;
 using SpiderSurge.Common;
+using UnityEngine;
 
 namespace SpiderSurge
 {
@@ -11,8 +13,10 @@ namespace SpiderSurge
         {
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
             if (page.Current == "surge.telemetry") { BuildTelemetry(page); return; }
+            if (page.Current == SurgeGuide.Page) { SurgeGuide.Build(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
+            page.Button("Surge guide", () => page.Open(SurgeGuide.Page));
 
             page.Spacer();
             page.Header("Play");
@@ -21,7 +25,6 @@ namespace SpiderSurge
             page.Note("Surge Survival runs have no abilities, no ultimates and no ability perks: the first perk choice is a normal one, and waves 30 and 60 bring no ultimate choice. Luck still appears. Applies from the next run.");
             page.Toggle("Ultimate on the D-pad", ModConfig.DpadUltimateKey);
             page.Note("Any D-pad direction casts the ultimate, instead of L3 and R3 together. Applies from the next run. While it's on, the D-pad doesn't switch the Stats windows.");
-            page.Toggle("Show the tutorial", ModConfig.ShowTutorialKey);
 
             page.Spacer();
             page.Header("Sound");
@@ -32,7 +35,7 @@ namespace SpiderSurge
             page.Button("Ability indicator", () => page.Open("surge.indicator"));
             page.Button("Run stats and telemetry", () => page.Open("surge.telemetry"));
             page.Spacer();
-            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
+            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey, ModConfig.ShowTutorialKey));
         }
 
         private static void BuildIndicator(SettingsPage page)
@@ -41,10 +44,17 @@ namespace SpiderSurge
             page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f);
             page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
             page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
-            page.Cycle("Ready color", ModConfig.IndicatorAvailableColorKey, Colors, ColorNames);
-            page.Cycle("Cooldown color", ModConfig.IndicatorCooldownColorKey, Colors, ColorNames);
-            page.Cycle("Active color", ModConfig.IndicatorActiveColorKey, Colors, ColorNames);
+            page.Cycle("Ready color", ModConfig.IndicatorAvailableColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorAvailableColorKey));
+            page.Cycle("Cooldown color", ModConfig.IndicatorCooldownColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorCooldownColorKey));
+            page.Cycle("Active color", ModConfig.IndicatorActiveColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorActiveColorKey));
             page.Toggle("Only show when ready", ModConfig.IndicatorShowOnlyWhenReadyKey);
+        }
+
+        // A value that isn't a color matches the default the indicator falls back to
+        private static Func<string, bool> IsInUse(string key)
+        {
+            Color inUse = ModConfig.ReadColor(key);
+            return value => ModConfig.TryParseColor(value, out Color color) && color == inUse;
         }
 
         private static void BuildTelemetry(SettingsPage page)

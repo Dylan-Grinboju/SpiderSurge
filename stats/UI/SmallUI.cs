@@ -33,17 +33,19 @@ namespace StatsMod
         #endregion
 
         public float DEAD_PLAYER_ALPHA = 0.5f;
+        public float MAX_HEIGHT_PERCENT = 0.9f;
 
-        private float HeaderHeight => UIManager.ScaleValue(BASE_HEADER_HEIGHT);
-        private float PlayerRowHeight => UIManager.ScaleValue(BASE_PLAYER_ROW_HEIGHT);
-        private float Padding => UIManager.ScaleValue(BASE_PADDING);
+        private float scale = 1f;
+        private float HeaderHeight => BASE_HEADER_HEIGHT * scale;
+        private float PlayerRowHeight => BASE_PLAYER_ROW_HEIGHT * scale;
+        private float Padding => BASE_PADDING * scale;
+        private float Scaled(float value) => value * scale;
 
         #region UI State
         private bool isDisplayVisible = false;
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private Rect windowRect;
         private GameStatsSnapshot statsSnapshot;
-        private int snapshotFrame = -1;
         #endregion
 
         #region GUI Styles
@@ -53,12 +55,12 @@ namespace StatsMod
         private GUIStyle valueStyle;
         private int stylesVersion = -1;
         private int fontVersion = -1;
+        private float stylesScale = -1f;
         #endregion
 
         #region Initialization
         public void Initialize()
         {
-            windowRect = new Rect(ModConfig.DisplayPositionX, ModConfig.DisplayPositionY, 0f, 0f);
             isDisplayVisible = isDisplayVisibleAtAll;
 
             Logger.LogInfo("SmallUI initialized");
@@ -91,39 +93,55 @@ namespace StatsMod
         private void InitializeStyles()
         {
             Hud.EnsureFonts();
-            if (stylesVersion == UIManager.StyleVersion && fontVersion == Hud.FontVersion) return;
+            if (stylesVersion != UIManager.StyleVersion || fontVersion != Hud.FontVersion || windowStyle == null)
+            {
+                windowStyle = new GUIStyle();
+                headerStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
+                noPlayersStyle = Hud.Style(HEADER_FONT_SIZE, bold: true);
+                valueStyle = Hud.Style(VALUE_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
 
-            windowStyle = new GUIStyle();
-            headerStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
-            noPlayersStyle = Hud.Style(UIManager.ScaleFont(HEADER_FONT_SIZE), bold: true);
-            valueStyle = Hud.Style(UIManager.ScaleFont(VALUE_FONT_SIZE), bold: true, anchor: TextAnchor.MiddleCenter);
+                stylesVersion = UIManager.StyleVersion;
+                fontVersion = Hud.FontVersion;
+                stylesScale = -1f;
+            }
 
-            stylesVersion = UIManager.StyleVersion;
-            fontVersion = Hud.FontVersion;
+            if (stylesScale != scale)
+            {
+                Hud.Resize(headerStyle, HEADER_FONT_SIZE, scale);
+                Hud.Resize(noPlayersStyle, HEADER_FONT_SIZE, scale);
+                Hud.Resize(valueStyle, VALUE_FONT_SIZE, scale);
+                stylesScale = scale;
+            }
         }
         #endregion
 
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || GameMenus.Open) return;
 
-            InitializeStyles();
-            if (snapshotFrame != Time.frameCount)
-            {
-                statsSnapshot = GameSessionManager.Instance?.GetStatsSnapshot();
-                snapshotFrame = Time.frameCount;
-            }
+            statsSnapshot = GameSessionManager.Instance?.GetDisplaySnapshot();
             UpdateWindowSize(statsSnapshot?.ActivePlayers?.Count ?? 0);
+            InitializeStyles();
+            Vector2 saved = ModConfig.DisplayPosition;
+            windowRect.x = saved.x / 100f * Screen.width;
+            windowRect.y = saved.y / 100f * Screen.height;
+            ClampToScreen();
 
-            Vector2 oldPosition = new Vector2(windowRect.x, windowRect.y);
+            Vector2 placed = windowRect.position;
             windowRect = GUI.Window(WindowId, windowRect, DrawStatsWindow, "", windowStyle);
 
-            Vector2 newPosition = new Vector2(windowRect.x, windowRect.y);
-            if (oldPosition != newPosition)
+            if (windowRect.position != placed)
             {
-                ModConfig.SetDisplayPosition((int)newPosition.x, (int)newPosition.y);
+                ClampToScreen();
+                ModConfig.SetDisplayPosition(windowRect.position);
             }
+        }
+
+        private void ClampToScreen()
+        {
+            windowRect.x = Mathf.Clamp(windowRect.x, 0f, Mathf.Max(0f, Screen.width - windowRect.width));
+            windowRect.y = Mathf.Clamp(windowRect.y, 0f, Mathf.Max(0f, Screen.height - windowRect.height));
         }
 
         private void DrawStatsWindow(int windowID)
@@ -134,14 +152,14 @@ namespace StatsMod
                 if (background)
                 {
                     Hud.Fill(new Rect(0f, 0f, windowRect.width, windowRect.height), Hud.Ink);
-                    Hud.Fill(new Rect(0f, 0f, windowRect.width, UIManager.ScaleValue(2f)), Hud.Pink);
+                    Hud.Fill(new Rect(0f, 0f, windowRect.width, Scaled(2f)), Hud.Pink);
                 }
 
                 bool shadow = !background;
-                float killX = Padding + UIManager.ScaleValue(BASE_BAR_WIDTH + BASE_BAR_GAP);
-                float killWidth = UIManager.ScaleValue(COL_WIDTH_KILL);
+                float killX = Padding + Scaled(BASE_BAR_WIDTH + BASE_BAR_GAP);
+                float killWidth = Scaled(COL_WIDTH_KILL);
                 float deathX = killX + killWidth;
-                float deathWidth = UIManager.ScaleValue(COL_WIDTH_DEATH);
+                float deathWidth = Scaled(COL_WIDTH_DEATH);
                 float y = Padding;
 
                 Hud.Label(new Rect(killX, y, killWidth, HeaderHeight), LABEL_KILL, headerStyle, Hud.Pink, shadow);
@@ -161,7 +179,7 @@ namespace StatsMod
                         var playerData = playerEntry.Value;
                         float alpha = sessionActive && !playerData.IsAlive ? DEAD_PLAYER_ALPHA : 1f;
 
-                        Hud.Fill(new Rect(Padding, y + barInset, UIManager.ScaleValue(BASE_BAR_WIDTH), PlayerRowHeight - barInset * 2), Hud.WithAlpha(Hud.Readable(playerData.PlayerColor), alpha));
+                        Hud.Fill(new Rect(Padding, y + barInset, Scaled(BASE_BAR_WIDTH), PlayerRowHeight - barInset * 2), Hud.WithAlpha(Hud.Readable(playerData.PlayerColor), alpha));
                         Hud.Label(new Rect(killX, y, killWidth, PlayerRowHeight), playerData.Kills.ToString(), valueStyle, Hud.WithAlpha(playerData.Kills > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
                         Hud.Label(new Rect(deathX, y, deathWidth, PlayerRowHeight), playerData.Deaths.ToString(), valueStyle, Hud.WithAlpha(playerData.Deaths > 0 ? Hud.Pink : Hud.Muted, alpha), shadow);
                         y += PlayerRowHeight;
@@ -178,10 +196,14 @@ namespace StatsMod
         #endregion
 
         #region Window Size Management
+        // Many players shrink the whole window so every row fits on screen
         private void UpdateWindowSize(int rows)
         {
-            windowRect.height = Padding * 2 + HeaderHeight + Mathf.Max(rows, 1) * PlayerRowHeight;
-            windowRect.width = Padding * 2 + UIManager.ScaleValue(BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_KILL + COL_WIDTH_DEATH);
+            float baseWidth = BASE_PADDING * 2 + BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_KILL + COL_WIDTH_DEATH;
+            float baseHeight = BASE_PADDING * 2 + BASE_HEADER_HEIGHT + Mathf.Max(rows, 1) * BASE_PLAYER_ROW_HEIGHT;
+            scale = Hud.FitScale(UIManager.UIScaleFactor, baseWidth, baseHeight, 1f, MAX_HEIGHT_PERCENT);
+            windowRect.width = baseWidth * scale;
+            windowRect.height = baseHeight * scale;
         }
         #endregion
     }

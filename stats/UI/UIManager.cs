@@ -63,19 +63,46 @@ namespace StatsMod
         private static float _uiScaleFactor = 1.0f;
         private static bool _scalingInitialized = false;
         private static bool _scalingLogged;
+        private static int _scaledWidth;
+        private static int _scaledHeight;
+        private static Vector2Int _resizedTo;
+        private static float _resizedAt;
+        private const float ResizeSettleSeconds = 0.25f;
         public static int StyleVersion { get; private set; }
 
+        // A window being dragged to a new size changes it every frame, so the windows rescale once it has held still for a moment
         public static float UIScaleFactor
         {
             get
             {
-                if (!_scalingInitialized) InitializeScaling();
+                if (!_scalingInitialized)
+                {
+                    InitializeScaling();
+                }
+                else if (Screen.width != _scaledWidth || Screen.height != _scaledHeight)
+                {
+                    var size = new Vector2Int(Screen.width, Screen.height);
+                    if (size != _resizedTo)
+                    {
+                        _resizedTo = size;
+                        _resizedAt = Time.unscaledTime;
+                    }
+                    else if (Time.unscaledTime - _resizedAt >= ResizeSettleSeconds)
+                    {
+                        _scalingLogged = false;
+                        InitializeScaling();
+                        StyleVersion++;
+                    }
+                }
                 return _uiScaleFactor;
             }
         }
 
         private static void InitializeScaling()
         {
+            _scaledWidth = Screen.width;
+            _scaledHeight = Screen.height;
+
             if (ModConfig.AutoScale)
             {
                 // Base resolution: 1920x1080
@@ -184,7 +211,7 @@ namespace StatsMod
         private void HandleGamepadInput()
         {
             Gamepad gamepad = Gamepad.current;
-            if (gamepad == null) return;
+            if (gamepad == null || GameMenus.Open) return;
 
             bool cyclePressed = false;
             bool dpadPressed = gamepad.dpad.up.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame ||

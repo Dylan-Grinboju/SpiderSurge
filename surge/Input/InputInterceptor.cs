@@ -299,7 +299,7 @@ namespace SpiderSurge
                         break;
                     }
                 }
-                if (!deviceAssigned)
+                if (!deviceAssigned || PlayerControlSettings.IsMenuHeld(device))
                 {
                     return;
                 }

@@ -86,6 +86,11 @@ namespace SpiderSurge.Enemies
 
         private void OnDisable()
         {
+            GoOut();
+        }
+
+        private void GoOut()
+        {
             if (line != null) line.enabled = false;
             if (chargeSound != null) chargeSound.Stop();
             if (beamSound != null) beamSound.Stop();
@@ -94,7 +99,13 @@ namespace SpiderSurge.Enemies
 
         private void FixedUpdate()
         {
-            if (health == null || health.IsDead() || !synced) return;
+            if (health == null) return;
+            if (health.IsDead())
+            {
+                if (phase != Phase.Idle) GoOut();
+                return;
+            }
+            if (!synced) return;
 
             // Freeze Time and Banish make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
             if (remoteHold || FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(health.gameObject))

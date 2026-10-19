@@ -79,7 +79,7 @@ Surge only runs abilities for players on the host's PC, so a match with an onlin
 
 Open the normal **Versus Battle** setup page. Team versus, team count and friendly fire appear above the versus presets; scroll down for the other team options. The same controls are also available when customizing a versus preset. The page has every setting from the Yaml file, plus:
 
-- The team list, where the host can move each player to the next team, shuffle everyone, or balance the team sizes.
+- The team list, which shows each player under their team. The host can move a player to another team with the arrows next to their name, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
 Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** > **Enable or disable parts** and restart the game if the controls are missing.
@@ -114,7 +114,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
 
 ### Input:
-`teams.buttonGamepad`: The controller button that switches team in the lobby. Default: `<Gamepad>/buttonNorth` (Y / Triangle).
+`teams.buttonGamepad`: The controller button that switches team in the lobby. Default: `<Gamepad>/buttonNorth` (Y / Triangle). In the lobby, a team button that is also the game's show-names button (Y or Tab) only switches team.
 
 `teams.buttonKeyboard`: The keyboard key that switches team in the lobby. Default: `<Keyboard>/t`.
 

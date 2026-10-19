@@ -56,7 +56,7 @@ namespace StatsMod
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
 
             page.Spacer();
-            page.ConfirmButton("Reset Stats settings to defaults", () => Settings.Reset("stats", Key("display.position.x"), Key("display.position.y")));
+            page.ConfirmButton("Reset Stats settings to defaults", () => Settings.Reset("stats", ModConfig.PositionXKey, ModConfig.PositionYKey));
         }
 
         private static void BuildColumns(SettingsPage page)

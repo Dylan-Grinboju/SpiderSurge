@@ -14,6 +14,7 @@ namespace StatsMod
         private sealed class Column
         {
             public string Label;
+            public string Header;
             public float Width;
             public Func<bool> Shown;
             public Tone Tone;
@@ -188,7 +189,7 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint || GameMenus.Open) return;
 
             InitializeStyles();
 
@@ -197,7 +198,7 @@ namespace StatsMod
 
             try
             {
-                var statsSnapshot = GameSessionManager.Instance.GetStatsSnapshot();
+                var statsSnapshot = GameSessionManager.Instance.GetDisplaySnapshot();
                 Draw(statsSnapshot);
             }
             catch (Exception ex)
@@ -269,7 +270,7 @@ namespace StatsMod
             bool live = statsSnapshot.IsSurvivalActive || statsSnapshot.IsVersusActive;
             GameMode mode = live ? statsSnapshot.GameMode : GameSessionManager.Instance.LastGameMode;
             string caption = live ? "LIVE STATS" : mode == GameMode.None ? "NO GAMES YET" : mode == GameMode.Versus ? "LAST MATCH" : "LAST RUN";
-            string title = mode == GameMode.Versus ? "VERSUS" : mode == GameMode.Survival ? "SURVIVAL" : "STATS";
+            string title = mode == GameMode.Versus ? "VERSUS" : mode == GameMode.Survival ? (IsSurgeRun() ? "SURGE" : "SURVIVAL") : "STATS";
 
             float captionHeight = CAPTION_FONT_SIZE * 1.6f * scale;
             Hud.Label(new Rect(row.x, row.y, row.width, captionHeight), caption, captionStyle, live ? Hud.Pink : Hud.Muted);
@@ -296,6 +297,11 @@ namespace StatsMod
             }
         }
 
+        private static bool IsSurgeRun()
+        {
+            return Parts.Surge.Running && (SpiderSurge.SurgeGameModeManager.IsSurgeRunActive || SpiderSurge.SurgeGameModeManager.WasSurgeRunUsed);
+        }
+
         private void DrawTile(Rect tile, string caption, string value, Color valueColor, float captionHeight)
         {
             Hud.Label(new Rect(tile.x, tile.y, tile.width, captionHeight), caption, captionRightStyle, Hud.Muted);
@@ -316,7 +322,7 @@ namespace StatsMod
             foreach (Column column in visibleColumns)
             {
                 float width = column.Width * scale;
-                Hud.Label(new Rect(x + 4f * scale, table.y, width - 8f * scale, headerHeight - headerInset), column.Label.ToUpperInvariant(), columnHeaderStyle, Hud.Muted);
+                Hud.Label(new Rect(x + 4f * scale, table.y, width - 8f * scale, headerHeight - headerInset), column.Header ??= column.Label.ToUpperInvariant(), columnHeaderStyle, Hud.Muted);
                 x += width;
             }
 

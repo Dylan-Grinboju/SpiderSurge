@@ -27,7 +27,7 @@ namespace SpiderSurge
         public static bool CanLaunch(EnemyHealthSystem enemy)
         {
             // A kinematic body (the Wasp Cocoon's) never slows down or stops at walls, so it would fly off the map for good
-            Rigidbody2D body = enemy != null && !enemy.dead ? BodyOf(enemy) : null;
+            Rigidbody2D body = enemy != null && !enemy.dead && !FrozenEnemy.IsFrozen(enemy) ? BodyOf(enemy) : null;
             if (body == null || body.bodyType != RigidbodyType2D.Dynamic)
             {
                 return false;

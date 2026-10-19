@@ -25,8 +25,75 @@ namespace StatsMod
 
         private bool isPaused = false;
 
+        public int RosterVersion { get; private set; }
+
         // Raised with +1 when a tracked player's death is recorded and -1 when one is undone
         public event Action<int> DeathCountChanged;
+
+        public struct KillCredit
+        {
+            public PlayerController Killer;
+            public bool Friendly;
+            public string Weapon;
+            internal bool Streak;
+            internal int StreakSerial;
+            internal bool Airborne;
+            internal bool Solo;
+            internal int SoloSerial;
+        }
+
+        internal class Streak
+        {
+            public int Current;
+            public int Max;
+            public int Serial;
+            private readonly Dictionary<int, int> ended = new Dictionary<int, int>();
+
+            public void Add()
+            {
+                Current++;
+                if (Current > Max) Max = Current;
+            }
+
+            public void End()
+            {
+                if (Current > 0) ended[Serial] = Current;
+                Serial++;
+                Current = 0;
+            }
+
+            public void Reset()
+            {
+                ended.Clear();
+                Serial++;
+                Current = 0;
+                Max = 0;
+            }
+
+            // A taken-back kill shortens the streak it was in, running or already ended, and the best streak is worked out again
+            public void Revert(int serial)
+            {
+                if (serial == Serial)
+                {
+                    if (Current > 0) Current--;
+                }
+                else if (ended.TryGetValue(serial, out int length))
+                {
+                    if (length > 1) ended[serial] = length - 1;
+                    else ended.Remove(serial);
+                }
+                else
+                {
+                    return;
+                }
+
+                Max = Current;
+                foreach (int value in ended.Values)
+                {
+                    if (value > Max) Max = value;
+                }
+            }
+        }
 
         public class PlayerData
         {
@@ -43,11 +110,14 @@ namespace StatsMod
             public int EnemyShieldsTakenDown { get; set; }
             public int FriendlyShieldsHit { get; set; }
             public int ShieldsLost { get; set; }
-            public int KillStreak { get; set; }
-            public int MaxKillStreak { get; set; }
-            public int KillStreakWhileSolo { get; set; }
-            public int MaxKillStreakWhileSolo { get; set; }
+            internal readonly Streak KillRun = new Streak();
+            internal readonly Streak SoloRun = new Streak();
+            public int KillStreak { get => KillRun.Current; set => KillRun.Current = value; }
+            public int MaxKillStreak { get => KillRun.Max; set => KillRun.Max = value; }
+            public int KillStreakWhileSolo { get => SoloRun.Current; set => SoloRun.Current = value; }
+            public int MaxKillStreakWhileSolo { get => SoloRun.Max; set => SoloRun.Max = value; }
             public string PlayerName { get; set; }
+            internal bool HasLocalName { get; set; }
             public float JoinTime { get; set; }
             public Color PlayerColor { get; set; }
             public float? CurrentAliveStartTime { get; set; }
@@ -228,6 +298,7 @@ namespace StatsMod
             }
 
             activePlayers[player] = playerData;
+            RosterVersion++;
 
             RefreshPlayerCache();
         }
@@ -241,12 +312,17 @@ namespace StatsMod
         public void RefreshIdentities()
         {
             if (!Net.IsAuthority) return;
+            bool online = Net.IsOnline;
             foreach (var entry in activePlayers)
             {
                 if (entry.Key == null) continue;
+                int id = entry.Key.playerID.Value;
+                if (!online && entry.Value.HasLocalName && entry.Value.PlayerId == id) continue;
+                if (entry.Value.PlayerId != id) RosterVersion++;
                 // Names change too when a local game goes online (Player 1 becomes the account name)
-                entry.Value.PlayerId = entry.Key.playerID.Value;
+                entry.Value.PlayerId = id;
                 entry.Value.PlayerName = NameFor(entry.Key);
+                entry.Value.HasLocalName = !online;
             }
         }
 
@@ -271,6 +347,7 @@ namespace StatsMod
             if (activePlayers.TryGetValue(player, out PlayerData playerData))
             {
                 activePlayers.Remove(player);
+                RosterVersion++;
                 ForgetLooseWeapons(player);
 
                 RefreshPlayerCache();
@@ -279,18 +356,9 @@ namespace StatsMod
             }
         }
 
-        // A thrown weapon keeps its thrower's playerID, which the next player to join reuses, so a leaver's weapons lose their owner
         private static void ForgetLooseWeapons(PlayerController player)
         {
-            if (!Net.IsAuthority) return;
-            ulong id = (ulong)player.playerID.Value;
-            foreach (Weapon weapon in UnityEngine.Object.FindObjectsOfType<Weapon>())
-            {
-                if (weapon.ownerWeaponClientId == id)
-                {
-                    weapon.ownerWeaponClientId = ulong.MaxValue;
-                }
-            }
+            HitLogic.ForgetWeaponsOf(player);
         }
 
         public void RecordPlayerDeath(SpiderHealthSystem spiderHealth)
@@ -315,10 +383,11 @@ namespace StatsMod
                 {
                     data.Deaths++;
                     DeathCountChanged?.Invoke(1);
-                    data.KillStreak = 0;
-                    data.KillStreakWhileSolo = 0;
+                    data.KillRun.End();
+                    data.SoloRun.End();
                     data.StopAliveTimer();
-                    StopWebSwingTimer(playerInput);
+                    data.StopWebSwingTimer();
+                    data.StopAirborneTimer();
 
                     // Track death on the current map
                     string currentMap = GameSessionManager.Instance.CurrentMapName;
@@ -395,10 +464,8 @@ namespace StatsMod
                 entry.Value.WebSwings = 0;
                 entry.Value.WebSwingTime = 0f;
                 entry.Value.AirborneTime = 0f;
-                entry.Value.KillStreak = 0;
-                entry.Value.MaxKillStreak = 0;
-                entry.Value.KillStreakWhileSolo = 0;
-                entry.Value.MaxKillStreakWhileSolo = 0;
+                entry.Value.KillRun.Reset();
+                entry.Value.SoloRun.Reset();
                 entry.Value.TotalAliveTime = 0f;
                 entry.Value.CurrentAliveStartTime = null;
                 entry.Value.CurrentWebSwingStartTime = null;
@@ -416,10 +483,16 @@ namespace StatsMod
             }
         }
 
+        // In playerID order, so tables list players the same way after someone leaves and another joins
         public Dictionary<PlayerController, PlayerData> GetActivePlayers()
         {
             RefreshIdentities();
-            return new Dictionary<PlayerController, PlayerData>(activePlayers);
+            var players = new Dictionary<PlayerController, PlayerData>(activePlayers.Count);
+            foreach (var entry in activePlayers.OrderBy(p => p.Value.PlayerId))
+            {
+                players.Add(entry.Key, entry.Value);
+            }
+            return players;
         }
 
         internal bool TryGetPlayer(PlayerController player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
@@ -443,20 +516,19 @@ namespace StatsMod
             return activePlayers.Any(p => p.Value.IsAlive && PlayerRelations.AreTeammates(player, p.Key));
         }
 
-        public void IncrementPlayerKill(PlayerController player)
+        public KillCredit IncrementPlayerKill(PlayerController player)
         {
+            KillCredit credit = new KillCredit { Killer = player };
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.Kills++;
 
                 // A kill credited after the killer died (the target reached lava or blew up later) starts no streak
-                if (!data.IsAlive) return;
+                if (!data.IsAlive) return credit;
 
-                data.KillStreak++;
-                if (data.KillStreak > data.MaxKillStreak)
-                {
-                    data.MaxKillStreak = data.KillStreak;
-                }
+                credit.Streak = true;
+                credit.StreakSerial = data.KillRun.Serial;
+                data.KillRun.Add();
 
                 SpiderController spider = player.GetComponentInChildren<SpiderController>();
                 if (spider != null)
@@ -465,18 +537,45 @@ namespace StatsMod
                     if (stabilizer != null && !stabilizer.grounded)
                     {
                         data.KillsWhileAirborne++;
+                        credit.Airborne = true;
                     }
                 }
 
                 if (!HasLivingTeammate(player))
                 {
+                    credit.Solo = true;
+                    credit.SoloSerial = data.SoloRun.Serial;
                     data.KillsWhileSolo++;
-                    data.KillStreakWhileSolo++;
-                    if (data.KillStreakWhileSolo > data.MaxKillStreakWhileSolo)
-                    {
-                        data.MaxKillStreakWhileSolo = data.KillStreakWhileSolo;
-                    }
+                    data.SoloRun.Add();
                 }
+            }
+            return credit;
+        }
+
+        public void RevertKill(KillCredit credit)
+        {
+            if (!Net.IsAuthority || credit.Killer == null || !activePlayers.TryGetValue(credit.Killer, out PlayerData data)) return;
+
+            if (credit.Friendly)
+            {
+                if (data.FriendlyKills > 0) data.FriendlyKills--;
+            }
+            else
+            {
+                if (data.Kills > 0) data.Kills--;
+                if (credit.Airborne && data.KillsWhileAirborne > 0) data.KillsWhileAirborne--;
+                if (credit.Solo && data.KillsWhileSolo > 0) data.KillsWhileSolo--;
+                if (credit.Streak) data.KillRun.Revert(credit.StreakSerial);
+                if (credit.Solo) data.SoloRun.Revert(credit.SoloSerial);
+            }
+
+            if (credit.Weapon != null && data.WeaponHits.TryGetValue(credit.Weapon, out int hits) && hits > 0)
+            {
+                data.WeaponHits[credit.Weapon] = hits - 1;
+            }
+            if (data.EnemyKills.TryGetValue("Player", out int kills) && kills > 0)
+            {
+                data.EnemyKills["Player"] = kills - 1;
             }
         }
 
@@ -673,7 +772,7 @@ namespace StatsMod
                 {
                     if (HasLivingTeammate(entry.Key))
                     {
-                        entry.Value.KillStreakWhileSolo = 0;
+                        entry.Value.SoloRun.End();
                     }
                 }
             }
@@ -762,6 +861,18 @@ namespace StatsMod
                 {
                     entry.Value.WasAirborneWhenPaused = false;
                 }
+            }
+        }
+
+        // A session that stops while paused never sees the unpause, so the next one must not start paused
+        public void ClearPause()
+        {
+            isPaused = false;
+            foreach (var entry in activePlayers)
+            {
+                entry.Value.WasAliveWhenPaused = false;
+                entry.Value.WasSwingingWhenPaused = false;
+                entry.Value.WasAirborneWhenPaused = false;
             }
         }
 

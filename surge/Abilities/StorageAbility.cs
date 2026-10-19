@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using HarmonyLib;
 using Unity.Netcode;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
@@ -71,6 +72,8 @@ namespace SpiderSurge
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
+
+        private static readonly Dictionary<Weapon, float> restoredAmmo = new Dictionary<Weapon, float>();
 
         protected override void Start()
         {
@@ -245,9 +248,11 @@ namespace SpiderSurge
             GameObject heldWeaponObj = _weaponManager.equippedWeapon ? _weaponManager.equippedWeapon.gameObject : null;
 
             _storedWeaponData = StoreWeapon(heldWeaponObj);
+            _retrieving = storedWeaponObj;
 
             yield return new WaitForSeconds(AbilityDuration);
 
+            _retrieving = null;
             RetrieveWeapon(storedWeaponObj);
         }
 
@@ -368,12 +373,46 @@ namespace SpiderSurge
             }
         }
 
+        // An Astral Heckhound hit only makes a ghost, which can still be revived, so its death counts once its time runs out or it is disintegrated
         public void OnCharacterDied()
         {
-            if (_playerDied) return;
+            if (_playerDied || BecomingGhost) return;
             // Local check
             _playerDied = true;
             SaveWeapons(isDeath: true);
+            DestroyStoredWeapons();
+        }
+
+        private bool BecomingGhost => spiderHealthSystem != null && spiderHealthSystem.astralHeckhoundMod && !spiderHealthSystem.astralDead && !spiderHealthSystem.dead;
+
+        private bool Died => spiderHealthSystem != null && (spiderHealthSystem.dead || (spiderHealthSystem.astralDead && !spiderHealthSystem.astralHeckhoundMod));
+
+        private void LateUpdate()
+        {
+            if (!_playerDied && Died) OnCharacterDied();
+        }
+
+        // A ghost whose time runs out is marked dead and its spider switched off in the same frame
+        private void OnDisable()
+        {
+            if (!_playerDied && Died) OnCharacterDied();
+        }
+
+        // Stored weapons are inactive network objects under the spider, which outlive it hidden in the level; a kept one comes back as a new copy
+        private void DestroyStoredWeapons()
+        {
+            if (!IsAuthority) return;
+            GameObject stored = _storedWeaponData?.WeaponRef != null ? _storedWeaponData.WeaponRef.gameObject : null;
+            GameObject retrieving = _retrieving;
+            _storedWeaponData = null;
+            _retrieving = null;
+            foreach (GameObject weaponObj in new[] { stored, retrieving })
+            {
+                if (weaponObj == null || weaponObj.activeSelf) continue;
+                NetworkObject no = weaponObj.GetComponent<NetworkObject>();
+                if (no != null && no.IsSpawned) no.Despawn(true);
+                else Destroy(weaponObj);
+            }
         }
 
         protected override void OnDestroy()
@@ -387,6 +426,7 @@ namespace SpiderSurge
         }
 
         private bool _playerDied = false;
+        private GameObject _retrieving;
 
         private void SaveWeapons(bool isDeath)
         {
@@ -525,6 +565,7 @@ namespace SpiderSurge
                     if (newWeapon != null)
                     {
                         newWeapon.ammo = data.Ammo;
+                        KeepRestoredAmmo(newWeapon, data.Ammo);
                     }
 
                     newWeaponObj.transform.SetParent(transform);
@@ -548,6 +589,25 @@ namespace SpiderSurge
             StoragePersistenceManager.ClearStoredWeapons(playerId);
         }
 
+        private static void KeepRestoredAmmo(Weapon weapon, float ammo)
+        {
+            foreach (Weapon gone in new List<Weapon>(restoredAmmo.Keys))
+            {
+                if (gone == null) restoredAmmo.Remove(gone);
+            }
+            restoredAmmo[weapon] = ammo;
+        }
+
+        // A hit before Weapon.Start also refills the ammo, and Start refills it again, so the saved ammo is kept until Start is done
+        public static void ApplyRestoredAmmo(Weapon weapon, bool started)
+        {
+            if (restoredAmmo.TryGetValue(weapon, out float ammo))
+            {
+                if (started) restoredAmmo.Remove(weapon);
+                weapon.ammo = Mathf.Min(ammo, weapon.maxAmmo);
+            }
+        }
+
         public static StorageAbility GetByHealthSystem(SpiderHealthSystem healthSystem)
         {
             if (healthSystem == null) return null;
@@ -566,6 +626,24 @@ namespace SpiderSurge
             }
             types.Add(Weapon.WeaponType.Gun);
             return types;
+        }
+    }
+
+    [HarmonyPatch(typeof(Weapon), "StartActions")]
+    public class Weapon_StartActions_StoragePatch
+    {
+        static void Postfix(Weapon __instance)
+        {
+            StorageAbility.ApplyRestoredAmmo(__instance, false);
+        }
+    }
+
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.Start))]
+    public class Weapon_Start_StoragePatch
+    {
+        static void Postfix(Weapon __instance)
+        {
+            StorageAbility.ApplyRestoredAmmo(__instance, true);
         }
     }
 }

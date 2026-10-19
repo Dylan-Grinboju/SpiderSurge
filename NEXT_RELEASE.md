@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it; press the backtick key to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press the backtick key to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 
@@ -66,7 +66,7 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Titles | **F3** (also skips the reveal) | |
 | Surge ability | **Q** | **L1**, or any button you pick: hold **Start** and double-tap it |
 | Surge ultimate | **C** | **L3 + R3** together, or any D-pad direction if you turn that on |
-| Surge guide | **`** (backtick) | |
+| Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
 On a controller you can switch the stats windows with a stick press instead of the D-pad. While Surge's ultimate is on the D-pad, only the stick press switches them.

@@ -30,6 +30,8 @@ namespace SpiderSurge.Common
         private static readonly AccessTools.FieldRef<ModsMenu, UIButton> BackButtonOf = AccessTools.FieldRefAccess<ModsMenu, UIButton>("backButton");
         private static SettingsPage _open;
         private static int _backFrame = -1;
+        private static ModsMenu _entryMenu;
+        private static Button _entryButton;
 
         private ModsMenu _menu;
         private UIView _view;
@@ -66,18 +68,43 @@ namespace SpiderSurge.Common
             }
         }
 
-        public void Build(ModsMenu menu, Button entry)
+        public static bool IsShowing(string page) => _open != null && _open._menu != null && _open._view.IsVisible && _open.Current == page;
+
+        // Silk adds the SpiderSurge button to the Mods menu only once its update check is done
+        public static bool CanShow => (_open != null && _open._menu != null) || (_entryMenu != null && _entryButton != null);
+
+        internal static void SetEntry(ModsMenu menu, Button entry)
         {
-            StartCoroutine(BuildNextFrame(menu, entry));
+            _entryMenu = menu;
+            _entryButton = entry;
         }
 
-        private IEnumerator BuildNextFrame(ModsMenu menu, Button entry)
+        // Opens the SpiderSurge menu in the Mods menu at a page, with the pages before it to go back through
+        public static bool Show(params string[] pages)
+        {
+            if (_open != null && _open._menu != null)
+            {
+                if (_open.Current != pages[pages.Length - 1]) _open.Open(pages[pages.Length - 1]);
+                return true;
+            }
+            if (!CanShow) return false;
+            Show(_entryMenu, _entryButton, pages);
+            return true;
+        }
+
+        internal static void Show(ModsMenu menu, Button entry, params string[] pages)
+        {
+            var page = menu.GetComponent<SettingsPage>() ?? menu.gameObject.AddComponent<SettingsPage>();
+            page.StartCoroutine(page.BuildNextFrame(menu, entry, pages));
+        }
+
+        private IEnumerator BuildNextFrame(ModsMenu menu, Button entry, string[] pages)
         {
             yield return null;
-            BuildMenu(menu, entry);
+            BuildMenu(menu, entry, pages);
         }
 
-        private void BuildMenu(ModsMenu menu, Button entry)
+        private void BuildMenu(ModsMenu menu, Button entry, string[] pages)
         {
             if (_menu != null) return;
             var view = menu.GetComponent<UIView>();
@@ -137,6 +164,11 @@ namespace SpiderSurge.Common
                 _open = this;
                 _history.Clear();
                 Current = MainPage;
+                foreach (string page in pages)
+                {
+                    _history.Push((Current, 0, 1f));
+                    Current = page;
+                }
                 if (!_subscribed)
                 {
                     Settings.Changed += RequestRebuild;
@@ -461,6 +493,39 @@ namespace SpiderSurge.Common
             }
         }
 
+        // Text the controller can select, so a page of reading scrolls with the D-pad and sticks like the other pages
+        public void Line(string text)
+        {
+            TMP_Text paragraph = _menu.CreateParagraph(text);
+            if (paragraph == null)
+            {
+                return;
+            }
+
+            var row = new GameObject("Line", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            row.transform.SetParent(_menu.objectParent, false);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(16, 16, 6, 6);
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            paragraph.transform.SetParent(row.transform, false);
+            SetText(paragraph, text);
+            paragraph.fontSize = FontSize;
+            paragraph.enableAutoSizing = false;
+            paragraph.enableWordWrapping = true;
+            paragraph.alignment = TextAlignmentOptions.TopLeft;
+            paragraph.margin = Vector4.zero;
+            paragraph.raycastTarget = false;
+            var fitter = paragraph.GetComponent<ContentSizeFitter>();
+            if (fitter != null) DestroyImmediate(fitter);
+            var selectable = paragraph.gameObject.AddComponent<Selectable>();
+            selectable.transition = Selectable.Transition.None;
+            _created.Add(row);
+            Register(selectable);
+        }
+
         public void Checkbox(string label, bool value, Action<bool> onToggle)
         {
             CheckboxScript checkbox = _menu.CreateCheckbox(changed => Run(() => onToggle(changed)), label, value);
@@ -522,10 +587,10 @@ namespace SpiderSurge.Common
         }
 
         // A button that steps through fixed choices of a text setting; a value typed into the file shows as is until changed
-        public void Cycle(string label, string key, string[] values, string[] names)
+        public void Cycle(string label, string key, string[] values, string[] names, Func<string, bool> isCurrent = null)
         {
             string current = Settings.GetString(key);
-            int index = Array.FindIndex(values, value => string.Equals(value, current, StringComparison.OrdinalIgnoreCase));
+            int index = Array.FindIndex(values, value => isCurrent != null ? isCurrent(value) : string.Equals(value, current, StringComparison.OrdinalIgnoreCase));
             string shown = index >= 0 ? names[index] : $"<noparse>{current}</noparse>";
             Button($"{label}: {shown}", () => Settings.Set(key, values[(index + 1) % values.Length]));
         }

@@ -27,6 +27,8 @@ namespace SpiderSurge
 
         private static readonly Dictionary<string, GameObject> EnemyPrefabs = new Dictionary<string, GameObject>();
 
+        private bool _frozeAny;
+
         public float FreezeRange
         {
             get
@@ -70,6 +72,7 @@ namespace SpiderSurge
                 );
             }
 
+            _frozeAny = false;
             if (spiderHealthSystem == null) return;
 
             Vector2 origin = spiderHealthSystem.transform.position;
@@ -85,15 +88,14 @@ namespace SpiderSurge
             float duration = AbilityDuration;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
-                FrozenEnemy.Freeze(enemy, duration);
+                if (FrozenEnemy.Freeze(enemy, duration)) _frozeAny = true;
             }
         }
 
-        // The freeze ends with the enemies' thaw, so its sound stands in for the usual ability-ended one
+        // Frozen enemies play the thaw sound as they thaw, so a cast that froze nothing ends like any other ability
         protected override void PlayAbilityEndedSound(bool wasUltimate)
         {
-            if (wasUltimate) base.PlayAbilityEndedSound(wasUltimate);
-            else FrozenEnemy.PlayThawSound();
+            if (wasUltimate || !_frozeAny) base.PlayAbilityEndedSound(wasUltimate);
         }
 
         protected override void OnActivateUltimate()
