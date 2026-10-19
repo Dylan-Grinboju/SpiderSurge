@@ -153,12 +153,15 @@ namespace StatsMod
     }
 
     [HarmonyPatch(typeof(SpiderHealthSystem), "Impact")]
+    [HarmonyAfter("com.SpiderSurge.teams")]
     class SpiderImpactReceiverPatch
     {
-        static void Prefix(SpiderHealthSystem __instance, bool stun)
+        static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
         {
             try
             {
+                // Teams friendly fire on Ignore can cancel the knockback
+                if (!__runOriginal) return;
                 HitLogic.OnPlayerHit(__instance, damage: false, stun);
             }
             catch (Exception ex)

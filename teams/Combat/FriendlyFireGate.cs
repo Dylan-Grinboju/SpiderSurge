@@ -15,30 +15,13 @@ namespace SpiderTeams
 
         private static readonly List<Push> _pushes = new List<Push>(8);
 
+        public static int PulseDepth { get; set; }
+
         // Returns true to let the hit run as vanilla. An unknown attacker always gets vanilla so a tracking gap never blocks a kill.
         public static bool Allow(SpiderHealthSystem victim, Vector3 force, Vector3 point, bool stun)
         {
             FriendlyFireMode mode = ModConfig.FriendlyFire;
-            if (mode == FriendlyFireMode.Damage || victim == null)
-            {
-                return true;
-            }
-
-            int attacker = DamageContext.Current;
-            if (attacker < 0 || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
-            {
-                return true;
-            }
-
-            var victimPlayer = victim.GetComponentInParent<PlayerController>();
-            if (victimPlayer == null || victimPlayer.playerID.Value == attacker)
-            {
-                return true;
-            }
-
-            var manager = TeamManager.Instance;
-            int attackerTeam;
-            if (!manager.TryGetTeamOfPlayerId(attacker, out attackerTeam) || attackerTeam != manager.GetTeam(victimPlayer))
+            if (mode == FriendlyFireMode.Damage || !IsTeammateHit(victim, out int attacker, out PlayerController victimPlayer, out int attackerTeam))
             {
                 return true;
             }
@@ -52,6 +35,32 @@ namespace SpiderTeams
 
             Logger.LogDebug($"SpiderTeams friendly fire: attacker=P{attacker + 1} victim=P{victimPlayer.playerID.Value + 1} ({TeamPalette.TeamName(attackerTeam)}) -> {(pushed ? "pushed" : "ignored")}");
             return false;
+        }
+
+        // A blast's outer ring, a saw or a zap only knocks back and stuns, so Ignore drops that too; the Kinetic Pulse pushes everyone by design
+        public static bool AllowImpact(SpiderHealthSystem victim)
+        {
+            return ModConfig.FriendlyFire != FriendlyFireMode.Ignore || PulseDepth > 0 || !IsTeammateHit(victim, out _, out _, out _);
+        }
+
+        private static bool IsTeammateHit(SpiderHealthSystem victim, out int attacker, out PlayerController victimPlayer, out int attackerTeam)
+        {
+            attacker = DamageContext.Current;
+            victimPlayer = null;
+            attackerTeam = -1;
+            if (victim == null || attacker < 0 || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
+            {
+                return false;
+            }
+
+            victimPlayer = victim.GetComponentInParent<PlayerController>();
+            if (victimPlayer == null || victimPlayer.playerID.Value == attacker)
+            {
+                return false;
+            }
+
+            var manager = TeamManager.Instance;
+            return manager.TryGetTeamOfPlayerId(attacker, out attackerTeam) && attackerTeam == manager.GetTeam(victimPlayer);
         }
 
         // An explosion knocks back every tick it lasts, so a teammate gets one shove per explosion, and one per shield-break window from anything else
