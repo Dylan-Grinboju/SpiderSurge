@@ -1,6 +1,6 @@
 # SpiderSurge
 
-**Abilities, live stats and team versus for SpiderHeck, all in one mod.**
+**New abilities, ultimates, perks and enemies for SpiderHeck's Endless Survival.**
 
 [![Latest release](https://img.shields.io/github/v/release/Dylan-Grinboju/SpiderSurge?label=release&color=ff0061)](https://github.com/Dylan-Grinboju/SpiderSurge/releases)
 [![Downloads](https://img.shields.io/github/downloads/Dylan-Grinboju/SpiderSurge/total?color=ff0061)](https://github.com/Dylan-Grinboju/SpiderSurge/releases)
@@ -8,121 +8,199 @@
 
 <img width="2559" height="1439" alt="Choosing a Surge ability" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
 
-SpiderSurge is made of four parts. Surge is played from its own lobby platform; the other parts can be turned on or off from the game's Mods menu.
+This page describes **SpiderSurge 0.4.0**, the latest release. The next version, with live stats, team versus and game fixes built in, is still in development; [NEXT_RELEASE.md](NEXT_RELEASE.md) describes it.
 
-| Part | What it does | On after installing |
+## Surge Mode
+
+Surge Mode is on after installing. The survival platform in the lobby then reads **Surge Survival**, and every Endless Survival run is a Surge run. Tiers of Heck and Parkour are unchanged. To play normal survival, turn Surge Mode off in the Mods menu (see [Settings](#settings)); the platform then reads **Wave Survival** again.
+
+In a Surge run:
+
+- Waves have 75% more enemies, and they move 10% faster.
+- Every enemy type shows up much earlier, and the early ones stop coming sooner. On pain level 2 and higher, every enemy can show up from wave 1.
+- Six new enemies join the waves.
+- The first perk choice is an ability. From wave 30 you can take its ultimate, and from wave 60 you can switch to another ability's ultimate.
+- Ability and ultimate cooldowns reset at the start of every wave. Null Field's cooldown drops by 12 seconds instead.
+- The perk choice has no time limit.
+- High scores are kept apart from your normal survival scores, and Surge runs aren't sent to the online leaderboards.
+
+<details>
+<summary>Which waves each enemy appears in</summary>
+
+| Enemy | Normal survival | Surge |
 |---|---|---|
-| [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival and Versus, with live stats windows and fun titles after Survival runs | Yes |
-| [Surge](surge/README.md) | A separate Surge Survival platform above and left of Wave Survival: new abilities, ultimates, perks and custom enemies | Yes |
-| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
-| [Game fixes](#game-fixes) | Fixes bugs in the base game | Yes |
+| Wasp | 1-22 | 1-7 |
+| Roller | 2-26 | 1-9 |
+| Whisp | 4-30 | 2-10 |
+| Melee Whisp | 6-34 | 3-10 |
+| Khepri | 8-36 | 4-24 |
+| Exploding Roller | 10+ | 5+ |
+| Power Whisp | 12+ | 6+ |
+| Power Wasp | 14+ | 7-16 |
+| Power Roller | 16+ | 9+ |
+| Power Khepri | 18+ | 10+ |
+| Power Melee Whisp | 20+ | 11-20 |
+| Shielded Wasp | 22+ | 13-42 |
+| Hornet Shaman | 24+ | 14+ |
+| Shielded Power Wasp | 26+ | 16+ |
+| Hornet | 28+ | 18-25 |
+| Shielded Hornet | 32+ | 20+ |
 
-Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
+</details>
 
-## A look around
+## Abilities and ultimates
 
-### Stats
+Abilities are perks: the one you pick is shared by every player, and each spider has its own cooldown. An ability and its ultimate share that cooldown.
 
-A small live window sits in a corner of the screen while you play: each spider's kills and deaths, next to its color. It fades a spider's row while it's dead. Drag it anywhere with the mouse.
+| Ability | Ultimate |
+|---|---|
+| **Null Field**: immune to all damage for 3 s. Cooldown 12 s. While it's active a spider can't die stuck in a wall either. A shield you had when it started breaks at the end if you were hit during it | **Neural Backup**: after a 10 s cast, a random dead player comes back at a spawn point. If nobody is dead, 3 friendly wasps spawn instead. Cooldown 75 s |
+| **Bottomless Clip**: for 5 s, shooting doesn't use ammo. When it ends, or you drop or throw the weapon, the weapon disintegrates; grenades, mines, the BoomStick, the Laser Cube and the Death Cube are exempt. Cooldown 20 s | **Care Package**: random weapons appear at half of the map's weapon spawns. Cooldown 30 s |
+| **Kinetic Pulse**: a pulse that pushes away enemies, other players, items and projectiles around you. Enemies are pushed twice as hard. Cooldown 12 s | **Thermal Detonation**: a bigger pulse whose center kills everything it reaches: enemies, projectiles and other players. Only you are spared. Cooldown 20 s |
+| **Pocket Dimension**: stores the weapon you hold. The one stored before comes back 2.5 s later and equips itself. Cooldown 12 s | **Pocket Dimension^2**: a second storage slot on the ultimate button. Weapons come back after 4 s. Cooldown 15 s |
 
-<img width="680" alt="The small stats window next to the game's HUD" src="docs/images/stats-small-window-closeup.png" />
+### Upgrade perks
 
-The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). Green is good, pink is a hit you took, amber is friendly fire.
+- **Ability Cooldown:** level 1 shortens the ability's cooldown and level 2 the ultimate's.
+- **Ability Duration:** level 1 lengthens the ability and level 2 the ultimate. With Kinetic Pulse it is **Bigger Pulse** (a larger radius); with Pocket Dimension it is **Faster Retrieval** (weapons come back 1 s sooner).
+- **Short Term Investment:** the ability gets better and the ultimate worse. **Long Term Investment** does the opposite. Both need an ultimate.
+- **Lucky:** each card for a two-level perk you don't have yet has a 15% chance (30% at Lucky level 2) of being a gold **Lucky Upgrade** that jumps straight to level 2. This works on the game's own perks too.
 
-<img width="1600" alt="The big stats window during a Survival run" src="docs/images/stats-big-window.jpg" />
+At wave 60, picking another ability's ultimate swaps your ability and ultimate for that pair. Those cards say **Swap Ability!**
 
-When a run with two or more players ends, everyone gets fun titles based on how they played. The cards are revealed one by one in the lobby.
+### Synergies
 
-<img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
+Some of the game's perks improve an ability. Their cards are tagged **Synergized**.
 
-### Surge
+| Ability | Perk | What it adds |
+|---|---|---|
+| Null Field | Start Shields, Positive Encouragement, Safety Net | If you have a shield when Neural Backup starts, the revived player has a 50% chance of a shield, or the wasps a 50% chance of a 4th wasp |
+| Bottomless Clip | Efficiency | Level 1: the weapon keeps its ammo instead of disintegrating. Level 2: it keeps at least half its ammo |
+| Kinetic Pulse | Bigger Boom | A stronger pulse; level 2 also strengthens Thermal Detonation |
+| Kinetic Pulse | Too Cool | A larger lethal center for Thermal Detonation |
+| Pocket Dimension | More Guns, More Boom or More Particles | Level 1: stored weapons of that kind stay through a map change. Level 2: they also stay through death |
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it; press the backtick key to open it at any time.
+## Enemies
 
-<img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
+These appear only in Surge runs.
 
-### Teams
+<img width="2559" height="1439" alt="A Surge run with a Twin Blade Whisp, a Twin Whisp and a Missile Whisp" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
-Split the lobby into teams and fight until one team is left standing. Spiders take their team's color, teammates spawn together, and the win screen shows each team's score.
-
-<img width="1600" alt="A team versus match" src="docs/images/teams-versus.jpg" />
-
-### Settings in the game
-
-Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with larger text and separate category pages. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
-
-<img width="1280" alt="The native SpiderSurge settings menu with controller selection" src="docs/images/mods-menu-native.png" />
-
-Team versus, team count and friendly fire are on the normal **Versus Battle** setup page, above the versus presets. Scroll down for the other team options. They are also available on the custom versus page.
+| Enemy | What it does | Waves |
+|---|---|---|
+| Twin Blade Whisp | A Melee Whisp with a blade on each end | 8-16 |
+| Twin Blade Power Melee Whisp | A Power Melee Whisp with the same second blade | 15+ |
+| Twin Whisp | Yellow. Fires two rail shots side by side | 12-20 |
+| Shielded Twin Whisp | A Twin Whisp with a shield | 17+ |
+| Missile Whisp | Dark red. Fires rockets that explode on impact | 19-25 |
+| Shielded Missile Whisp | A Missile Whisp with a shield | 21+ |
 
 ## Controls
 
 | What | Keyboard | Controller |
 |---|---|---|
-| Small stats window | **F1** | D-pad (cycles the windows) |
-| Big stats window | **F2** | |
-| Titles | **F3** (also skips the reveal) | |
-| Surge ability | **Q** | **L1**, or any button you pick: hold **Start** and double-tap it |
-| Surge ultimate | **C** | **L3 + R3** together, or any D-pad direction if you turn that on |
-| Surge guide | **`** (backtick) | |
-| Switch team in the lobby | **T** | **Y / Triangle** |
+| Ability | **Q** | **L1**, or a button you pick (below) |
+| Ultimate | **C** | **L3 + R3** together, or any D-pad direction if `UseDpadForUltimate` is on |
+| Guide | **`** (backtick) | |
 
-On a controller you can switch the stats windows with a stick press instead of the D-pad. While Surge's ultimate is on the D-pad, only the stick press switches them.
+- Once a spider has an ability, its ability button no longer does what it did in the game, so by default **L1 stops jumping**. Jump with A, or move the ability to another button.
+- **Change the ability button:** during a Surge run, hold **Start** or **Select** and double-tap L1, L2, R1, R2, A, B, X, Y, L3 or R3. Hold Start or Select for 3 seconds to go back to L1. Each player picks their own, and the choice lasts until the game closes.
+- **The guide** opens by itself the first time you launch the game. It explains the abilities, the controls, the ability indicator and the synergies. Press the backtick key to close it or open it again; it has no close button.
+- **The ability indicator** is a dot above each spider: green when the ability is ready, blue while it's active and red while it recharges.
 
 ## Installation
 
-1. Install Silk Mod Loader: https://github.com/SilkModding/Silk
-2. Download the `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or build it from the source.
-3. Place the `SpiderSurge.dll` into your Silk `mods` folder.
+1. Install the Silk mod loader: https://github.com/SilkModding/Silk
+2. Download `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases).
+3. Put it in the `Silk\Mods` folder in the game folder.
 4. Launch the game.
-5. Play Surge from its platform above and left of Wave Survival in the lobby. To turn on Teams, open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
 
-## Updating from SpiderStats or SpiderTeams
-
-1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
-2. Launch the game.
-
-On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
-
-If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge 1.0.0, only the first one runs. A popup lists the files to delete.
+Building `main` from source gives the unreleased next version, not 0.4.0.
 
 ## Settings
 
-### From the Mods menu:
+### In the game
 
-Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
+Open the pause menu and pick **Mods** > **SpiderSurge**. The page has:
 
-- **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
-- Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
-- **General**: check for updates and reload edits to the settings file without restarting the game.
-- **About SpiderSurge**: version and credits.
+- **Enable Surge Mode** / **Disable Surge Mode**: takes effect from the next run. It is locked during a run.
+- **Enable Telemetry** / **Disable Telemetry**, your anonymous ID and **Reset Telemetry ID** (see [Telemetry](#telemetry)).
+- Credits.
 
-Stats columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Surge's indicator and telemetry settings have their own pages. Every reset asks for confirmation first.
+### The settings file
 
-### Using the Yaml file:
+Everything else is in `...\Silk\Config\Mods\SpiderSurge.yaml`, which the mod creates on the first launch. Edit it while the game is closed; the mod reads it only at startup.
 
-All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
+```yaml
+EnableSurgeMode: true
+UseDpadForUltimate: false
+UnlimitedPerkChoosingTime: true
+EnableStatsLogging: true
+TelemetryEnabled: false
+indicator:
+  radius: 1.5
+  offset:
+    x: 3
+    y: 8
+  availableColor: '#00FF00'
+  cooldownColor: '#FF0000'
+  activeColor: '#87CEEB'
+  showOnlyWhenReady: false
+display:
+  showTutorial: true
+  showTelemetryConsentPrompt: true
+```
 
-`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
+| Setting | What it does | Default |
+|---|---|---|
+| `EnableSurgeMode` | Makes Endless Survival runs Surge runs | `true` |
+| `UseDpadForUltimate` | Any D-pad direction fires the ultimate, and L3 + R3 no longer does. The D-pad still moves the spider | `false` |
+| `UnlimitedPerkChoosingTime` | Removes the perk choice's countdown in Surge runs; the timer shows ∞ | `true` |
+| `EnableStatsLogging` | Writes a report of each Surge run to `...\Silk\Logs\SpiderSurge\`. SpiderStats data, the Surge titles and telemetry all need it | `true` |
+| `TelemetryEnabled` | Sends anonymous run data at the end of each Surge run (see [Telemetry](#telemetry)) | `false` |
+| `indicator.radius` | The size of the ability dot, from 0.5 to 10 | `1.5` |
+| `indicator.offset.x`, `indicator.offset.y` | Where the dot sits relative to the spider | `3`, `8` |
+| `indicator.availableColor`, `cooldownColor`, `activeColor` | The dot's colors: `#RRGGBB`, `#RRGGBBAA`, a color name, or `r,g,b` from 0 to 1 | green, red, light blue |
+| `indicator.showOnlyWhenReady` | Shows the dot only while the ability is ready | `false` |
+| `display.showTutorial` | Opens the guide at the next launch. The mod sets it back to `false` after showing it | `true` |
+| `display.showTelemetryConsentPrompt` | Asks about telemetry at the next launch. The mod sets it to `false` once you answer | `true` |
 
-`general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
+If a value is invalid, the mod uses its default and writes a warning to the Silk log. Write decimals with a dot (`1.5`) on every Windows language. To reset everything, delete the file; it is recreated with the defaults on the next launch.
 
-Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
+Updating from 0.3.3 or older: on the first launch, the `indicator` and `display` settings move into their sections and keep your values. Before 0.4.0 those settings had no effect.
 
-## Game fixes
+## Telemetry
 
-- Reconnecting a controller keeps its original spider instead of adding a second player controlled by the same gamepad.
-- Whisps no longer shoot the moment they spawn.
-- Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
-- Pain-level colour unlocks no longer throw an error on every lobby load, and every earned colour unlocks instead of only the first.
-- Starting the game no longer throws the custom-maps warning error twice.
+Telemetry is off until you agree to it. On the first launch, a popup asks whether to send anonymized match data; you can change your answer in the Mods menu at any time.
 
-## Building and releasing
+When it's on, the end of each Surge run sends the date and time, the mod version, the run's length, the number of players, waves survived, pain level, the perks taken and each player's ability and ultimate counts. It uses an anonymous random ID, stored in `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`, and never player names. Reports that fail to send are kept and sent at the next launch. Telemetry also needs `EnableStatsLogging`.
 
-`dotnet build -c Release` makes `bin/Release/net472/SpiderSurge.dll`. The version comes from the latest `vX.Y.Z` git tag through [MinVer](https://github.com/adamralph/minver), so the code holds no version number to edit. A build after `v0.4.0` is `0.4.1-dev.N`, and the update check counts it as older than the release with the same number. A build without the git history (a source zip) is `0.0.0-dev`.
+## SpiderStats
 
-To release, publish a GitHub release with a new `vX.Y.Z` tag. The Build workflow builds `SpiderSurge.dll` from that tag and attaches it to the release. The update check reads the latest published release, so players are offered the new version from then on; drafts and pre-releases are not offered. `version.txt` is only for players on 0.4.0 or older, whose update check reads it from `main`. Set it to the first release made this way once that release is published, then leave it.
+With [SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releases) 2.3.0 or newer installed (and `EnableStatsLogging` on), each Surge run adds every player's ability and ultimate counts to the SpiderStats log, and the end-of-run titles gain Surge titles. Like all titles, they need 2 or more players and a clear leader, with no tie.
 
-## Other Mods
+| Title | Goes to the player with |
+|---|---|
+| Enhanced | The most abilities |
+| Ultimate Form | The most ultimates |
+| Powered Up | The most ultimates and the most abilities |
+| Maximum Power | The most ultimates and the fewest abilities |
+| Simple is Better | The most abilities and the fewest ultimates |
+| Vanilla | The fewest ultimates and the fewest abilities |
+| Ability Destroyer | The most abilities and the most offense (kills plus enemy shields broken) |
+| Wasn't Fast Enough | The most Null Fields and the most damage taken |
+| Down with the Ship | The most Kinetic Pulses and the most lava deaths |
+| Boom Boom | The most Thermal Detonations and the most explosion kills |
+| Self Sacrifice | The most Neural Backups and the most damage taken |
 
-- **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Raises the player limit to 32. Teams works with it.
+## Good to know
+
+- **High scores:** Surge runs keep their own high scores. Your normal survival scores are untouched, and they show again when Surge Mode is off or the mod is removed. Back up your saves anyway.
+- **Pause menu:** in every mode, **Restart** and returning to the lobby or main menu ask "Are you sure?" first.
+- **Sounds** follow the game's SFX volume.
+- **Updates:** 15 seconds after the game starts, the mod checks for a newer version and offers to open its download page. 0.4.0 has no setting to turn this off.
+
+## Other mods
+
+- **[SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod)**: tracks kills, deaths and more, with live stats windows and end-of-run titles.
+- **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: raises the player limit to 32.
