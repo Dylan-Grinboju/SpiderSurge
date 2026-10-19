@@ -157,7 +157,7 @@ display:
 | `UseDpadForUltimate` | Any D-pad direction fires the ultimate, and L3 + R3 no longer does. The D-pad still moves the spider | `false` |
 | `UnlimitedPerkChoosingTime` | Removes the perk choice's countdown in Surge runs; the timer shows ∞ | `true` |
 | `EnableStatsLogging` | Writes a report of each Surge run to `...\Silk\Logs\SpiderSurge\`. SpiderStats data, the Surge titles and telemetry all need it | `true` |
-| `TelemetryEnabled` | Sends anonymous run data at the end of each Surge run (see [Telemetry](#telemetry)) | `false` |
+| `TelemetryEnabled` | Sends anonymous run data at the end of each Survival run, Surge or plain (see [Telemetry](#telemetry)) | `false` |
 | `indicator.radius` | The size of the ability dot, from 0.5 to 10 | `1.5` |
 | `indicator.offset.x`, `indicator.offset.y` | Where the dot sits relative to the spider | `3`, `8` |
 | `indicator.availableColor`, `cooldownColor`, `activeColor` | The dot's colors: `#RRGGBB`, `#RRGGBBAA`, a color name, or `r,g,b` from 0 to 1 | green, red, light blue |
@@ -173,7 +173,7 @@ Updating from 0.3.3 or older: on the first launch, the `indicator` and `display`
 
 Telemetry is off until you agree to it. On the first launch, a popup asks whether to send anonymized match data; you can change your answer in the Mods menu at any time.
 
-When it's on, the end of each Surge run sends the date and time, the mod version, the run's length, the number of players, waves survived, pain level, the perks taken and each player's ability and ultimate counts. It uses an anonymous random ID, stored in `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`, and never player names. Reports that fail to send are kept and sent at the next launch. Telemetry also needs `EnableStatsLogging`.
+When it's on, the end of each Survival run, with or without Surge mode, sends whether it was a Surge run, the date and time, the mod version, the run's length, the number of players, waves survived, pain level, the perks taken, each player's ability and ultimate counts and the end-of-run titles with how many the run unlocked. It uses an anonymous random ID, stored in `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`, and never player names. Reports that fail to send are kept and sent at the next launch. Telemetry also needs `EnableStatsLogging`.
 
 ## SpiderStats
 

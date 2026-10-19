@@ -69,6 +69,9 @@ namespace SpiderSurge.Logging
         private bool _livesOut = false;
         private bool _restartRequested = false;
         private int _currentWave = 0;
+        private SpiderSurgeStatsSnapshot _pendingTelemetry;
+        private bool _surgeRun;
+        private int _titleCalculationsAtStart;
         private static System.Reflection.FieldInfo[] _modifierManagerFields;
         private void Awake()
         {
@@ -85,6 +88,9 @@ namespace SpiderSurge.Logging
         {
             if (!ModConfig.EnableStatsLogging || !Net.IsAuthority) return;
 
+            SendPendingTelemetry();
+            _titleCalculationsAtStart = StatsMod.TitlesManager.Instance.CalculationCount;
+            _surgeRun = SurgeGameModeManager.IsSurgeRunActive;
             _matchStartTime = DateTime.Now;
             _abilityActivationsPerPlayer.Clear();
             _ultimateActivationsPerPlayer.Clear();
@@ -125,7 +131,8 @@ namespace SpiderSurge.Logging
                 MaxLives = GetMaxLives(),
                 StatsTracked = statsTracked,
                 UnlimitedPerkTime = ModConfig.UnlimitedPerkChoosingTime,
-                AbilitiesOn = SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.NoAbilitiesThisRun,
+                SurgeMode = _surgeRun,
+                AbilitiesOn = _surgeRun && (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.NoAbilitiesThisRun),
                 PerkChoices = new List<PerkChoiceRecord>(_perkChoices),
                 Waves = new List<WaveRecord>(_waves)
             };
@@ -174,15 +181,19 @@ namespace SpiderSurge.Logging
                 }
             }
 
-            SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
-
-            Integration.StatsModBridge.SendSurgeStats(snapshot);
-            Integration.StatsModBridge.SendSurgeTitles(snapshot);
+            // A plain Survival run is only reported to telemetry; the local report and Surge's stats and titles stay with Surge runs
+            if (_surgeRun)
+            {
+                SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
+                Integration.StatsModBridge.SendSurgeStats(snapshot);
+                Integration.StatsModBridge.SendSurgeTitles(snapshot);
+            }
 
             if (ShouldUploadTelemetryFromThisClient())
             {
                 Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
-                SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshot(snapshot);
+                SendPendingTelemetry();
+                _pendingTelemetry = snapshot;
             }
             else
             {
@@ -195,6 +206,35 @@ namespace SpiderSurge.Logging
                     Logger.LogInfo("SpiderSurge telemetry skipped: this client is not host/server.");
                 }
             }
+        }
+
+        // Stats works out the titles after this part's StopGameMode prefix, which registers Surge's titles first, so the report goes out once the run has fully stopped
+        public void SendPendingTelemetry()
+        {
+            var snapshot = _pendingTelemetry;
+            if (snapshot == null) return;
+            _pendingTelemetry = null;
+            snapshot.Titles = BuildTitlesReport();
+            SpiderSurgeTelemetryUploader.Instance.QueueAndSendSnapshot(snapshot);
+        }
+
+        private TitlesReport BuildTitlesReport()
+        {
+            if (!Parts.Stats.Running) return null;
+            var titles = StatsMod.TitlesManager.Instance;
+            if (titles.CalculationCount == _titleCalculationsAtStart) return null;
+            var earned = titles.AllTitles;
+            if (earned.Count == 0) return null;
+
+            var onScreen = new HashSet<StatsMod.TitleEntry>(titles.CurrentTitles);
+            return new TitlesReport
+            {
+                Shown = titles.LastTitlesShown,
+                NewlyUnlocked = titles.LastNewlyUnlocked,
+                UnlockedTotal = StatsMod.TitleCollection.Readable ? StatsMod.TitleCollection.Unlocked.Count : (int?)null,
+                CatalogSize = StatsMod.TitleCatalog.All.Count,
+                Earned = earned.Select(title => new EarnedTitle { Name = title.TitleName, PlayerId = title.PlayerId, OnScreen = onScreen.Contains(title) }).ToList()
+            };
         }
 
         public void LogAbilityActivation(int playerId)
@@ -294,7 +334,7 @@ namespace SpiderSurge.Logging
             _pendingPerkChoice = new PerkChoiceRecord
             {
                 Wave = SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave,
-                Kind = GetPerkChoiceKind(PerksManager.Instance),
+                Kind = _surgeRun ? GetPerkChoiceKind(PerksManager.Instance) : PerkChoiceKinds.Perk,
                 Offered = offered,
                 LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList()
             };
@@ -510,7 +550,7 @@ namespace SpiderSurge.Logging
         [HarmonyPostfix]
         public static void Postfix(bool __result)
         {
-            if (__result && SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
+            if (__result)
             {
                 SpiderSurgeStatsManager.RunSafely("StartGame", stats => stats.StartTracking());
             }
@@ -527,6 +567,12 @@ namespace SpiderSurge.Logging
             {
                 SpiderSurgeStatsManager.RunSafely("StopGameMode", stats => stats.StopTrackingAndLog());
             }
+        }
+
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            SpiderSurgeStatsManager.RunSafely("StopGameMode", stats => stats.SendPendingTelemetry());
         }
     }
 

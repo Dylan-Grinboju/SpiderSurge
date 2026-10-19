@@ -193,8 +193,22 @@ public class TitlesManager
     public int TitleCount => currentTitles.Count;
     public event Action OnTitlesUpdated;
 
+    // Goes up every time a run's titles are worked out, so a reader can tell whether they belong to the run it saw end
+    public int CalculationCount { get; private set; }
+    public bool LastTitlesShown { get; private set; }
+    public int? LastNewlyUnlocked { get; private set; }
+
+    public void SetRunOutcome(bool shown, int? newlyUnlocked)
+    {
+        LastTitlesShown = shown;
+        LastNewlyUnlocked = newlyUnlocked;
+    }
+
     public void CalculateAndStoreTitles(GameStatsSnapshot snapshot)
     {
+        CalculationCount++;
+        LastTitlesShown = false;
+        LastNewlyUnlocked = null;
         currentTitles.Clear();
         allTitles.Clear();
 
