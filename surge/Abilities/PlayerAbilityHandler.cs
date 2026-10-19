@@ -186,5 +186,25 @@ namespace SpiderSurge
             }
             return null;
         }
+
+        // Whether the player's ability or ultimate effect is running right now
+        public static bool HasActiveAbility(int playerId)
+        {
+            foreach (var controller in ActiveSpiderControllers)
+            {
+                if (controller == null || Players.IdOf(controller) != playerId)
+                {
+                    continue;
+                }
+                foreach (var ability in controller.GetComponents<BaseAbility>())
+                {
+                    if (ability.IsActive())
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 }

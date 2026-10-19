@@ -55,6 +55,7 @@ namespace SpiderSurge.Logging
 
         private readonly Dictionary<int, int> _abilityActivationsPerPlayer = new Dictionary<int, int>();
         private readonly Dictionary<int, int> _ultimateActivationsPerPlayer = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _savesPerPlayer = new Dictionary<int, int>();
         private readonly List<PerkChoiceRecord> _perkChoices = new List<PerkChoiceRecord>();
         private readonly List<WaveRecord> _waves = new List<WaveRecord>();
         private PerkChoiceRecord _pendingPerkChoice;
@@ -87,6 +88,7 @@ namespace SpiderSurge.Logging
             _matchStartTime = DateTime.Now;
             _abilityActivationsPerPlayer.Clear();
             _ultimateActivationsPerPlayer.Clear();
+            _savesPerPlayer.Clear();
             _perkChoices.Clear();
             _waves.Clear();
             _pendingPerkChoice = null;
@@ -138,7 +140,8 @@ namespace SpiderSurge.Logging
                     {
                         PlayerId = playerId,
                         AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(playerId, out int abilities) ? abilities : 0,
-                        UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0
+                        UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0,
+                        Saves = _savesPerPlayer.TryGetValue(playerId, out int saves) ? saves : 0
                     };
 
                     if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
@@ -150,11 +153,19 @@ namespace SpiderSurge.Logging
                         stats.ShotsFired = data.ShootingAccuracy.ShotsFired;
                         stats.ShotsHit = data.ShootingAccuracy.ShotsHit;
                         stats.AliveSeconds = (int)data.GetCurrentAliveTime().TotalSeconds;
+                        stats.KillsDuringAbility = data.KillsDuringAbility;
                         if (data.EnemyKills != null)
                         {
                             foreach (var entry in data.EnemyKills.Where(entry => entry.Value > 0))
                             {
                                 stats.EnemyKills[entry.Key] = entry.Value;
+                            }
+                        }
+                        if (data.WeaponHits != null)
+                        {
+                            foreach (var entry in data.WeaponHits.Where(entry => entry.Value > 0))
+                            {
+                                stats.WeaponHits[entry.Key] = entry.Value;
                             }
                         }
                     }
@@ -195,6 +206,7 @@ namespace SpiderSurge.Logging
                 _abilityActivationsPerPlayer[playerId] = 0;
             }
             _abilityActivationsPerPlayer[playerId]++;
+            if (_currentWaveRecord != null) _currentWaveRecord.AbilityUses++;
         }
 
         public void LogUltimateActivation(int playerId)
@@ -206,6 +218,17 @@ namespace SpiderSurge.Logging
                 _ultimateActivationsPerPlayer[playerId] = 0;
             }
             _ultimateActivationsPerPlayer[playerId]++;
+            if (_currentWaveRecord != null) _currentWaveRecord.UltimateUses++;
+        }
+
+        // A Null Field that blocked a hit while the spider had no shield, so the hit would have killed it
+        public void LogAbilitySave(int playerId)
+        {
+            if (!_isTracking) return;
+
+            _savesPerPlayer.TryGetValue(playerId, out int saves);
+            _savesPerPlayer[playerId] = saves + 1;
+            if (_currentWaveRecord != null) _currentWaveRecord.Saves++;
         }
 
         public void IncrementWave()
@@ -517,13 +540,26 @@ namespace SpiderSurge.Logging
         }
     }
 
+    // The game calls StartWave every frame while a wave can't start yet (SpiderInspector's wave freeze), so a record opens only when the wave really starts
     [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
     public class SurvivalMode_StartWave_Patch
     {
+        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgressRef =
+            AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
+
         [HarmonyPrefix]
-        public static void Prefix()
+        public static void Prefix(SurvivalMode __instance, out bool __state)
         {
-            SpiderSurgeStatsManager.RunSafely("StartWave", stats => stats.OnWaveStarted());
+            __state = WaveInProgressRef(__instance);
+        }
+
+        [HarmonyPostfix]
+        public static void Postfix(SurvivalMode __instance, bool __state)
+        {
+            if (!__state && WaveInProgressRef(__instance))
+            {
+                SpiderSurgeStatsManager.RunSafely("StartWave", stats => stats.OnWaveStarted());
+            }
         }
     }
 
