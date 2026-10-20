@@ -243,7 +243,7 @@ namespace SpiderSurge
             var locked = PerkConfirm.Locked;
             bool can = CanConfirm(locked);
             bool confirmed = _submitted != null && (locked == _submitted || !Net.IsRemoteClient);
-            _button.interactable = can;
+            PerkChoiceWidget.SetInteractable(_button, can, locked != null && locked.cardButton != null ? locked.cardButton : PerkChoiceWidget.FirstCard(_hud));
             if (locked != null && locked.cardButton != null)
             {
                 Navigation nav = _button.navigation;

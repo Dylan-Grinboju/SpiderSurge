@@ -426,7 +426,7 @@ namespace SpiderSurge
         {
             if (_buy == null) return;
             bool can = _selected != null && selectedCan;
-            _buy.interactable = can;
+            PerkChoiceWidget.SetInteractable(_buy, can, _selected != null && _selected.Button != null ? _selected.Button : PerkChoiceWidget.FirstCard(_hud));
             if (_selected != null && _selected.Button != null)
             {
                 Navigation nav = _buy.navigation;

@@ -4,11 +4,12 @@ using Doozy.Engine.UI;
 using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace SpiderSurge
 {
-    // Shared handling for the objects Surge adds to the perk choice view: the shop panel and the confirm button
+    // Shared handling for the objects Surge adds to the perk choice view: the shop panel, the confirm button and the meter hint
     public static class PerkChoiceWidget
     {
         private static readonly AccessTools.FieldRef<SurvivalModeHud, List<SurvivalModifierChoiceCard>> CardList = AccessTools.FieldRefAccess<SurvivalModeHud, List<SurvivalModifierChoiceCard>>("survivalModifierChoiceCards");
@@ -28,6 +29,12 @@ namespace SpiderSurge
             return cards;
         }
 
+        public static Selectable FirstCard(SurvivalModeHud hud)
+        {
+            var cards = Cards(hud);
+            return cards.Count > 0 ? cards[0].cardButton : null;
+        }
+
         // Every way the game settles a pick (a click, the votes, the timer) ends in PerkChoiceSubmitClientRpc; nothing is bought or confirmed after it
         public static void MarkChoiceMade()
         {
@@ -41,6 +48,16 @@ namespace SpiderSurge
         }
 
         public static Color Faded(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);
+
+        // Unity drops the selection when the selected control stops being interactable, which leaves a controller nothing to move from
+        public static void SetInteractable(Selectable control, bool interactable, Selectable fallback)
+        {
+            if (control == null || control.interactable == interactable) return;
+            EventSystem eventSystem = EventSystem.current;
+            bool wasSelected = eventSystem != null && eventSystem.currentSelectedGameObject == control.gameObject;
+            control.interactable = interactable;
+            if (wasSelected && !interactable && fallback != null && fallback.isActiveAndEnabled) eventSystem.SetSelectedGameObject(fallback.gameObject);
+        }
 
         // A rebuild can find more than one old copy, so every one goes, renamed so the next pass can't find it again
         public static void Remove(SurvivalModeHud hud, string name)
