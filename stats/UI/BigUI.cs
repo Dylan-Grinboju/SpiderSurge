@@ -17,6 +17,8 @@ namespace StatsMod
             public string Group;
             public string Header;
             public float Width;
+            public float FitWidth;
+            public int FitVersion = -1;
             public Func<bool> Shown;
             public Tone Tone;
             public Func<PlayerTracker.PlayerData, int> Count;
@@ -108,6 +110,9 @@ namespace StatsMod
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
         public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
         public float COL_WIDTH_PLAYER_NAME = 230f;
+        public float HEADER_SIDE_INSET = 4f;
+        // Font sizes are rounded when the window scales, so a header measured at the base size gets this much room to spare
+        public float HEADER_FIT_SLACK = 1.08f;
         #endregion
 
         #region Font Sizes
@@ -142,6 +147,7 @@ namespace StatsMod
         private GUIStyle titleStyle;
         private GUIStyle tileValueStyle;
         private GUIStyle columnHeaderStyle;
+        private GUIStyle headerMeasureStyle;
         private GUIStyle playerHeaderStyle;
         private GUIStyle nameStyle;
         private GUIStyle valueStyle;
@@ -183,6 +189,7 @@ namespace StatsMod
             titleStyle = Hud.Style(TITLE_FONT_SIZE, bold: true, anchor: TextAnchor.UpperLeft);
             tileValueStyle = Hud.Style(TILE_VALUE_FONT_SIZE, bold: true, anchor: TextAnchor.UpperRight);
             columnHeaderStyle = Hud.Style(COLUMN_HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.LowerCenter, wrap: true);
+            headerMeasureStyle = Hud.Style(COLUMN_HEADER_FONT_SIZE, bold: true);
             playerHeaderStyle = Hud.Style(COLUMN_HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.LowerLeft);
             nameStyle = Hud.Style(NAME_FONT_SIZE, bold: true);
             valueStyle = Hud.Style(VALUE_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
@@ -225,7 +232,7 @@ namespace StatsMod
             {
                 Column column = presetColumns[i];
                 visibleColumns.Add(column);
-                columnsWidth += column.Width;
+                columnsWidth += WidthOf(column);
             }
 
             bool showTiles = ModConfig.ShowPlayTime || ModConfig.ShowEnemyDeaths;
@@ -259,6 +266,26 @@ namespace StatsMod
                 DrawPlayerTable(statsSnapshot, new Rect(content.x, tableY, content.width, content.yMax - tableY), scale);
             }
         }
+
+        // A header wraps onto two lines at most and never breaks a word, so its column grows to the narrowest width that allows that
+        private float WidthOf(Column column)
+        {
+            if (column.FitVersion == fontVersion) return column.FitWidth;
+            column.Header ??= column.Label.ToUpperInvariant();
+            string[] words = column.Header.Split(' ');
+            float needed = float.MaxValue;
+            for (int split = 1; split <= words.Length; split++)
+            {
+                float first = HeaderLineWidth(string.Join(" ", words, 0, split));
+                float second = split < words.Length ? HeaderLineWidth(string.Join(" ", words, split, words.Length - split)) : 0f;
+                needed = Mathf.Min(needed, Mathf.Max(first, second));
+            }
+            column.FitWidth = Mathf.Max(column.Width, Mathf.Ceil(needed * HEADER_FIT_SLACK) + 2f * HEADER_SIDE_INSET);
+            column.FitVersion = fontVersion;
+            return column.FitWidth;
+        }
+
+        private float HeaderLineWidth(string line) => headerMeasureStyle.CalcSize(new GUIContent(line)).x;
 
         private void ApplyScale(float scale)
         {
@@ -342,8 +369,8 @@ namespace StatsMod
             float x = table.x + nameWidth;
             foreach (Column column in visibleColumns)
             {
-                float width = column.Width * scale;
-                Hud.Label(new Rect(x + 4f * scale, table.y, width - 8f * scale, headerHeight - headerInset), column.Header ??= column.Label.ToUpperInvariant(), columnHeaderStyle, Hud.Muted);
+                float width = WidthOf(column) * scale;
+                Hud.Label(new Rect(x + HEADER_SIDE_INSET * scale, table.y, width - 2f * HEADER_SIDE_INSET * scale, headerHeight - headerInset), column.Header, columnHeaderStyle, Hud.Muted);
                 x += width;
             }
 
@@ -380,7 +407,7 @@ namespace StatsMod
                 x = row.x + nameWidth;
                 foreach (Column column in visibleColumns)
                 {
-                    float width = column.Width * scale;
+                    float width = WidthOf(column) * scale;
                     Rect cell = new Rect(x, row.y, width, rowHeight);
                     if (column.Accuracy != null)
                     {
