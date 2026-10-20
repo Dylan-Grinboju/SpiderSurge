@@ -280,8 +280,8 @@ namespace SpiderSurge.Vfx
             {
                 Color color = Consts.Values.Vfx.ReviveColor;
                 Shockwave.Expand(transform.position, 40f, color, 250f, 2f);
-                SurgeVfx.Flash(transform.position, color, 2f, 32f, 0.4f);
-                SurgeVfx.Burst(transform.position, Color.white, color, 40, 40f, 120f, 0.6f, 1.2f, 0.4f, 0.8f, 3f, trails: true);
+                SurgeVfx.Flash(transform.position, color, 1.5f, 26f, 0.35f);
+                SurgeVfx.Burst(transform.position, Color.Lerp(color, Color.white, 0.5f), color, 30, 40f, 120f, 0.5f, 1f, 0.4f, 0.8f, 3f, trails: true);
             }
             Destroy(gameObject);
         }

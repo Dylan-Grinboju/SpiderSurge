@@ -11,7 +11,7 @@ namespace StatsMod
     {
         public const int Size = 192;
         private const float ViewRadius = 7.5f;
-        private const float ShotDelay = 1.5f;
+        private const float ShotDelay = 2.5f;
         private static readonly Color Backdrop = new Color(0.075f, 0.06f, 0.115f, 1f);
 
         public static SpiderPortraits Instance { get; private set; }
