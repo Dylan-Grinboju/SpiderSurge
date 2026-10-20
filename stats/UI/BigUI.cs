@@ -110,9 +110,11 @@ namespace StatsMod
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
         public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
         public float COL_WIDTH_PLAYER_NAME = 230f;
+        public float COL_WIDTH_PLAYER_NAME_MAX = 380f;
+        public float NAME_INSET = 56f;
         public float HEADER_SIDE_INSET = 4f;
-        // Font sizes are rounded when the window scales, so a header measured at the base size gets this much room to spare
-        public float HEADER_FIT_SLACK = 1.08f;
+        // Font sizes are rounded when the window scales, so text measured at the base size gets this much room to spare
+        public float TEXT_FIT_SLACK = 1.08f;
         #endregion
 
         #region Font Sizes
@@ -139,6 +141,10 @@ namespace StatsMod
         private bool isDisplayVisibleAtAll => ModConfig.ShowStatsWindow;
         private readonly List<Column> visibleColumns = new List<Column>();
         private readonly Dictionary<(Column, int), (long Seconds, string Text)> timeTexts = new Dictionary<(Column, int), (long Seconds, string Text)>();
+        private readonly Dictionary<string, (string Text, float Width)> nameFits = new Dictionary<string, (string Text, float Width)>();
+        private int nameFitVersion = -1;
+        private float nameFitMax;
+        private float nameColumnWidth;
         #endregion
 
         #region GUI Styles
@@ -150,6 +156,7 @@ namespace StatsMod
         private GUIStyle headerMeasureStyle;
         private GUIStyle playerHeaderStyle;
         private GUIStyle nameStyle;
+        private GUIStyle nameMeasureStyle;
         private GUIStyle valueStyle;
         private GUIStyle emptyStyle;
         private int fontVersion = -1;
@@ -192,6 +199,7 @@ namespace StatsMod
             headerMeasureStyle = Hud.Style(COLUMN_HEADER_FONT_SIZE, bold: true);
             playerHeaderStyle = Hud.Style(COLUMN_HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.LowerLeft);
             nameStyle = Hud.Style(NAME_FONT_SIZE, bold: true);
+            nameMeasureStyle = Hud.Style(NAME_FONT_SIZE, bold: true);
             valueStyle = Hud.Style(VALUE_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
             emptyStyle = Hud.Style(NAME_FONT_SIZE, anchor: TextAnchor.MiddleCenter);
 
@@ -227,7 +235,8 @@ namespace StatsMod
         {
             SelectColumns();
             visibleColumns.Clear();
-            float columnsWidth = COL_WIDTH_PLAYER_NAME;
+            nameColumnWidth = NameColumnWidth(statsSnapshot);
+            float columnsWidth = nameColumnWidth;
             for (int i = presetPage * 6; i < Mathf.Min(presetColumns.Count, (presetPage + 1) * 6); i++)
             {
                 Column column = presetColumns[i];
@@ -280,12 +289,50 @@ namespace StatsMod
                 float second = split < words.Length ? HeaderLineWidth(string.Join(" ", words, split, words.Length - split)) : 0f;
                 needed = Mathf.Min(needed, Mathf.Max(first, second));
             }
-            column.FitWidth = Mathf.Max(column.Width, Mathf.Ceil(needed * HEADER_FIT_SLACK) + 2f * HEADER_SIDE_INSET);
+            column.FitWidth = Mathf.Max(column.Width, Mathf.Ceil(needed * TEXT_FIT_SLACK) + 2f * HEADER_SIDE_INSET);
             column.FitVersion = fontVersion;
             return column.FitWidth;
         }
 
         private float HeaderLineWidth(string line) => headerMeasureStyle.CalcSize(new GUIContent(line)).x;
+
+        private float NameColumnWidth(GameStatsSnapshot statsSnapshot)
+        {
+            float width = COL_WIDTH_PLAYER_NAME;
+            if (statsSnapshot.ActivePlayers == null) return width;
+            foreach (var playerEntry in statsSnapshot.ActivePlayers)
+            {
+                width = Mathf.Max(width, FitName(playerEntry.Value.PlayerName).Width);
+            }
+            return width;
+        }
+
+        // The name column grows to fit a name up to its widest, and a longer name is cut short with an ellipsis
+        private (string Text, float Width) FitName(string name)
+        {
+            name ??= "";
+            if (nameFitVersion != fontVersion || nameFitMax != COL_WIDTH_PLAYER_NAME_MAX)
+            {
+                nameFits.Clear();
+                nameFitVersion = fontVersion;
+                nameFitMax = COL_WIDTH_PLAYER_NAME_MAX;
+            }
+            if (nameFits.TryGetValue(name, out var fit)) return fit;
+
+            float room = COL_WIDTH_PLAYER_NAME_MAX - NAME_INSET - HEADER_SIDE_INSET;
+            string text = name;
+            if (NameTextWidth(text) > room)
+            {
+                int length = text.Length;
+                while (length > 1 && NameTextWidth(text.Substring(0, length).TrimEnd() + "…") > room) length--;
+                text = text.Substring(0, length).TrimEnd() + "…";
+            }
+            fit = (text, Mathf.Clamp(NAME_INSET + NameTextWidth(text) + HEADER_SIDE_INSET, COL_WIDTH_PLAYER_NAME, COL_WIDTH_PLAYER_NAME_MAX));
+            nameFits[name] = fit;
+            return fit;
+        }
+
+        private float NameTextWidth(string text) => Mathf.Ceil(nameMeasureStyle.CalcSize(new GUIContent(text)).x * TEXT_FIT_SLACK);
 
         private void ApplyScale(float scale)
         {
@@ -361,8 +408,8 @@ namespace StatsMod
             float headerHeight = BASE_COLUMN_HEADER_HEIGHT * scale;
             float rowHeight = BASE_PLAYER_ROW_HEIGHT * scale;
             float barWidth = 4f * scale;
-            float nameInset = barWidth + 52f * scale;
-            float nameWidth = COL_WIDTH_PLAYER_NAME * scale;
+            float nameInset = NAME_INSET * scale;
+            float nameWidth = nameColumnWidth * scale;
             float headerInset = 4f * scale;
 
             Hud.Label(new Rect(table.x + nameInset, table.y, nameWidth - nameInset, headerHeight - headerInset), LABEL_PLAYER, playerHeaderStyle, Hud.Muted);
@@ -402,7 +449,7 @@ namespace StatsMod
                 Texture portrait = SpiderPortraits.ViewOf(playerEntry.Key);
                 if (portrait != null) GUI.DrawTexture(portraitRect, portrait, ScaleMode.ScaleToFit);
                 else Hud.Fill(portraitRect, playerColor);
-                Hud.Label(new Rect(row.x + nameInset, row.y, nameWidth - nameInset, rowHeight), playerData.PlayerName, nameStyle, playerColor);
+                Hud.Label(new Rect(row.x + nameInset, row.y, nameWidth - nameInset, rowHeight), FitName(playerData.PlayerName).Text, nameStyle, playerColor);
 
                 x = row.x + nameWidth;
                 foreach (Column column in visibleColumns)
