@@ -78,12 +78,11 @@ namespace SpiderSurge
             IsChoosing = true;
             TimeScaleController.instance.Pause();
             ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
-            // Vanilla clients have no Surge abilities to build cards from, so only the host and modded clients get them
-            ShowCards.Invoke(hud, new object[] { ids, new int[ids.Length], Net.ServerId, false });
+            // The game's own card message; ulong.MaxValue sends it to every client
+            ShowCards.Invoke(hud, new object[] { ids, new int[ids.Length], ulong.MaxValue, false });
             hud.perkChoiceView.InstantShow();
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChoicesShown(abilities));
             Listen(true);
-            foreach (ulong client in Net.ModdedClients) SendTo(client);
             return false;
         }
 
@@ -111,7 +110,7 @@ namespace SpiderSurge
         private static void SendTo(ulong clientId)
         {
             var hud = SurvivalModeHud.instance;
-            if (!IsChoosing || hud == null || clientId == Net.ServerId || !Net.ClientHasMod(clientId)) return;
+            if (!IsChoosing || hud == null || clientId == Net.ServerId) return;
             hud.ShowPerkChoicesServerRpc(clientId);
         }
 

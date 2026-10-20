@@ -198,6 +198,7 @@ With [SpiderStats](https://github.com/Dylan-Grinboju/spiderheck_stats_mod/releas
 - **High scores:** Surge runs keep their own high scores. Your normal survival scores are untouched, and they show again when Surge Mode is off or the mod is removed. Back up your saves anyway.
 - **Pause menu:** in every mode, **Restart** and returning to the lobby or main menu ask "Are you sure?" first.
 - **Sounds** follow the game's SFX volume.
+- **Online play:** every player needs the same SpiderSurge version, and the lobby must use P2P. The host turns away anyone else.
 - **Updates:** 15 seconds after the game starts, the mod checks for a newer version and offers to open its download page. 0.4.0 has no setting to turn this off.
 
 ## Other mods

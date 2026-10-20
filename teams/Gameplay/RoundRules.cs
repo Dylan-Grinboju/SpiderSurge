@@ -73,7 +73,7 @@ namespace SpiderTeams
             }
         }
 
-        // Every member scores, alive or dead, so vanilla scoreboards on unmodded clients stay right.
+        // Every member scores, alive or dead, so the game's own scoreboard stays right.
         private static void AwardRound(VersusMode versus, int team)
         {
             var manager = TeamManager.Instance;

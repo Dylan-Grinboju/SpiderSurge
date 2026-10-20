@@ -137,12 +137,11 @@ These only matter while the Surge part runs. See [Surge Abilities](#surge-abilit
 
 ## Online Play
 
-Teams runs on the host. Couch games on one PC always count as hosting, so they just work.
+Teams runs on the host. Every player needs the same SpiderSurge version, since the host turns away anyone else. Couch games on one PC always count as hosting, so they just work.
 
-- **You host with the mod**: The team rules, friendly fire and team spawns apply to everyone. Players without the mod still see the team colors, the announcements and the right scores, but their win screen may name only one player from the winning team. For now, the team marker only shows on the host's PC.
-- **Someone else hosts**: The mod does nothing. When a match starts, it shows a one-time message that teams only apply when you host.
-- Online players can't use the team button yet. The host picks their team from the versus settings page.
-- Surge abilities only work for players on the host's PC, so they are off for any match with an online player.
+- **You host**: The team rules, friendly fire and team spawns apply to everyone.
+- **Someone else hosts**: Their team settings apply until you leave, and a one-time message says so when a match starts.
+- Online players pick their team with the team button too; the host applies the pick.
 - Like other gameplay mods, SpiderSurge makes Silk turn off leaderboard score uploads for the session.
 
 ## Compatibility

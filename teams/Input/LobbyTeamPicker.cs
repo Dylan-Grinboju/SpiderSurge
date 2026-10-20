@@ -41,8 +41,7 @@ namespace SpiderTeams
         {
             var manager = TeamManager.Instance;
             bool room = LobbyController.inLobby || LobbyController.inWaitingRoom;
-            bool authority = TeamManager.IsHost || Net.HostHasMod;
-            bool wanted = manager != null && manager.PicksOpen && ModConfig.TeamsEnabled && room && authority;
+            bool wanted = manager != null && manager.PicksOpen && ModConfig.TeamsEnabled && room;
             if (wanted == _active)
             {
                 return;

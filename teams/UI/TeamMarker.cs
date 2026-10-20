@@ -86,7 +86,7 @@ namespace SpiderTeams
 
         private static bool ShouldShow()
         {
-            if (!ModConfig.ShowMarker || !ModConfig.TeamsEnabled || !(TeamManager.IsHost || SpiderSurge.Common.Net.HostHasMod))
+            if (!ModConfig.ShowMarker || !ModConfig.TeamsEnabled)
             {
                 return false;
             }
