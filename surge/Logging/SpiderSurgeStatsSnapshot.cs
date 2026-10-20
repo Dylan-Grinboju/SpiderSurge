@@ -21,6 +21,24 @@ namespace SpiderSurge.Logging
         public List<PerkChoiceRecord> PerkChoices { get; set; } = new List<PerkChoiceRecord>();
         public List<WaveRecord> Waves { get; set; } = new List<WaveRecord>();
         public TitlesReport Titles { get; set; }
+        public MeterReport Meter { get; set; }
+    }
+
+    public class MeterReport
+    {
+        public int ChargePerPoint { get; set; }
+        public int TotalCharge { get; set; }
+        public int PointsEarned { get; set; }
+        public int PointsSpent { get; set; }
+        public Dictionary<string, int> ChargeBySource { get; set; } = new Dictionary<string, int>();
+        public List<MeterPurchaseRecord> Purchases { get; set; } = new List<MeterPurchaseRecord>();
+    }
+
+    public class MeterPurchaseRecord
+    {
+        public int Wave { get; set; }
+        public string Item { get; set; }
+        public string Detail { get; set; }
     }
 
     public class TitlesReport
@@ -53,6 +71,7 @@ namespace SpiderSurge.Logging
         public int AliveSeconds { get; set; }
         public int Saves { get; set; }
         public int KillsDuringAbility { get; set; }
+        public int MeterCharge { get; set; }
         public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> WeaponHits { get; set; } = new Dictionary<string, int>();
     }
@@ -66,7 +85,9 @@ namespace SpiderSurge.Logging
         public string Picked { get; set; }
         public int Level { get; set; }
         public bool TimedOut { get; set; }
+        public bool Rerolled { get; set; }
         public float DecisionSeconds { get; set; }
+        public List<string> ShopOffer { get; set; } = new List<string>();
     }
 
     public class WaveRecord
@@ -80,5 +101,6 @@ namespace SpiderSurge.Logging
         public int AbilityUses { get; set; }
         public int UltimateUses { get; set; }
         public int Saves { get; set; }
+        public int MeterCharge { get; set; }
     }
 }

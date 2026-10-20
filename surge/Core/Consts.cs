@@ -100,7 +100,7 @@ namespace SpiderSurge
             public const int MaxQueuedPayloads = 50;
             public const int MinSendIntervalMs = 2000;
             public const int DuplicatePayloadWindowMinutes = 10;
-            public const int SchemaVersion = 3;
+            public const int SchemaVersion = 4;
             public const int MaxPerkChoiceRecords = 60;
             public const int MaxWaveRecords = 150;
             public const int MaxGlobalPerks = 64;
@@ -235,6 +235,62 @@ namespace SpiderSurge
             {
                 public const float Level1Chance = 0.15f;
                 public const float Level2Chance = 0.3f;
+            }
+
+            // The shared Surge meter: charge comes from what abilities do, a full meter is one shop point
+            public static class Meter
+            {
+                public const int RerollCost = 1;
+                public const int LifeCost = 2;
+                public const int PerkCost = 3;
+                public const int MaxLivesCost = 5;
+                public const int SacrificeLives = 1;
+                public const int SacrificePoints = 1;
+                public const int SacrificeMinLives = 2;
+                public const float MinLabelFontSize = 9f;
+                public const float DefaultActiveChargePerWave = 6f;
+                public const float DefaultScreensPerPoint = 1.5f;
+                public const float MinActiveChargePerWave = 1f;
+                public const float MaxActiveChargePerWave = 20f;
+                public const float MinScreensPerPoint = 0.25f;
+                public const float MaxScreensPerPoint = 5f;
+                public const int MinChargePerPoint = 1;
+                public const float NullFieldHitInterval = 0.5f;
+                public const int ClampedShotsPerCharge = 2;
+                public const int PulseChargePerEnemy = 1;
+                public const int PulseCapPerCast = 3;
+                public const int DetonationChargePerKill = 2;
+                public const int DetonationCapPerCast = 6;
+                public const int BottomlessClipCapPerCast = 3;
+                public const int CarePackageChargePerPickup = 1;
+                public const int CarePackageCapPerCast = 3;
+                public const int NullFieldChargePerHit = 1;
+                public const int NullFieldCapPerCast = 3;
+                public const int NeuralBackupChargePerEvent = 2;
+                public const int NeuralBackupCapPerCast = 4;
+                public const int PocketDimensionChargePerRecall = 2;
+                public const int PocketDimensionCapPerCast = 2;
+                public const int BanishChargePerEnemy = 2;
+                public const int BanishCapPerCast = 2;
+                public const int FreezeChargePerEnemy = 1;
+                public const int FreezeCapPerCast = 3;
+                public const int RewindChargePerEnemy = 1;
+                public const int RewindCapPerCast = 4;
+                public const float HudBlinkSeconds = 0.8f;
+                public const float CardScale = 0.8f;
+                public const float CardRootShift = -90f;
+                public const float PanelWidth = 200f;
+                public const float EntryHeight = 60f;
+                public const float EntrySpacing = 5f;
+                public const float HeaderHeight = 26f;
+                public const int OfferSize = 2;
+                public const float BuyHeight = 34f;
+                public const float ConfirmWidth = 300f;
+                public const float ConfirmHeight = 44f;
+                public static readonly UnityEngine.Color ConfirmDisabledTint = new UnityEngine.Color(1f, 1f, 1f, 0.45f);
+                public const float ConfirmGap = 14f;
+                public const float LockedCardScale = 1.08f;
+                public static readonly UnityEngine.Color LockedCardTint = new UnityEngine.Color(1f, 0.9f, 0.55f);
             }
 
             public static class Enemies

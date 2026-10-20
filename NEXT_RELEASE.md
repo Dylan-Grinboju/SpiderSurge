@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Using the abilities fills the team's Surge meter, and a full meter is a point to spend in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a point. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 

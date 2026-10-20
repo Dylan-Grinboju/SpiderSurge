@@ -58,6 +58,8 @@ namespace SpiderSurge.Logging
         private readonly Dictionary<int, int> _savesPerPlayer = new Dictionary<int, int>();
         private readonly List<PerkChoiceRecord> _perkChoices = new List<PerkChoiceRecord>();
         private readonly List<WaveRecord> _waves = new List<WaveRecord>();
+        private readonly Dictionary<int, int> _meterChargePerPlayer = new Dictionary<int, int>();
+        private readonly List<MeterPurchaseRecord> _meterPurchases = new List<MeterPurchaseRecord>();
         private PerkChoiceRecord _pendingPerkChoice;
         private float _pendingPerkOfferedAt;
         private bool _pendingPerkSubmitted;
@@ -98,6 +100,8 @@ namespace SpiderSurge.Logging
             _abilityActivationsPerPlayer.Clear();
             _ultimateActivationsPerPlayer.Clear();
             _savesPerPlayer.Clear();
+            _meterChargePerPlayer.Clear();
+            _meterPurchases.Clear();
             _perkChoices.Clear();
             _waves.Clear();
             _pendingPerkChoice = null;
@@ -137,7 +141,8 @@ namespace SpiderSurge.Logging
                 SurgeMode = _surgeRun,
                 AbilitiesOn = _surgeRun && (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.NoAbilitiesThisRun),
                 PerkChoices = new List<PerkChoiceRecord>(_perkChoices),
-                Waves = new List<WaveRecord>(_waves)
+                Waves = new List<WaveRecord>(_waves),
+                Meter = _surgeRun ? BuildMeterReport() : null
             };
 
             if (players != null)
@@ -151,7 +156,8 @@ namespace SpiderSurge.Logging
                         PlayerId = playerId,
                         AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(playerId, out int abilities) ? abilities : 0,
                         UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0,
-                        Saves = _savesPerPlayer.TryGetValue(playerId, out int saves) ? saves : 0
+                        Saves = _savesPerPlayer.TryGetValue(playerId, out int saves) ? saves : 0,
+                        MeterCharge = _meterChargePerPlayer.TryGetValue(playerId, out int meter) ? meter : 0
                     };
 
                     if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
@@ -267,6 +273,57 @@ namespace SpiderSurge.Logging
 
         public WaveRecord CurrentWaveRecord => _isTracking ? _currentWaveRecord : null;
 
+        public void LogMeterCharge(int playerId, int amount)
+        {
+            if (!_isTracking || amount <= 0) return;
+
+            _meterChargePerPlayer.TryGetValue(playerId, out int charge);
+            _meterChargePerPlayer[playerId] = charge + amount;
+            if (_currentWaveRecord != null) _currentWaveRecord.MeterCharge += amount;
+        }
+
+        public void LogMeterPurchase(ShopItem item, string detail)
+        {
+            if (!_isTracking) return;
+
+            // Numbered like the perk choice it was bought on, which is the wave that just ended
+            int wave = _pendingPerkChoice != null ? _pendingPerkChoice.Wave
+                : SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave;
+            _meterPurchases.Add(new MeterPurchaseRecord
+            {
+                Wave = wave,
+                Item = item.ToString(),
+                Detail = detail
+            });
+        }
+
+        // The offer on screen is replaced by new cards, so it closes as rerolled and the new offer opens as its own record
+        public void OnPerkChoiceRerolled()
+        {
+            if (!_isTracking || _pendingPerkChoice == null || _pendingPerkSubmitted) return;
+
+            _pendingPerkChoice.Rerolled = true;
+            _pendingPerkChoice.DecisionSeconds = Time.realtimeSinceStartup - _pendingPerkOfferedAt;
+            _pendingPerkSubmitted = true;
+        }
+
+        private MeterReport BuildMeterReport()
+        {
+            var report = new MeterReport
+            {
+                ChargePerPoint = SurgeMeter.ChargePerPoint,
+                TotalCharge = SurgeMeter.TotalCharge,
+                PointsEarned = SurgeMeter.PointsEarned,
+                PointsSpent = SurgeMeter.PointsSpent,
+                Purchases = new List<MeterPurchaseRecord>(_meterPurchases)
+            };
+            foreach (var entry in SurgeMeter.ChargeBySource)
+            {
+                if (entry.Value > 0) report.ChargeBySource[entry.Key.ToString()] = entry.Value;
+            }
+            return report;
+        }
+
         // A Null Field that blocked a hit while the spider had no shield, so the hit would have killed it; it counts in the wave the hit landed in
         public void LogAbilitySave(int playerId, WaveRecord wave)
         {
@@ -332,6 +389,7 @@ namespace SpiderSurge.Logging
         {
             if (!_isTracking || modifiers == null) return;
 
+            int? rerolledWave = PerkShop.RerollInProgress && _pendingPerkChoice != null ? _pendingPerkChoice.Wave : (int?)null;
             RecordUnansweredPerkChoice();
 
             var lucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys;
@@ -339,10 +397,11 @@ namespace SpiderSurge.Logging
 
             _pendingPerkChoice = new PerkChoiceRecord
             {
-                Wave = SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave,
+                Wave = rerolledWave ?? (SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave),
                 Kind = _surgeRun ? GetPerkChoiceKind(PerksManager.Instance) : PerkChoiceKinds.Perk,
                 Offered = offered,
-                LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList()
+                LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList(),
+                ShopOffer = SurgeMeter.Enabled ? PerkShop.Offer.Select(item => item.ToString()).ToList() : new List<string>()
             };
             _pendingPerkOfferedAt = Time.realtimeSinceStartup;
             _pendingPerkSubmitted = false;

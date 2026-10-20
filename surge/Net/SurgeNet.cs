@@ -61,6 +61,7 @@ namespace SpiderSurge
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
+            MeterNet.Initialize();
         }
 
         public static void Shutdown()
@@ -77,6 +78,7 @@ namespace SpiderSurge
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
+            MeterNet.Shutdown();
         }
 
         public static void MarkDirty()
@@ -95,6 +97,9 @@ namespace SpiderSurge
                 SendStateNow();
             }
         }
+
+        // What the host's perk timer does, as last sent; only read on a remote client
+        public static bool HostUnlimitedPerkTime { get; private set; }
 
         public static void SendStateNow()
         {
@@ -228,6 +233,7 @@ namespace SpiderSurge
                 writer.Write(key);
             }
             writer.Write(PlayerAbilityHandler.SpawnEpoch);
+            writer.Write(ModConfig.UnlimitedPerkChoosingTime);
         }
 
         private static void OnState(ulong sender, BinaryReader reader)
@@ -262,6 +268,7 @@ namespace SpiderSurge
                     lucky.Add(reader.ReadString());
                 }
                 int spawnEpoch = reader.ReadInt32();
+                HostUnlimitedPerkTime = reader.ReadBoolean();
 
                 SurgeGameModeManager.SelectMode(modeEnabled);
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed);

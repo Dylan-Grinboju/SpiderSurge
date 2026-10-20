@@ -231,6 +231,7 @@ namespace SpiderSurge
             if (enemyTarget != null)
             {
                 BanishedTarget.BeginEnemy(enemyTarget, body, playerController);
+                SurgeMeter.Add(MeterSource.Banish, PlayerId, CastId, Consts.Values.Meter.BanishChargePerEnemy, Consts.Values.Meter.BanishCapPerCast);
                 return true;
             }
             return false;
@@ -321,6 +322,12 @@ namespace SpiderSurge
 
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
+
+                // Recalling a weapon that still has ammo is the swap that matters
+                if (weapon.ammo > 0f)
+                {
+                    SurgeMeter.Add(MeterSource.PocketDimension, PlayerId, CastId, Consts.Values.Meter.PocketDimensionChargePerRecall, Consts.Values.Meter.PocketDimensionCapPerCast);
+                }
             }
 
             if (SoundManager.Instance != null && !IsRemote)

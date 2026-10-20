@@ -30,6 +30,14 @@ namespace SpiderSurge
             page.Header("Effects");
             page.Toggle("Reduced visual effects", ModConfig.ReducedEffectsKey);
             page.Note("Softens decorative flashes and particles. Danger rings and warnings stay visible.");
+
+            page.Spacer();
+            page.Header("Surge meter");
+            page.Slider("Charge per wave for active play", ModConfig.MeterActiveChargePerWaveKey, Consts.Values.Meter.MinActiveChargePerWave, Consts.Values.Meter.MaxActiveChargePerWave, 1f);
+            page.Slider("Perk screens per point", ModConfig.MeterScreensPerPointKey, Consts.Values.Meter.MinScreensPerPoint, Consts.Values.Meter.MaxScreensPerPoint, 0.25f);
+            page.Note($"One shop point takes the charge a player casting on cooldown makes in that many perk screens, times the number of players. Defaults: {Consts.Values.Meter.DefaultActiveChargePerWave:0} and {Consts.Values.Meter.DefaultScreensPerPoint:0.##}, which is {MeterExample()} charge per point for one player. Changes apply at the next wave.");
+
+            page.Spacer();
             page.Header("Sound");
             page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%");
             page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");
@@ -55,6 +63,12 @@ namespace SpiderSurge
             page.Cycle("Active color", ModConfig.IndicatorActiveColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorActiveColorKey));
             page.Toggle("Only show when ready", ModConfig.IndicatorShowOnlyWhenReadyKey);
             page.Note("Applies to both displays. Turn this off to see active time and cooldown progress.");
+        }
+
+        // The solo threshold at pain 1-4, where perk screens come every 3 waves
+        private static string MeterExample()
+        {
+            return Mathf.RoundToInt(ModConfig.MeterActiveChargePerWave * 3f * ModConfig.MeterScreensPerPoint).ToString();
         }
 
         // A value that isn't a color matches the default the indicator falls back to

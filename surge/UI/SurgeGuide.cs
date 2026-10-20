@@ -110,6 +110,7 @@ namespace SpiderSurge
                 page.Line("Stand on the Surge Survival platform above and left of Wave Survival. Surge brings new abilities, perks and enemies. Wave Survival still starts the normal game.");
                 page.Button("Abilities and ultimates", () => page.Open(Page + ".abilities"));
                 page.Button("Perks and synergies", () => page.Open(Page + ".perks"));
+                page.Button("Surge meter and shop", () => page.Open(Page + ".meter"));
                 page.Button("Enemies", () => page.Open(Page + ".enemies"));
                 page.Button("Controls and indicators", () => page.Open(Page + ".controls"));
                 page.Button("Progression and records", () => page.Open(Page + ".progression"));
@@ -139,6 +140,16 @@ namespace SpiderSurge
                 page.Line(Synergy("Bottomless Clip", "Efficiency", "Without Efficiency, most weapons are consumed. Grenades, mines, Boomsticks, Laser Cubes and Death Cubes are exempt. The first level preserves its original ammo; the second also refills a held weapon to at least half capacity. Dropping it preserves its original ammo at either level."));
                 page.Line(Synergy("Kinetic Pulse", "Explosion perks", "Bigger Boom first strengthens Kinetic Pulse knockback; its second level also strengthens Thermal Detonation knockback. Too Cool widens the ultimate's lethal area."));
                 page.Line(Synergy("Pocket Dimension", "Weapon perks", "More Guns preserves guns, More Boom preserves explosives, throwables and mines, and More Particles preserves particle and melee weapons. The first level keeps them between rounds; the second also keeps them after death."));
+                return;
+            }
+            if (section == Page + ".meter")
+            {
+                page.Title("Surge meter and shop");
+                page.Line("The bar under the lives counter is the team's <b>Surge meter</b>. It fills from what your abilities do during a wave, and a full bar is one <b>point</b>. It never resets between waves.");
+                page.Line("Kinetic Pulse launching enemies, Bottomless Clip firing shots it paid for, Null Field blocking hits, Pocket Dimension recalling a loaded weapon and Freeze Time freezing enemies all charge it. Ultimates charge more: Thermal Detonation kills, Care Package weapons picked up, Neural Backup revives and friendly Wasp kills, Banish and Rewind hits.");
+                page.Line("Each cast earns at most a few charge, and a point takes more charge the more players there are, so everyone has to cast.");
+                page.Line($"Spend points in the <b>shop</b> on the right of every perk choice: press right from the last card. Each screen sells two of these five, drawn at random: <color={Gold}>1</color> Reroll the cards, <color={Gold}>2</color> an extra life, <color={Gold}>3</color> a random perk you don't have, <color={Gold}>5</color> +1 max lives, and the <b>Blood Pact</b>, a life for a point. Pick an item, then press <b>Buy</b> under it. Unspent points carry on.");
+                page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice works the same way.");
                 return;
             }
             if (section == Page + ".enemies")

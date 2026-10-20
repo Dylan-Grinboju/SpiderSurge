@@ -100,6 +100,7 @@ namespace SpiderSurge.Logging
                     sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
                     sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
                     sb.AppendLine($"    Null Field Saves: {player.Saves}");
+                    if (stats.Meter != null) sb.AppendLine($"    Meter Charge: {player.MeterCharge}");
                     if (stats.StatsTracked)
                     {
                         sb.AppendLine($"    Deaths: {player.Deaths} ({player.LavaDeaths} in lava)");
@@ -125,8 +126,9 @@ namespace SpiderSurge.Logging
                 foreach (var choice in stats.PerkChoices)
                 {
                     string timedOut = choice.TimedOut ? ", timer ran out" : "";
-                    string picked = choice.Picked != null ? $"{choice.Picked} Lvl {choice.Level}" : "nothing (run ended)";
-                    sb.AppendLine($"  Wave {choice.Wave} ({choice.Kind}): {picked} from [{string.Join(", ", choice.Offered)}]{timedOut}");
+                    string picked = choice.Picked != null ? $"{choice.Picked} Lvl {choice.Level}" : choice.Rerolled ? "nothing (rerolled)" : "nothing (run ended)";
+                    string shop = choice.ShopOffer != null && choice.ShopOffer.Count > 0 ? $", shop [{string.Join(", ", choice.ShopOffer)}]" : "";
+                    sb.AppendLine($"  Wave {choice.Wave} ({choice.Kind}): {picked} from [{string.Join(", ", choice.Offered)}]{shop}{timedOut}");
                 }
             }
             else
@@ -142,7 +144,8 @@ namespace SpiderSurge.Logging
                 {
                     string deaths = wave.Deaths >= 0 ? $", {wave.Deaths} deaths" : "";
                     string saves = wave.Saves > 0 ? $", {wave.Saves} saves" : "";
-                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}, {wave.AbilityUses} abilities, {wave.UltimateUses} ultimates{saves}");
+                    string meter = wave.MeterCharge > 0 ? $", {wave.MeterCharge} meter charge" : "";
+                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}, {wave.AbilityUses} abilities, {wave.UltimateUses} ultimates{saves}{meter}");
                 }
             }
             else
@@ -150,6 +153,31 @@ namespace SpiderSurge.Logging
                 sb.AppendLine("  None");
             }
             sb.AppendLine();
+
+            if (stats.Meter != null)
+            {
+                var meter = stats.Meter;
+                sb.AppendLine("SURGE METER:");
+                sb.AppendLine($"  Charge per point: {meter.ChargePerPoint}");
+                sb.AppendLine($"  Total charge: {meter.TotalCharge}, points earned: {meter.PointsEarned}, points spent: {meter.PointsSpent}");
+                if (meter.ChargeBySource.Count > 0)
+                {
+                    sb.AppendLine($"  Charge by source: {string.Join(", ", meter.ChargeBySource.Select(entry => $"{entry.Key} {entry.Value}"))}");
+                }
+                if (meter.Purchases.Count > 0)
+                {
+                    foreach (var purchase in meter.Purchases)
+                    {
+                        string detail = string.IsNullOrEmpty(purchase.Detail) ? "" : $" ({purchase.Detail})";
+                        sb.AppendLine($"  Wave {purchase.Wave}: bought {purchase.Item}{detail}");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("  Nothing bought");
+                }
+                sb.AppendLine();
+            }
 
             sb.AppendLine("=".PadRight(60, '='));
             return sb.ToString();

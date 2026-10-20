@@ -19,6 +19,9 @@ namespace SpiderSurge
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
 
+            PerkConfirmButton.Build(__instance);
+            PerkShopPanel.Build(__instance);
+
             // Access perkChoiceView using reflection since it might be private
             var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (viewField == null) return;
@@ -125,13 +128,25 @@ namespace SpiderSurge
         }
     }
 
+    // A new perk screen draws new shop items; a reroll re-shows the cards and keeps them, so a reroll can't be used to fish for items
+    [HarmonyPatch(typeof(SurvivalModeHud), "ShowPerkChoices")]
+    public class SurvivalModeHud_ShowPerkChoices_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            if (SurgeGameModeManager.IsSurgeRunActive && SurgeMeter.Enabled && !AbilitySelection.IsChoosing && !PerkShop.RerollInProgress) PerkShop.RollOffer();
+        }
+    }
+
     [HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
     public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
     {
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime))
+            // A reroll re-shows the cards while the first countdown still runs, so it must not start a second one
+            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime || PerkShop.RerollInProgress))
             {
                 __result = EmptyEnumerator();
                 return false;
@@ -154,7 +169,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(PerkChoiseTimer __instance)
         {
-            if (!SurgeGameModeManager.IsSurgeRunActive || (!AbilitySelection.IsChoosing && !ModConfig.UnlimitedPerkChoosingTime)) return;
+            if (!PerkConfirm.Active && !(SurgeGameModeManager.IsSurgeRunActive && AbilitySelection.IsChoosing)) return;
 
             var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
             if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;

@@ -125,6 +125,7 @@ namespace SpiderSurge
         private Collider2D[] _pulseResults = new Collider2D[64];
 
         private readonly HashSet<EnemyHealthSystem> _enemiesToLaunch = new HashSet<EnemyHealthSystem>();
+        private readonly HashSet<EnemyHealthSystem> _enemiesCharged = new HashSet<EnemyHealthSystem>();
         protected override void Start()
         {
             base.Start();
@@ -268,6 +269,8 @@ namespace SpiderSurge
                 System.Array.Resize(ref _pulseResults, _pulseResults.Length * 2);
             }
             CollectEnemiesToLaunch(hitCount, p);
+            _enemiesCharged.Clear();
+            if (deadly) ChargeDeathRadius(p, hitCount);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -323,8 +326,39 @@ namespace SpiderSurge
                 }
             }
 
-            LaunchEnemies(p);
+            LaunchEnemies(p, deadly);
             ApplyPulseToRailShotsWithoutColliders(p);
+            _enemiesCharged.Clear();
+        }
+
+        // Charges for every enemy in the death radius before the explosion spawns, since it kills and destroys them at once
+        private void ChargeDeathRadius(PulseParams p, int hitCount)
+        {
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D collider = _pulseResults[i];
+                if (collider == null) continue;
+                EnemyHealthSystem enemy = collider.GetComponentInParent<EnemyHealthSystem>();
+                if (enemy == null || enemy.dead) continue;
+                if (Vector2.Distance(p.Position, collider.ClosestPoint(p.Position)) <= p.DeathRadius)
+                {
+                    ChargeForEnemy(enemy, true, Consts.Values.Meter.DetonationChargePerKill);
+                }
+            }
+        }
+
+        // Each enemy charges the meter once per pulse: a lethal hit for 2, a launch for 1
+        private void ChargeForEnemy(EnemyHealthSystem enemy, bool deadly, int amount)
+        {
+            if (enemy == null || !enemy.needToKillToCompleteLevel || !_enemiesCharged.Add(enemy)) return;
+            if (deadly)
+            {
+                SurgeMeter.Add(MeterSource.ThermalDetonation, PlayerId, CastId, amount, Consts.Values.Meter.DetonationCapPerCast);
+            }
+            else
+            {
+                SurgeMeter.Add(MeterSource.KineticPulse, PlayerId, CastId, amount, Consts.Values.Meter.PulseCapPerCast);
+            }
         }
 
         // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
@@ -345,13 +379,14 @@ namespace SpiderSurge
             }
         }
 
-        private void LaunchEnemies(PulseParams p)
+        private void LaunchEnemies(PulseParams p, bool deadly)
         {
             foreach (EnemyHealthSystem enemy in _enemiesToLaunch)
             {
                 if (enemy != null && !enemy.dead)
                 {
                     PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
+                    ChargeForEnemy(enemy, deadly, Consts.Values.Meter.PulseChargePerEnemy);
                 }
             }
             _enemiesToLaunch.Clear();

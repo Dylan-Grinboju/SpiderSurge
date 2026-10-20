@@ -89,7 +89,14 @@ namespace SpiderSurge
             float duration = AbilityDuration;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
-                if (FrozenEnemy.Freeze(enemy, duration)) _frozeAny = true;
+                if (FrozenEnemy.Freeze(enemy, duration))
+                {
+                    _frozeAny = true;
+                    if (enemy.needToKillToCompleteLevel)
+                    {
+                        SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, CastId, Consts.Values.Meter.FreezeChargePerEnemy, Consts.Values.Meter.FreezeCapPerCast);
+                    }
+                }
             }
             FrozenShot.FreezeAround(origin, range, duration);
         }
@@ -189,6 +196,7 @@ namespace SpiderSurge
             {
                 if (IsWasp(enemy, wasp, shieldedWasp)) continue;
                 RewindEnemy(enemy, wasp, shieldedWasp);
+                SurgeMeter.Add(MeterSource.Rewind, PlayerId, CastId, Consts.Values.Meter.RewindChargePerEnemy, Consts.Values.Meter.RewindCapPerCast);
             }
         }
 

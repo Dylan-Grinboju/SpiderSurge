@@ -22,10 +22,11 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
     - **Wasp Cocoon**: A stationary cocoon that starts hatching its first Wasp a second after it appears, then one every 10 seconds until it's destroyed, with at most 2 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps while its shield holds.
     - **Laser enemies**: Red-shielded versions of most enemies (not the Exploding Roller or already shielded ones). Every 5 seconds a faint ring and the Death Ray's charge sound warn for 1 second, then a Laser Cannon ring around the enemy burns for 1 second. Breaking the red shield removes the ring for good.
+- **Surge Meter and Shop**: The team shares a meter, shown under the lives counter, that fills from what abilities do during a wave: enemies launched by Kinetic Pulse, shots Bottomless Clip paid for, hits Null Field blocked, a loaded weapon recalled from the Pocket Dimension, enemies frozen by Freeze Time, and more from the ultimates (Thermal Detonation kills, Care Package weapons picked up, Neural Backup revives and friendly Wasp kills, Banish and Rewind hits). Each cast earns at most a few charge, and a point takes more charge with more players. A full meter is one point; it never resets between waves. Points are spent in a shop beside every perk choice, reachable with the controller by pressing right from the last card. Each perk screen puts two of the five items on sale: **1** reroll the cards, **2** an extra life (never above the max), **3** a random perk the team doesn't have yet, **5** +1 max lives without a life, and the **Blood Pact**, which costs no points but a life and gives one point. See [Surge meter](#surge-meter).
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with its key at any time, backtick (**`**) by default. It also opens on the first launch.
-- **Achievements**: 12 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
+- **Achievements**: 13 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together. Change them in **Mods** > **SpiderSurge** > **Controls**, where the controller ultimate can also be another pair of buttons, one button or the whole D-pad.
@@ -56,6 +57,28 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 | You Are Not Done Yet | Revive an Astral Heckhound ghost with Neural Backup, your own included |
 | Kiss of Death | Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability |
 | Not On My Watch | Block a Laser Cannon or Laser Cube beam headed for a teammate while Null Field makes you immune. A teammate who is immune at that moment doesn't count |
+| Max Capacity | Buy a Bigger Heart (+1 max lives) in the Surge shop |
+
+## Surge meter
+
+The meter is the team's, and only the host counts it. It fills while a wave runs, from these, each capped per cast so one cast can't fill it alone:
+
+| Ability | Charges the meter when | Charge | Cap per cast |
+|---|---|---|---|
+| Kinetic Pulse | an enemy is launched | 1 each | 3 |
+| Thermal Detonation | an enemy is in the death zone (2) or launched (1) | 2 / 1 | 6 |
+| Bottomless Clip | a shot that would have cost ammo is fired | 1 per 2 shots | 3 |
+| Care Package | a weapon it dropped is picked up by anyone | 1 each | 3 |
+| Null Field | a hit is blocked (at most twice a second) | 1 each | 3 |
+| Neural Backup | a player is revived, or a friendly Wasp it summoned kills an enemy | 2 each | 4 |
+| Pocket Dimension | a weapon that still has ammo is recalled | 2 | 2 |
+| Banish | an enemy is banished | 2 | 2 |
+| Freeze Time | an enemy is frozen | 1 each | 3 |
+| Rewind | an enemy is turned into a Wasp | 1 each | 4 |
+
+A full meter is one point. The charge a point takes is `charge per wave for active play × players × waves between perk screens × perk screens per point`: with the defaults (6 and 1.5) and perk screens every 3 waves, that is 27 charge for one player, 72 for two, 135 for three and 216 for four. A player who casts on cooldown and lands most casts buys a reroll about every other perk screen; a player who holds the ability as insurance sees the bar move but rarely shops. Both numbers can be changed in **Mods** > **SpiderSurge** > **Surge** (`surge.meter.activeChargePerWave`, `surge.meter.screensPerPoint`); the host's values apply online and a change applies at the next wave.
+
+The shop appears on the right of every perk choice, including the ability pick and the ultimate choices at waves 30 and 60. Each screen puts two of the five items on sale, drawn at random when the screen opens (items that can be bought right now are drawn first); a reroll changes the cards, not the items on sale. Press right from the last card to enter it, up and down to move inside it, A on an item to select it and A on the **Buy** button under the items to pay for it (a reroll happens the moment it is bought), left to go back to the cards. Any player can buy, and the mouse works too. A reroll keeps the kind of choice (abilities stay abilities, the ultimate screen offers ultimates again) and the perk timer, if it is on, keeps counting. The extra life is refused when lives are full, the Blood Pact needs a spare life (it never takes the last one, since losing a wave with it ends the run), and the random perk is never an ability, an ultimate or a pain-level handicap. The match log and telemetry record the charge per player and wave, what was bought and rerolled offers, and the Stats title **Power Broker** goes to the player with the most charge.
 
 ## How to configure Surge
 
@@ -75,9 +98,13 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 
 The ability, ultimate and Surge guide keys are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `surge.dpadUltimate: true` becomes `controls.ultimate.controller: <Gamepad>/dpad` on the first launch.
 
-`surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. Default: `true`.
+`surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The host's setting applies online. Default: `true`.
 
-`surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
+`surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears, the Surge meter and shop don't. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
+
+`surge.meter.activeChargePerWave`: The meter charge one player makes per wave when casting on cooldown, used to size a shop point. From 1 to 20. Default: `6`.
+
+`surge.meter.screensPerPoint`: How many perk screens of that charge one point takes. From 0.25 to 5. Default: `1.5`. See [Surge meter](#surge-meter) for the formula.
 
 With abilities enabled, a dedicated choice screen offers all five shared abilities before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
 
@@ -123,7 +150,8 @@ One report per finished Survival run, with or without Surge mode, sent by the ho
 - **The run:** whether it was a Surge run, mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, whether the perk choice timer is unlimited, and whether the run had abilities.
 - **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took. A perk screen still open when the run ends is sent with no card picked.
 - **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, how many spiders died in it, how many abilities and ultimates were used in it, and how many times Null Field blocked a hit that would have killed a spider without a shield.
-- **Each player, by slot number:** ability and ultimate presses, and how many of their deaths Null Field blocked. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills while their ability or ultimate was on, kills by enemy type, kills and shields broken by each weapon (Kinetic Pulse counts as a weapon), friendly kills, shots fired and hit, and time alive.
+- **The Surge meter**, in Surge runs: the charge a point took, the total charge, points earned and spent, the charge from each ability, and each purchase with its wave and what it gave. A perk choice that was rerolled is sent as its own record, marked rerolled, before the new offer. Each wave also carries the charge made in it.
+- **Each player, by slot number:** ability and ultimate presses, how many of their deaths Null Field blocked, and the meter charge they made. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills while their ability or ultimate was on, kills by enemy type, kills and shields broken by each weapon (Kinetic Pulse counts as a weapon), friendly kills, shots fired and hit, and time alive.
 
 - **Titles**, when the Stats part is on and the run had 2 or more players: every title earned at the end of the run, with the slot number of the player who earned it and whether it was one of the cards on the end screen, whether titles were shown at all, how many titles the run newly unlocked in the [title collection](../stats/README.md#title-collection), how many are unlocked on this PC in total, and how many titles exist. The collection itself, with its dates, is never sent.
 
@@ -162,6 +190,7 @@ Surge registers the following titles through the Stats title system. Titles requ
 |---|---|
 | Enhanced | Most ability activations |
 | Ultimate Form | Most ultimate activations |
+| Power Broker | Most Surge meter charge |
 | Powered Up | Most ultimate and most ability activations |
 | Maximum Power | Most ultimate and fewest ability activations |
 | Simple is Better | Most ability and fewest ultimate activations |

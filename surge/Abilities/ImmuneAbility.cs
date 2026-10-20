@@ -123,6 +123,9 @@ namespace SpiderSurge
             return ability;
         }
 
+        private float _lastChargedHit = -10f;
+
+        // Lava calls this every frame, so a blocked hit charges the meter at most twice a second
         public void RegisterHit()
         {
             if (isActive && IsImmune)
@@ -130,6 +133,11 @@ namespace SpiderSurge
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
                 if (bubble != null) bubble.Hit();
+                if (Time.time - _lastChargedHit >= Consts.Values.Meter.NullFieldHitInterval)
+                {
+                    _lastChargedHit = Time.time;
+                    SurgeMeter.Add(MeterSource.NullField, PlayerId, CastId, Consts.Values.Meter.NullFieldChargePerHit, Consts.Values.Meter.NullFieldCapPerCast);
+                }
             }
         }
 
@@ -159,6 +167,7 @@ namespace SpiderSurge
         protected override void OnActivate()
         {
             wasHitDuringSession = false;
+            _lastChargedHit = -10f;
             hadBarrierOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             ApplyImmunity(true);
@@ -408,6 +417,7 @@ namespace SpiderSurge
 
             if (TryRespawnDeadPlayer(out var revivedPlayer))
             {
+                SurgeMeter.Add(MeterSource.NeuralBackup, PlayerId, CastId, Consts.Values.Meter.NeuralBackupChargePerEvent, Consts.Values.Meter.NeuralBackupCapPerCast);
                 if (hadBarrierOnUltimateCastStart && Random.value <= Consts.Values.Immune.UltimateShieldSynergyChance)
                 {
                     StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
@@ -556,6 +566,9 @@ namespace SpiderSurge
             var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
             spawnedObj.SetActive(true);
             NullFieldVfx.Summon(spawn.position);
+            var owner = spawnedObj.AddComponent<FriendlyWaspOwner>();
+            owner.PlayerId = PlayerId;
+            owner.CastId = CastId;
 
             var netObj = spawnedObj.GetComponent<NetworkObject>();
             if (netObj != null)
