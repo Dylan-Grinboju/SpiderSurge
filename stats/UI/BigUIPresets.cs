@@ -8,7 +8,7 @@ namespace StatsMod
     public partial class BigUI
     {
         internal static readonly string[] PresetKeys = { "default", "combat", "enemies", "weapons", "accuracy", "movement" };
-        internal static readonly string[] PresetNames = { "Default - Recommended", "Combat", "Enemy kills", "Weapon kills", "Accuracy", "Movement" };
+        internal static readonly string[] PresetNames = { "Default", "Combat", "Enemy kills", "Weapon kills", "Accuracy", "Movement" };
         private static readonly HashSet<string> CombatColumns = new HashSet<string> { "Kills", "Deaths", "Max Kill Streak", "Enemy Shields", "Friendly Kills", "Shields Lost" };
         private static readonly HashSet<string> MovementColumns = new HashSet<string> { "Web Swings", "Web Swing Time", "Airborne Time", "Airborne Kills", "Lava Deaths", "Astral Returns" };
         private readonly List<Column> presetColumns = new List<Column>();
