@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 namespace SpiderSurge
 {
-    // The Surge guide is a page of the Mods menu; the backtick key and the first launch open the pause menu on it
+    // The Surge guide is a page of the Mods menu; its key and the first launch open the pause menu on it
     public class SurgeGuide : MonoBehaviour
     {
         public const string Page = "surge.guide";
@@ -17,6 +17,7 @@ namespace SpiderSurge
         private const float OpenTimeout = 3f;
 
         private static SurgeGuide _instance;
+        private readonly ControlPoller _guideKey = new ControlPoller();
         private bool _opening;
 
         public static void Initialize()
@@ -51,8 +52,7 @@ namespace SpiderSurge
 
         private void Update()
         {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.backquoteKey.wasPressedThisFrame)
+            if (_guideKey.WasPressed(Controls.Get(Controls.SurgeGuide), Keyboard.current))
             {
                 if (SettingsPage.IsShowing(Page)) HudController.instance.Resume();
                 else Open();
@@ -112,12 +112,12 @@ namespace SpiderSurge
                 "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
                 "• <b>Choose wisely:</b> Ultimates have longer cooldowns but high impact!"));
             page.Line(Section("How to activate abilities",
-                "<b>Ability:</b> Q (keyboard) / L1 (gamepad)",
-                "<b>Ultimate:</b> C (keyboard) / L3 + R3 (gamepad)",
-                "<b>D-pad:</b> turn on <b>Ultimate on the D-pad</b> in Mods > SpiderSurge > Surge to cast it with any D-pad direction."));
+                $"<b>Ability:</b> {Controls.Display(Controls.AbilityKeyboard)} (keyboard) / {Controls.Display(Controls.AbilityController)} (controller)",
+                $"<b>Ultimate:</b> {Controls.Display(Controls.UltimateKeyboard)} (keyboard) / {Controls.Display(Controls.UltimateController)} (controller)"));
             page.Line(Section("Customize controls",
-                "<b>Set a new ability button on a gamepad:</b> while holding Menu/Start, double-tap any button.",
-                "<b>Reset to default:</b> hold <b>Menu/Start</b> for <b>3 seconds</b>.",
+                "<b>Change the buttons for everyone:</b> Mods > SpiderSurge > Controls.",
+                "<b>Set your own ability button on a controller:</b> while holding Menu/Start, double-tap any button.",
+                "<b>Back to the default:</b> hold <b>Menu/Start</b> for <b>3 seconds</b>.",
                 "• Each player has their own. Settings persist until you leave or reset."));
             page.Line(Section("Ability indicator",
                 $"<color={Hex(ModConfig.IndicatorAvailableColor)}><b>Ready:</b></color> the ability is ready to use.",
@@ -140,7 +140,10 @@ namespace SpiderSurge
                 "• <b>More Guns</b>, <b>More Boom</b> or <b>More Particles</b> level 1: keep matching stored weapons between rounds.",
                 "• Level 2: keep matching stored weapons even after <b>death</b>.",
                 "• More Guns = guns, More Boom = explosives, throwables and mines, More Particles = particle and melee weapons."));
-            page.Note("Press the backtick key ( ` ) to open this guide at any time.");
+            if (Controls.Get(Controls.SurgeGuide) != Controls.None)
+            {
+                page.Note($"Press {Controls.Display(Controls.SurgeGuide)} to open this guide at any time.");
+            }
         }
 
         private static string Section(string title, params string[] lines)

@@ -9,7 +9,6 @@ namespace SpiderSurge
 {
     public static class ModConfig
     {
-        public const string DpadUltimateKey = "surge.dpadUltimate";
         public const string UnlimitedPerkTimeKey = "surge.unlimitedPerkTime";
         public const string NoAbilitiesKey = "surge.noAbilities";
         public const string AbilityVolumeKey = "surge.abilityVolume";
@@ -33,7 +32,6 @@ namespace SpiderSurge
 
         public static readonly KeyValuePair<string, object>[] Defaults =
         {
-            new KeyValuePair<string, object>(DpadUltimateKey, false),
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
             new KeyValuePair<string, object>(NoAbilitiesKey, false),
             new KeyValuePair<string, object>(AbilityVolumeKey, DefaultAbilityVolume),
@@ -61,9 +59,6 @@ namespace SpiderSurge
         public static Color IndicatorCooldownColor => ReadColor(IndicatorCooldownColorKey);
         public static Color IndicatorActiveColor => ReadColor(IndicatorActiveColorKey);
         public static bool IndicatorShowOnlyWhenReady => Settings.GetBool(IndicatorShowOnlyWhenReadyKey);
-
-        // Ultimate activation configuration
-        public static bool UltimateUseDpadActivation => Settings.GetBool(DpadUltimateKey);
 
         public static bool UnlimitedPerkChoosingTime => Settings.GetBool(UnlimitedPerkTimeKey);
 

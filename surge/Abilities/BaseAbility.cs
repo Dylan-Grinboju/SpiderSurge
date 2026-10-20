@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
@@ -43,18 +44,17 @@ namespace SpiderSurge
 
         protected bool isUltimateActive = false;
 
-        private InputAction leftStickPressAction;
-        private InputAction rightStickPressAction;
+        private InputAction comboFirstAction;
+        private InputAction comboSecondAction;
         private InputAction ultimateButtonAction;
-        private InputAction dpadActivationAction;
-        private readonly HashSet<InputControl> heldDpadControls = new HashSet<InputControl>();
-        private bool? ultimateOnDpad;
-        private static int dpadUltimates;
-        private static int stickUltimates;
-        private bool leftStickPressed = false;
-        private bool rightStickPressed = false;
-        private float lastLeftStickPressTime = 0f;
-        private float lastRightStickPressTime = 0f;
+        private InputAction ultimatePressAction;
+        private readonly HashSet<InputControl> heldUltimateControls = new HashSet<InputControl>();
+        private bool ultimateBound;
+        private static int boundUltimates;
+        private bool comboFirstPressed = false;
+        private bool comboSecondPressed = false;
+        private float lastComboFirstPressTime = 0f;
+        private float lastComboSecondPressTime = 0f;
         private const float COMBO_WINDOW = Consts.Values.Inputs.ComboWindow;
 
         // Override these in derived classes to enable Ultimate
@@ -70,18 +70,14 @@ namespace SpiderSurge
         {
             get
             {
-                // Get the player-specific gamepad button, fallback to default L1
-                string gamepadButton = Consts.Values.Inputs.GamepadLeftShoulder;
-                if (playerInput != null)
-                {
-                    gamepadButton = PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex);
-                }
-                return new string[] { Consts.Values.Inputs.KeyboardQ, gamepadButton };
+                string keyboard = Controls.Get(Controls.AbilityKeyboard);
+                string gamepad = playerInput != null ? PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex) : PlayerControlSettings.DefaultGamepadButton;
+                var buttons = new List<string>(2);
+                if (keyboard != Controls.None) buttons.Add(keyboard);
+                if (gamepad != Controls.None) buttons.Add(gamepad);
+                return buttons.ToArray();
             }
         }
-
-        // Ultimate activation: C key (dual stick combo handled separately)
-        public virtual string UltimateActivationButton => Consts.Values.Inputs.KeyboardC;
 
         public virtual float AbilityBaseDuration => 5f;
         public virtual float AbilityBaseCooldown => 30f;
@@ -199,75 +195,36 @@ namespace SpiderSurge
             }
         }
 
-        public static bool? DpadUltimateBound => dpadUltimates + stickUltimates == 0 ? (bool?)null : dpadUltimates > 0;
-
-        private static void CountUltimateInput(bool dpad, int change)
-        {
-            if (dpad)
-            {
-                dpadUltimates += change;
-            }
-            else
-            {
-                stickUltimates += change;
-            }
-        }
+        // Every change to the ultimate controls rebinds them at once, so a bound ultimate always uses the current binding
+        public static bool UltimateBound => boundUltimates > 0;
 
         // The gamepad actions are pass-through: a Button action bound to every pad ignores one pad's press while another pad holds the same button.
         private void SetupUltimateInputs()
         {
             try
             {
-                bool useDpad = ModConfig.UltimateUseDpadActivation;
-
-                if (useDpad)
+                string controller = Controls.Get(Controls.UltimateController);
+                string[] combo = Controls.Combo(controller);
+                if (combo != null)
                 {
-                    // D-pad activation: any D-pad direction activates the Ultimate
-                    dpadActivationAction = new InputAction(
-                        name: $"{GetType().Name}_DpadActivation",
-                        type: InputActionType.PassThrough
-                    );
-                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadUp);
-                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadDown);
-                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadLeft);
-                    dpadActivationAction.AddBinding(Consts.Values.Inputs.GamepadDpadRight);
-                    dpadActivationAction.performed += OnDpadChanged;
-                    dpadActivationAction.canceled += OnDpadChanged;
-                    dpadActivationAction.Enable();
+                    comboFirstAction = CreatePassThrough("ComboFirst", OnComboFirstChanged, combo[0]);
+                    comboSecondAction = CreatePassThrough("ComboSecond", OnComboSecondChanged, combo[1]);
                 }
-                else
+                else if (controller != Controls.None)
                 {
-                    // Dual stick combo: left stick press
-                    leftStickPressAction = new InputAction(
-                        name: $"{GetType().Name}_LeftStickPress",
-                        type: InputActionType.PassThrough,
-                        binding: Consts.Values.Inputs.GamepadLeftStickPress
-                    );
-                    leftStickPressAction.performed += OnLeftStickChanged;
-                    leftStickPressAction.canceled += OnLeftStickChanged;
-                    leftStickPressAction.Enable();
-
-                    // Dual stick combo: right stick press
-                    rightStickPressAction = new InputAction(
-                        name: $"{GetType().Name}_RightStickPress",
-                        type: InputActionType.PassThrough,
-                        binding: Consts.Values.Inputs.GamepadRightStickPress
-                    );
-                    rightStickPressAction.performed += OnRightStickChanged;
-                    rightStickPressAction.canceled += OnRightStickChanged;
-                    rightStickPressAction.Enable();
+                    ultimatePressAction = CreatePassThrough("Press", OnUltimatePressChanged, Controls.PressPaths(controller).ToArray());
                 }
-                CountUltimateInput(useDpad, 1);
-                ultimateOnDpad = useDpad;
+                ultimateBound = true;
+                boundUltimates++;
 
-                // Keyboard Ultimate button (always available)
-                if (!string.IsNullOrEmpty(UltimateActivationButton))
+                string keyboard = Controls.Get(Controls.UltimateKeyboard);
+                if (keyboard != Controls.None)
                 {
-                    ultimateButtonAction = new InputAction(
-                        name: $"{GetType().Name}_UltimateButton",
-                        type: InputActionType.Button,
-                        binding: UltimateActivationButton
-                    );
+                    ultimateButtonAction = new InputAction(name: $"{GetType().Name}_UltimateButton", type: InputActionType.Button);
+                    foreach (string path in Controls.PressPaths(keyboard))
+                    {
+                        ultimateButtonAction.AddBinding(path);
+                    }
                     ultimateButtonAction.performed += OnUltimateButtonPressed;
                     ultimateButtonAction.Enable();
                 }
@@ -278,59 +235,117 @@ namespace SpiderSurge
             }
         }
 
-        // Fires on the first D-pad direction pressed, like a button would.
-        private void OnDpadChanged(InputAction.CallbackContext context)
+        private InputAction CreatePassThrough(string name, System.Action<InputAction.CallbackContext> onChange, params string[] paths)
+        {
+            var action = new InputAction(name: $"{GetType().Name}_Ultimate{name}", type: InputActionType.PassThrough);
+            foreach (string path in paths)
+            {
+                action.AddBinding(path);
+            }
+            action.performed += onChange;
+            action.canceled += onChange;
+            action.Enable();
+            return action;
+        }
+
+        private void TearDownUltimateInputs()
+        {
+            if (ultimateBound)
+            {
+                boundUltimates--;
+                ultimateBound = false;
+            }
+            DisposeAction(ref comboFirstAction, OnComboFirstChanged);
+            DisposeAction(ref comboSecondAction, OnComboSecondChanged);
+            DisposeAction(ref ultimatePressAction, OnUltimatePressChanged);
+            if (ultimateButtonAction != null)
+            {
+                ultimateButtonAction.performed -= OnUltimateButtonPressed;
+                ultimateButtonAction.Disable();
+                ultimateButtonAction.Dispose();
+                ultimateButtonAction = null;
+            }
+            heldUltimateControls.Clear();
+            comboFirstPressed = false;
+            comboSecondPressed = false;
+        }
+
+        private static void DisposeAction(ref InputAction action, System.Action<InputAction.CallbackContext> onChange)
+        {
+            if (action == null) return;
+            action.performed -= onChange;
+            action.canceled -= onChange;
+            action.Disable();
+            action.Dispose();
+            action = null;
+        }
+
+        public void RefreshControls()
+        {
+            if (inputInterceptor != null && _cachedActivationButtons != null)
+            {
+                RefreshInputBindings();
+            }
+            if (HasUltimate && playerInput != null && ultimateBound)
+            {
+                TearDownUltimateInputs();
+                SetupUltimateInputs();
+            }
+        }
+
+        // Fires on the first bound control pressed, so the whole D-pad works like one button
+        private void OnUltimatePressChanged(InputAction.CallbackContext context)
         {
             if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
-            bool wasHeld = heldDpadControls.Count > 0;
+            bool wasHeld = heldUltimateControls.Count > 0;
             if (context.ReadValueAsButton())
             {
-                heldDpadControls.Add(context.control);
+                heldUltimateControls.Add(context.control);
             }
             else
             {
-                heldDpadControls.Remove(context.control);
+                heldUltimateControls.Remove(context.control);
             }
 
-            if (!wasHeld && heldDpadControls.Count > 0 && !PlayerControlSettings.IsMenuHeld(context.control.device))
+            if (!wasHeld && heldUltimateControls.Count > 0 && !Controls.Ignored(context.control.device))
             {
                 ActivateUltimate();
             }
         }
 
-        private void OnLeftStickChanged(InputAction.CallbackContext context)
+        private void OnComboFirstChanged(InputAction.CallbackContext context)
         {
             if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
             bool pressed = context.ReadValueAsButton();
-            if (pressed == leftStickPressed) return;
+            if (pressed == comboFirstPressed) return;
 
-            leftStickPressed = pressed;
+            comboFirstPressed = pressed;
             if (pressed)
             {
-                lastLeftStickPressTime = Time.time;
-                CheckStickCombo(context.control.device);
+                lastComboFirstPressTime = Time.time;
+                CheckCombo(context.control.device);
             }
         }
 
-        private void OnRightStickChanged(InputAction.CallbackContext context)
+        private void OnComboSecondChanged(InputAction.CallbackContext context)
         {
             if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
             bool pressed = context.ReadValueAsButton();
-            if (pressed == rightStickPressed) return;
+            if (pressed == comboSecondPressed) return;
 
-            rightStickPressed = pressed;
+            comboSecondPressed = pressed;
             if (pressed)
             {
-                lastRightStickPressTime = Time.time;
-                CheckStickCombo(context.control.device);
+                lastComboSecondPressTime = Time.time;
+                CheckCombo(context.control.device);
             }
         }
 
-        private void CheckStickCombo(InputDevice device)
+        private void CheckCombo(InputDevice device)
         {
-            if (leftStickPressed && rightStickPressed && !PlayerControlSettings.IsMenuHeld(device))
+            if (comboFirstPressed && comboSecondPressed && !Controls.Ignored(device))
             {
-                float timeDiff = Mathf.Abs(lastLeftStickPressTime - lastRightStickPressTime);
+                float timeDiff = Mathf.Abs(lastComboFirstPressTime - lastComboSecondPressTime);
                 if (timeDiff <= COMBO_WINDOW)
                 {
                     ActivateUltimate();
@@ -340,7 +355,7 @@ namespace SpiderSurge
 
         private void OnUltimateButtonPressed(InputAction.CallbackContext context)
         {
-            if (!IsDeviceAssigned(context.control.device)) return;
+            if (!IsDeviceAssigned(context.control.device) || Controls.Ignored(context.control.device)) return;
             ActivateUltimate();
         }
 
@@ -756,12 +771,6 @@ namespace SpiderSurge
 
         protected virtual void OnDestroy()
         {
-            if (ultimateOnDpad.HasValue)
-            {
-                CountUltimateInput(ultimateOnDpad.Value, -1);
-                ultimateOnDpad = null;
-            }
-
             if (inputInterceptor != null && _cachedActivationButtons != null)
             {
                 foreach (string button in _cachedActivationButtons)
@@ -773,34 +782,7 @@ namespace SpiderSurge
                 }
             }
 
-            // Clean up Ultimate input actions
-            if (leftStickPressAction != null)
-            {
-                leftStickPressAction.performed -= OnLeftStickChanged;
-                leftStickPressAction.canceled -= OnLeftStickChanged;
-                leftStickPressAction.Disable();
-                leftStickPressAction.Dispose();
-            }
-            if (rightStickPressAction != null)
-            {
-                rightStickPressAction.performed -= OnRightStickChanged;
-                rightStickPressAction.canceled -= OnRightStickChanged;
-                rightStickPressAction.Disable();
-                rightStickPressAction.Dispose();
-            }
-            if (ultimateButtonAction != null)
-            {
-                ultimateButtonAction.performed -= OnUltimateButtonPressed;
-                ultimateButtonAction.Disable();
-                ultimateButtonAction.Dispose();
-            }
-            if (dpadActivationAction != null)
-            {
-                dpadActivationAction.performed -= OnDpadChanged;
-                dpadActivationAction.canceled -= OnDpadChanged;
-                dpadActivationAction.Disable();
-                dpadActivationAction.Dispose();
-            }
+            TearDownUltimateInputs();
 
             if (durationCoroutine != null)
             {

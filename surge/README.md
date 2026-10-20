@@ -24,13 +24,13 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Laser enemies**: Red-shielded versions of most enemies (not the Exploding Roller or already shielded ones). Every 5 seconds a faint ring and the Death Ray's charge sound warn for 1 second, then a Laser Cannon ring around the enemy burns for 1 second. Breaking the red shield removes the ring for good.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
-- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with the backtick key (**`**) at any time. It also opens on the first launch.
-- **Achievements**: 11 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
+- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with its key at any time, backtick (**`**) by default. It also opens on the first launch.
+- **Achievements**: 12 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
-    - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together, or any D-pad direction if you turn that on.
+    - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together. Change them in **Mods** > **SpiderSurge** > **Controls**, where the controller ultimate can also be another pair of buttons, one button or the whole D-pad.
     - **Per-Player Remapping**: While holding **Start/Menu**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
-    - **Reset**: Hold **Start/Menu** for 3 seconds to reset to default (L1).
+    - **Reset**: Hold **Start/Menu** for 3 seconds to go back to the controller ability button of the **Controls** page (L1 by default).
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
 
@@ -40,7 +40,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ## Achievements
 
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
 | Achievement | How to unlock it |
 |---|---|
@@ -55,12 +55,13 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 | Yay I Guess? | Pick the Nothing perk when Luck made it a Lucky Upgrade |
 | You Are Not Done Yet | Revive an Astral Heckhound ghost with Neural Backup, your own included |
 | Kiss of Death | Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability |
+| Not On My Watch | Block a Laser Cannon or Laser Cube beam headed for a teammate while Null Field makes you immune. A teammate who is immune at that moment doesn't count |
 
 ## How to configure Surge
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities** and **Ultimate on the D-pad**, which apply from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities**, which applies from the next run. The ability, ultimate and guide keys are on the **Controls** page. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
 
 ### Using the Yaml file:
 
@@ -72,7 +73,7 @@ Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.ya
 ### Gameplay:
 The lobby platform selects the mode for each run. Older `surge.surgeMode` and `parts.surge` settings are ignored.
 
-`surge.dpadUltimate`: If true, any D-pad direction casts the ultimate, instead of L3 and R3 together. While it's on, the D-pad doesn't switch the Stats windows. Default: `false`.
+The ability, ultimate and Surge guide keys are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `surge.dpadUltimate: true` becomes `controls.ultimate.controller: <Gamepad>/dpad` on the first launch.
 
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. Default: `true`.
 
@@ -169,7 +170,7 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 
 ## Notes and disclaimers
 
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores, and Wave Survival still shows your normal ones. BACK UP YOUR SAVE FILES JUST IN CASE.
+- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores in `SpiderSurge\progress.dat`, and Wave Survival still shows your normal ones from the game's save.
 - Surge Mode is designed for Survival Mode. Its abilities only reach versus through the [Teams](../teams/README.md) part.
 
 ## The Future

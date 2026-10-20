@@ -18,7 +18,7 @@ namespace SpiderSurge
             if (UseSurgeHighScore(__instance))
             {
                 string baseName = __instance.name.Replace("_Surge", "");
-                __result = GameSaveWrapper.Instance.Load(baseName + "-SurgeHS", 0f);
+                __result = SurgeHighScores.Get(baseName);
                 return false;
             }
             return true;
@@ -34,7 +34,7 @@ namespace SpiderSurge
             if (SurvivalConfig_GetHighScore_Patch.UseSurgeHighScore(__instance))
             {
                 string baseName = __instance.name.Replace("_Surge", "");
-                GameSaveWrapper.Instance.Save(baseName + "-SurgeHS", score);
+                SurgeHighScores.Set(baseName, score);
                 return false; // Prevent original save
             }
             return true;

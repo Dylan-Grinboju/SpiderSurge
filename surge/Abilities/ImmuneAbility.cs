@@ -60,6 +60,18 @@ namespace SpiderSurge
 
         public bool IsImmune { get; private set; }
 
+        public static bool AnyImmune
+        {
+            get
+            {
+                foreach (var ability in immuneByHealthSystem.Values)
+                {
+                    if (ability != null && ability.IsImmune) return true;
+                }
+                return false;
+            }
+        }
+
         protected override void Awake()
         {
             base.Awake();

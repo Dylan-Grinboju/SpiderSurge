@@ -368,15 +368,6 @@ namespace SpiderSurge
 
             public static class Inputs
             {
-                public const string KeyboardQ = "<keyboard>/q";
-                public const string GamepadLeftShoulder = "<Gamepad>/leftshoulder";
-                public const string KeyboardC = "<Keyboard>/c";
-                public const string GamepadDpadUp = "<Gamepad>/dpad/up";
-                public const string GamepadDpadDown = "<Gamepad>/dpad/down";
-                public const string GamepadDpadLeft = "<Gamepad>/dpad/left";
-                public const string GamepadDpadRight = "<Gamepad>/dpad/right";
-                public const string GamepadLeftStickPress = "<Gamepad>/leftStickPress";
-                public const string GamepadRightStickPress = "<Gamepad>/rightStickPress";
                 public const float ComboWindow = 0.15f;
             }
 

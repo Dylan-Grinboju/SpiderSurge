@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Linq;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -11,14 +13,13 @@ namespace SpiderSurge
     ///
     /// Controls:
     /// - Hold Menu button + Double-tap any button = Set that button as ability activation
-    /// - Hold Menu button for 3 seconds = Reset to default (L1)
+    /// - Hold Menu button for 3 seconds = Reset to the controller ability button of the Controls page
     /// </summary>
     public class PlayerControlSettings : MonoBehaviour
     {
         public static PlayerControlSettings Instance { get; private set; }
 
-        // Default ability button path
-        public const string DefaultGamepadButton = "<Gamepad>/leftshoulder";
+        public static string DefaultGamepadButton => Controls.Get(Controls.AbilityController);
 
         // Per-player button mapping (playerIndex -> button path)
         private static readonly Dictionary<int, string> playerAbilityButtons = new Dictionary<int, string>();
@@ -42,20 +43,7 @@ namespace SpiderSurge
         private const float FeedbackDisplayDuration = 2f;
         private const float ReferenceScreenHeight = 1080f;
 
-        // All supported gamepad buttons for ability mapping
-        private static readonly string[] SupportedButtons = new string[]
-        {
-            "<Gamepad>/leftshoulder",
-            "<Gamepad>/lefttrigger",
-            "<Gamepad>/rightshoulder",
-            "<Gamepad>/righttrigger",
-            "<Gamepad>/buttonNorth",
-            "<Gamepad>/buttonSouth",
-            "<Gamepad>/buttonEast",
-            "<Gamepad>/buttonWest",
-            "<Gamepad>/leftStickPress",
-            "<Gamepad>/rightStickPress"
-        };
+        private static readonly string[] SupportedButtons = Controls.ControllerButtons.Select(button => button.path).ToArray();
 
         // Input actions for detection
         private InputAction menuButtonAction;
@@ -70,6 +58,7 @@ namespace SpiderSurge
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 SetupInputActions();
+                Settings.Changed += OnSettingsChanged;
             }
             else
             {
@@ -259,7 +248,7 @@ namespace SpiderSurge
             if (playerAbilityButtons.ContainsKey(playerIndex))
             {
                 playerAbilityButtons.Remove(playerIndex);
-                ShowFeedback(playerIndex, "Ability button reset to L1");
+                ShowFeedback(playerIndex, $"Ability button reset to {Controls.Label(DefaultGamepadButton)}");
 
                 // Notify abilities to re-register with default button
                 NotifyAbilitiesOfButtonChange(playerIndex);
@@ -280,7 +269,7 @@ namespace SpiderSurge
             }
         }
 
-        // A remap belongs to the player who made it, so whoever joins next in that slot starts on L1
+        // A remap belongs to the player who made it, so whoever joins next in that slot starts on the default button
         public static void ForgetPlayer(int playerIndex)
         {
             playerAbilityButtons.Remove(playerIndex);
@@ -324,25 +313,19 @@ namespace SpiderSurge
             return -1;
         }
 
-        private static string GetButtonDisplayName(string buttonPath)
+        private static string GetButtonDisplayName(string buttonPath) => Controls.PathLabel(buttonPath);
+
+        private void OnSettingsChanged(string key)
         {
-            switch (buttonPath)
+            if (!Controls.Affects(key, Controls.AbilityKeyboard, Controls.AbilityController, Controls.UltimateKeyboard, Controls.UltimateController)) return;
+
+            foreach (var input in PlayerInput.all)
             {
-                case "<Gamepad>/leftshoulder": return "L1";
-                case "<Gamepad>/lefttrigger": return "L2";
-                case "<Gamepad>/rightshoulder": return "R1";
-                case "<Gamepad>/righttrigger": return "R2";
-                case "<Gamepad>/buttonNorth": return "Y/△";
-                case "<Gamepad>/buttonSouth": return "A/X";
-                case "<Gamepad>/buttonEast": return "B/○";
-                case "<Gamepad>/buttonWest": return "X/□";
-                case "<Gamepad>/dpad/up": return "D-Pad Up";
-                case "<Gamepad>/dpad/down": return "D-Pad Down";
-                case "<Gamepad>/dpad/left": return "D-Pad Left";
-                case "<Gamepad>/dpad/right": return "D-Pad Right";
-                case "<Gamepad>/leftStickPress": return "L3";
-                case "<Gamepad>/rightStickPress": return "R3";
-                default: return buttonPath;
+                if (input == null) continue;
+                foreach (var ability in input.GetComponentsInChildren<BaseAbility>())
+                {
+                    ability.RefreshControls();
+                }
             }
         }
 
@@ -408,6 +391,7 @@ namespace SpiderSurge
         private void OnDestroy()
         {
             if (Instance != this) return;
+            Settings.Changed -= OnSettingsChanged;
             // Clean up input actions
             menuButtonAction?.Disable();
             menuButtonAction?.Dispose();

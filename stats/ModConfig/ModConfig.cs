@@ -11,13 +11,11 @@ namespace StatsMod
         public const string ColumnsPrefix = Prefix + "display.bigUI.columns.";
         public const string AutoScaleKey = Prefix + "display.autoScale";
         public const string UIScaleKey = Prefix + "display.uiScale";
-        public const string CycleInputKey = Prefix + "input.cycleInput";
         public const string PositionXKey = Prefix + "display.position.xPercent";
         public const string PositionYKey = Prefix + "display.position.yPercent";
         public const float MinScale = 0.5f;
         public const float MaxScale = 3f;
         public const float MaxRevealDelay = 10f;
-        public static readonly string[] CycleInputs = { "dpad", "joystick", "both", "none" };
         private static readonly Dictionary<string, string> _keys = new Dictionary<string, string>();
         private static readonly Dictionary<string, string> _columnKeys = new Dictionary<string, string>();
         private static readonly Dictionary<string, string> _accuracyKeys = new Dictionary<string, string>();
@@ -81,7 +79,6 @@ namespace StatsMod
             ("tracking.saveStatsToFile", true),
             ("titles.enabled", true),
             ("titles.revealDelaySeconds", 2.0f),
-            ("input.cycleInput", "dpad"),
         }.Select(pair => new KeyValuePair<string, object>(Prefix + pair.key, pair.value))
             .Concat(WeaponAccuracy.Weapons.Select(weapon => new KeyValuePair<string, object>(ColumnsPrefix + "accuracy." + weapon.Key, false))).ToArray();
 
@@ -159,29 +156,12 @@ namespace StatsMod
         public static bool TitlesEnabled => Bool("titles.enabled");
         public static float TitlesRevealDelaySeconds => Mathf.Clamp(Settings.GetFloat(Prefix + "titles.revealDelaySeconds"), 0f, MaxRevealDelay);
 
-        public static string ConfiguredCycleInput
-        {
-            get
-            {
-                string value = Settings.GetString(CycleInputKey).ToLowerInvariant();
-                return System.Array.IndexOf(CycleInputs, value) >= 0 ? value : "dpad";
-            }
-        }
+        // A button that casts Surge's ultimate on its own doesn't also switch the windows
+        public static string SwitchWindowsBinding => SurgeUltimateTaken
+            ? Controls.Without(Controls.Get(Controls.SwitchWindows), Controls.Get(Controls.UltimateController))
+            : Controls.Get(Controls.SwitchWindows);
 
-        public static bool DpadTakenBySurge => Parts.Surge.Running && (SpiderSurge.BaseAbility.DpadUltimateBound ?? (SpiderSurge.ModConfig.UltimateUseDpadActivation && !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled));
-
-        public static string CycleInput => CycleInputFor(ConfiguredCycleInput);
-
-        // Surge's ultimate on the D-pad takes the D-pad over
-        public static string CycleInputFor(string configured)
-        {
-            if (DpadTakenBySurge)
-            {
-                if (configured == "dpad") return "none";
-                if (configured == "both") return "joystick";
-            }
-            return configured;
-        }
+        private static bool SurgeUltimateTaken => Parts.Surge.Running && (SpiderSurge.BaseAbility.UltimateBound || !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled);
 
         // The small window is dragged with the mouse, so its position is saved once it stops moving, as a percentage of the screen so a new resolution keeps it in place
         public static void SetDisplayPosition(Vector2 position)

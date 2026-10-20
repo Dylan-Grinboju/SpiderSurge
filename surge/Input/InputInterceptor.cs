@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -113,45 +114,15 @@ namespace SpiderSurge
             }
         }
 
-        /// <summary>
-        /// Maps a button binding path to the correct action name based on the game's input mapping.
-        /// Any button used for ability activation is treated as CustomAbility.
-        /// </summary>
-        /// <param name="bindingPath">The input binding path (e.g., "<Gamepad>/buttonSouth")</param>
-        /// <returns>The corresponding action name, or null if no mapping found</returns>
+        // Any key or controller button can be an ability button, so every one maps to the CustomAbility action
         private string GetActionNameFromBindingPath(string bindingPath)
         {
-            string lowerPath = bindingPath.ToLower();
-
-            // All buttons that can be used as ability buttons are treated as CustomAbility
-            // This allows players to remap their ability to any button
-            switch (lowerPath)
+            if (bindingPath.StartsWith("<Keyboard>/", System.StringComparison.OrdinalIgnoreCase) || bindingPath.StartsWith("<Gamepad>/", System.StringComparison.OrdinalIgnoreCase))
             {
-                // Keyboard ability buttons
-                case "<keyboard>/q":
-                    return "CustomAbility";
-
-                // All gamepad buttons that can be used for abilities
-                case "<gamepad>/leftshoulder":    // L1 (default ability)
-                case "<gamepad>/lefttrigger":     // L2
-                case "<gamepad>/rightshoulder":   // R1
-                case "<gamepad>/righttrigger":    // R2
-                case "<gamepad>/buttonnorth":     // Y/Triangle
-                case "<gamepad>/buttonsouth":     // A/Cross
-                case "<gamepad>/buttoneast":      // B/Circle
-                case "<gamepad>/buttonwest":      // X/Square
-                case "<gamepad>/dpad/up":
-                case "<gamepad>/dpad/down":
-                case "<gamepad>/dpad/left":
-                case "<gamepad>/dpad/right":
-                case "<gamepad>/leftstickpress":  // L3
-                case "<gamepad>/rightstickpress": // R3
-                    return "CustomAbility";
-
-                default:
-                    Logger.LogWarning($"Unknown binding path: {bindingPath}. No action mapping available.");
-                    return null;
+                return "CustomAbility";
             }
+            Logger.LogWarning($"Unknown binding path: {bindingPath}. No action mapping available.");
+            return null;
         }
 
         /// <summary>
@@ -298,7 +269,7 @@ namespace SpiderSurge
                         break;
                     }
                 }
-                if (!deviceAssigned || PlayerControlSettings.IsMenuHeld(device))
+                if (!deviceAssigned || Controls.Ignored(device))
                 {
                     return;
                 }

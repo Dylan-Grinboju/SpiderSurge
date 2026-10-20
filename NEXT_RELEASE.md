@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press the backtick key to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 
@@ -64,12 +64,12 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Small stats window | **F1** | D-pad (cycles the windows) |
 | Big stats window | **F2** | |
 | Titles | **F3** (also skips the reveal) | |
-| Surge ability | **Q** | **L1**, or any button you pick: hold **Start** and double-tap it |
-| Surge ultimate | **C** | **L3 + R3** together, or any D-pad direction if you turn that on |
+| Surge ability | **Q** | **L1**, or your own button: hold **Start** and double-tap it |
+| Surge ultimate | **C** | **L3 + R3** together |
 | Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
-On a controller you can switch the stats windows with a stick press instead of the D-pad. While Surge's ultimate is on the D-pad, only the stick press switches them.
+Change any of them in **Mods** > **SpiderSurge** > **Controls**: select a row, then press the new key or button. The controller ultimate and the stats switch can also be two buttons pressed together or the whole D-pad. A row that shares a button with another one shows a warning, and a button that casts Surge's ultimate on its own doesn't also switch the stats windows.
 
 ## Installation
 
@@ -97,6 +97,7 @@ Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 - **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
 - **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
+- **Controls**: every key and button the mod uses, on one page.
 - **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version and credits.
 
@@ -110,7 +111,26 @@ All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It ha
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
+`controls`: The keys and buttons of the **Controls** page, as Unity Input System paths such as `<Keyboard>/f1` or `<Gamepad>/buttonNorth`. `none` turns one off and `a|b` lets either one work. A controller control takes A, B, X, Y, L1, R1, L2, R2, L3 and R3, and a keyboard control any key but Escape; Start, Select and Escape stay with the pause menu and the ability remap. The controller ultimate and the stats switch also take `<Gamepad>/dpad` (any D-pad direction) and `a+b` (two buttons together). A value a control can't take is ignored, with a warning in the log, and the default is used. Older `surge.dpadUltimate`, `stats.input.cycleInput`, `teams.buttonGamepad` and `teams.buttonKeyboard` values move here on the first launch.
+
+| Key | Default |
+|---|---|
+| `controls.ability.keyboard`, `controls.ability.controller` | `<Keyboard>/q`, `<Gamepad>/leftShoulder` |
+| `controls.ultimate.keyboard`, `controls.ultimate.controller` | `<Keyboard>/c`, `<Gamepad>/leftStickPress+<Gamepad>/rightStickPress` |
+| `controls.surgeGuide.keyboard` | `<Keyboard>/backquote` |
+| `controls.stats.smallWindow`, `controls.stats.bigWindow`, `controls.stats.titlesWindow` | `<Keyboard>/f1`, `<Keyboard>/f2`, `<Keyboard>/f3` |
+| `controls.stats.switchWindows` | `<Gamepad>/dpad` |
+| `controls.teams.keyboard`, `controls.teams.controller` | `<Keyboard>/t`, `<Gamepad>/buttonNorth` |
+
 Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
+
+## Saved progress
+
+Surge achievements, the Stats title collection and Surge Survival highscores are saved together in one file on your PC, in the game's own save folder, so updating or reinstalling the mod or the game keeps them: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\progress.dat` for Steam (`...\SPIDERHECK\SpiderSurge\progress.dat` for the Xbox app). Each part has its own section, so turning a part off keeps its progress, and each reset button clears only its own progress.
+
+Each save writes a new file and swaps it in, keeping the previous one as `progress.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `progress.dat.broken`. While another program (OneDrive or an antivirus, say) holds the file open, achievements, titles and highscores earned meanwhile are kept and saved once it can be read, without lowering a highscore or showing an achievement you already have again.
+
+Older versions kept the achievements and Surge highscores in the game's save and the titles in `titles.dat`. They move into `progress.dat` the first time the new version reads them, and the old copies are removed once the move is saved. The move happens only once, so an old copy that can't be removed doesn't bring reset progress back.
 
 ## Game fixes
 

@@ -33,8 +33,8 @@ namespace SpiderTeams
         public static bool RecolorSpiders { get; private set; } = Consts.Defaults.RecolorSpiders;
         public static bool ShowMarker { get; private set; } = Consts.Defaults.ShowMarker;
         public static bool GroupTeammates { get; private set; } = Consts.Defaults.GroupTeammates;
-        public static string CycleTeamGamepad { get; private set; } = Consts.Defaults.CycleTeamGamepad;
-        public static string CycleTeamKeyboard { get; private set; } = Consts.Defaults.CycleTeamKeyboard;
+        public static string CycleTeamGamepad => Controls.Get(Controls.TeamController);
+        public static string CycleTeamKeyboard => Controls.Get(Controls.TeamKeyboard);
         public static bool SurgeEnabled { get; private set; } = Consts.Defaults.SurgeEnabled;
         public static SurgeAbility SurgeAbility { get; private set; } = DefaultSurgeAbility;
         public static bool SurgeUltimate { get; private set; } = Consts.Defaults.SurgeUltimate;
@@ -68,7 +68,7 @@ namespace SpiderTeams
             {
                 _warned.Clear();
             }
-            if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal))
+            if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal) || Controls.Affects(key, Controls.TeamKeyboard, Controls.TeamController))
             {
                 Refresh();
             }
@@ -80,8 +80,6 @@ namespace SpiderTeams
         public static void SetRecolorSpiders(bool value) => Set(Consts.Keys.RecolorSpiders, value);
         public static void SetShowMarker(bool value) => Set(Consts.Keys.ShowMarker, value);
         public static void SetGroupTeammates(bool value) => Set(Consts.Keys.GroupTeammates, value);
-        public static void SetCycleTeamGamepad(string path) => Set(Consts.Keys.CycleTeamGamepad, path);
-        public static void SetCycleTeamKeyboard(string path) => Set(Consts.Keys.CycleTeamKeyboard, path);
         public static void SetSurgeEnabled(bool value) => Set(Consts.Keys.SurgeEnabled, value);
         public static void SetSurgeAbility(SurgeAbility value) => Set(Consts.Keys.SurgeAbility, SurgeAbilityName(value));
         public static void SetSurgeUltimate(bool value) => Set(Consts.Keys.SurgeUltimate, value);
@@ -175,8 +173,6 @@ namespace SpiderTeams
             RecolorSpiders = Settings.GetBool(Consts.Keys.RecolorSpiders);
             ShowMarker = Settings.GetBool(Consts.Keys.ShowMarker);
             GroupTeammates = Settings.GetBool(Consts.Keys.GroupTeammates);
-            CycleTeamGamepad = ReadBinding(Consts.Keys.CycleTeamGamepad, Consts.Defaults.CycleTeamGamepad);
-            CycleTeamKeyboard = ReadBinding(Consts.Keys.CycleTeamKeyboard, Consts.Defaults.CycleTeamKeyboard);
             SurgeEnabled = Settings.GetBool(Consts.Keys.SurgeEnabled);
             SurgeAbility = ReadSurgeAbility();
             SurgeUltimate = Settings.GetBool(Consts.Keys.SurgeUltimate);
@@ -249,21 +245,6 @@ namespace SpiderTeams
                 Warn(key, value.ToString(), $"must be 0-{Consts.Surge.MaxPerkLevel}, using {clamped}");
             }
             return clamped;
-        }
-
-        private static string ReadBinding(string key, string fallback)
-        {
-            string raw = Settings.GetString(key);
-            if (raw.Length == 0 || raw.Equals(Consts.Bindings.None, StringComparison.OrdinalIgnoreCase))
-            {
-                return Consts.Bindings.None;
-            }
-            if (!raw.StartsWith("<") || raw.IndexOf('/') < 0)
-            {
-                Warn(key, raw, $"is not an Input System path like {fallback}, using {fallback}");
-                return fallback;
-            }
-            return raw;
         }
 
         private static void Warn(string key, string value, string problem)

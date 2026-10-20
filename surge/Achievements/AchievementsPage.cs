@@ -9,7 +9,7 @@ namespace SpiderSurge
         public static void Build(SettingsPage page)
         {
             page.Title("Surge achievements");
-            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. They are saved with this game's save file. Click a locked achievement to see how to get it.");
+            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. Click a locked achievement to see how to get it.");
 
             foreach (Achievement achievement in SurgeAchievements.All)
             {
@@ -28,6 +28,7 @@ namespace SpiderSurge
 
             page.Spacer();
             page.ConfirmButton("Reset all achievements", SurgeAchievements.ResetAll);
+            page.Note($"Saved in <noparse>{ModData.FilePath}</noparse>");
         }
     }
 }

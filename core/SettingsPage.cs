@@ -56,6 +56,7 @@ namespace SpiderSurge.Common
         private string _confirmationLabel;
         private readonly List<Selectable> _controls = new List<Selectable>();
         private readonly List<GameObject> _created = new List<GameObject>();
+        private readonly Dictionary<int, Control> _bindingRows = new Dictionary<int, Control>();
         private readonly Stack<(string page, int selection, float scroll)> _history = new Stack<(string, int, float)>();
         private readonly HashSet<string> _revealed = new HashSet<string>();
         private bool _subscribed;
@@ -203,6 +204,7 @@ namespace SpiderSurge.Common
                 if (created != null) StopClickAnimations(created);
             }
             _created.Clear();
+            _bindingRows.Clear();
             _controls.Clear();
             _lastSelected = null;
             if (_menu != null)
@@ -231,6 +233,7 @@ namespace SpiderSurge.Common
             {
                 _open = null;
             }
+            ControlCapture.Cancel();
         }
 
         public void Open(string page)
@@ -257,7 +260,7 @@ namespace SpiderSurge.Common
         // Every back input ends here; one key can reach several of them in the same frame, so only the first counts
         public static bool HandleBack()
         {
-            if (_backFrame == Time.frameCount) return true;
+            if (ControlCapture.Busy || _backFrame == Time.frameCount) return true;
             if (_open == null || _open._menu == null || !_open._view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null)
                 return false;
             _open.Back();
@@ -267,6 +270,7 @@ namespace SpiderSurge.Common
         // The clicked button is still handling its click, so the page changes on the next frame
         private void Show(string page, int selection, float scroll)
         {
+            if (ControlCapture.Current != null) ControlCapture.Cancel();
             _revealed.Clear();
             Current = page;
             if (_pending != null)
@@ -323,6 +327,7 @@ namespace SpiderSurge.Common
         {
             try
             {
+                _bindingRows.TryGetValue(selectIndex, out Control selectedBinding);
                 DestroyCreated();
                 if (_menu == null || _menu.objectParent == null)
                 {
@@ -330,6 +335,7 @@ namespace SpiderSurge.Common
                 }
 
                 AddContent();
+                selectIndex = RowOf(selectedBinding, selectIndex);
                 ConfigureNavigation();
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
                 Select(selectIndex);
@@ -359,6 +365,7 @@ namespace SpiderSurge.Common
             if (Current == "parts") { AddParts(); return; }
             if (Current == "about") { AddAbout(); return; }
             if (Current == AchievementsHub) { AddAchievements(); return; }
+            if (Current == ControlsPage.Page) { ControlsPage.Build(this); return; }
             if (Current == "confirm")
             {
                 Title("Confirm reset");
@@ -391,6 +398,7 @@ namespace SpiderSurge.Common
                 if (part.Running && part.HasSettings) Button(part.Title, () => Open(part.Key));
             }
             if (Parts.Surge.Running || Parts.Stats.Running) Button("Achievements", () => Open(AchievementsHub));
+            if (Parts.Surge.Running || Parts.Stats.Running || Parts.Teams.Running) Button("Controls", () => Open(ControlsPage.Page));
             Button("Enable or disable parts", () => Open("parts"));
             Button("General", () => Open("general"));
             Button("About SpiderSurge", () => Open("about"));
@@ -622,6 +630,14 @@ namespace SpiderSurge.Common
             Register(button);
         }
 
+        public void Binding(Control control)
+        {
+            Button(ControlsPage.RowLabel(control), () => ControlCapture.Toggle(control));
+            _bindingRows[_created.Count - 1] = control;
+            string clash = ControlsPage.ClashWarning(control);
+            if (clash != null) Warning(clash);
+        }
+
         public void ConfirmButton(string label, Action onConfirm)
         {
             Button(label, () =>
@@ -756,7 +772,9 @@ namespace SpiderSurge.Common
         // Keeps a control focused; clicks on empty space and the game's select-on-hover buttons must not scroll the list
         private void LateUpdate()
         {
-            if (_menu == null || !_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null) return;
+            if (_menu == null) return;
+            ControlCapture.Tick();
+            if (!_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null || ControlCapture.Busy) return;
             foreach (var pad in Gamepad.all)
             {
                 if (pad.buttonEast.wasPressedThisFrame)
@@ -843,6 +861,7 @@ namespace SpiderSurge.Common
                 }
             }
             _created.Clear();
+            _bindingRows.Clear();
             _controls.Clear();
             _lastSelected = null;
         }
@@ -858,6 +877,17 @@ namespace SpiderSurge.Common
                 }
                 DOTween.Kill(rect);
             }
+        }
+
+        // A clash warning can appear or go above a control row, so the row is found again by its control
+        private int RowOf(Control control, int fallback)
+        {
+            if (control == null) return fallback;
+            foreach (var row in _bindingRows)
+            {
+                if (row.Value == control) return row.Key;
+            }
+            return fallback;
         }
 
         private int SelectedIndex()
