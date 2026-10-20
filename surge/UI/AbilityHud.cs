@@ -9,9 +9,7 @@ namespace SpiderSurge
         private GUIStyle detailStyle;
         private GUIStyle timerStyle;
         private int fontVersion = -1;
-        private string title;
         private string abilityName;
-        private string playerName;
         private string status;
         private int lastSeconds = -1;
         private int lastState = -1;
@@ -38,11 +36,6 @@ namespace SpiderSurge
                 fontVersion = Hud.FontVersion;
             }
             string name = Players.NameOf(player);
-            if (title == null || playerName != name)
-            {
-                playerName = name;
-                title = "P" + Hud.Number(ability.PlayerId + 1) + "  " + name;
-            }
             abilityName ??= PerksManager.Instance.GetDisplayName(ability.PerkName);
             int state = !alive ? 0 : active ? 1 : ready ? 2 : 3;
             int seconds = Mathf.CeilToInt(active ? ability.ActiveRemaining : ability.CooldownRemaining);
@@ -74,7 +67,7 @@ namespace SpiderSurge
             Hud.Resize(titleStyle, 14, scale);
             Hud.Resize(detailStyle, 12, scale);
             Hud.Resize(timerStyle, 12, scale);
-            Hud.Label(new Rect(x + 12f * scale, y + 5f * scale, width - 58f * scale, 22f * scale), title, titleStyle, Hud.Readable(player.playerColor.Value));
+            Hud.Label(new Rect(x + 12f * scale, y + 5f * scale, width - 58f * scale, 22f * scale), name, titleStyle, Hud.Readable(player.playerColor.Value));
             Hud.Label(new Rect(x + 12f * scale, y + 27f * scale, width - 24f * scale, 19f * scale), abilityName, detailStyle, Hud.Text);
             Hud.Label(new Rect(x + 12f * scale, y + 45f * scale, width - 24f * scale, 18f * scale), status, timerStyle, color);
             var bar = new Rect(x + 12f * scale, y + height - 9f * scale, width - 24f * scale, 3f * scale);
