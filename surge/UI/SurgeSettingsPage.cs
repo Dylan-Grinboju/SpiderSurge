@@ -34,8 +34,8 @@ namespace SpiderSurge
             page.Spacer();
             page.Header("Surge meter");
             page.Slider("Charge per wave for active play", ModConfig.MeterActiveChargePerWaveKey, Consts.Values.Meter.MinActiveChargePerWave, Consts.Values.Meter.MaxActiveChargePerWave, 1f);
-            page.Slider("Perk screens per point", ModConfig.MeterScreensPerPointKey, Consts.Values.Meter.MinScreensPerPoint, Consts.Values.Meter.MaxScreensPerPoint, 0.25f);
-            page.Note($"One shop point takes the charge a player casting on cooldown makes in that many perk screens, times the number of players. Defaults: {Consts.Values.Meter.DefaultActiveChargePerWave:0} and {Consts.Values.Meter.DefaultScreensPerPoint:0.##}, which is {MeterExample()} charge per point for one player. Changes apply at the next wave.");
+            page.Slider("Perk screens per chaos point", ModConfig.MeterScreensPerPointKey, Consts.Values.Meter.MinScreensPerPoint, Consts.Values.Meter.MaxScreensPerPoint, 0.25f);
+            page.Note($"One chaos point takes the charge a player casting on cooldown makes in that many perk screens, times the number of players. Defaults: {Consts.Values.Meter.DefaultActiveChargePerWave:0} and {Consts.Values.Meter.DefaultScreensPerPoint:0.##}, which is {MeterExample()} charge per chaos point for one player. Changes apply at the next wave.");
 
             page.Spacer();
             page.Header("Sound");

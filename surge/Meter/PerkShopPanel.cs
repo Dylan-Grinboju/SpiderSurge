@@ -17,7 +17,7 @@ namespace SpiderSurge
         public Vector2 OriginalSize;
     }
 
-    // The shop column beside the perk cards, built from the game's card prefab: a row click selects an item and Buy spends the points
+    // The shop column beside the perk cards, built from the game's card prefab: a row click selects an item and Buy spends the chaos points
     public class PerkShopPanel : MonoBehaviour
     {
         private const string PanelName = "SurgeShop";
@@ -392,7 +392,7 @@ namespace SpiderSurge
             int points = SurgeMeter.Points;
             if (_header != null)
             {
-                _header.text = $"Points: <color={Consts.Formatting.ColorGold}>{points}</color>";
+                _header.text = $"Chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)

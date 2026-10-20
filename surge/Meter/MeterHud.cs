@@ -7,7 +7,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
-    // A thin meter bar under the lives counter of the survival HUD, with the team's point count next to it; it ignores the HUD's row layout
+    // A thin meter bar under the lives counter of the survival HUD, with the team's chaos point count next to it; it ignores the HUD's row layout
     public class MeterHud : MonoBehaviour
     {
         private const string ObjectName = "SurgeMeter";
@@ -90,7 +90,7 @@ namespace SpiderSurge
                 pointsRect.anchorMax = new Vector2(0f, 0.5f);
                 pointsRect.pivot = new Vector2(0f, 0.5f);
                 pointsRect.anchoredPosition = new Vector2(BarWidth + 6f, 0f);
-                pointsRect.sizeDelta = new Vector2(120f, 40f);
+                pointsRect.sizeDelta = new Vector2(240f, 40f);
                 pointsRect.localScale = Vector3.one * 0.5f;
                 points.alignment = TextAlignmentOptions.MidlineLeft;
                 points.enableWordWrapping = false;
@@ -137,7 +137,7 @@ namespace SpiderSurge
             if (points != _shownPoints)
             {
                 _shownPoints = points;
-                _points.text = points == 1 ? "1 point" : $"{points} points";
+                _points.text = points == 1 ? "1 chaos point" : $"{points} chaos points";
             }
         }
 

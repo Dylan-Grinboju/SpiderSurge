@@ -158,8 +158,8 @@ namespace SpiderSurge.Logging
             {
                 var meter = stats.Meter;
                 sb.AppendLine("SURGE METER:");
-                sb.AppendLine($"  Charge per point: {meter.ChargePerPoint}");
-                sb.AppendLine($"  Total charge: {meter.TotalCharge}, points earned: {meter.PointsEarned}, points spent: {meter.PointsSpent}");
+                sb.AppendLine($"  Charge per chaos point: {meter.ChargePerPoint}");
+                sb.AppendLine($"  Total charge: {meter.TotalCharge}, chaos points earned: {meter.PointsEarned}, chaos points spent: {meter.PointsSpent}");
                 if (meter.ChargeBySource.Count > 0)
                 {
                     sb.AppendLine($"  Charge by source: {string.Join(", ", meter.ChargeBySource.Select(entry => $"{entry.Key} {entry.Value}"))}");

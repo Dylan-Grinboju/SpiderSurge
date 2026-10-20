@@ -145,10 +145,10 @@ namespace SpiderSurge
             if (section == Page + ".meter")
             {
                 page.Title("Surge meter and shop");
-                page.Line("The bar under the lives counter is the team's <b>Surge meter</b>. It fills from what your abilities do during a wave, and a full bar is one <b>point</b>. It never resets between waves.");
+                page.Line("The bar under the lives counter is the team's <b>Surge meter</b>. It fills from what your abilities do during a wave, and a full bar is one <b>chaos point</b>. It never resets between waves.");
                 page.Line("Kinetic Pulse launching enemies, Bottomless Clip firing shots it paid for, Null Field blocking hits, Pocket Dimension recalling a loaded weapon and Freeze Time freezing enemies all charge it. Ultimates charge more: Thermal Detonation kills, Care Package weapons picked up, Neural Backup revives and friendly Wasp kills, Banish and Rewind hits.");
-                page.Line("Each cast earns at most a few charge, and a point takes more charge the more players there are, so everyone has to cast.");
-                page.Line($"Spend points in the <b>shop</b> on the right of every perk choice: press right from the last card. Each screen sells two of these five, drawn at random: <color={Gold}>1</color> Reroll the cards, <color={Gold}>2</color> an extra life, <color={Gold}>3</color> a random perk you don't have, <color={Gold}>5</color> +1 max lives, and the <b>Blood Pact</b>, a life for a point. Pick an item, then press <b>Buy</b> under it. Unspent points carry on.");
+                page.Line("Each cast earns at most a few charge, and a chaos point takes more charge the more players there are, so everyone has to cast.");
+                page.Line($"Spend chaos points in the <b>shop</b> on the right of every perk choice: press right from the last card. Each screen sells two of these five, drawn at random: <color={Gold}>1</color> Reroll the cards, <color={Gold}>2</color> an extra life, <color={Gold}>3</color> a random perk you don't have, <color={Gold}>5</color> +1 max lives, and the <b>Blood Pact</b>, a life for a chaos point. Pick an item, then press <b>Buy</b> under it. Unspent chaos points carry on.");
                 page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice works the same way.");
                 return;
             }

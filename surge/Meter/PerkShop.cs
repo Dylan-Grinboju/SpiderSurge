@@ -103,7 +103,7 @@ namespace SpiderSurge
                 case ShopItem.Reroll: return "New perk cards";
                 case ShopItem.Life: return "+1 life, up to the max";
                 case ShopItem.Perk: return "A random perk you don't have";
-                case ShopItem.Sacrifice: return "Trade a life for a point";
+                case ShopItem.Sacrifice: return "Trade a life for a chaos point";
                 default: return "+1 max lives, no life with it";
             }
         }
@@ -166,7 +166,7 @@ namespace SpiderSurge
             if (!Net.IsAuthority || !SurgeMeter.Enabled || !IsOpen) return "The shop is closed";
             if (!IsOffered(item)) return "Not on sale on this screen";
             int cost = CostOf(item);
-            if (!SurgeMeter.CanAfford(cost)) return "Not enough points";
+            if (!SurgeMeter.CanAfford(cost)) return "Not enough chaos points";
             string unavailable = Unavailable(item);
             if (unavailable != null) return unavailable;
 
@@ -292,7 +292,7 @@ namespace SpiderSurge
             if (lives == null || lives.Value < Consts.Values.Meter.SacrificeMinLives) return null;
             lives.Value -= Consts.Values.Meter.SacrificeLives;
             SurgeMeter.GrantPoints(Consts.Values.Meter.SacrificePoints);
-            return $"{mode.Lives}/{mode.MaxLives}, {SurgeMeter.Points} points";
+            return $"{mode.Lives}/{mode.MaxLives}, {SurgeMeter.Points} chaos points";
         }
 
         // The perks on the cards stay out, since picking one after the shop gave it would raise it past its level
@@ -343,7 +343,7 @@ namespace SpiderSurge
                 case ShopItem.Reroll: what = "rerolled the perks"; break;
                 case ShopItem.Life: what = "bought an extra life"; break;
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
-                case ShopItem.Sacrifice: what = "traded a life for a point"; break;
+                case ShopItem.Sacrifice: what = "traded a life for a chaos point"; break;
                 default: what = "raised the max lives"; break;
             }
             Toast.Show($"{who} {what}", Hud.Pink);

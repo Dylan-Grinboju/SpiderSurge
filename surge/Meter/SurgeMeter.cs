@@ -123,7 +123,7 @@ namespace SpiderSurge
             if (!Net.IsAuthority || amount <= 0) return;
             Points += amount;
             PointsEarned += amount;
-            Logger.LogInfo($"[Surge meter] {amount} point(s) granted, the team has {Points}");
+            Logger.LogInfo($"[Surge meter] {amount} chaos point(s) granted, the team has {Points}");
             Raise(Changed);
             Raise(PointEarned);
             MeterNet.MarkDirty();
@@ -164,7 +164,7 @@ namespace SpiderSurge
             }
             if (earned)
             {
-                Logger.LogInfo($"[Surge meter] Point earned, the team has {Points} (threshold {ChargePerPoint})");
+                Logger.LogInfo($"[Surge meter] Chaos point earned, the team has {Points} (threshold {ChargePerPoint})");
                 Raise(PointEarned);
             }
         }
