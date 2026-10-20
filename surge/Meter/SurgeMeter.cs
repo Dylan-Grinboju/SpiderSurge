@@ -188,4 +188,25 @@ namespace SpiderSurge
             }
         }
     }
+
+    // Friends join a run in the waiting room, after its first threshold was set, so a join or a leave sets it again at once instead of at the next wave
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.AddPlayer))]
+    public class LobbyController_AddPlayer_MeterPatch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive) SurgeMeter.RecomputeThreshold();
+        }
+    }
+
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.RemovePlayer))]
+    public class LobbyController_RemovePlayer_MeterPatch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive) SurgeMeter.RecomputeThreshold();
+        }
+    }
 }
