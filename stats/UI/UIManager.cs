@@ -3,6 +3,7 @@ using Logger = Silk.Logger;
 using UnityEngine.InputSystem;
 using System.Collections;
 using SpiderSurge.Common;
+using Doozy.Engine.UI;
 
 namespace StatsMod
 {
@@ -41,6 +42,23 @@ namespace StatsMod
                 return ModConfig.TitlesEnabled && mode != GameMode.Versus;
             }
         }
+        internal static bool TitlesBlockedByMenu
+        {
+            get
+            {
+                if (SettingsPage.IsOpen) return true;
+                var perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
+                if (perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing)) return true;
+                if (!GameMenus.Open) return false;
+                HudController hud = HudController.instance;
+                if (Instance == null || !Instance.restartTitlesPause || hud == null || !hud.paused ||
+                    hud.pauseView == null || !hud.pauseView.gameObject.activeInHierarchy ||
+                    !hud.pauseView.IsVisible || hud.pauseView.IsHiding) return true;
+                if (hud.optionsView != null && (hud.optionsView.IsVisible || hud.optionsView.IsShowing)) return true;
+                UIView mods = ModsMenu.instance != null ? ModsMenu.instance.GetComponent<UIView>() : null;
+                return (mods != null && (mods.IsVisible || mods.IsShowing)) || UIPopupManager.CurrentVisibleQueuePopup != null;
+            }
+        }
         #endregion
 
         #region UI Components
@@ -52,6 +70,7 @@ namespace StatsMod
         #region Controller Cycling State
         private UIState currentUIState = UIState.Off;
         private Coroutine delayedPauseCoroutine;
+        private bool restartTitlesPause;
         private readonly ControlPoller smallWindowKey = new ControlPoller();
         private readonly ControlPoller bigWindowKey = new ControlPoller();
         private readonly ControlPoller titlesKey = new ControlPoller();
@@ -183,6 +202,7 @@ namespace StatsMod
         #region Input Handling
         private void Update()
         {
+            if (HudController.instance == null || !HudController.instance.paused) restartTitlesPause = false;
             HandleKeyboardInput();
             HandleGamepadInput();
         }
@@ -325,7 +345,7 @@ namespace StatsMod
 
         private void HandleTitlesKey()
         {
-            if (!CanShowTitles) return;
+            if (!CanShowTitles || TitlesBlockedByMenu) return;
             // If currently animating, skip the animation
             if (titlesUI != null && titlesUI.IsAnimating())
             {
@@ -414,6 +434,7 @@ namespace StatsMod
 
         public void HideTitlesUI()
         {
+            restartTitlesPause = false;
             if (titlesUI != null)
             {
                 titlesUI.HideDisplay();
@@ -479,6 +500,7 @@ namespace StatsMod
         {
             if (Instance == null) return;
 
+            Instance.restartTitlesPause = false;
 
             if (preserveEndOfGameTitles &&
                 Instance.currentUIState == UIState.TitlesUI &&
@@ -504,6 +526,11 @@ namespace StatsMod
                 if (HudController.instance != null && !HudController.instance.paused)
                 {
                     HudController.instance.Pause();
+                    if (Instance != null)
+                    {
+                        Instance.restartTitlesPause = HudController.instance.paused &&
+                            Instance.titlesUI != null && Instance.titlesUI.IsVisible();
+                    }
                 }
             }
             catch (System.Exception ex)

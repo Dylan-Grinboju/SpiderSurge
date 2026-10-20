@@ -1,8 +1,37 @@
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace SpiderSurge
 {
+    [HarmonyPatch]
+    internal static class PulseExplosionWeapon_Patch
+    {
+        // Weapon overrides can drop, fire or explode before reaching the base hit handler.
+        [HarmonyTargetMethods]
+        private static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (var type in typeof(Weapon).Assembly.GetTypes())
+            {
+                if (!typeof(Weapon).IsAssignableFrom(type)) continue;
+                foreach (string name in new[] { nameof(Weapon.Damage), nameof(Weapon.Impact), nameof(Weapon.Disarm) })
+                {
+                    MethodInfo method = AccessTools.DeclaredMethod(type, name);
+                    if (method != null) yield return method;
+                }
+            }
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static bool Prefix(Weapon __instance)
+        {
+            SpiderHealthSystem caster = PulseExplosionScopePatch.ProtectedSpider;
+            return caster == null || !__instance.equipped || __instance.owner == null || __instance.owner.healthSystem != caster;
+        }
+    }
+
     internal static class AmmoAbilityPatchUtils
     {
         internal static void TryHandleWeaponRemoved(SpiderWeaponManager manager)

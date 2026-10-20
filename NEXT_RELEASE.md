@@ -86,7 +86,7 @@ Change any of them in **Mods** > **SpiderSurge** > **Controls**: select a row, t
 
 On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
 
-If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge 1.0.0, only the first one runs. A popup lists the files to delete.
+If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older standalone `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge that include the merged parts, only the first one runs. A popup lists the files to delete.
 
 ## Settings
 

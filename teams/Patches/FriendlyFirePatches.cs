@@ -151,17 +151,18 @@ namespace SpiderTeams
     }
 
     [HarmonyPatch]
-    public static class WeaponBeam_Patch
+    public static class WeaponAttack_Patch
     {
         [HarmonyTargetMethods]
         public static IEnumerable<MethodBase> TargetMethods()
         {
-            return PatchScopes.Existing("WeaponBeam_Patch",
+            return PatchScopes.Existing("WeaponAttack_Patch",
                 AccessTools.Method(typeof(DeathRay), "Fire", Type.EmptyTypes),
                 AccessTools.Method(typeof(DeathCube), "Fire", new[] { typeof(Vector3), typeof(LineRenderer) }),
                 AccessTools.Method(typeof(LaserCube), "Beam", new[] { typeof(Vector3), typeof(LineRenderer) }),
                 AccessTools.Method(typeof(LaserCannon), "DamageHit", new[] { typeof(RaycastHit2D), typeof(IDamageable) }),
-                AccessTools.Method(typeof(KhepriStaff), "Zap", new[] { typeof(GameObject) }));
+                AccessTools.Method(typeof(KhepriStaff), "Zap", new[] { typeof(GameObject) }),
+                AccessTools.Method(typeof(Snowballs), "ExplodeClientRpc", new[] { typeof(Vector3) }));
         }
 
         [HarmonyPrefix]

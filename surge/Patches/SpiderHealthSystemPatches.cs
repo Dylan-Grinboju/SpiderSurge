@@ -5,6 +5,14 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SpiderHealthSystem))]
     public static class SpiderHealthSystemPatches
     {
+        [HarmonyPatch("Impact")]
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        public static bool Impact_Prefix(SpiderHealthSystem __instance)
+        {
+            return PulseExplosionScopePatch.ProtectedSpider != __instance;
+        }
+
         // A hit another prefix cancelled (Teams friendly fire) never reached the spider, so Null Field doesn't count it
         [HarmonyPatch("Damage")]
         [HarmonyPrefix]

@@ -41,7 +41,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 | Mode | What a teammate's hit does |
 |---|---|
 | `push` (default) | Knocks you back and stuns you, but never kills you or breaks your shield |
-| `ignore` | Nothing at all |
+| `ignore` | No damage, knockback or stun from friendly attacks; Kinetic Pulse still pushes teammates |
 | `damage` | Works as normal and can kill |
 
 - Hitting yourself always works as normal, so your own grenade can still kill you.
@@ -58,7 +58,7 @@ Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **
 
 | Ability | What it does | Ultimate |
 |---|---|---|
-| Null Field | Become immune to all damage for a short time | **Neural Backup**: After a cast time, revive a dead teammate next to you. With nobody to revive, it summons friendly wasps, which only chase AI enemies |
+| Null Field | Become immune to all damage for a short time | **Neural Backup**: After a cast time, revive a dead teammate at the map spawn point nearest you. With nobody to revive, it summons friendly wasps, which only chase AI enemies |
 | Bottomless Clip | Shooting uses no ammo for a short time | **Care Package**: Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2 |
 | Kinetic Pulse | Release a pulse that knocks back everyone nearby | **Thermal Detonation**: The pulse kills anyone close to you. Teammates follow the friendly fire rule |
 | Pocket Dimension | Store your weapon and swap it back later | **Banish**: Pulls the nearest enemy or spider close to you into the pocket dimension, forever. Teammates only with friendly fire set to damage. A miss has a shorter cooldown |

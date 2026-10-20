@@ -12,7 +12,6 @@ namespace SpiderSurge.Common
     {
         private const string OwnId = "SpiderSurge_Mod";
         private const string RunningKey = "SpiderSurge.RunningFrom";
-        private static readonly Version FirstMergedVersion = new Version(1, 0, 0);
 
         private static readonly Dictionary<string, Part> Replaced = new Dictionary<string, Part>
         {
@@ -37,7 +36,7 @@ namespace SpiderSurge.Common
             AppDomain.CurrentDomain.SetData(RunningKey, null);
         }
 
-        // Stats, SpiderTeams and SpiderSurge before 1.0.0 patch the game on their own, so the part they would double stays off
+        // Standalone mods patch the game on their own, so the part they would double stays off
         public static void Check()
         {
             var found = new List<string>();
@@ -59,9 +58,9 @@ namespace SpiderSurge.Common
                         continue;
                     }
 
-                    string id = ReadModId(file, out string version);
+                    string id = ReadModId(file, out bool hasMergedParts);
                     string name = Path.GetFileName(file);
-                    Part part = DoubledPart(id, version);
+                    Part part = DoubledPart(id, hasMergedParts);
                     if (part != null)
                     {
                         part.BlockedBy = name;
@@ -96,7 +95,7 @@ namespace SpiderSurge.Common
                 list + off);
         }
 
-        private static Part DoubledPart(string id, string version)
+        private static Part DoubledPart(string id, bool hasMergedParts)
         {
             if (id == null)
             {
@@ -106,24 +105,23 @@ namespace SpiderSurge.Common
             {
                 return part;
             }
-            bool beforeMerge = !Version.TryParse(version?.Split('+', '-')[0], out Version parsed) || parsed < FirstMergedVersion;
-            return id == OwnId && beforeMerge ? Parts.Surge : null;
+            return id == OwnId && !hasMergedParts ? Parts.Surge : null;
         }
 
-        private static string ReadModId(string file, out string version)
+        private static string ReadModId(string file, out bool hasMergedParts)
         {
-            version = null;
+            hasMergedParts = false;
             try
             {
                 using (var assembly = AssemblyDefinition.ReadAssembly(file))
                 {
+                    hasMergedParts = assembly.MainModule.GetType(typeof(Parts).FullName) != null;
                     foreach (TypeDefinition type in assembly.MainModule.Types)
                     {
                         foreach (CustomAttribute attribute in type.CustomAttributes)
                         {
                             if (attribute.AttributeType.FullName == typeof(SilkModAttribute).FullName && attribute.ConstructorArguments.Count > 4)
                             {
-                                version = attribute.ConstructorArguments[2].Value as string;
                                 return attribute.ConstructorArguments[4].Value as string;
                             }
                         }

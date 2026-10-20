@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
 using SpiderSurge.Common;
@@ -206,18 +207,33 @@ namespace StatsMod
     [HarmonyPatch(typeof(WebMaker), "ShootWeb")]
     public class WebMakerShootWebPatch
     {
-        static void Postfix(WebMaker __instance, GameObject ___target)
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            int tracked = 0;
+            MethodInfo raycast = AccessTools.Method(typeof(WebMaker), nameof(WebMaker.RaycastWeb));
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+                if (!instruction.Calls(raycast)) continue;
+                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                yield return CodeInstruction.Call(typeof(WebMakerShootWebPatch), nameof(RecordSwing));
+                tracked++;
+            }
+            if (tracked != 1) Logger.LogWarning($"WebMaker.ShootWeb raycast changed ({tracked} sites); check web swing tracking");
+        }
+
+        private static RaycastHit2D RecordSwing(RaycastHit2D hit, WebMaker webMaker)
         {
             try
             {
-                if (___target == null)
+                if (!hit)
                 {
-                    return;
+                    return hit;
                 }
 
-                if (__instance.spiderController != null && GameSessionManager.Instance.IsActive && !IsGone(__instance.spiderHealthSystem))
+                if (webMaker.spiderController != null && GameSessionManager.Instance.IsActive && !IsGone(webMaker.spiderHealthSystem))
                 {
-                    PlayerController playerInput = __instance.spiderController.GetComponentInParent<PlayerController>();
+                    PlayerController playerInput = webMaker.spiderController.GetComponentInParent<PlayerController>();
                     if (playerInput != null)
                     {
                         PlayerTracker.Instance.IncrementWebSwings(playerInput);
@@ -229,6 +245,7 @@ namespace StatsMod
             {
                 Logger.LogError($"Error tracking web swing: {ex.Message}");
             }
+            return hit;
         }
 
         internal static bool IsGone(SpiderHealthSystem health) => health != null && (health.dead || health.astralDead);
