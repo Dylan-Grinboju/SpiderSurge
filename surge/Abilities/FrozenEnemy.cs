@@ -61,6 +61,12 @@ namespace SpiderSurge
             return frozen != null ? frozen.TimeLeft : 0f;
         }
 
+        public static float ThawTimeOf(EnemyHealthSystem enemy)
+        {
+            FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
+            return frozen != null ? frozen._thawTime : 0f;
+        }
+
         internal static void SetBaseColor(SpriteRenderer sprite, Color color)
         {
             FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
@@ -318,13 +324,120 @@ namespace SpiderSurge
         }
     }
 
-    // The cloud chases its target on its own, so it stays where it is while its shaman is frozen; its poison still hurts
+    // A shaman's poison cloud held by Freeze Time, caught by the ring or frozen with its shaman: it stops where it is with its smoke and glow, and its poison still hurts
+    public class FrozenCloud : MonoBehaviour
+    {
+        private static readonly HashSet<int> FrozenIds = new HashSet<int>();
+        private static readonly AccessTools.FieldRef<DeathCloud, bool> Dying = AccessTools.FieldRefAccess<DeathCloud, bool>("_dying");
+
+        private DeathCloud _cloud;
+        private int _id;
+        private float _thawTime;
+        private float _smokeSpeed;
+        private Color _glowBase;
+        private Color _glowShown;
+        private FrostAura _frost;
+
+        public float TimeLeft => Mathf.Max(0f, _thawTime - Time.time);
+
+        public static bool IsFrozen(DeathCloud cloud) => cloud != null && FrozenIds.Contains(cloud.GetInstanceID());
+
+        // A cloud is frozen whole once its smoke reaches into the ring, so no part of it is left behind
+        public static void FreezeAround(Vector2 origin, float range, float until)
+        {
+            foreach (DeathCloud cloud in Object.FindObjectsOfType<DeathCloud>())
+            {
+                if (Vector2.Distance(origin, cloud.transform.position) <= range + Consts.Values.Freeze.CloudReach) Freeze(cloud, until);
+            }
+        }
+
+        public static void Freeze(DeathCloud cloud, float until)
+        {
+            if (Apply(cloud, until)) SurgeNet.SendEnemyFx(EnemyFx.CloudFrozen, cloud.GetComponent<NetworkObject>(), until - Time.time);
+        }
+
+        // Online clients only stop its smoke; the host holds it and its position syncs
+        public static void ShowFrozen(DeathCloud cloud, float duration)
+        {
+            Apply(cloud, Time.time + duration);
+        }
+
+        // True when the hold starts or gets longer
+        private static bool Apply(DeathCloud cloud, float until)
+        {
+            if (cloud == null || Dying(cloud) || until <= Time.time) return false;
+            FrozenCloud frozen = cloud.GetComponent<FrozenCloud>();
+            if (frozen != null)
+            {
+                if (until <= frozen._thawTime) return false;
+                frozen._thawTime = until;
+                return true;
+            }
+            frozen = cloud.gameObject.AddComponent<FrozenCloud>();
+            frozen._cloud = cloud;
+            frozen._thawTime = until;
+            frozen.Hold();
+            return true;
+        }
+
+        private void Hold()
+        {
+            _id = _cloud.GetInstanceID();
+            FrozenIds.Add(_id);
+            if (_cloud.rb2d != null) _cloud.rb2d.velocity = Vector2.zero;
+            if (_cloud.mainEffect != null)
+            {
+                ParticleSystem.MainModule main = _cloud.mainEffect.main;
+                _smokeSpeed = main.simulationSpeed;
+                main.simulationSpeed = 0f;
+            }
+            if (_cloud.glow != null)
+            {
+                _glowBase = _cloud.glow.color;
+                _glowShown = Color.Lerp(_glowBase, Consts.Values.Freeze.TintColor, Consts.Values.Freeze.TintStrength);
+                _glowShown.a = _glowBase.a;
+                _cloud.glow.color = _glowShown;
+            }
+            _frost = FrostAura.Attach(_cloud.transform, Consts.Values.Freeze.CloudReach);
+        }
+
+        // A cloud whose shaman died fades out the way the game fades it, so it thaws first
+        private void Update()
+        {
+            if (Time.time < _thawTime && !Dying(_cloud)) return;
+            Thaw();
+            Destroy(this);
+        }
+
+        private void Thaw()
+        {
+            FrozenIds.Remove(_id);
+            if (_cloud.mainEffect != null)
+            {
+                ParticleSystem.MainModule main = _cloud.mainEffect.main;
+                main.simulationSpeed = _smokeSpeed;
+            }
+            if (_cloud.glow != null && _cloud.glow.color == _glowShown) _cloud.glow.color = _glowBase;
+            if (_frost != null) _frost.Release(!Dying(_cloud));
+            _frost = null;
+        }
+
+        private void OnDestroy()
+        {
+            FrozenIds.Remove(_id);
+            if (_frost != null) _frost.Release(false);
+        }
+    }
+
+    // The cloud chases its target on its own, so it stays where it is while it is frozen; it freezes with its shaman, even one frozen before the cloud spawned
     [HarmonyPatch(typeof(DeathCloud), "MoveTowardsGoal")]
     public static class FrozenEnemy_DeathCloud_Patch
     {
         private static bool Prefix(DeathCloud __instance)
         {
-            if (__instance.origin == null || !FrozenEnemy.IsFrozen(__instance.origin.GetComponentInParent<EnemyHealthSystem>())) return true;
+            EnemyHealthSystem shaman = __instance.origin != null ? __instance.origin.GetComponentInParent<EnemyHealthSystem>() : null;
+            if (FrozenEnemy.IsFrozen(shaman)) FrozenCloud.Freeze(__instance, FrozenEnemy.ThawTimeOf(shaman));
+            if (!FrozenCloud.IsFrozen(__instance)) return true;
             if (__instance.rb2d != null) __instance.rb2d.velocity = Vector2.zero;
             return false;
         }

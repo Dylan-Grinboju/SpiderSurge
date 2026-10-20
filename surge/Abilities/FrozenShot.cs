@@ -33,6 +33,7 @@ namespace SpiderSurge
             foreach (BasicProjectile shot in Object.FindObjectsOfType<BasicProjectile>()) TryFreeze(shot, shot.rb2d, origin, range, until);
             foreach (RailShot shot in Object.FindObjectsOfType<RailShot>()) TryFreeze(shot, shot.GetComponent<Rigidbody2D>(), origin, range, until);
             foreach (SawDisc disc in Object.FindObjectsOfType<SawDisc>()) TryFreeze(disc, disc.rb2d, origin, range, until);
+            FrozenCloud.FreezeAround(origin, range, until);
             FrozenParticles.FreezeAround(origin, range, until);
         }
 
@@ -163,7 +164,7 @@ namespace SpiderSurge
             }
         }
 
-        // Effects spawned during play; the level's own particles, spiders and weapons are left out, and so is the spawn warning, since the enemy still arrives on time
+        // Effects spawned during play; the level's own particles, spiders and weapons are left out, and so is the spawn warning, since the enemy still arrives on time. A poison cloud is frozen whole by FrozenCloud
         public static void FreezeAround(Vector2 origin, float range, float until)
         {
             string spawnWarning = EnemySpawner.instance != null && EnemySpawner.instance.spawnEffect != null ? EnemySpawner.instance.spawnEffect.name + "(Clone)" : null;
@@ -173,6 +174,7 @@ namespace SpiderSurge
                 Transform root = particles.transform.root;
                 if (!root.name.EndsWith("(Clone)") || root.name == spawnWarning) continue;
                 if (particles.GetComponentInParent<PlayerController>() != null || particles.GetComponentInParent<SpiderHealthSystem>() != null || particles.GetComponentInParent<Weapon>() != null) continue;
+                if (particles.GetComponentInParent<DeathCloud>() != null) continue;
                 Freeze(particles, until);
             }
         }
