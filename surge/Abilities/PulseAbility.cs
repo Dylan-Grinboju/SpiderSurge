@@ -261,9 +261,13 @@ namespace SpiderSurge
 
             bool _attemptedLethalExplosion = false;
 
-            // Use NonAlloc to avoid allocating new array every time
-            int hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, p.KnockBackRadius, _pulseResults, pulseLayers);
-            CollectEnemiesToLaunch(hitCount);
+            float queryRadius = deadly ? Mathf.Max(p.KnockBackRadius, p.DeathRadius) : p.KnockBackRadius;
+            int hitCount;
+            while ((hitCount = Physics2D.OverlapCircleNonAlloc(p.Position, queryRadius, _pulseResults, pulseLayers)) == _pulseResults.Length)
+            {
+                System.Array.Resize(ref _pulseResults, _pulseResults.Length * 2);
+            }
+            CollectEnemiesToLaunch(hitCount, p);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -311,7 +315,7 @@ namespace SpiderSurge
                     }
                     continue;
                 }
-                else
+                else if (distance <= p.KnockBackRadius)
                 {
                     if (rb != null)
                         rb.velocity = Vector2.zero;
@@ -324,13 +328,14 @@ namespace SpiderSurge
         }
 
         // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
-        private void CollectEnemiesToLaunch(int hitCount)
+        private void CollectEnemiesToLaunch(int hitCount, PulseParams p)
         {
             _enemiesToLaunch.Clear();
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D collider = _pulseResults[i];
                 if (collider == null) continue;
+                if (Vector2.Distance(collider.ClosestPoint(p.Position), p.Position) > p.KnockBackRadius) continue;
 
                 EnemyHealthSystem enemy = collider.GetComponentInParent<EnemyHealthSystem>();
                 if (PulseKnockback.CanLaunch(enemy))
@@ -485,6 +490,7 @@ namespace SpiderSurge
 
                 var explosion = tempObj.AddComponent<Explosion>();
                 explosion.enabled = false;
+                tempObj.AddComponent<PulseExplosionCaster>().Health = spiderHealthSystem;
 
                 int playerID = playerController.playerID.Value;
 
@@ -593,6 +599,31 @@ namespace SpiderSurge
             {
                 playerPulseAbilities.Remove(PlayerId);
             }
+        }
+    }
+
+    internal sealed class PulseExplosionCaster : MonoBehaviour
+    {
+        internal SpiderHealthSystem Health;
+    }
+
+    [HarmonyPatch(typeof(Explosion), "KnockBack")]
+    internal static class PulseExplosionScopePatch
+    {
+        internal static SpiderHealthSystem ProtectedSpider;
+
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static void Prefix(Explosion __instance, out SpiderHealthSystem __state)
+        {
+            __state = ProtectedSpider;
+            ProtectedSpider = __instance.GetComponent<PulseExplosionCaster>()?.Health;
+        }
+
+        [HarmonyFinalizer]
+        private static void Finalizer(SpiderHealthSystem __state)
+        {
+            ProtectedSpider = __state;
         }
     }
 }
