@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
+using SpiderSurge.Vfx;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -35,6 +36,7 @@ namespace SpiderSurge
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
         private readonly Dictionary<SpriteRenderer, Tint> _tints = new Dictionary<SpriteRenderer, Tint>();
         private readonly List<SpriteRenderer> _recolored = new List<SpriteRenderer>();
+        private FrostAura _frost;
 
         private struct Tint
         {
@@ -115,6 +117,7 @@ namespace SpiderSurge
             _enemyId = _enemy.GetInstanceID();
             FrozenEnemyIds.Add(_enemyId);
             _held = true;
+            AttachFrost();
 
             if (_visualOnly)
             {
@@ -177,6 +180,25 @@ namespace SpiderSurge
             light.Property("color").SetValue(whisp.energyColor);
         }
 
+        // The frost follows the enemy's moving body and spreads as wide as its sprites
+        private void AttachFrost()
+        {
+            Transform body = _enemy.rb2D != null ? _enemy.rb2D.transform : _enemy.transform;
+            float radius = 5f;
+            foreach (Renderer renderer in _enemy.GetComponentsInChildren<Renderer>())
+            {
+                if (renderer is SpriteRenderer) radius = Mathf.Max(radius, renderer.bounds.extents.magnitude);
+            }
+            _frost = FrostAura.Attach(body, Mathf.Min(radius, 14f));
+        }
+
+        private void ReleaseFrost(bool thawed)
+        {
+            if (_frost == null) return;
+            _frost.Release(thawed);
+            _frost = null;
+        }
+
         private void TintAll()
         {
             foreach (SpriteRenderer sprite in _enemy.GetComponentsInChildren<SpriteRenderer>(true))
@@ -217,12 +239,18 @@ namespace SpiderSurge
             if (_visualOnly)
             {
                 RestoreTints();
+                ReleaseFrost(alive);
                 if (alive) PlayThawSound();
                 return;
             }
 
             // Banish took it while frozen and holds it itself until it is gone
-            if (BanishedTarget.IsBanished(gameObject)) return;
+            if (BanishedTarget.IsBanished(gameObject))
+            {
+                ReleaseFrost(false);
+                return;
+            }
+            ReleaseFrost(alive);
             if (alive) PlayThawSound();
 
             foreach (var pair in _bodies)
@@ -270,6 +298,7 @@ namespace SpiderSurge
 
         private void OnDestroy()
         {
+            ReleaseFrost(false);
             if (_held)
             {
                 _held = false;

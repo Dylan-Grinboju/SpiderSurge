@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Unity.Netcode;
 using SpiderSurge.Common;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -163,9 +164,7 @@ namespace SpiderSurge
 
         private static void SpawnBanishRing(Transform body, float range)
         {
-            GameObject ring = new GameObject("BanishRing");
-            ring.transform.position = body.position;
-            ring.AddComponent<PulseRingEffect>().SetupInward(range, Consts.Values.Storage.RingColor, Consts.Values.Storage.BanishPullTime, body);
+            StorageVfx.Banish(body, range);
         }
 
         // Another player's Banish online, drawn from the host's message
@@ -264,6 +263,7 @@ namespace SpiderSurge
             if (val == null) return null;
 
             _weaponManager.UnEquipWeapon();
+            StorageVfx.Send(heldWeaponObj.transform.position);
 
             HideFromClients(heldWeaponObj);
             heldWeaponObj.transform.SetParent(transform);
@@ -305,6 +305,7 @@ namespace SpiderSurge
             storedWeaponObj.SetActive(true);
             storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
             ShowToClients(storedWeaponObj);
+            StorageVfx.Retrieve(_weaponManager.transform.position);
 
             Weapon weapon = storedWeaponObj.GetComponent<Weapon>();
             if (weapon != null)

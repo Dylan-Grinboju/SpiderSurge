@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
 using SpiderSurge.Common;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -744,6 +745,11 @@ namespace SpiderSurge
 
             onCooldown = false;
             cooldownEndTime = 0f;
+
+            if (IsUnlocked() && spiderHealthSystem != null && IsPlayerAlive())
+            {
+                ReadyVfx.Pulse(spiderHealthSystem.transform.position, abilityIndicator != null ? abilityIndicator.availableColor : Color.white);
+            }
 
             if (SoundManager.Instance != null && IsUnlocked() && !IsRemote)
             {
