@@ -38,7 +38,7 @@ namespace StatsMod
             page.Title("Stats");
             page.Header("Windows");
             page.Toggle("Show the stats windows", Key("display.showStatsWindow"));
-            page.Note($"Small window: {KeyLabel(Controls.SmallWindow)}. Big window: {KeyLabel(Controls.BigWindow)}. Titles: {KeyLabel(Controls.TitlesWindow)}. Switch windows on a controller: <noparse>{Controls.Label(ModConfig.SwitchWindowsBinding)}</noparse>.");
+            page.Note($"Small window: {Controls.Display(Controls.SmallWindow)}. Big window: {Controls.Display(Controls.BigWindow)}. Titles: {Controls.Display(Controls.TitlesWindow)}. Switch windows on a controller: {Controls.Display(ModConfig.SwitchWindowsBinding)}.");
             page.Button("Change these keys", () => page.Open(ControlsPage.Page));
             page.Toggle("Small window background", Key("display.smallUIShowBackground"));
             page.Toggle("Scale with the screen size", ModConfig.AutoScaleKey);
@@ -156,8 +156,6 @@ namespace StatsMod
         }
 
         private static string Key(string key) => ModConfig.Prefix + key;
-
-        private static string KeyLabel(Control control) => $"<noparse>{Controls.Label(control)}</noparse>";
 
         private static string ColumnLabel(string column)
         {

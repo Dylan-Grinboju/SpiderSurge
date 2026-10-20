@@ -250,8 +250,7 @@ namespace SpiderTeams
                     return;
                 }
 
-                // While Start or Select is held the press belongs to Surge's ability-button remap, not to a team pick
-                if (SpiderSurge.PlayerControlSettings.IsMenuHeld(device) || ControlCapture.Busy)
+                if (Controls.Ignored(device))
                 {
                     return;
                 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -268,7 +269,7 @@ namespace SpiderSurge
                         break;
                     }
                 }
-                if (!deviceAssigned || PlayerControlSettings.IsMenuHeld(device))
+                if (!deviceAssigned || Controls.Ignored(device))
                 {
                     return;
                 }

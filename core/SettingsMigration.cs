@@ -55,13 +55,12 @@ namespace SpiderSurge.Common
 
         private const string Sticks = "<Gamepad>/leftStickPress|<Gamepad>/rightStickPress";
 
-        // Settings that became rows of the Controls page, with how an old value becomes a binding; null keeps the default
         private static readonly (string from, string to, Func<string, string> convert)[] MovedKeys =
         {
             ("surge.dpadUltimate", Controls.UltimateController.Key, raw => Settings.TryParseBool(raw, out bool on) && on ? Controls.Dpad : null),
             ("stats.input.cycleInput", Controls.SwitchWindows.Key, StatsSwitchBinding),
-            ("teams.buttonGamepad", Controls.TeamController.Key, raw => raw),
-            ("teams.buttonKeyboard", Controls.TeamKeyboard.Key, raw => raw),
+            ("teams.buttonGamepad", Controls.TeamController.Key, raw => TeamBinding(Controls.TeamController, raw)),
+            ("teams.buttonKeyboard", Controls.TeamKeyboard.Key, raw => TeamBinding(Controls.TeamKeyboard, raw)),
         };
 
         public static void Run()
@@ -225,6 +224,14 @@ namespace SpiderSurge.Common
             {
                 Logger.LogError($"Could not move the old control settings in {path}: {ex.Message}");
             }
+        }
+
+        // Select was a team button before; the Controls page keeps it for the pause menu and the ability remap
+        private static string TeamBinding(Control control, string raw)
+        {
+            if (Controls.Accepts(control, raw)) return raw;
+            Logger.LogWarning($"The team button '{raw}' can't be used any more, so {control.Key} starts on {Controls.Label(control.Default)}");
+            return null;
         }
 
         private static string StatsSwitchBinding(string raw)

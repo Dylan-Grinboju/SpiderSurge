@@ -33,8 +33,8 @@ namespace SpiderSurge.Common
                 if (Current == null) return "";
                 if (WaitingForSecond) return $"{_first.label} + press a second button for a combo, or let go";
                 return Current.Device == ControlDevice.Keyboard
-                    ? "press a key (Escape cancels, Backspace turns it off)"
-                    : "press a button (Start cancels, Select turns it off)";
+                    ? "press a key (Escape or Start cancels, Backspace turns it off)"
+                    : "press a button (Start or Escape cancels, Select turns it off)";
             }
         }
 
@@ -84,13 +84,25 @@ namespace SpiderSurge.Common
             {
                 return;
             }
-            if (Current.Device == ControlDevice.Keyboard) TickKeyboard();
+            if (CancelPressed()) End();
+            else if (Current.Device == ControlDevice.Keyboard) TickKeyboard();
             else TickController();
             if (Current != null && Time.unscaledTime > _until)
             {
                 if (WaitingForSecond) Set(_first.path);
                 else End();
             }
+        }
+
+        // Escape and Start cancel from either device, and so does a controller's B while a keyboard row waits, so a player on the other device isn't stuck until the timeout
+        private static bool CancelPressed()
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) return true;
+            foreach (Gamepad pad in Gamepad.all)
+            {
+                if (pad.startButton.wasPressedThisFrame || (Current.Device == ControlDevice.Keyboard && pad.buttonEast.wasPressedThisFrame)) return true;
+            }
+            return false;
         }
 
         private static void TickKeyboard()
@@ -102,8 +114,7 @@ namespace SpiderSurge.Common
             {
                 KeyControl key = keys[i];
                 if (key == null || !key.wasPressedThisFrame) continue;
-                if (key.keyCode == Key.Escape) End();
-                else if (key.keyCode == Key.Backspace) Set(Controls.None);
+                if (key.keyCode == Key.Backspace) Set(Controls.None);
                 else Set("<Keyboard>/" + key.name);
                 return;
             }
@@ -118,11 +129,6 @@ namespace SpiderSurge.Common
             }
             foreach (Gamepad pad in Gamepad.all)
             {
-                if (pad.startButton.wasPressedThisFrame)
-                {
-                    End();
-                    return;
-                }
                 if (pad.selectButton.wasPressedThisFrame)
                 {
                     Set(Controls.None);
@@ -133,22 +139,37 @@ namespace SpiderSurge.Common
                     Set(Controls.Dpad);
                     return;
                 }
-                foreach (var button in Controls.ControllerButtons)
+                int first = PressedAfter(pad, -1);
+                if (first < 0) continue;
+                var button = Controls.ControllerButtons[first];
+                int second = Current.Allows(ControlExtras.Combo) ? PressedAfter(pad, first) : -1;
+                if (second >= 0)
                 {
-                    if (!button.button(pad).wasPressedThisFrame) continue;
-                    if (Current.Allows(ControlExtras.Combo))
-                    {
-                        _first = button;
-                        _comboPad = pad;
-                        SettingsPage.RefreshOpen();
-                    }
-                    else
-                    {
-                        Set(button.path);
-                    }
-                    return;
+                    Set(button.path + Controls.ComboSeparator + Controls.ControllerButtons[second].path);
                 }
+                else if (Current.Allows(ControlExtras.Combo))
+                {
+                    _first = button;
+                    _comboPad = pad;
+                    SettingsPage.RefreshOpen();
+                }
+                else
+                {
+                    Set(button.path);
+                }
+                return;
             }
+        }
+
+        // Two buttons that go down on the same frame, like both sticks clicked together, make a combo straight away
+        private static int PressedAfter(Gamepad pad, int after)
+        {
+            var buttons = Controls.ControllerButtons;
+            for (int i = after + 1; i < buttons.Length; i++)
+            {
+                if (buttons[i].button(pad).wasPressedThisFrame) return i;
+            }
+            return -1;
         }
 
         // A second button pressed while the first is held makes a combo; letting go of the first keeps it alone

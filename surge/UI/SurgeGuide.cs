@@ -52,7 +52,7 @@ namespace SpiderSurge
 
         private void Update()
         {
-            if (!ControlCapture.Busy && _guideKey.WasPressed(Controls.Get(Controls.SurgeGuide), Keyboard.current))
+            if (_guideKey.WasPressed(Controls.Get(Controls.SurgeGuide), Keyboard.current))
             {
                 if (SettingsPage.IsShowing(Page)) HudController.instance.Resume();
                 else Open();
@@ -112,8 +112,8 @@ namespace SpiderSurge
                 "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
                 "• <b>Choose wisely:</b> Ultimates have longer cooldowns but high impact!"));
             page.Line(Section("How to activate abilities",
-                $"<b>Ability:</b> {Key(Controls.AbilityKeyboard)} (keyboard) / {Key(Controls.AbilityController)} (controller)",
-                $"<b>Ultimate:</b> {Key(Controls.UltimateKeyboard)} (keyboard) / {Key(Controls.UltimateController)} (controller)"));
+                $"<b>Ability:</b> {Controls.Display(Controls.AbilityKeyboard)} (keyboard) / {Controls.Display(Controls.AbilityController)} (controller)",
+                $"<b>Ultimate:</b> {Controls.Display(Controls.UltimateKeyboard)} (keyboard) / {Controls.Display(Controls.UltimateController)} (controller)"));
             page.Line(Section("Customize controls",
                 "<b>Change the buttons for everyone:</b> Mods > SpiderSurge > Controls.",
                 "<b>Set your own ability button on a controller:</b> while holding Menu/Start, double-tap any button.",
@@ -142,11 +142,9 @@ namespace SpiderSurge
                 "• More Guns = guns, More Boom = explosives, throwables and mines, More Particles = particle and melee weapons."));
             if (Controls.Get(Controls.SurgeGuide) != Controls.None)
             {
-                page.Note($"Press {Key(Controls.SurgeGuide)} to open this guide at any time.");
+                page.Note($"Press {Controls.Display(Controls.SurgeGuide)} to open this guide at any time.");
             }
         }
-
-        private static string Key(Control control) => $"<noparse>{Controls.Label(control)}</noparse>";
 
         private static string Section(string title, params string[] lines)
         {

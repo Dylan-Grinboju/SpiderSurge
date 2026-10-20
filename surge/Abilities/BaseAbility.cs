@@ -49,8 +49,8 @@ namespace SpiderSurge
         private InputAction ultimateButtonAction;
         private InputAction ultimatePressAction;
         private readonly HashSet<InputControl> heldUltimateControls = new HashSet<InputControl>();
-        private string boundUltimate;
-        private static readonly Dictionary<string, int> boundUltimates = new Dictionary<string, int>();
+        private bool ultimateBound;
+        private static int boundUltimates;
         private bool comboFirstPressed = false;
         private bool comboSecondPressed = false;
         private float lastComboFirstPressTime = 0f;
@@ -195,23 +195,8 @@ namespace SpiderSurge
             }
         }
 
-        public static string BoundUltimateController
-        {
-            get
-            {
-                foreach (var pair in boundUltimates)
-                {
-                    if (pair.Value > 0) return pair.Key;
-                }
-                return null;
-            }
-        }
-
-        private static void CountUltimateInput(string binding, int change)
-        {
-            boundUltimates.TryGetValue(binding, out int count);
-            boundUltimates[binding] = count + change;
-        }
+        // Every change to the ultimate controls rebinds them at once, so a bound ultimate always uses the current binding
+        public static bool UltimateBound => boundUltimates > 0;
 
         // The gamepad actions are pass-through: a Button action bound to every pad ignores one pad's press while another pad holds the same button.
         private void SetupUltimateInputs()
@@ -229,8 +214,8 @@ namespace SpiderSurge
                 {
                     ultimatePressAction = CreatePassThrough("Press", OnUltimatePressChanged, Controls.PressPaths(controller).ToArray());
                 }
-                boundUltimate = controller;
-                CountUltimateInput(controller, 1);
+                ultimateBound = true;
+                boundUltimates++;
 
                 string keyboard = Controls.Get(Controls.UltimateKeyboard);
                 if (keyboard != Controls.None)
@@ -265,10 +250,10 @@ namespace SpiderSurge
 
         private void TearDownUltimateInputs()
         {
-            if (boundUltimate != null)
+            if (ultimateBound)
             {
-                CountUltimateInput(boundUltimate, -1);
-                boundUltimate = null;
+                boundUltimates--;
+                ultimateBound = false;
             }
             DisposeAction(ref comboFirstAction, OnComboFirstChanged);
             DisposeAction(ref comboSecondAction, OnComboSecondChanged);
@@ -301,7 +286,7 @@ namespace SpiderSurge
             {
                 RefreshInputBindings();
             }
-            if (HasUltimate && playerInput != null && boundUltimate != null)
+            if (HasUltimate && playerInput != null && ultimateBound)
             {
                 TearDownUltimateInputs();
                 SetupUltimateInputs();
@@ -322,7 +307,7 @@ namespace SpiderSurge
                 heldUltimateControls.Remove(context.control);
             }
 
-            if (!wasHeld && heldUltimateControls.Count > 0 && !PlayerControlSettings.IsMenuHeld(context.control.device))
+            if (!wasHeld && heldUltimateControls.Count > 0 && !Controls.Ignored(context.control.device))
             {
                 ActivateUltimate();
             }
@@ -358,7 +343,7 @@ namespace SpiderSurge
 
         private void CheckCombo(InputDevice device)
         {
-            if (comboFirstPressed && comboSecondPressed && !PlayerControlSettings.IsMenuHeld(device))
+            if (comboFirstPressed && comboSecondPressed && !Controls.Ignored(device))
             {
                 float timeDiff = Mathf.Abs(lastComboFirstPressTime - lastComboSecondPressTime);
                 if (timeDiff <= COMBO_WINDOW)
@@ -370,7 +355,7 @@ namespace SpiderSurge
 
         private void OnUltimateButtonPressed(InputAction.CallbackContext context)
         {
-            if (!IsDeviceAssigned(context.control.device)) return;
+            if (!IsDeviceAssigned(context.control.device) || Controls.Ignored(context.control.device)) return;
             ActivateUltimate();
         }
 

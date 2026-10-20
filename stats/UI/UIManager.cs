@@ -182,7 +182,6 @@ namespace StatsMod
         #region Input Handling
         private void Update()
         {
-            if (ControlCapture.Busy) return;
             HandleKeyboardInput();
             HandleGamepadInput();
         }

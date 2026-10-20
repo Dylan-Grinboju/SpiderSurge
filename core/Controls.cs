@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.Layouts;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge.Common
@@ -79,7 +80,6 @@ namespace SpiderSurge.Common
             TeamKeyboard, TeamController
         };
 
-        // The buttons a controller row can take; Start and Select are kept for the pause menu and the ability remap gesture
         public static readonly (string path, string label, Func<Gamepad, ButtonControl> button)[] ControllerButtons =
         {
             ("<Gamepad>/buttonSouth", "A", pad => pad.buttonSouth),
@@ -111,6 +111,8 @@ namespace SpiderSurge.Common
 
         private static readonly Dictionary<string, string[][]> _parsed = new Dictionary<string, string[][]>();
         private static readonly Dictionary<string, string> _labels = new Dictionary<string, string>();
+        private static readonly Dictionary<(string, string), string> _without = new Dictionary<(string, string), string>();
+        private static HashSet<string> _keyNames;
         private static readonly HashSet<string> _warned = new HashSet<string>();
 
         static Controls()
@@ -151,6 +153,8 @@ namespace SpiderSurge.Common
             return value;
         }
 
+        public static bool Accepts(Control control, string raw) => Normalize(control, raw) != null;
+
         private static string Normalize(Control control, string raw)
         {
             string text = (raw ?? "").Trim();
@@ -181,10 +185,36 @@ namespace SpiderSurge.Common
             return text;
         }
 
+        // A controller row takes the buttons of ControllerButtons and the D-pad, and a keyboard row any key but Escape; Start, Select and Escape stay with the game's pause menu and the ability remap gesture
         private static bool Fits(Control control, string path)
         {
-            string device = control.Device == ControlDevice.Keyboard ? KeyboardDevice : GamepadDevice;
-            return path.Length > device.Length && path.StartsWith(device, StringComparison.OrdinalIgnoreCase);
+            if (control.Device == ControlDevice.Controller)
+            {
+                return IsDpad(path) || ControllerButtons.Any(button => string.Equals(button.path, path, StringComparison.OrdinalIgnoreCase));
+            }
+            if (!path.StartsWith(KeyboardDevice, StringComparison.OrdinalIgnoreCase)) return false;
+            string key = path.Substring(KeyboardDevice.Length);
+            if (key.Equals("escape", StringComparison.OrdinalIgnoreCase)) return false;
+            HashSet<string> keys = KeyNames();
+            return keys.Count > 0 ? keys.Contains(key) : key.Length > 0 && key.All(char.IsLetterOrDigit);
+        }
+
+        private static HashSet<string> KeyNames()
+        {
+            if (_keyNames != null) return _keyNames;
+            _keyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (InputControlLayout.ControlItem item in InputSystem.LoadLayout("Keyboard").controls)
+                {
+                    if (item.layout == "Key") _keyNames.Add(item.name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Couldn't list the keyboard's keys: {ex.Message}");
+            }
+            return _keyNames;
         }
 
         public static bool IsDpad(string path) => string.Equals(path, Dpad, StringComparison.OrdinalIgnoreCase);
@@ -261,16 +291,29 @@ namespace SpiderSurge.Common
         // The binding without the alternatives that share a button with what fires other on its own
         public static string Without(string binding, string other)
         {
-            var taken = new HashSet<string>(PressPaths(other), StringComparer.OrdinalIgnoreCase);
-            if (taken.Count == 0)
+            if (_without.TryGetValue((binding, other), out string cached))
             {
-                return binding;
+                return cached;
             }
-            var kept = Parse(binding).Where(combo => combo.Length > 1 || !AllPaths(combo[0]).Any(taken.Contains)).Select(combo => string.Join(ComboSeparator.ToString(), combo)).ToArray();
-            return kept.Length == 0 ? None : string.Join(AlternativeSeparator.ToString(), kept);
+            string result = binding;
+            var taken = new HashSet<string>(PressPaths(other), StringComparer.OrdinalIgnoreCase);
+            if (taken.Count > 0)
+            {
+                var kept = Parse(binding).Where(combo => combo.Length > 1 || !AllPaths(combo[0]).Any(taken.Contains)).Select(combo => string.Join(ComboSeparator.ToString(), combo)).ToArray();
+                result = kept.Length == 0 ? None : string.Join(AlternativeSeparator.ToString(), kept);
+            }
+            _without[(binding, other)] = result;
+            return result;
         }
 
+        // While a control is being set, or a pad holds Start or Select for the ability remap, no mod button reacts
+        public static bool Ignored(InputDevice device) => ControlCapture.Busy || SpiderSurge.PlayerControlSettings.IsMenuHeld(device);
+
         public static string Label(Control control) => Label(Get(control));
+
+        public static string Display(Control control) => Display(Get(control));
+
+        public static string Display(string binding) => $"<noparse>{Label(binding)}</noparse>";
 
         public static string Label(string binding)
         {
@@ -341,7 +384,7 @@ namespace SpiderSurge.Common
         // True on the frame a button of the binding goes down while the rest of its combo is held
         public bool WasPressed(string binding, InputDevice device)
         {
-            if (device == null || string.IsNullOrEmpty(binding) || binding == Controls.None)
+            if (device == null || string.IsNullOrEmpty(binding) || binding == Controls.None || Controls.Ignored(device))
             {
                 return false;
             }

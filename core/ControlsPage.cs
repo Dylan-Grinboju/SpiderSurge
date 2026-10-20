@@ -9,7 +9,7 @@ namespace SpiderSurge.Common
         public static void Build(SettingsPage page)
         {
             page.Title("Controls");
-            page.Note("Select a control, then press the new key or button. On a controller, Start cancels and Select turns the control off; on the keyboard, Escape cancels and Backspace turns it off.");
+            page.Note("Select a control, then press the new key or button. Start or Escape cancels. Select turns a controller control off, and Backspace a keyboard one.");
 
             if (Parts.Surge.Running)
             {
@@ -39,7 +39,7 @@ namespace SpiderSurge.Common
                 {
                     page.Warning(effective == Controls.None
                         ? "Surge's ultimate uses the same buttons, so they cast the ultimate and don't switch the windows."
-                        : $"Surge's ultimate uses some of the same buttons, so only <noparse>{Controls.Label(effective)}</noparse> switches the windows.");
+                        : $"Surge's ultimate uses some of the same buttons, so only {Controls.Display(effective)} switches the windows.");
                 }
             }
 
@@ -61,7 +61,7 @@ namespace SpiderSurge.Common
             string device = control.Device == ControlDevice.Keyboard ? "keyboard" : "controller";
             string value = ControlCapture.Current == control
                 ? $"<color={SettingsPage.Orange}>{ControlCapture.Prompt}</color>"
-                : $"<noparse>{Controls.Label(control)}</noparse>";
+                : Controls.Display(control);
             return $"{control.Name} ({device}): {value}";
         }
 

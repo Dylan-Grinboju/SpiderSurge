@@ -114,7 +114,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
 
 ### Input:
-The team buttons are `controls.teams.controller` (default `<Gamepad>/buttonNorth`, Y / Triangle) and `controls.teams.keyboard` (default `<Keyboard>/t`), which **Mods** > **SpiderSurge** > **Controls** sets. In the lobby, a team button that is also the game's show-names button (Y or Tab) only switches team. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values move there on the first launch.
+The team buttons are `controls.teams.controller` (default `<Gamepad>/buttonNorth`, Y / Triangle) and `controls.teams.keyboard` (default `<Keyboard>/t`), which **Mods** > **SpiderSurge** > **Controls** sets. In the lobby, a team button that is also the game's show-names button (Y or Tab) only switches team. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values move there on the first launch; Select / Back can't be a team button any more, so it goes back to Y.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).

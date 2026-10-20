@@ -156,35 +156,12 @@ namespace StatsMod
         public static bool TitlesEnabled => Bool("titles.enabled");
         public static float TitlesRevealDelaySeconds => Mathf.Clamp(Settings.GetFloat(Prefix + "titles.revealDelaySeconds"), 0f, MaxRevealDelay);
 
-        private static string _switchConfigured;
-        private static string _switchUltimate;
-        private static string _switchBinding;
-
         // A button that casts Surge's ultimate on its own doesn't also switch the windows
-        public static string SwitchWindowsBinding
-        {
-            get
-            {
-                string configured = Controls.Get(Controls.SwitchWindows);
-                string ultimate = SurgeUltimateBinding;
-                if (configured != _switchConfigured || ultimate != _switchUltimate || _switchBinding == null)
-                {
-                    _switchConfigured = configured;
-                    _switchUltimate = ultimate;
-                    _switchBinding = ultimate == null ? configured : Controls.Without(configured, ultimate);
-                }
-                return _switchBinding;
-            }
-        }
+        public static string SwitchWindowsBinding => SurgeUltimateTaken
+            ? Controls.Without(Controls.Get(Controls.SwitchWindows), Controls.Get(Controls.UltimateController))
+            : Controls.Get(Controls.SwitchWindows);
 
-        private static string SurgeUltimateBinding
-        {
-            get
-            {
-                if (!Parts.Surge.Running) return null;
-                return SpiderSurge.BaseAbility.BoundUltimateController ?? (SpiderSurge.SurgeGameModeManager.AbilitiesDisabled ? null : Controls.Get(Controls.UltimateController));
-            }
-        }
+        private static bool SurgeUltimateTaken => Parts.Surge.Running && (SpiderSurge.BaseAbility.UltimateBound || !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled);
 
         // The small window is dragged with the mouse, so its position is saved once it stops moving, as a percentage of the screen so a new resolution keeps it in place
         public static void SetDisplayPosition(Vector2 position)

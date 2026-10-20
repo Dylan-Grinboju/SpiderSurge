@@ -47,17 +47,25 @@ namespace SpiderSurge.Common
 
         public static T Load<T>(string key, T fallback) => GameSaveWrapper.Instance.Load(key, fallback);
 
+        // Removes every key in one write of the save
         public static void Delete(IEnumerable<string> keys)
         {
             try
             {
                 ES3File container = Container;
-                foreach (string key in keys)
+                if (container != null)
                 {
-                    if (container != null) container.DeleteKey(key);
-                    else ES3.DeleteKey(key);
+                    foreach (string key in keys) container.DeleteKey(key);
+                    GameSaveWrapper.Instance.SaveData("GameSave", container.GetBytes());
                 }
-                if (container != null) GameSaveWrapper.Instance.SaveData("GameSave", container.GetBytes());
+                else if (ES3.FileExists())
+                {
+                    using (ES3Writer writer = ES3Writer.Create(new ES3Settings()))
+                    {
+                        foreach (string key in keys) writer.MarkKeyForDeletion(key);
+                        writer.Save();
+                    }
+                }
             }
             catch (Exception ex)
             {

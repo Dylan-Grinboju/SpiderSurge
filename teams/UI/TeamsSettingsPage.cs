@@ -131,7 +131,7 @@ namespace SpiderTeams
             page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
             page.Note(Consts.Surge.LongTermDescription);
 
-            page.Note($"Ability: <noparse>{Controls.Label(Controls.AbilityKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.AbilityController)}</noparse> (hold Start and double-tap a button to pick your own). Ultimate: <noparse>{Controls.Label(Controls.UltimateKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.UltimateController)}</noparse>. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
+            page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Start and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
             page.Note("Abilities need SpiderSurge on every player's machine; a match with a player who lacks it plays without them.");
         }
 
@@ -202,9 +202,9 @@ namespace SpiderTeams
             }
         }
 
-        private static string GamepadLabel() => "<noparse>" + Controls.Label(ModConfig.CycleTeamGamepad) + "</noparse>";
+        private static string GamepadLabel() => Controls.Display(Controls.TeamController);
 
-        private static string KeyboardLabel() => "<noparse>" + Controls.Label(ModConfig.CycleTeamKeyboard) + "</noparse>";
+        private static string KeyboardLabel() => Controls.Display(Controls.TeamKeyboard);
 
         private static string PickHint()
         {

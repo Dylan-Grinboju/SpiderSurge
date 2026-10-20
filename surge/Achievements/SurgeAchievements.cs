@@ -36,6 +36,7 @@ namespace SpiderSurge
     {
         private const string Section = "achievements";
         private const string LegacyKey = "SpiderSurge-Achievements";
+        private const string LegacySource = "gamesave.achievements";
         private const char FieldSeparator = '\t';
 
         public const string BlackHole = "blackHole";
@@ -67,107 +68,89 @@ namespace SpiderSurge
             new Achievement(NotOnMyWatch, "Not On My Watch", "Block a laser beam headed for a teammate while Null Field makes you immune."),
         };
 
-        private static readonly Dictionary<string, AchievementUnlock> _unlocked = new Dictionary<string, AchievementUnlock>();
-        private static bool _loaded;
+        private static readonly ProgressSection<AchievementUnlock> _unlocks = new ProgressSection<AchievementUnlock>(Section, TryParse, Format, Earlier, AnnounceAll);
         private static bool _legacyChecked;
 
         public static event Action<Achievement> Unlocked;
 
-        private static Dictionary<string, AchievementUnlock> Data
+        public static int UnlockedCount => All.Count(achievement => IsUnlocked(achievement.Id));
+
+        public static bool IsUnlocked(string id)
         {
-            get
+            ImportLegacy();
+            return _unlocks.Contains(id);
+        }
+
+        public static AchievementUnlock UnlockOf(string id)
+        {
+            ImportLegacy();
+            return _unlocks.TryGet(id, out AchievementUnlock unlock) ? unlock : null;
+        }
+
+        // Only the machine that runs the game logic decides; a remote client never unlocks anything. One unlocked while the file can't be read is announced once it can, if the file doesn't already have it
+        public static void Unlock(string id, PlayerController player)
+        {
+            if (!Net.IsAuthority || IsUnlocked(id) || Array.Find(All, candidate => candidate.Id == id) == null) return;
+            bool loaded = _unlocks.Loaded;
+            _unlocks.Add(id, new AchievementUnlock { Date = DateTime.Now, Player = player != null ? Players.NameOf(player) : "" });
+            if (loaded) Announce(id);
+        }
+
+        public static void ResetAll()
+        {
+            if (!_unlocks.Clear())
             {
-                EnsureLoaded();
-                return _unlocked;
+                Logger.LogWarning($"Couldn't reset the achievements: {ModData.FilePath} can't be read right now");
+                return;
+            }
+            Logger.LogInfo("Achievements reset");
+        }
+
+        // The older save is merged first, so an unlock it already had isn't announced again
+        private static void AnnounceAll(List<KeyValuePair<string, AchievementUnlock>> waited)
+        {
+            ImportLegacy();
+            foreach (var entry in waited)
+            {
+                if (_unlocks.TryGet(entry.Key, out AchievementUnlock unlock) && unlock == entry.Value) Announce(entry.Key);
             }
         }
 
-        public static int UnlockedCount => Array.FindAll(All, achievement => Data.ContainsKey(achievement.Id)).Length;
-
-        public static bool IsUnlocked(string id) => Data.ContainsKey(id);
-
-        public static AchievementUnlock UnlockOf(string id) => Data.TryGetValue(id, out AchievementUnlock unlock) ? unlock : null;
-
-        // Only the machine that runs the game logic decides; a remote client never unlocks anything
-        public static void Unlock(string id, PlayerController player)
+        private static void Announce(string id)
         {
-            if (!Net.IsAuthority || IsUnlocked(id)) return;
             Achievement achievement = Array.Find(All, candidate => candidate.Id == id);
-            if (achievement == null) return;
-
-            string name = player != null ? Players.NameOf(player) : "";
-            _unlocked[id] = new AchievementUnlock { Date = DateTime.Now, Player = name };
-            Save();
+            if (achievement == null || !_unlocks.TryGet(id, out AchievementUnlock unlock)) return;
+            string name = unlock.Player ?? "";
             Logger.LogInfo($"Achievement unlocked: {achievement.Name}{(name.Length > 0 ? " by " + name : "")}");
             ShowPopup(achievement, name);
             Unlocked?.Invoke(achievement);
             SettingsPage.RefreshOpen();
         }
 
-        public static void ResetAll()
-        {
-            if (!EnsureLoaded())
-            {
-                Logger.LogWarning($"Couldn't reset the achievements: {ModData.FilePath} can't be read right now");
-                return;
-            }
-            _unlocked.Clear();
-            Save();
-            Logger.LogInfo("Achievements reset");
-        }
-
-        // An achievement unlocked while the file can't be read is kept and saved once it can be
-        private static bool EnsureLoaded()
-        {
-            if (!_loaded)
-            {
-                if (!ModData.Readable) return false;
-                var pending = new Dictionary<string, AchievementUnlock>(_unlocked);
-                _unlocked.Clear();
-                foreach (string line in ModData.Lines(Section))
-                {
-                    if (TryParse(line, out string id, out AchievementUnlock unlock)) _unlocked[id] = unlock;
-                }
-                _loaded = true;
-                if (Merge(pending)) Save();
-            }
-            if (!_legacyChecked && GameSave.Ready)
-            {
-                _legacyChecked = true;
-                ImportLegacy();
-            }
-            return true;
-        }
-
-        // Older versions kept the achievements in the game's save; they move to the progress file once, and the old entry goes only after that is saved
+        // Older versions kept the achievements in the game's save; they move to the progress file once, and the old entry goes once that is saved
         private static void ImportLegacy()
         {
+            if (_legacyChecked || !GameSave.Ready || !_unlocks.Loaded) return;
+            _legacyChecked = true;
             if (!GameSave.Has(LegacyKey)) return;
-            string saved = GameSave.Load(LegacyKey, "") ?? "";
-            var old = new Dictionary<string, AchievementUnlock>();
-            foreach (string entry in saved.Split('\n'))
+            if (!ModData.Imported(LegacySource))
             {
-                string[] fields = entry.Split(FieldSeparator);
-                if (fields.Length < 2 || !IsId(fields[0])) continue;
-                DateTime.TryParse(fields[1], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime date);
-                old[fields[0]] = new AchievementUnlock { Date = date, Player = fields.Length > 2 ? fields[2] : "" };
+                string saved = GameSave.Load(LegacyKey, "") ?? "";
+                var old = new Dictionary<string, AchievementUnlock>();
+                foreach (string entry in saved.Split('\n'))
+                {
+                    string[] fields = entry.Split(FieldSeparator);
+                    if (fields.Length < 2 || !IsId(fields[0])) continue;
+                    DateTime.TryParse(fields[1], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime date);
+                    old[fields[0]] = new AchievementUnlock { Date = date, Player = fields.Length > 2 ? fields[2] : "" };
+                }
+                if (!_unlocks.Import(LegacySource, old)) return;
+                if (old.Count > 0) Logger.LogInfo($"Moved {old.Count} achievements from the game's save to {ModData.FilePath}");
             }
-            if (Merge(old) && !Save()) return;
             GameSave.Delete(new[] { LegacyKey });
-            if (old.Count > 0) Logger.LogInfo($"Moved {old.Count} achievements from the game's save to {ModData.FilePath}");
         }
 
-        private static bool Merge(Dictionary<string, AchievementUnlock> other)
-        {
-            bool changed = false;
-            foreach (KeyValuePair<string, AchievementUnlock> entry in other)
-            {
-                if (_unlocked.TryGetValue(entry.Key, out AchievementUnlock mine) && mine.Date <= entry.Value.Date) continue;
-                _unlocked[entry.Key] = entry.Value;
-                changed = true;
-            }
-            return changed;
-        }
+        private static AchievementUnlock Earlier(AchievementUnlock saved, AchievementUnlock other) => other.Date < saved.Date ? other : saved;
 
         private static bool TryParse(string line, out string id, out AchievementUnlock unlock)
         {
@@ -189,17 +172,9 @@ namespace SpiderSurge
 
         private static bool IsId(string id) => id.Length > 0 && id.All(char.IsLetterOrDigit);
 
-        private static bool Save()
+        private static string Format(string id, AchievementUnlock unlock)
         {
-            if (!_loaded) return false;
-            var lines = new List<string>();
-            foreach (KeyValuePair<string, AchievementUnlock> entry in _unlocked)
-            {
-                lines.Add(entry.Key + FieldSeparator
-                    + entry.Value.Date.ToString("o", CultureInfo.InvariantCulture) + FieldSeparator
-                    + Convert.ToBase64String(Encoding.UTF8.GetBytes(entry.Value.Player ?? "")));
-            }
-            return ModData.Write(Section, lines);
+            return id + FieldSeparator + unlock.Date.ToString("o", CultureInfo.InvariantCulture) + FieldSeparator + Convert.ToBase64String(Encoding.UTF8.GetBytes(unlock.Player ?? ""));
         }
 
         private static void ShowPopup(Achievement achievement, string player)
