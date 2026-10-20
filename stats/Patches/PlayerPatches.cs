@@ -44,6 +44,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.RemovePlayer))]
     public class LobbyRemovePlayerPatch
     {
+        [HarmonyBefore("com.SpiderSurge.teams")]
         static void Prefix(PlayerController player)
         {
             try
