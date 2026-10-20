@@ -49,6 +49,8 @@ namespace SpiderSurge
         private Button _buy;
         private Image _buyBackground;
         private TMP_Text _buyLabel;
+        private int _lives = -1;
+        private int _maxLives = -1;
 
         public static void Build(SurvivalModeHud hud)
         {
@@ -460,6 +462,16 @@ namespace SpiderSurge
         {
             SurgeMeter.Changed -= Refresh;
             PerkShop.OfferChanged -= Rebuild;
+        }
+
+        // What the shop can sell depends on the lives, which a client gets after the points, so the panel redraws when they change
+        private void Update()
+        {
+            SurvivalMode mode = SurvivalMode.instance;
+            if (mode == null || (mode.Lives == _lives && mode.MaxLives == _maxLives)) return;
+            _lives = mode.Lives;
+            _maxLives = mode.MaxLives;
+            Refresh();
         }
 
         // A client gets the cards and the host's offer in separate messages, so the panel is redrawn when the offer arrives later
