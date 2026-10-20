@@ -134,6 +134,7 @@ Older versions kept the achievements and Surge highscores in the game's save and
 
 ## Game fixes
 
+- Every controller can pause, even while another controller is sending input.
 - Reconnecting a controller keeps its original spider instead of adding a second player controlled by the same gamepad.
 - Whisps no longer shoot the moment they spawn.
 - Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
