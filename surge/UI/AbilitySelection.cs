@@ -14,11 +14,16 @@ namespace SpiderSurge
             pending = SurgeGameModeManager.IsSurgeRunActive && !SurgeGameModeManager.AbilitiesDisabled;
         }
 
-        public static void Reset()
+        public static void Reset(bool instant = true)
         {
             if (IsChoosing)
             {
-                SurvivalModeHud.instance?.ClosePerkChoiseView();
+                var hud = SurvivalModeHud.instance;
+                if (hud != null)
+                {
+                    if (instant) hud.ClosePerkChoiseView();
+                    else hud.perkChoiceView.Hide();
+                }
                 TimeScaleController.instance?.Reset();
                 GameController.instance?.EnableInputs();
             }
@@ -68,7 +73,7 @@ namespace SpiderSurge
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChosen(modifier));
             if (StatsMod.GameSessionManager.Instance?.IsActive == true)
                 StatsMod.GameSessionManager.Instance.RecordPerk(PerksManager.Instance.GetDisplayName(modifier.data.key));
-            Reset();
+            Reset(instant: false);
             PlayerAbilityHandler.AttachToExistingSpiders();
             PerksManager.Instance.RefreshAbilityRegistrations();
             SurgeNet.SendStateNow();
