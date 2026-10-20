@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Doozy.Engine.UI;
 using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
@@ -92,7 +93,7 @@ namespace SpiderSurge
         }
     }
 
-    // A perk card's scale built from its vanilla scale, the shop layout's factor and the lock highlight, so repeated layouts never compound
+    // A perk card's scale built from its vanilla scale, the shop layout's factor and the lock highlight, so repeated layouts never compound and Doozy's punches return to it
     public class PerkCardScale : MonoBehaviour
     {
         private Vector3 _base = Vector3.one;
@@ -125,6 +126,8 @@ namespace SpiderSurge
         private void Apply()
         {
             transform.localScale = _base * _factor * (_locked ? Consts.Values.Meter.LockedCardScale : 1f);
+            var button = GetComponent<UIButton>();
+            if (button != null) button.UpdateStartScale();
         }
     }
 }

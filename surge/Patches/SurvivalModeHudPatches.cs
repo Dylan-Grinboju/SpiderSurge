@@ -112,7 +112,7 @@ namespace SpiderSurge
         }
     }
 
-    // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then
+    // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then, while the view may still be animating in
     public static class PerkChoiceRefresh
     {
         // The HUD keeps these private and Mono enforces that at run time, so they are reached through Harmony's field access
@@ -122,7 +122,7 @@ namespace SpiderSurge
         public static void Refresh()
         {
             var hud = SurvivalModeHud.instance;
-            if (hud == null || hud.perkChoiceView == null || !hud.perkChoiceView.IsVisible)
+            if (hud == null || hud.perkChoiceView == null || !(hud.perkChoiceView.IsVisible || hud.perkChoiceView.IsShowing))
             {
                 return;
             }
@@ -130,6 +130,7 @@ namespace SpiderSurge
             {
                 if (card.modifier != null)
                 {
+                    if (card.modifierIconImage != null && card.modifier.data != null) card.modifierIconImage.sprite = card.modifier.data.icon;
                     SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, CardIndex(card), false);
                 }
             }
