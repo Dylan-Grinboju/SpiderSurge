@@ -180,7 +180,6 @@ namespace SpiderSurge
 
                 // Visuals
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
-                public const float RingWidth = 0.3f;
                 public const float RingSpeed = 500f;
             }
 
@@ -220,6 +219,16 @@ namespace SpiderSurge
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.7f, 0.95f, 1f, 0.9f);
                 public static readonly UnityEngine.Color RewindRingColor = new UnityEngine.Color(1f, 0.8f, 0.3f, 0.9f);
                 public static readonly UnityEngine.Color TintColor = new UnityEngine.Color(0.55f, 0.85f, 1f, 1f);
+            }
+
+            public static class Vfx
+            {
+                public static readonly UnityEngine.Color PulseHotColor = new UnityEngine.Color(1f, 0.5f, 0.1f, 0.9f);
+                public static readonly UnityEngine.Color FrostColor = new UnityEngine.Color(0.6f, 0.9f, 1f, 0.5f);
+                public static readonly UnityEngine.Color ClipColor = new UnityEngine.Color(1f, 0.75f, 0.2f, 1f);
+                public static readonly UnityEngine.Color NullFieldColor = new UnityEngine.Color(1f, 0.84f, 0f, 1f);
+                public const float NullFieldShellAlpha = 0.02f;
+                public static readonly UnityEngine.Color ReviveColor = new UnityEngine.Color(0.45f, 1f, 0.6f, 1f);
             }
 
             public static class Luck

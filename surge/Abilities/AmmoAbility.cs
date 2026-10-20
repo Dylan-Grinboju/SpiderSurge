@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Unity.Netcode;
 using SpiderSurge.Common;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 using UnityEngine.SceneManagement;
 
@@ -231,10 +232,32 @@ namespace SpiderSurge
                 float currentAmmoFloor = GetHeldWeaponFloorAmmo(trackedWeapon);
                 SetWeaponAmmo(trackedWeapon, currentAmmoFloor);
             }
+
+            if (spiderHealthSystem != null)
+            {
+                ClipVfx.Cast(spiderHealthSystem.transform.position);
+                aura = WeaponAura.Attach(spiderHealthSystem.transform);
+                ShowAuraOn(trackedWeapon);
+            }
+        }
+
+        private WeaponAura aura;
+
+        private void ShowAuraOn(Weapon weapon)
+        {
+            if (aura != null) aura.Retarget(weapon != null ? weapon.transform : null);
+        }
+
+        private void StopAura()
+        {
+            if (aura == null) return;
+            aura.Stop();
+            aura = null;
         }
 
         protected override void OnDeactivate()
         {
+            StopAura();
             Weapon equippedWeapon = weaponManager?.equippedWeapon;
 
             if (equippedWeapon != null)
@@ -267,6 +290,7 @@ namespace SpiderSurge
                 return;
 
             ability.EnsureTrackedWeapon(weapon);
+            ability.ShowAuraOn(weapon);
         }
 
         public static void HandleWeaponRemoved(SpiderWeaponManager manager, Weapon weapon)
@@ -286,6 +310,7 @@ namespace SpiderSurge
                 return;
             }
 
+            ability.ShowAuraOn(null);
             ability.ResolveWeaponAmmoOnAbilityRemoval(weapon, true);
         }
 
@@ -424,6 +449,7 @@ namespace SpiderSurge
                             netObj.Spawn(true);
                             netObj.DestroyWithScene = true;
                         }
+                        ClipVfx.Drop(spawner);
 
                         spawnedCount++;
                     }
@@ -460,6 +486,7 @@ namespace SpiderSurge
 
         protected override void OnDestroy()
         {
+            StopAura();
             base.OnDestroy();
 
             if (playerAmmoAbilities.TryGetValue(PlayerId, out var registered) && registered == this)

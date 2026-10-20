@@ -93,6 +93,14 @@
   <!-- Assembly References -->
   <ItemGroup>
     <Reference Include="System.Net.Http" />
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>./lib/Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>./lib/Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>./lib/UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>false</Private>

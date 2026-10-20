@@ -29,6 +29,7 @@ namespace StatsMod
         public int EMPTY_FONT_SIZE = 22;
 
         public float PLAYER_SQUARE_SIZE = 18f;
+        public float PORTRAIT_SIZE = 64f;
         public float BORDER_SIZE = 4f;
         public float SQUARE_TO_NAME_SPACING = 10f;
         public float TITLE_TO_DESCRIPTION_SPACING = 10f;
@@ -55,6 +56,19 @@ namespace StatsMod
         private bool hasAnimationPlayed = false;
         private float[] revealedAt;
         #endregion
+
+        private void DrawPortrait(Rect window, TitleEntry title, float scale)
+        {
+            Texture portrait = title.Portrait;
+            if (portrait != null)
+            {
+                GUI.DrawTexture(window, portrait, ScaleMode.ScaleToFit, true);
+                return;
+            }
+            Hud.Fill(window, Hud.Ink);
+            float squareSize = PLAYER_SQUARE_SIZE * scale;
+            Hud.Fill(new Rect(window.x + (window.width - squareSize) * 0.5f, window.y + (window.height - squareSize) * 0.5f, squareSize, squareSize), title.PrimaryColor);
+        }
 
         #region Layout Cache
         private sealed class CardLayout
@@ -386,7 +400,7 @@ namespace StatsMod
         {
             float height = CARD_HEIGHT * scale;
             float innerWidth = (CARD_WIDTH - CARD_PADDING * 2f) * scale;
-            float chipSize = (PLAYER_SQUARE_SIZE + BORDER_SIZE * 2f) * scale;
+            float chipSize = (PORTRAIT_SIZE + BORDER_SIZE * 2f) * scale;
             float maxNameWidth = innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale;
             while (cardLayouts.Count < count)
             {
@@ -451,9 +465,9 @@ namespace StatsMod
 
             Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.DescriptionHeight), title.Description ?? "", cardDescriptionStyle, Hud.Muted);
 
-            float squareSize = PLAYER_SQUARE_SIZE * scale;
+            float portraitSize = PORTRAIT_SIZE * scale;
             float borderSize = BORDER_SIZE * scale;
-            float chipSize = squareSize + borderSize * 2;
+            float chipSize = portraitSize + borderSize * 2;
             string playerName = title.PlayerName ?? "";
             float nameWidth = layout.NameWidth;
             float groupWidth = chipSize + SQUARE_TO_NAME_SPACING * scale + nameWidth;
@@ -464,7 +478,7 @@ namespace StatsMod
             Hud.Fill(new Rect(card.x + padding, footerY - padding * 0.6f, innerWidth, Mathf.Max(1f, scale)), Hud.Line);
             Rect chip = new Rect(groupX, footerY + (footerHeight - chipSize) * 0.5f, chipSize, chipSize);
             Hud.Fill(chip, title.SecondaryColor);
-            Hud.Fill(new Rect(chip.x + borderSize, chip.y + borderSize, squareSize, squareSize), title.PrimaryColor);
+            DrawPortrait(new Rect(chip.x + borderSize, chip.y + borderSize, portraitSize, portraitSize), title, scale);
             Hud.Label(new Rect(chip.xMax + SQUARE_TO_NAME_SPACING * scale, footerY, nameWidth, footerHeight), playerName, cardPlayerNameStyle, playerColor);
         }
         #endregion

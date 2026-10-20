@@ -3,6 +3,7 @@ using System.Linq;
 using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -147,16 +148,12 @@ namespace SpiderSurge
 
         private static void SpawnRing(Vector2 origin, float range)
         {
-            GameObject ring = new GameObject("FreezeRing");
-            ring.transform.position = origin;
-            ring.AddComponent<PulseRingEffect>().Setup(range, Consts.Values.Freeze.RingColor);
+            FreezeVfx.Cast(origin, range);
         }
 
         private static void SpawnRewindRing(Transform body, float range)
         {
-            GameObject ring = new GameObject("RewindRing");
-            ring.transform.position = body.position;
-            ring.AddComponent<PulseRingEffect>().SetupInward(range, Consts.Values.Freeze.RewindRingColor, Consts.Values.Freeze.RewindRingTime, body);
+            FreezeVfx.Rewind(body, range);
         }
 
         private static List<EnemyHealthSystem> EnemiesInRange(Vector2 origin, float range)
@@ -207,6 +204,7 @@ namespace SpiderSurge
             GameObject prefab = shielded && shieldedWasp != null ? shieldedWasp : wasp;
             Vector3 position = enemy.rb2D != null ? (Vector3)enemy.rb2D.position : enemy.transform.position;
             float frozenFor = FrozenEnemy.TimeLeftOn(enemy);
+            FreezeVfx.RewindPop(position);
 
             GameObject spawned = Instantiate(prefab, position, Quaternion.identity);
             spawned.SetActive(true);

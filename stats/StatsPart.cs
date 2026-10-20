@@ -30,6 +30,7 @@ namespace StatsMod
         protected internal override void OnStop()
         {
             StatsNet.Shutdown();
+            TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)
             {

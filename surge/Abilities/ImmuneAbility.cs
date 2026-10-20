@@ -6,6 +6,7 @@ using System.Linq;
 using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -128,7 +129,31 @@ namespace SpiderSurge
             {
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
+                if (bubble != null) bubble.Hit();
             }
+        }
+
+        private NullFieldBubble bubble;
+        private ChannelEffect channel;
+
+        private void ShowBubble(bool enable)
+        {
+            if (enable)
+            {
+                if (bubble == null && spiderHealthSystem != null) bubble = NullFieldBubble.Attach(spiderHealthSystem.transform);
+            }
+            else if (bubble != null)
+            {
+                bubble.End();
+                bubble = null;
+            }
+        }
+
+        private void EndChannel(bool completed)
+        {
+            if (channel == null) return;
+            channel.Finish(completed);
+            channel = null;
         }
 
         protected override void OnActivate()
@@ -186,6 +211,7 @@ namespace SpiderSurge
         {
             isUltimateCastPending = true;
             hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
+            if (spiderHealthSystem != null) channel = ChannelEffect.Attach(spiderHealthSystem.transform);
 
             if (SoundManager.Instance != null && !IsRemote)
             {
@@ -200,10 +226,12 @@ namespace SpiderSurge
         {
             if (!isUltimateCastPending)
             {
+                EndChannel(false);
                 return;
             }
 
             isUltimateCastPending = false;
+            EndChannel(true);
             ExecuteUltimateEffect();
             hadBarrierOnUltimateCastStart = false;
         }
@@ -221,6 +249,7 @@ namespace SpiderSurge
         private void ApplyRadiance(bool enable)
         {
             if (spiderHealthSystem == null) return;
+            ShowBubble(enable);
 
             if (enable)
             {
@@ -332,12 +361,6 @@ namespace SpiderSurge
             if (spiderHealthSystem == null) return;
             IsImmune = enable;
 
-            ApplyRadiance(enable);
-            if (Net.IsHost)
-            {
-                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
-            }
-
             if (enable)
             {
                 try
@@ -366,6 +389,12 @@ namespace SpiderSurge
                 {
                     Logger.LogError($"Failed to reset immune time: {ex.Message}");
                 }
+            }
+
+            SurgeVfx.Safely(() => ApplyRadiance(enable));
+            if (Net.IsHost)
+            {
+                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
             }
         }
 
@@ -422,10 +451,12 @@ namespace SpiderSurge
             if (IsGhost(revivedPlayer))
             {
                 revivedPlayer.spiderHealthSystem.DisableDeathEffect();
+                NullFieldVfx.Revive(revivedPlayer.spiderHealthSystem.transform.position);
                 return true;
             }
             var spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
             revivedPlayer.SpawnCharacter(spawnPoint.position, spawnPoint.rotation);
+            NullFieldVfx.Revive(spawnPoint.position);
             return true;
         }
 
@@ -524,6 +555,7 @@ namespace SpiderSurge
 
             var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
             spawnedObj.SetActive(true);
+            NullFieldVfx.Summon(spawn.position);
 
             var netObj = spawnedObj.GetComponent<NetworkObject>();
             if (netObj != null)
@@ -586,6 +618,8 @@ namespace SpiderSurge
 
             isUltimateCastPending = false;
             hadBarrierOnUltimateCastStart = false;
+            EndChannel(false);
+            ShowBubble(false);
         }
 
         private void DestroyBarrier()

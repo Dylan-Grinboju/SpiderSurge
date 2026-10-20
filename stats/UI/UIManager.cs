@@ -175,6 +175,7 @@ namespace StatsMod
             titlesUIObj.transform.SetParent(transform);
             titlesUI = titlesUIObj.AddComponent<TitlesUI>();
             titlesUI.Initialize();
+            titlesUIObj.AddComponent<SpiderPortraits>();
 
         }
         #endregion

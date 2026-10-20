@@ -6,6 +6,7 @@ using Unity.Netcode;
 using Interfaces;
 using HarmonyLib;
 using SpiderSurge.Common;
+using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -213,7 +214,7 @@ namespace SpiderSurge
         private static void DrawPulse(Vector3 position, float radius, bool deadly, GameObject explosionPrefab, PlayerController owner)
         {
             ApplyCameraEffects(deadly, radius);
-            SpawnRingVisual(position, radius);
+            PulseVfx.Draw(position, radius, deadly);
             if (deadly)
             {
                 SpawnExplosionVFX(position, GetDeathRadius(true), explosionPrefab, owner);
@@ -511,22 +512,6 @@ namespace SpiderSurge
                 {
                     Destroy(tempObj);
                 }
-            }
-        }
-
-        private static void SpawnRingVisual(Vector3 position, float radius)
-        {
-            try
-            {
-                GameObject ringObj = new GameObject("PulseRing");
-                ringObj.transform.position = position;
-                var ringEffect = ringObj.AddComponent<PulseRingEffect>();
-                // Match the visual expansion to the actual physics radius
-                ringEffect.Setup(radius);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogWarning($"PulseAbility: Failed to spawn ring visual: {ex.Message}");
             }
         }
 
