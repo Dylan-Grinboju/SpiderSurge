@@ -152,7 +152,7 @@ namespace SpiderSurge
                 Enemy(page, "Power Twin Blade Whisp", CustomEnemies.TwinBladePowerMeleeWhispPrefab, "The stronger twin-blade variant. Keep clear of the weapon's reach.");
                 Enemy(page, "Wasp Cocoon", CustomEnemies.WaspCocoonPrefab, "A stationary enemy that keeps hatching Wasps until destroyed, with a limit on its living offspring. Its Wasps must also die before the wave ends. Freeze Time pauses hatching.");
                 Enemy(page, "Shielded Wasp Cocoon", CustomEnemies.ShieldedWaspCocoonPrefab, "Hatches Shielded Wasps while its own shield holds. Break the cocoon's shield to stop future offspring receiving that protection.");
-                Enemy(page, "Laser enemies", CustomEnemies.LaserPrefabs.Values.FirstOrDefault(), "Red-shielded variants periodically show a faint warning ring and play a charge sound, followed by a lethal laser ring. Stay clear of the ring. Breaking the red shield removes the laser attack permanently. Exploding Rollers do not get this variant.");
+                Enemy(page, "Laser enemies", CustomEnemies.LaserPrefabs.TryGetValue("LaserWhisp", out var laserWhisp) ? laserWhisp : CustomEnemies.LaserPrefabs.Values.FirstOrDefault(),"Red-shielded variants periodically show a faint warning ring and play a charge sound, followed by a lethal laser ring. Stay clear of the ring. Breaking the red shield removes the laser attack permanently. Exploding Rollers do not get this variant.");
                 return;
             }
             if (section == Page + ".controls")

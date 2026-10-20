@@ -132,7 +132,7 @@ namespace SpiderSurge.Enemies
                 var baseHealth = baseEnemy.GetComponent<EnemyHealthSystem>();
                 if (baseHealth == null || (baseHealth.shield != null && baseHealth.shield.activeSelf)) continue;
 
-                var laserEnemy = CreateShieldedEnemy(baseEnemy, shieldSourceEnemy, laserName, Consts.Values.LaserRing.Color);
+                var laserEnemy = CreateShieldedEnemy(baseEnemy, shieldSourceEnemy, laserName, Consts.Values.LaserRing.Color, tintBody: false);
                 var laserHealth = laserEnemy?.GetComponent<EnemyHealthSystem>();
                 if (laserHealth == null || laserHealth.shield == null || laserHealth.shieldShatterEffect == null)
                 {
@@ -142,9 +142,35 @@ namespace SpiderSurge.Enemies
                     continue;
                 }
 
+                AddShieldBubble(laserHealth, shieldSourceEnemy, baseEnemy.name, Consts.Values.LaserRing.Color);
                 laserHealth.shield.AddComponent<LaserRing>().Initialize(laserHealth, laserCannon, deathRay);
                 LaserPrefabs[laserName] = laserEnemy;
             }
+        }
+
+        // The game's shield bubble in the shield's color, fitted to the enemy's body; it lives on the shield object, so it goes when the shield breaks
+        private static void AddShieldBubble(EnemyHealthSystem health, GameObject shieldSourceEnemy, string baseName, Color color)
+        {
+            var source = shieldSourceEnemy.GetComponent<EnemyHealthSystem>().shield.GetComponentInChildren<SpriteRenderer>(true);
+            if (source == null)
+            {
+                Logger.LogWarning($"[SpiderSurge] {health.name} has no shield bubble to copy.");
+                return;
+            }
+            var fit = Consts.Values.LaserRing.Bubbles.TryGetValue(baseName, out var size) ? size : (offsetY: 0f, scale: 1f);
+
+            var bubble = new GameObject("ShieldBubble");
+            bubble.transform.SetParent(health.shield.transform, false);
+            bubble.transform.localPosition = new Vector3(0f, fit.offsetY, 0f);
+            bubble.transform.localScale = new Vector3(fit.scale, fit.scale, 1f);
+
+            var renderer = bubble.AddComponent<SpriteRenderer>();
+            renderer.sprite = source.sprite;
+            renderer.sharedMaterial = source.sharedMaterial;
+            renderer.sortingLayerID = source.sortingLayerID;
+            renderer.sortingOrder = source.sortingOrder;
+            color.a = source.color.a;
+            renderer.color = color;
         }
 
         private static readonly HashSet<string> FailedLaserVariants = new HashSet<string>();
@@ -348,7 +374,7 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name, Color? shieldTint = null)
+        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name, Color? shieldTint = null, bool tintBody = true)
         {
             if (baseEnemy == null || shieldSourceEnemy == null) return null;
 
@@ -363,10 +389,13 @@ namespace SpiderSurge.Enemies
                 newShield.SetActive(false);
                 newShield.transform.SetParent(newEnemyObj.transform, false);
 
-                var shieldRenderer = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
-                Color shieldColor = shieldTint ?? (shieldRenderer != null ? shieldRenderer.color : Color.magenta);
-                newShield.AddComponent<ShieldedEnemyVisuals>().Initialize(
-                    newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true), shieldColor);
+                if (tintBody)
+                {
+                    var shieldRenderer = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
+                    Color shieldColor = shieldTint ?? (shieldRenderer != null ? shieldRenderer.color : Color.magenta);
+                    newShield.AddComponent<ShieldedEnemyVisuals>().Initialize(
+                        newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true), shieldColor);
+                }
 
                 healthSystem.shield = newShield;
                 newShield.SetActive(true);

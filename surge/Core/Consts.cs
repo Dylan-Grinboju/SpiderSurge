@@ -283,6 +283,27 @@ namespace SpiderSurge
                     { "Hornet Variant", "LaserHornet" },
                     { "MissileWhisp", "LaserMissileWhisp" },
                 };
+
+                // Base enemy name -> the red shield bubble's height and scale on the enemy's root; Wasp, Hornet and Whisp values are the game's own shielded versions'
+                public static readonly Dictionary<string, (float offsetY, float scale)> Bubbles = new Dictionary<string, (float, float)>
+                {
+                    { "Wasp", (0.1194f, 0.3673f) },
+                    { "PowerWasp Variant", (0.1194f, 0.3673f) },
+                    { "Hornet Variant", (0.8377f, 0.4979f) },
+                    { "Hornet_Shaman Variant", (0.8377f, 0.4979f) },
+                    { "Whisp", (0f, 1.7f) },
+                    { "PowerWhisp Variant", (0f, 1.7f) },
+                    { "MeleeWhisp", (0f, 1.7f) },
+                    { "PowerMeleeWhisp Variant", (0f, 1.7f) },
+                    { "TwinWhisp", (0f, 1.7f) },
+                    { "TwinBladeMeleeWhisp", (0f, 1.7f) },
+                    { "TwinBladePowerMeleeWhisp", (0f, 1.7f) },
+                    { "MissileWhisp", (0f, 1.7f) },
+                    { "Roller", (0f, 1.6f) },
+                    { "PowerRoller Variant", (0f, 1.6f) },
+                    { "Khepri", (4f, 1.6f) },
+                    { "PowerKhepri Variant", (4f, 1.6f) },
+                };
             }
 
             public static class Colors
