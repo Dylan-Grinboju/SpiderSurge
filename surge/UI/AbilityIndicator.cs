@@ -19,6 +19,7 @@ namespace SpiderSurge
         private SpriteRenderer weapon;
         private Material material;
         private float drawnProgress = -1f;
+        private readonly AbilityHud hud = new AbilityHud();
         private readonly Vector3[] points = new Vector3[Segments + 1];
 
         public void Initialize(BaseAbility tracked, Transform follow)
@@ -94,8 +95,8 @@ namespace SpiderSurge
             bool alive = ability.IsPlayerAlive() && ability.IsUnlocked();
             bool active = ability.IsActive();
             bool ready = !active && !ability.IsOnCooldown();
-            bool shown = alive && (!showOnlyWhenReady || ready);
-            float progress = active ? 1f : ability.CooldownProgress;
+            bool shown = !ModConfig.IndicatorCompactHud && alive && (!showOnlyWhenReady || ready);
+            float progress = active ? ability.ActiveProgress : ability.CooldownProgress;
             track.enabled = shown;
             fill.enabled = shown && progress > 0f;
             Color color = active ? activeColor : ready ? availableColor : cooldownColor;
@@ -107,7 +108,7 @@ namespace SpiderSurge
                 drawnProgress = progress;
             }
             Sprite sprite = ability is StorageAbility storage ? storage.StoredWeaponSprite : null;
-            weapon.enabled = alive && sprite != null;
+            weapon.enabled = !ModConfig.IndicatorCompactHud && alive && sprite != null;
             if (sprite != null)
             {
                 weapon.sprite = sprite;
@@ -115,6 +116,12 @@ namespace SpiderSurge
                 weapon.transform.localScale = Vector3.one * (indicatorRadius * 2.2f / Mathf.Max(0.01f, size));
                 weapon.transform.localPosition = new Vector3(indicatorRadius * 2.6f, 0f, 0f);
             }
+        }
+
+        private void OnGUI()
+        {
+            if (ModConfig.IndicatorCompactHud && ability != null)
+                hud.Draw(ability, availableColor, activeColor, cooldownColor);
         }
 
         public void SetRadius(float value) { indicatorRadius = Mathf.Clamp(value, 0.5f, 10f); Resize(); }

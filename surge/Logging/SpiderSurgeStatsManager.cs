@@ -372,7 +372,7 @@ namespace SpiderSurge.Logging
 
         internal static bool PerkChoiceTimerRanOut()
         {
-            if (ModConfig.UnlimitedPerkChoosingTime || SurvivalModeHud.instance == null) return false;
+            if (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime || SurvivalModeHud.instance == null) return false;
 
             try
             {

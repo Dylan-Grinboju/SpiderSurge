@@ -19,7 +19,7 @@ In a Surge run:
 - Waves have 75% more enemies, and they move 10% faster.
 - Every enemy type shows up much earlier, and the early ones stop coming sooner. On pain level 2 and higher, every enemy can show up from wave 1.
 - Six new enemies join the waves.
-- The first perk choice is an ability. From wave 30 you can take its ultimate, and from wave 60 you can switch to another ability's ultimate.
+- Choose the group's shared ability before wave 1, from all five abilities. The arena waits for your choice; the first earned perk choice offers normal upgrades. From wave 30 you can take its ultimate, and from wave 60 you can switch to another ability's ultimate.
 - Ability and ultimate cooldowns reset at the start of every wave. Null Field's cooldown drops by 12 seconds instead.
 - The perk choice has no time limit.
 - High scores are kept apart from your normal survival scores, and Surge runs aren't sent to the online leaderboards.

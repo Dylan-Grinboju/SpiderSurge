@@ -131,7 +131,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive && ModConfig.UnlimitedPerkChoosingTime)
+            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime))
             {
                 __result = EmptyEnumerator();
                 return false;
@@ -154,7 +154,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(PerkChoiseTimer __instance)
         {
-            if (!SurgeGameModeManager.IsSurgeRunActive || !ModConfig.UnlimitedPerkChoosingTime) return;
+            if (!SurgeGameModeManager.IsSurgeRunActive || (!AbilitySelection.IsChoosing && !ModConfig.UnlimitedPerkChoosingTime)) return;
 
             var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
             if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;

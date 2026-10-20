@@ -79,6 +79,12 @@ The ability, ultimate and Surge guide keys are in the `controls` section, which 
 
 `surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
 
+With abilities enabled, a dedicated choice screen offers all five shared abilities before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
+
+`surge.indicator.compactHud`: Replaces the world rings with a compact panel at the bottom right, with a named row for each player. Active effects have a draining bar and remaining seconds; cooldowns have a filling bar and remaining seconds. Both use game time. Pocket Dimension also shows its stored weapon. Change this immediately under Surge > Ability indicator > Use compact ability HUD. The existing colors and Only show when ready setting apply to both displays; size and position settings apply to the world rings. Default: `false`.
+
+The world ring drains in the active color over a timed ability or ultimate's duration, then fills clockwise in the cooldown color until ready. Active effects without a duration keep a full ring. Both timers stop while game time is paused.
+
 ### Sound:
 `surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
 

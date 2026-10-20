@@ -44,6 +44,7 @@ namespace SpiderSurge
 
         public void SetActive(bool active)
         {
+            if (!active) AbilitySelection.Reset();
             IsActive = IsModeEnabled && active;
             if (active)
             {

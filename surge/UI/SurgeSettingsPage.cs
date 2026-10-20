@@ -43,13 +43,18 @@ namespace SpiderSurge
         private static void BuildIndicator(SettingsPage page)
         {
             page.Title("Ability indicator");
+            page.Toggle("Use compact ability HUD", ModConfig.IndicatorCompactHudKey);
+            page.Note("Replaces the ring beside each spider with a fixed panel at the bottom right. Active effects count down; cooldown bars fill until ready. Changes apply immediately.");
+            page.Header("Ring position and size");
             page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f);
             page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
             page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
+            page.Header("Colors and visibility");
             page.Cycle("Ready color", ModConfig.IndicatorAvailableColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorAvailableColorKey));
             page.Cycle("Cooldown color", ModConfig.IndicatorCooldownColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorCooldownColorKey));
             page.Cycle("Active color", ModConfig.IndicatorActiveColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorActiveColorKey));
             page.Toggle("Only show when ready", ModConfig.IndicatorShowOnlyWhenReadyKey);
+            page.Note("Applies to both displays. Turn this off to see active time and cooldown progress.");
         }
 
         // A value that isn't a color matches the default the indicator falls back to

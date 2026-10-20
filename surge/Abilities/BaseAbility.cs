@@ -33,6 +33,11 @@ namespace SpiderSurge
         protected float cooldownEndTime = 0f;
         private float cooldownDuration;
         public float CooldownProgress => !onCooldown ? 1f : cooldownDuration <= 0f ? 0f : Mathf.Clamp01(1f - (cooldownEndTime - Time.time) / cooldownDuration);
+        private float activeEndTime;
+        private float activeDuration;
+        public float CooldownRemaining => onCooldown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
+        public float ActiveRemaining => isActive ? Mathf.Max(0f, activeEndTime - Time.time) : 0f;
+        public float ActiveProgress => activeDuration > 0f ? Mathf.Clamp01(ActiveRemaining / activeDuration) : 1f;
 
         // Rate limit for ability not ready sound (once per second, per player)
         private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
@@ -413,6 +418,8 @@ namespace SpiderSurge
             }
 
             isActive = true;
+            activeDuration = AbilityDuration;
+            activeEndTime = Time.time + activeDuration;
             OnActivate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
@@ -477,6 +484,8 @@ namespace SpiderSurge
 
             isActive = true;
             isUltimateActive = true;
+            activeDuration = UltimateDuration;
+            activeEndTime = Time.time + activeDuration;
             OnActivateUltimate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
@@ -612,6 +621,7 @@ namespace SpiderSurge
 
         public void RegisterWithInputInterceptor()
         {
+            CreateAbilityIndicator();
             if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
             {
                 _cachedActivationButtons = ActivationButtons;
