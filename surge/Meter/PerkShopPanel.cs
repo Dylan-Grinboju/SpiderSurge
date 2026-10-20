@@ -17,9 +17,7 @@ namespace SpiderSurge
         public Vector2 OriginalSize;
     }
 
-    // The shop column beside the perk cards: a points header, one row per item and a Buy button, built from the game's own card
-    // prefab so it looks like the cards and takes the same controller input. A row click only selects the item; Buy spends the
-    // points. Rebuilt every time the cards are, refreshed on meter changes.
+    // The shop column beside the perk cards, built from the game's card prefab: a row click selects an item and Buy spends the points
     public class PerkShopPanel : MonoBehaviour
     {
         private const string PanelName = "SurgeShop";
@@ -48,7 +46,7 @@ namespace SpiderSurge
             if (hud == null || hud.perkChoiceView == null || hud.perkCardsRoot == null) return;
 
             Remove(hud);
-            if (!SurgeMeter.Enabled || AbilitySelection.IsChoosing || hud.perkCardPrefab == null)
+            if (!SurgeMeter.Enabled || AbilitySelection.StartingChoiceOpen || hud.perkCardPrefab == null)
             {
                 RestoreCards(hud);
                 PerkConfirmButton.Current?.Reposition();
@@ -114,25 +112,28 @@ namespace SpiderSurge
             float width = (parent != null ? parent.rect.width : 800f) + root.sizeDelta.x;
             var group = root.GetComponent<HorizontalLayoutGroup>();
             float spacing = group != null ? group.spacing : 5f;
-            int count = root.childCount;
-            if (count == 0) return;
+            var cards = PerkChoiceWidget.Cards(hud);
+            if (cards.Count == 0) return;
             float cardsWidth = 0f;
-            foreach (Transform card in root)
+            foreach (var card in cards)
             {
-                var cardRect = card as RectTransform;
-                if (cardRect != null) cardsWidth += cardRect.sizeDelta.x * cardRect.localScale.x;
+                cardsWidth += ((RectTransform)card.transform).sizeDelta.x * PerkCardScale.Of(card).Base.x;
             }
-            cardsWidth += spacing * (count - 1);
-            float factor = cardsWidth > 0f ? Mathf.Min(1f, (width - spacing * (count - 1)) / (cardsWidth - spacing * (count - 1))) : 1f;
+            float room = width - spacing * (cards.Count - 1);
+            float factor = cardsWidth > 0f ? Mathf.Min(1f, room / cardsWidth) : 1f;
             factor = Mathf.Min(factor, Consts.Values.Meter.CardScale);
-            foreach (Transform card in root)
+            foreach (var card in cards)
             {
-                card.localScale *= factor;
+                PerkCardScale.Of(card).SetFactor(factor);
             }
         }
 
         private static void RestoreCards(SurvivalModeHud hud)
         {
+            foreach (var card in PerkChoiceWidget.Cards(hud))
+            {
+                PerkCardScale.Of(card).SetFactor(1f);
+            }
             var root = hud.perkCardsRoot as RectTransform;
             var layout = root != null ? root.GetComponent<ShopCardLayout>() : null;
             if (layout == null) return;
@@ -313,12 +314,11 @@ namespace SpiderSurge
             PerkShop.Request(_selected.Item, LocalBuyer());
         }
 
-        // Right from the last card enters the shop, up and down move inside it to the Buy button, left goes back to the last
-        // card; Buy also leads left to the perk confirm button when there is one, and that button leads right into the shop
+        // Right from the last card enters the shop, up and down reach Buy, left goes back; Buy and the confirm button lead to each other
         private void LinkNavigation()
         {
             var cards = new List<Button>();
-            foreach (Transform card in _hud.perkCardsRoot)
+            foreach (var card in PerkChoiceWidget.Cards(_hud))
             {
                 var button = card.GetComponent<Button>();
                 if (button != null) cards.Add(button);
@@ -394,36 +394,38 @@ namespace SpiderSurge
             {
                 _header.text = $"Points: <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
+            bool selectedCan = false;
             foreach (Entry entry in _entries)
             {
                 int cost = PerkShop.CostOf(entry.Item);
                 string unavailable = PerkShop.Unavailable(entry.Item);
                 bool can = points >= cost && unavailable == null;
+                if (entry == _selected) selectedCan = can;
                 float alpha = can ? 1f : 0.45f;
                 if (entry.Title != null)
                 {
                     entry.Title.text = $"<color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(entry.Item)}</color>  {PerkShop.NameOf(entry.Item)}";
-                    entry.Title.color = WithAlpha(entry.Title.color, alpha);
+                    entry.Title.color = PerkChoiceWidget.Faded(entry.Title.color, alpha);
                 }
                 if (entry.Description != null)
                 {
                     entry.Description.text = unavailable ?? PerkShop.DescriptionOf(entry.Item);
-                    entry.Description.color = WithAlpha(entry.Description.color, alpha);
+                    entry.Description.color = PerkChoiceWidget.Faded(entry.Description.color, alpha);
                 }
-                if (entry.Icon != null) entry.Icon.color = WithAlpha(Color.white, alpha);
+                if (entry.Icon != null) entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);
                 if (entry.Background != null)
                 {
                     Color tint = entry == _selected ? Consts.Values.Meter.LockedCardTint : Color.white;
-                    entry.Background.color = WithAlpha(tint, can ? 1f : 0.6f);
+                    entry.Background.color = PerkChoiceWidget.Faded(tint, can ? 1f : 0.6f);
                 }
             }
-            RefreshBuy(points);
+            RefreshBuy(selectedCan);
         }
 
-        private void RefreshBuy(int points)
+        private void RefreshBuy(bool selectedCan)
         {
             if (_buy == null) return;
-            bool can = _selected != null && points >= PerkShop.CostOf(_selected.Item) && PerkShop.Unavailable(_selected.Item) == null;
+            bool can = _selected != null && selectedCan;
             _buy.interactable = can;
             if (_selected != null && _selected.Button != null)
             {
@@ -435,12 +437,10 @@ namespace SpiderSurge
             {
                 _buyLabel.text = _selected == null ? "Pick an item to buy"
                     : $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
-                _buyLabel.color = WithAlpha(_buyLabel.color, can ? 1f : 0.5f);
+                _buyLabel.color = PerkChoiceWidget.Faded(_buyLabel.color, can ? 1f : 0.5f);
             }
-            if (_buyBackground != null) _buyBackground.color = WithAlpha(Color.white, can ? 1f : 0.6f);
+            if (_buyBackground != null) _buyBackground.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
-
-        private static Color WithAlpha(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);
 
         // After a reroll the selected card is gone with the old cards, so the view's first card is selected again
         private IEnumerator ReselectNextFrame()

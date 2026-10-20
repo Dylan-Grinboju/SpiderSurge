@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,7 +10,38 @@ namespace SpiderSurge
     // Shared handling for the objects Surge adds to the perk choice view: the shop panel and the confirm button
     public static class PerkChoiceWidget
     {
-        // The RPC postfix runs twice per show on the host, so every old copy goes, renamed so the next pass can't find it again
+        private static readonly AccessTools.FieldRef<SurvivalModeHud, List<SurvivalModifierChoiceCard>> CardList = AccessTools.FieldRefAccess<SurvivalModeHud, List<SurvivalModifierChoiceCard>>("survivalModifierChoiceCards");
+
+        public static bool ChoiceMade { get; private set; }
+
+        // The cards on screen, in order; the perk card root also still holds the previous cards until the end of the frame they are destroyed in
+        public static List<SurvivalModifierChoiceCard> Cards(SurvivalModeHud hud)
+        {
+            var cards = new List<SurvivalModifierChoiceCard>();
+            var list = hud != null ? CardList(hud) : null;
+            if (list == null) return cards;
+            foreach (var card in list)
+            {
+                if (card != null) cards.Add(card);
+            }
+            return cards;
+        }
+
+        // Every way the game settles a pick (a click, the votes, the timer) ends in PerkChoiceSubmitClientRpc; nothing is bought or confirmed after it
+        public static void MarkChoiceMade()
+        {
+            ChoiceMade = true;
+            PerkConfirmButton.Current?.Refresh();
+        }
+
+        public static void ResetChoice()
+        {
+            ChoiceMade = false;
+        }
+
+        public static Color Faded(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);
+
+        // A rebuild can find more than one old copy, so every one goes, renamed so the next pass can't find it again
         public static void Remove(SurvivalModeHud hud, string name)
         {
             if (hud == null || hud.perkChoiceView == null) return;
@@ -56,6 +89,42 @@ namespace SpiderSurge
                     else vote.gameObject.SetActive(false);
                 }
             }
+        }
+    }
+
+    // A perk card's scale built from its vanilla scale, the shop layout's factor and the lock highlight, so repeated layouts never compound
+    public class PerkCardScale : MonoBehaviour
+    {
+        private Vector3 _base = Vector3.one;
+        private float _factor = 1f;
+        private bool _locked;
+
+        public Vector3 Base => _base;
+
+        public static PerkCardScale Of(SurvivalModifierChoiceCard card)
+        {
+            var scale = card.GetComponent<PerkCardScale>();
+            if (scale != null) return scale;
+            scale = card.gameObject.AddComponent<PerkCardScale>();
+            scale._base = card.transform.localScale;
+            return scale;
+        }
+
+        public void SetFactor(float factor)
+        {
+            _factor = factor;
+            Apply();
+        }
+
+        public void SetLocked(bool locked)
+        {
+            _locked = locked;
+            Apply();
+        }
+
+        private void Apply()
+        {
+            transform.localScale = _base * _factor * (_locked ? Consts.Values.Meter.LockedCardScale : 1f);
         }
     }
 }

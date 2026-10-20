@@ -15,24 +15,18 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, int> CardIndex = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, int>("cardIndex");
         private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, bool> Picked = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, bool>("_picked");
 
-        private static Vector3 _lockedScale = Vector3.one;
-
         public static SurvivalModifierChoiceCard Locked { get; private set; }
         public static event Action LockedChanged;
 
-        // The host owns the perk timer, so its setting decides on every machine
-        public static bool UnlimitedTime => Net.IsRemoteClient && Net.HostHasMod ? SurgeNet.HostUnlimitedPerkTime : ModConfig.UnlimitedPerkChoosingTime;
-
-        // The starting ability choice has no timer either, so it locks and confirms the same way
-        public static bool Active => SurgeGameModeManager.IsSurgeRunActive && (UnlimitedTime || AbilitySelection.IsChoosing);
+        // The unlimited-time setting is shared, so a client reads the host's; the starting ability choice has no timer either
+        public static bool Active => SurgeGameModeManager.IsSurgeRunActive && (ModConfig.UnlimitedPerkChoosingTime || AbilitySelection.StartingChoiceOpen);
 
         public static void Lock(SurvivalModifierChoiceCard card)
         {
             if (card == null || card == Locked) return;
             Unlock();
             Locked = card;
-            _lockedScale = card.transform.localScale;
-            card.transform.localScale = _lockedScale * Consts.Values.Meter.LockedCardScale;
+            PerkCardScale.Of(card).SetLocked(true);
             var background = card.GetComponent<Image>();
             if (background != null) background.color = Consts.Values.Meter.LockedCardTint;
             LockedChanged?.Invoke();
@@ -48,7 +42,7 @@ namespace SpiderSurge
         {
             if (Locked != null)
             {
-                Locked.transform.localScale = _lockedScale;
+                PerkCardScale.Of(Locked).SetLocked(false);
                 var background = Locked.GetComponent<Image>();
                 if (background != null) background.color = Color.white;
             }
@@ -87,7 +81,7 @@ namespace SpiderSurge
         private Image _background;
         private TMP_Text _label;
         private SurvivalModeHud _hud;
-        private bool _submitted;
+        private SurvivalModifierChoiceCard _submitted;
 
         public static PerkConfirmButton Current { get; private set; }
 
@@ -175,10 +169,9 @@ namespace SpiderSurge
             Vector3 local = root.localPosition;
             float bottom = local.y + root.rect.yMin;
             bool any = false;
-            foreach (Transform child in root)
+            foreach (var choice in PerkChoiceWidget.Cards(_hud))
             {
-                var card = child as RectTransform;
-                if (card == null) continue;
+                var card = (RectTransform)choice.transform;
                 float cardBottom = local.y + card.localPosition.y + card.rect.yMin * card.localScale.y;
                 bottom = any ? Mathf.Min(bottom, cardBottom) : cardBottom;
                 any = true;
@@ -186,10 +179,18 @@ namespace SpiderSurge
             transform.localPosition = new Vector3(local.x + root.rect.center.x, bottom - Consts.Values.Meter.ConfirmGap, 0f);
         }
 
+        // The host's pick is final; a client's is a vote, so it can confirm another card the way a vanilla click moves the vote
+        private bool CanConfirm(SurvivalModifierChoiceCard locked)
+        {
+            if (locked == null || locked == _submitted || PerkChoiceWidget.ChoiceMade) return false;
+            return _submitted == null || Net.IsRemoteClient;
+        }
+
         private void OnClick()
         {
-            if (_submitted || PerkConfirm.Locked == null) return;
-            _submitted = true;
+            var locked = PerkConfirm.Locked;
+            if (!CanConfirm(locked)) return;
+            _submitted = locked;
             PerkConfirm.Submit();
             Refresh();
         }
@@ -198,7 +199,7 @@ namespace SpiderSurge
         private void LinkNavigation()
         {
             var cards = new List<Button>();
-            foreach (Transform card in _hud.perkCardsRoot)
+            foreach (var card in PerkChoiceWidget.Cards(_hud))
             {
                 var button = card.GetComponent<Button>();
                 if (button != null) cards.Add(button);
@@ -240,7 +241,8 @@ namespace SpiderSurge
         {
             if (this == null || _button == null) return;
             var locked = PerkConfirm.Locked;
-            bool can = locked != null && !_submitted;
+            bool can = CanConfirm(locked);
+            bool confirmed = _submitted != null && (locked == _submitted || !Net.IsRemoteClient);
             _button.interactable = can;
             if (locked != null && locked.cardButton != null)
             {
@@ -251,12 +253,10 @@ namespace SpiderSurge
             if (_label != null)
             {
                 string name = locked != null && locked.perkNameText != null ? locked.perkNameText.text : null;
-                _label.text = _submitted ? "Confirmed" : name != null ? $"Confirm <color={Consts.Formatting.ColorGold}>{name}</color>" : "Pick a card to confirm";
-                _label.color = WithAlpha(_label.color, can ? 1f : 0.5f);
+                _label.text = confirmed ? "Confirmed" : name != null ? $"Confirm <color={Consts.Formatting.ColorGold}>{name}</color>" : "Pick a card to confirm";
+                _label.color = PerkChoiceWidget.Faded(_label.color, can ? 1f : 0.5f);
             }
-            if (_background != null) _background.color = WithAlpha(Color.white, can ? 1f : 0.6f);
+            if (_background != null) _background.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
-
-        private static Color WithAlpha(Color color, float alpha) => new Color(color.r, color.g, color.b, alpha);
     }
 }

@@ -278,7 +278,6 @@ namespace SpiderSurge
                 public const int RewindCapPerCast = 4;
                 public const float HudBlinkSeconds = 0.8f;
                 public const float CardScale = 0.8f;
-                public const float CardRootShift = -90f;
                 public const float PanelWidth = 200f;
                 public const float EntryHeight = 60f;
                 public const float EntrySpacing = 5f;

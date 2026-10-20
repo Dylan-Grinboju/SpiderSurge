@@ -214,7 +214,7 @@ namespace SpiderSurge
                 {
                     SurgeGameModeManager.Instance.ResetRun();
                 }
-                SurgeMeter.Clear();
+                SurgeMeter.ResetRun();
 
                 if (PerksManager.Instance != null)
                 {
@@ -228,7 +228,6 @@ namespace SpiderSurge
                     if (SurgeGameModeManager.Instance == null) return;
                     SurgeGameModeManager.Instance.SetActive(true);
                     AbilitySelection.Arm();
-                    SurgeMeter.ResetRun();
                     if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
 
                     if (PlayerAbilityHandler.ActiveSpiderControllers != null)

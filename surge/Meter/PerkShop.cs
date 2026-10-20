@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Doozy.Engine.UI;
 using HarmonyLib;
 using SpiderSurge.Common;
-using TMPro;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -42,11 +40,11 @@ namespace SpiderSurge
         // Set while a reroll re-shows the cards, so the perk timer prefix doesn't start a second countdown
         public static bool RerollInProgress { get; private set; }
 
-        // Items that can be bought right now come first, so a full team isn't offered a life it can't take
-        public static void RollOffer()
+        // Items that can be bought right now come first, so a full team isn't offered a life it can't take; upcoming are the perks about to go on the cards
+        public static void RollOffer(List<Modifier> upcoming)
         {
             if (!Net.IsAuthority) return;
-            var available = Items.Where(item => Unavailable(item) == null).OrderBy(_ => UnityEngine.Random.value).ToList();
+            var available = Items.Where(item => Unavailable(item, upcoming) == null).OrderBy(_ => UnityEngine.Random.value).ToList();
             var rest = Items.Where(item => !available.Contains(item)).OrderBy(_ => UnityEngine.Random.value);
             SetOffer(available.Concat(rest).Take(Consts.Values.Meter.OfferSize).ToArray());
             MeterNet.MarkDirty();
@@ -122,13 +120,15 @@ namespace SpiderSurge
             }
         }
 
+        public static string Unavailable(ShopItem item) => Unavailable(item, null);
+
         // The reason an item can't be bought right now, or null; the price is checked separately so the panel can show both
-        public static string Unavailable(ShopItem item)
+        private static string Unavailable(ShopItem item, List<Modifier> onCards)
         {
             var mode = SurvivalMode.instance;
             if (item == ShopItem.Life && mode != null && mode.Lives >= mode.MaxLives) return "Lives are full";
             if (item == ShopItem.Sacrifice && mode != null && mode.Lives < Consts.Values.Meter.SacrificeMinLives) return "Need a spare life";
-            if (item == ShopItem.Perk && Net.IsAuthority && PerkPool().Count == 0) return "No perk left to give";
+            if (item == ShopItem.Perk && Net.IsAuthority && PerkPool(onCards).Count == 0) return "No perk left to give";
             return null;
         }
 
@@ -137,7 +137,7 @@ namespace SpiderSurge
             get
             {
                 var hud = SurvivalModeHud.instance;
-                if (hud == null || hud.perkChoiceView == null || !hud.perkChoiceView.IsVisible) return false;
+                if (hud == null || hud.perkChoiceView == null || !hud.perkChoiceView.IsVisible || PerkChoiceWidget.ChoiceMade) return false;
                 var mode = SurvivalMode.instance;
                 if (Net.IsAuthority && mode != null)
                 {
@@ -152,19 +152,23 @@ namespace SpiderSurge
         public static void Request(ShopItem item, int buyerId)
         {
             if (!SurgeMeter.Enabled) return;
-            if (!IsOffered(item) || !SurgeMeter.CanAfford(CostOf(item)) || Unavailable(item) != null)
+            if (!IsOpen || !IsOffered(item) || !SurgeMeter.CanAfford(CostOf(item)) || Unavailable(item) != null)
             {
-                SoundManager.Instance?.PlaySound(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume);
+                ShowRefused(item, null);
                 return;
             }
             MeterNet.SendBuy(item, buyerId);
         }
 
-        internal static bool Buy(ShopItem item, int buyerId)
+        // Host only: makes the purchase and returns null, or returns why it was refused
+        internal static string Buy(ShopItem item, int buyerId)
         {
-            if (!Net.IsAuthority || !SurgeMeter.Enabled || !IsOpen || !IsOffered(item)) return false;
+            if (!Net.IsAuthority || !SurgeMeter.Enabled || !IsOpen) return "The shop is closed";
+            if (!IsOffered(item)) return "Not on sale on this screen";
             int cost = CostOf(item);
-            if (!SurgeMeter.CanAfford(cost) || Unavailable(item) != null) return false;
+            if (!SurgeMeter.CanAfford(cost)) return "Not enough points";
+            string unavailable = Unavailable(item);
+            if (unavailable != null) return unavailable;
 
             string detail;
             try
@@ -181,9 +185,9 @@ namespace SpiderSurge
             catch (Exception ex)
             {
                 Logger.LogError($"[Surge shop] {item} failed: {ex}");
-                return false;
+                return "It didn't go through";
             }
-            if (detail == null) return false;
+            if (detail == null) return "It didn't go through";
 
             SurgeMeter.TrySpend(cost);
             Logger.LogInfo($"[Surge shop] {NameOf(item)} bought for {PriceOf(item)} by {Players.NameOf(buyerId)} ({detail})");
@@ -191,7 +195,14 @@ namespace SpiderSurge
             if (item == ShopItem.MaxLives) SurgeAchievements.Unlock(SurgeAchievements.MaxCapacity, Players.ById(buyerId));
             ShowBought(item, buyerId, detail);
             MeterNet.SendBought(item, buyerId, detail);
-            return true;
+            return null;
+        }
+
+        // On the machine that asked; a refusal from the host comes with its reason, a local one is already on the panel
+        public static void ShowRefused(ShopItem item, string reason)
+        {
+            SoundManager.Instance?.PlaySound(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume);
+            if (!string.IsNullOrEmpty(reason)) Toast.Show($"{NameOf(item)}: {reason}", Color.white);
         }
 
         // The vanilla path sends the new cards to every client, and the Surge selection prefix runs again with the same phase flags
@@ -284,16 +295,21 @@ namespace SpiderSurge
             return $"{mode.Lives}/{mode.MaxLives}, {SurgeMeter.Points} points";
         }
 
-        private static List<Modifier> PerkPool()
+        // The perks on the cards stay out, since picking one after the shop gave it would raise it past its level
+        private static List<Modifier> PerkPool(List<Modifier> onCards = null)
         {
             var manager = ModifierManager.instance;
             var perks = PerksManager.Instance;
             if (manager == null) return new List<Modifier>();
             var ults = perks != null ? new HashSet<string>(perks.GetAbilityUltimatePerkNames()) : new HashSet<string>();
+            var shown = new HashSet<string>((onCards ?? PerkChoiceWidget.Cards(SurvivalModeHud.instance).Select(card => card.modifier))
+                .Where(mod => mod?.data != null)
+                .Select(mod => mod.data.key));
             return manager.GetNonMaxedSurvivalMods()
                 .Where(mod => mod?.data != null
                     && mod.levelInSurvival == 0
                     && !ExcludedPerks.Contains(mod.data.key)
+                    && !shown.Contains(mod.data.key)
                     && !(perks != null && perks.IsAbilityPerk(mod.data.key))
                     && !ults.Contains(mod.data.key))
                 .ToList();
@@ -330,27 +346,7 @@ namespace SpiderSurge
                 case ShopItem.Sacrifice: what = "traded a life for a point"; break;
                 default: what = "raised the max lives"; break;
             }
-            Toast($"{who} {what}", Hud.Pink);
-        }
-
-        private static void Toast(string text, Color color)
-        {
-            try
-            {
-                UIPopup popup = UIPopup.GetPopup("TextPopUp");
-                if (popup == null) return;
-                popup.Data.SetLabelsTexts(new[] { text });
-                if (popup.Data.Labels.Count > 0 && popup.Data.Labels[0] != null)
-                {
-                    var label = popup.Data.Labels[0].GetComponent<TextMeshProUGUI>();
-                    if (label != null) label.color = color;
-                }
-                UIPopupManager.ShowPopup(popup, true, false);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning($"[Surge shop] could not show a popup: {ex.Message}");
-            }
+            Toast.Show($"{who} {what}", Hud.Pink);
         }
     }
 }

@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using Logger = Silk.Logger;
 
-namespace SpiderTeams
+namespace SpiderSurge.Common
 {
     internal static class Toast
     {
@@ -32,7 +32,7 @@ namespace SpiderTeams
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"SpiderTeams could not show a popup: {ex.Message}");
+                Logger.LogWarning($"SpiderSurge could not show a popup: {ex.Message}");
             }
         }
     }

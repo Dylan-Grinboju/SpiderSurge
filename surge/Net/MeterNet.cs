@@ -11,6 +11,7 @@ namespace SpiderSurge
         private const string StateChannel = "surge.meter.state";
         private const string BuyChannel = "surge.meter.buy";
         private const string BoughtChannel = "surge.meter.bought";
+        private const string RefusedChannel = "surge.meter.refused";
 
         private static bool _initialized;
         private static bool _dirty;
@@ -22,6 +23,7 @@ namespace SpiderSurge
             Net.Register(StateChannel, OnState);
             Net.Register(BuyChannel, OnBuy);
             Net.Register(BoughtChannel, OnBought);
+            Net.Register(RefusedChannel, OnRefused);
             Net.PeerReady += OnPeerReady;
             Net.LeftHost += OnLeftHost;
         }
@@ -33,6 +35,7 @@ namespace SpiderSurge
             Net.Unregister(StateChannel);
             Net.Unregister(BuyChannel);
             Net.Unregister(BoughtChannel);
+            Net.Unregister(RefusedChannel);
             Net.PeerReady -= OnPeerReady;
             Net.LeftHost -= OnLeftHost;
         }
@@ -89,7 +92,7 @@ namespace SpiderSurge
 
         private static void OnLeftHost()
         {
-            SurgeMeter.Clear();
+            SurgeMeter.ResetRun();
         }
 
         private static void OnState(ulong sender, BinaryReader reader)
@@ -112,7 +115,7 @@ namespace SpiderSurge
             }
         }
 
-        // A client may only buy in the name of its own players
+        // A client may only buy in the name of its own players, and hears why when the host turns a buy down
         private static void OnBuy(ulong sender, BinaryReader reader)
         {
             if (!Net.IsAuthority) return;
@@ -123,7 +126,14 @@ namespace SpiderSurge
                 Logger.LogWarning($"SpiderSurge: client {sender} tried to buy from the shop as P{buyerId + 1}, who is not theirs");
                 return;
             }
-            PerkShop.Buy(item, buyerId);
+            string refused = PerkShop.Buy(item, buyerId);
+            if (refused == null) return;
+            if (sender == Net.ServerId) PerkShop.ShowRefused(item, refused);
+            else Net.SendTo(sender, RefusedChannel, writer =>
+            {
+                writer.Write((byte)item);
+                writer.Write(refused);
+            });
         }
 
         private static void OnBought(ulong sender, BinaryReader reader)
@@ -133,6 +143,13 @@ namespace SpiderSurge
             int buyerId = reader.ReadInt32();
             string detail = reader.ReadString();
             PerkShop.ShowBought(item, buyerId, detail);
+        }
+
+        private static void OnRefused(ulong sender, BinaryReader reader)
+        {
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
+            var item = (ShopItem)reader.ReadByte();
+            PerkShop.ShowRefused(item, reader.ReadString());
         }
     }
 }

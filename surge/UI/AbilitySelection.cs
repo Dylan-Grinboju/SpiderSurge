@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -7,6 +8,11 @@ namespace SpiderSurge
     {
         private static bool pending;
         public static bool IsChoosing { get; private set; }
+
+        // Only the host runs the starting choice; a client knows it is on screen from the synced first-selection flag
+        public static bool StartingChoiceOpen => Net.IsRemoteClient
+            ? PerksManager.Instance != null && PerksManager.Instance.IsFirstNormalPerkSelection
+            : IsChoosing;
 
         public static void Arm()
         {

@@ -92,10 +92,7 @@ namespace SpiderSurge
                 if (FrozenEnemy.Freeze(enemy, duration))
                 {
                     _frozeAny = true;
-                    if (enemy.needToKillToCompleteLevel)
-                    {
-                        SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, CastId, Consts.Values.Meter.FreezeChargePerEnemy, Consts.Values.Meter.FreezeCapPerCast);
-                    }
+                    SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, CastId, Consts.Values.Meter.FreezeChargePerEnemy, Consts.Values.Meter.FreezeCapPerCast);
                 }
             }
             FrozenShot.FreezeAround(origin, range, duration);

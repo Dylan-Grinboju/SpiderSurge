@@ -21,15 +21,13 @@ namespace SpiderSurge
         Rewind = 9,
     }
 
-    // The team's shared Surge meter. The host owns it: charge comes in from the abilities while a wave runs, every full meter
-    // becomes a point, and points are spent in the perk shop. Clients get the numbers from MeterNet.
+    // The team's shared Surge meter, owned by the host: ability charge during a wave fills it, and every full meter is a shop point
     public static class SurgeMeter
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
 
-        private static readonly Dictionary<(int playerId, MeterSource source), (int castId, int used)> _castUse = new Dictionary<(int, MeterSource), (int, int)>();
-        private static readonly Dictionary<int, int> _chargeByPlayer = new Dictionary<int, int>();
+        private static readonly Dictionary<(int playerId, MeterSource source, int castId), int> _castUse = new Dictionary<(int, MeterSource, int), int>();
         private static readonly Dictionary<MeterSource, int> _chargeBySource = new Dictionary<MeterSource, int>();
 
         public static int Charge { get; private set; }
@@ -39,8 +37,9 @@ namespace SpiderSurge
         public static int PointsEarned { get; private set; }
         public static int PointsSpent { get; private set; }
 
-        public static IReadOnlyDictionary<int, int> ChargeByPlayer => _chargeByPlayer;
         public static IReadOnlyDictionary<MeterSource, int> ChargeBySource => _chargeBySource;
+
+        private static bool _remoteSynced;
 
         public static event Action Changed;
         public static event Action PointEarned;
@@ -63,21 +62,15 @@ namespace SpiderSurge
             TotalCharge = 0;
             PointsEarned = 0;
             PointsSpent = 0;
+            _remoteSynced = false;
             _castUse.Clear();
-            _chargeByPlayer.Clear();
             _chargeBySource.Clear();
             RecomputeThreshold();
             Raise(Changed);
             MeterNet.MarkDirty();
         }
 
-        public static void Clear()
-        {
-            ResetRun();
-        }
-
-        // chargePerPoint = activeChargePerWave × players × wavesPerScreen × screensPerPoint, so a team of any size needs the
-        // same effort per player to reach a point by the next perk screen
+        // activeChargePerWave × players × wavesPerScreen × screensPerPoint: the same effort per player for a team of any size
         public static void RecomputeThreshold()
         {
             if (!Net.IsAuthority) return;
@@ -99,25 +92,20 @@ namespace SpiderSurge
             MeterNet.MarkDirty();
         }
 
-        // Caps are per cast: the same source on the same player's current cast can't pass its cap
+        // Caps are per cast, so a wasp or a dropped weapon from an older cast still counts against that cast
         public static void Add(MeterSource source, int playerId, int castId, int amount, int capPerCast)
         {
             if (amount <= 0 || !CanEarn) return;
 
-            var key = (playerId, source);
-            if (!_castUse.TryGetValue(key, out var use) || use.castId != castId)
-            {
-                use = (castId, 0);
-            }
-            int room = capPerCast - use.used;
+            var key = (playerId, source, castId);
+            _castUse.TryGetValue(key, out int used);
+            int room = capPerCast - used;
             if (room <= 0) return;
             amount = Mathf.Min(amount, room);
-            _castUse[key] = (castId, use.used + amount);
+            _castUse[key] = used + amount;
 
             Charge += amount;
             TotalCharge += amount;
-            _chargeByPlayer.TryGetValue(playerId, out int byPlayer);
-            _chargeByPlayer[playerId] = byPlayer + amount;
             _chargeBySource.TryGetValue(source, out int bySource);
             _chargeBySource[source] = bySource + amount;
             Logging.SpiderSurgeStatsManager.Instance?.LogMeterCharge(playerId, amount);
@@ -151,9 +139,11 @@ namespace SpiderSurge
             return true;
         }
 
+        // The first state after joining or a reset only catches up, so it doesn't play the point sound
         internal static void ApplyRemote(int charge, int points, int chargePerPoint, int totalCharge)
         {
-            bool earned = points > Points || (points == Points && totalCharge > TotalCharge && charge < Charge);
+            bool earned = _remoteSynced && (points > Points || (points == Points && totalCharge > TotalCharge && charge < Charge));
+            _remoteSynced = true;
             Charge = charge;
             Points = points;
             ChargePerPoint = Mathf.Max(1, chargePerPoint);
