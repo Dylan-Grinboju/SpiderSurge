@@ -97,7 +97,7 @@ namespace SpiderSurge
                     panel.LinkNavigation();
                 }
                 panel.Refresh();
-                panel.StartCoroutine(panel.ReselectNextFrame());
+                if (panel.isActiveAndEnabled) panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
                 MeterHint.Current?.Reposition();
             }
@@ -546,7 +546,7 @@ namespace SpiderSurge
             if (_buyBackground != null) _buyBackground.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
 
-        // After a reroll the selected card is gone with the old cards, so the view's first card is selected again
+        // After a reroll the selected card is gone with the old cards, so the view's first card is selected again; a view that is still hidden selects its own when it opens
         private IEnumerator ReselectNextFrame()
         {
             yield return null;
