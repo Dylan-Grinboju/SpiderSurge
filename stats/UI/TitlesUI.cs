@@ -57,13 +57,12 @@ namespace StatsMod
         private float[] revealedAt;
         #endregion
 
-        // The player's spider as the game last shot it, or their color square until a shot exists
         private void DrawPortrait(Rect window, TitleEntry title, float scale)
         {
-            Texture portrait = SpiderPortraits.Of(title.PlayerId);
+            Texture portrait = title.Portrait;
             if (portrait != null)
             {
-                GUI.DrawTexture(window, portrait, ScaleMode.ScaleToFit, false);
+                GUI.DrawTexture(window, portrait, ScaleMode.ScaleToFit, true);
                 return;
             }
             Hud.Fill(window, Hud.Ink);

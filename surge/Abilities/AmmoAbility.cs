@@ -237,7 +237,7 @@ namespace SpiderSurge
             {
                 ClipVfx.Cast(spiderHealthSystem.transform.position);
                 aura = WeaponAura.Attach(spiderHealthSystem.transform);
-                aura.Retarget(trackedWeapon != null ? trackedWeapon.transform : null);
+                ShowAuraOn(trackedWeapon);
             }
         }
 
@@ -486,6 +486,7 @@ namespace SpiderSurge
 
         protected override void OnDestroy()
         {
+            StopAura();
             base.OnDestroy();
 
             if (playerAmmoAbilities.TryGetValue(PlayerId, out var registered) && registered == this)

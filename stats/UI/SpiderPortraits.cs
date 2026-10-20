@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
 {
-    // Keeps a small picture of every player's spider, shot once after each spawn while it is still alive (a dead spider is gone by the time titles show)
     public class SpiderPortraits : MonoBehaviour
     {
         public const int Size = 192;
@@ -19,13 +19,56 @@ namespace StatsMod
         private readonly Dictionary<int, RenderTexture> portraits = new Dictionary<int, RenderTexture>();
         private readonly Dictionary<int, float> dueAt = new Dictionary<int, float>();
         private readonly HashSet<int> shotThisLife = new HashSet<int>();
+        private readonly HashSet<int> captured = new HashSet<int>();
+        private readonly Dictionary<int, PlayerController> owners = new Dictionary<int, PlayerController>();
+        private readonly Dictionary<int, SpiderHealthSystem> lives = new Dictionary<int, SpiderHealthSystem>();
+        private readonly HashSet<int> present = new HashSet<int>();
+        private readonly List<int> departed = new List<int>();
+        private readonly List<Renderer> hidden = new List<Renderer>();
         private Camera cam;
         private int shooting = -1;
+        private Transform subject;
 
-        public static Texture Of(int playerId)
+        public static RenderTexture CopyOf(PlayerController player)
         {
-            if (Instance == null || playerId < 0) return null;
-            return Instance.portraits.TryGetValue(playerId, out RenderTexture texture) && texture != null && texture.IsCreated() ? texture : null;
+            if (Instance == null || player == null) return null;
+            int id = player.playerID.Value;
+            if (!Instance.captured.Contains(id) || !Instance.owners.TryGetValue(id, out PlayerController owner) || owner != player ||
+                !Instance.portraits.TryGetValue(id, out RenderTexture source) || source == null || !source.IsCreated()) return null;
+
+            RenderTexture copy = null;
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                copy = NewTexture($"TitlePortrait{id}");
+                Graphics.Blit(source, copy);
+                return copy;
+            }
+            catch (System.Exception ex)
+            {
+                DisposeTexture(copy);
+                Logger.LogWarning($"Spider portraits: could not copy a title portrait: {ex.Message}");
+                return null;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+        }
+
+        private static RenderTexture NewTexture(string name)
+        {
+            RenderTexture texture = new RenderTexture(Size, Size, 0, RenderTextureFormat.ARGB32) { name = name, filterMode = FilterMode.Bilinear };
+            if (texture.Create()) return texture;
+            DisposeTexture(texture);
+            throw new System.InvalidOperationException("Could not create a spider portrait texture");
+        }
+
+        internal static void DisposeTexture(RenderTexture texture)
+        {
+            if (texture == null) return;
+            texture.Release();
+            Destroy(texture);
         }
 
         private void Awake()
@@ -59,25 +102,34 @@ namespace StatsMod
             {
                 Logger.LogWarning($"Spider portraits: could not configure the URP camera: {ex.Message}");
             }
+            RenderPipelineManager.beginCameraRendering += BeginPortrait;
+            RenderPipelineManager.endCameraRendering += EndPortrait;
         }
 
         private void Update()
         {
-            if (shooting >= 0)
-            {
-                cam.enabled = false;
-                cam.targetTexture = null;
-                shooting = -1;
-            }
+            StopShooting();
 
             float now = Time.unscaledTime;
             List<PlayerController> players = Players.All;
-            if (players == null) return;
-            foreach (PlayerController player in players)
+            present.Clear();
+            if (players != null) foreach (PlayerController player in players)
             {
                 if (player == null) continue;
                 int id = player.playerID.Value;
+                present.Add(id);
+                if (!owners.TryGetValue(id, out PlayerController owner) || owner != player)
+                {
+                    Forget(id);
+                    owners[id] = player;
+                }
                 SpiderHealthSystem health = player.spiderHealthSystem;
+                if (!lives.TryGetValue(id, out SpiderHealthSystem life) || life != health)
+                {
+                    dueAt.Remove(id);
+                    shotThisLife.Remove(id);
+                    lives[id] = health;
+                }
                 if (health == null || health.dead || health.astralDead || !health.gameObject.activeInHierarchy)
                 {
                     dueAt.Remove(id);
@@ -91,21 +143,22 @@ namespace StatsMod
                     due = now + ShotDelay;
                     dueAt[id] = due;
                 }
-                if (now < due) continue;
+                if (now < due || shooting >= 0) continue;
 
                 Shoot(id, health);
-                shotThisLife.Add(id);
-                break;
             }
+            departed.Clear();
+            foreach (int id in owners.Keys)
+                if (!present.Contains(id)) departed.Add(id);
+            foreach (int id in departed) Forget(id);
         }
 
-        // Renders one spider into its texture this frame; the camera is switched off again on the next update
+        // Capture one living spider after its spawn effect finishes.
         private void Shoot(int playerId, SpiderHealthSystem health)
         {
             if (!portraits.TryGetValue(playerId, out RenderTexture texture) || texture == null)
             {
-                texture = new RenderTexture(Size, Size, 0, RenderTextureFormat.ARGB32) { name = $"SpiderPortrait{playerId}", filterMode = FilterMode.Bilinear };
-                texture.Create();
+                texture = NewTexture($"SpiderPortrait{playerId}");
                 portraits[playerId] = texture;
             }
 
@@ -113,15 +166,77 @@ namespace StatsMod
             cam.transform.position = new Vector3(center.x, center.y, 0f);
             cam.transform.rotation = Quaternion.identity;
             cam.targetTexture = texture;
+            subject = health.rootObject.transform;
             cam.enabled = true;
             shooting = playerId;
         }
 
+        // Hide other subjects only for this camera, then restore them before any other camera renders.
+        private void BeginPortrait(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera != cam || shooting < 0) return;
+            if (subject == null)
+            {
+                StopShooting();
+                return;
+            }
+            foreach (Renderer renderer in FindObjectsOfType<Renderer>())
+            {
+                if (renderer.forceRenderingOff || (cam.cullingMask & (1 << renderer.gameObject.layer)) == 0 || renderer.transform.IsChildOf(subject)) continue;
+                hidden.Add(renderer);
+                renderer.forceRenderingOff = true;
+            }
+        }
+
+        private void EndPortrait(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera != cam || shooting < 0) return;
+            if (subject != null)
+            {
+                shotThisLife.Add(shooting);
+                captured.Add(shooting);
+            }
+            StopShooting();
+        }
+
+        private void StopShooting()
+        {
+            foreach (Renderer renderer in hidden)
+                if (renderer != null) renderer.forceRenderingOff = false;
+            hidden.Clear();
+            if (cam != null)
+            {
+                cam.enabled = false;
+                cam.targetTexture = null;
+            }
+            subject = null;
+            shooting = -1;
+        }
+
+        private void Forget(int id)
+        {
+            if (portraits.TryGetValue(id, out RenderTexture texture)) DisposeTexture(texture);
+            portraits.Remove(id);
+            owners.Remove(id);
+            lives.Remove(id);
+            dueAt.Remove(id);
+            shotThisLife.Remove(id);
+            captured.Remove(id);
+        }
+
+        private void OnDisable()
+        {
+            StopShooting();
+        }
+
         private void OnDestroy()
         {
+            RenderPipelineManager.beginCameraRendering -= BeginPortrait;
+            RenderPipelineManager.endCameraRendering -= EndPortrait;
+            StopShooting();
             foreach (RenderTexture texture in portraits.Values)
             {
-                if (texture != null) texture.Release();
+                DisposeTexture(texture);
             }
             portraits.Clear();
             if (Instance == this) Instance = null;

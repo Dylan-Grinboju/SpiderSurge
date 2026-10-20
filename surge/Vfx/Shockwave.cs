@@ -2,13 +2,11 @@ using UnityEngine;
 
 namespace SpiderSurge.Vfx
 {
-    // A neon ring: a bright core over a wide soft halo, expanding at a set speed or closing on a target
     public class Shockwave : MonoBehaviour
     {
         private const int Segments = 72;
         private const float HaloWidth = 3f;
         private const float HaloAlpha = 0.5f;
-        // Over 1 so the core blooms the way the game's bright sprites do
         private const float CoreBrightness = 1.8f;
 
         private LineRenderer core;
@@ -25,7 +23,7 @@ namespace SpiderSurge.Vfx
         private float elapsed;
         private bool inward;
         private Transform follow;
-        private System.Action onComplete;
+        private System.Action<Vector3> onComplete;
 
         public static Shockwave Expand(Vector3 position, float radius, Color color, float speed, float width = 2f, float linger = 0.15f)
         {
@@ -37,10 +35,10 @@ namespace SpiderSurge.Vfx
             return wave;
         }
 
-        // Starts at the radius and closes on the followed transform, speeding up like Banish's pull
-        public static Shockwave Collapse(Transform follow, float radius, Color color, float duration, float width = 2f, System.Action onComplete = null)
+        // Starts at the radius and closes on the position, or on a followed transform, speeding up like Banish's pull; onComplete gets where it closed
+        public static Shockwave Collapse(Vector3 position, float radius, Color color, float duration, float width = 2f, Transform follow = null, System.Action<Vector3> onComplete = null)
         {
-            Shockwave wave = Create(follow.position, color, width);
+            Shockwave wave = Create(position, color, width);
             wave.maxRadius = radius;
             wave.radius = radius;
             wave.inward = true;
@@ -53,14 +51,13 @@ namespace SpiderSurge.Vfx
 
         private static Shockwave Create(Vector3 position, Color color, float width)
         {
-            GameObject holder = new GameObject("Shockwave");
-            holder.transform.position = position;
-            Shockwave wave = holder.AddComponent<Shockwave>();
-            wave.color = color;
-            wave.width = width;
-            wave.halo = wave.MakeLine("Halo", SurgeVfx.Order);
-            wave.core = wave.MakeLine("Core", SurgeVfx.Order + 1);
-            return wave;
+            return SurgeVfx.Create<Shockwave>("Shockwave", position, wave =>
+            {
+                wave.color = color;
+                wave.width = width;
+                wave.halo = wave.MakeLine("Halo", SurgeVfx.Order);
+                wave.core = wave.MakeLine("Core", SurgeVfx.Order + 1);
+            });
         }
 
         private LineRenderer MakeLine(string name, int order)
@@ -92,8 +89,8 @@ namespace SpiderSurge.Vfx
                 float t = elapsed / duration;
                 if (t >= 1f)
                 {
-                    onComplete?.Invoke();
                     Destroy(gameObject);
+                    if (onComplete != null) SurgeVfx.Safely(() => onComplete(transform.position));
                     return;
                 }
                 radius = maxRadius * (1f - t * t);
@@ -139,8 +136,8 @@ namespace SpiderSurge.Vfx
 
             core.widthMultiplier = width * widthScale;
             halo.widthMultiplier = width * widthScale * HaloWidth;
-            Color coreColor = SurgeVfx.WithAlpha(Color.Lerp(color, Color.white, 0.5f) * CoreBrightness, color.a * alpha);
-            Color haloColor = SurgeVfx.WithAlpha(color, color.a * alpha * HaloAlpha);
+            Color coreColor = SurgeVfx.SetAlpha(Color.Lerp(color, Color.white, 0.5f) * CoreBrightness, color.a * alpha);
+            Color haloColor = SurgeVfx.SetAlpha(color, color.a * alpha * HaloAlpha);
             core.startColor = coreColor;
             core.endColor = coreColor;
             halo.startColor = haloColor;

@@ -2,15 +2,14 @@ using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.Universal;
+using Logger = Silk.Logger;
 
 namespace SpiderSurge.Vfx
 {
-    // The game's own look, built at run time: its glow particle material, soft neon lines, 2D light flashes and soft discs
     public static class SurgeVfx
     {
         public const string SortingLayer = "Foreground";
         public const int Order = 285;
-        // The glow material draws each dot about 2.5 times its nominal size, so sizes here are given in world units
         private const float GlowSizeScale = 0.4f;
 
         private static Material glowParticles;
@@ -20,10 +19,45 @@ namespace SpiderSurge.Vfx
         private static Sprite forceField;
         private static Material forceFieldMaterial;
         private static int[] lightLayers;
-        private static readonly AccessTools.FieldRef<Light2D, int[]> LightSortingLayers =
-            AccessTools.FieldRefAccess<Light2D, int[]>("m_ApplyToSortingLayers");
+        private static AccessTools.FieldRef<Light2D, int[]> lightSortingLayers;
 
-        // The material the game's sparks, respawn and recall particles use; each quad is a soft glowing dot
+        // Effects are drawn from inside gameplay code, so a failing one is logged and skipped instead of stopping its caller
+        public static void Safely(System.Action draw)
+        {
+            try
+            {
+                draw();
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"SurgeVfx: an effect failed and was skipped: {ex}");
+            }
+        }
+
+        public static T Safely<T>(System.Func<T> make) where T : class
+        {
+            T made = null;
+            Safely(() => { made = make(); });
+            return made;
+        }
+
+        internal static T Create<T>(string name, Vector3 position, System.Action<T> setup) where T : Component
+        {
+            GameObject holder = new GameObject(name);
+            try
+            {
+                holder.transform.position = position;
+                T effect = holder.AddComponent<T>();
+                setup(effect);
+                return effect;
+            }
+            catch
+            {
+                Object.Destroy(holder);
+                throw;
+            }
+        }
+
         public static Material GlowParticles
         {
             get
@@ -33,12 +67,13 @@ namespace SpiderSurge.Vfx
             }
         }
 
-        // A vertex-colored line whose edges fade out across its width
         public static Material SoftLine
         {
             get
             {
                 if (softLine != null) return softLine;
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader == null) throw new System.InvalidOperationException("The sprite shader is unavailable");
                 const int height = 32;
                 Texture2D texture = new Texture2D(1, height, TextureFormat.RGBA32, false)
                 {
@@ -52,12 +87,11 @@ namespace SpiderSurge.Vfx
                     texture.SetPixel(0, y, new Color(1f, 1f, 1f, (1f - distance) * (1f - distance)));
                 }
                 texture.Apply();
-                softLine = new Material(Shader.Find("Sprites/Default")) { mainTexture = texture, hideFlags = HideFlags.HideAndDontSave };
+                softLine = new Material(shader) { mainTexture = texture, hideFlags = HideFlags.HideAndDontSave };
                 return softLine;
             }
         }
 
-        // A glow that fades from its center
         public static Sprite SoftDisc
         {
             get
@@ -67,7 +101,6 @@ namespace SpiderSurge.Vfx
             }
         }
 
-        // A solid disc with a short soft rim
         public static Sprite HardDisc
         {
             get
@@ -101,7 +134,6 @@ namespace SpiderSurge.Vfx
             return sprite;
         }
 
-        // The game's shield bubble sprite and its dissolving glow material, when a shielded spider or enemy has loaded them
         public static Sprite ForceField
         {
             get
@@ -134,7 +166,7 @@ namespace SpiderSurge.Vfx
             return Resources.FindObjectsOfTypeAll<Material>().FirstOrDefault(m => m.name == name);
         }
 
-        public static Color WithAlpha(Color color, float alpha)
+        public static Color SetAlpha(Color color, float alpha)
         {
             color.a = alpha;
             return color;
@@ -143,32 +175,31 @@ namespace SpiderSurge.Vfx
         // A point light that fades out like the game's explosion light
         public static LightFade Flash(Vector3 position, Color color, float intensity, float radius, float duration, Transform follow = null)
         {
-            GameObject holder = new GameObject("SurgeFlash");
-            holder.transform.position = position;
-            Light2D light = holder.AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Point;
-            light.color = WithAlpha(color, 1f);
-            light.intensity = intensity;
-            light.pointLightInnerRadius = 0f;
-            light.pointLightOuterRadius = radius;
-            LightSortingLayers(light) = LightLayers;
-            LightFade fade = holder.AddComponent<LightFade>();
-            fade.Setup(light, duration, follow);
-            return fade;
+            return Create<LightFade>("SurgeFlash", position, fade =>
+            {
+                Light2D light = fade.gameObject.AddComponent<Light2D>();
+                light.lightType = Light2D.LightType.Point;
+                light.color = SetAlpha(color, 1f);
+                light.intensity = intensity;
+                light.pointLightInnerRadius = 0f;
+                light.pointLightOuterRadius = radius;
+                if (lightSortingLayers == null) lightSortingLayers = AccessTools.FieldRefAccess<Light2D, int[]>("m_ApplyToSortingLayers");
+                lightSortingLayers(light) = LightLayers;
+                fade.Setup(light, duration, follow);
+            });
         }
 
         // A soft disc that scales between two radii while it fades; a pulse grows to the end radius and shrinks back
         public static DiscFade Disc(Vector3 position, Color color, float startRadius, float endRadius, float duration, int order = Order, bool pulse = false, Transform follow = null, bool hard = false)
         {
-            GameObject holder = new GameObject("SurgeDisc");
-            holder.transform.position = position;
-            SpriteRenderer renderer = holder.AddComponent<SpriteRenderer>();
-            renderer.sprite = hard ? HardDisc : SoftDisc;
-            renderer.sortingLayerName = SortingLayer;
-            renderer.sortingOrder = order;
-            DiscFade fade = holder.AddComponent<DiscFade>();
-            fade.Setup(renderer, color, startRadius, endRadius, duration, pulse, follow);
-            return fade;
+            return Create<DiscFade>("SurgeDisc", position, fade =>
+            {
+                SpriteRenderer renderer = fade.gameObject.AddComponent<SpriteRenderer>();
+                renderer.sprite = hard ? HardDisc : SoftDisc;
+                renderer.sortingLayerName = SortingLayer;
+                renderer.sortingOrder = order;
+                fade.Setup(renderer, color, startRadius, endRadius, duration, pulse, follow);
+            });
         }
 
         // One burst of glowing dots from a circle, in the game's explosion and shield-break style; it removes itself when they are gone
@@ -214,60 +245,60 @@ namespace SpiderSurge.Vfx
         private static ParticleSystem NewSystem(string name, Vector3 position, Transform parent, Color from, Color to, float speedMin, float speedMax,
             float sizeMin, float sizeMax, float lifeMin, float lifeMax, float radius, float radiusThickness, bool trails, float gravity, int order)
         {
-            GameObject holder = new GameObject(name);
-            holder.transform.position = position;
-            if (parent != null) holder.transform.SetParent(parent, true);
-            ParticleSystem system = holder.AddComponent<ParticleSystem>();
-            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            ParticleSystem.MainModule main = system.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
-            main.playOnAwake = false;
-            main.maxParticles = 1000;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(lifeMin, lifeMax);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(speedMin, speedMax);
-            main.startSize = new ParticleSystem.MinMaxCurve(sizeMin * GlowSizeScale, sizeMax * GlowSizeScale);
-            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI);
-            main.startColor = WithAlpha(from, 1f);
-            main.gravityModifier = gravity;
-
-            ParticleSystem.ShapeModule shape = system.shape;
-            shape.enabled = true;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = Mathf.Max(0.01f, radius);
-            shape.radiusThickness = radiusThickness;
-            shape.arc = 360f;
-
-            ParticleSystem.ColorOverLifetimeModule color = system.colorOverLifetime;
-            color.enabled = true;
-            color.color = new ParticleSystem.MinMaxGradient(FadeGradient(from, to));
-
-            ParticleSystem.SizeOverLifetimeModule size = system.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0f));
-
-            ParticleSystemRenderer renderer = holder.GetComponent<ParticleSystemRenderer>();
-            renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            renderer.sharedMaterial = GlowParticles;
-            renderer.sortingLayerName = SortingLayer;
-            renderer.sortingOrder = order;
-            renderer.minParticleSize = 0f;
-            renderer.maxParticleSize = 0.5f;
-
-            if (trails)
+            return Create<ParticleSystem>(name, position, system =>
             {
-                ParticleSystem.TrailModule trail = system.trails;
-                trail.enabled = true;
-                trail.lifetime = 0.15f;
-                trail.widthOverTrail = 0.6f;
-                trail.minVertexDistance = 0.5f;
-                trail.inheritParticleColor = true;
-                trail.dieWithParticles = true;
-                trail.colorOverLifetime = new ParticleSystem.MinMaxGradient(FadeGradient(Color.white, Color.white));
-                renderer.trailMaterial = GlowParticles;
-            }
-            return system;
+                GameObject holder = system.gameObject;
+                if (parent != null) holder.transform.SetParent(parent, true);
+                system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+                ParticleSystem.MainModule main = system.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                main.playOnAwake = false;
+                main.maxParticles = 1000;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(lifeMin, lifeMax);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(speedMin, speedMax);
+                main.startSize = new ParticleSystem.MinMaxCurve(sizeMin * GlowSizeScale, sizeMax * GlowSizeScale);
+                main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI);
+                main.startColor = SetAlpha(from, 1f);
+                main.gravityModifier = gravity;
+
+                ParticleSystem.ShapeModule shape = system.shape;
+                shape.enabled = true;
+                shape.shapeType = ParticleSystemShapeType.Circle;
+                shape.radius = Mathf.Max(0.01f, radius);
+                shape.radiusThickness = radiusThickness;
+                shape.arc = 360f;
+
+                ParticleSystem.ColorOverLifetimeModule color = system.colorOverLifetime;
+                color.enabled = true;
+                color.color = new ParticleSystem.MinMaxGradient(FadeGradient(from, to));
+
+                ParticleSystem.SizeOverLifetimeModule size = system.sizeOverLifetime;
+                size.enabled = true;
+                size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0f));
+
+                ParticleSystemRenderer renderer = holder.GetComponent<ParticleSystemRenderer>();
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                renderer.sharedMaterial = GlowParticles;
+                renderer.sortingLayerName = SortingLayer;
+                renderer.sortingOrder = order;
+                renderer.minParticleSize = 0f;
+                renderer.maxParticleSize = 0.5f;
+
+                if (trails)
+                {
+                    ParticleSystem.TrailModule trail = system.trails;
+                    trail.enabled = true;
+                    trail.lifetime = 0.15f;
+                    trail.widthOverTrail = 0.6f;
+                    trail.minVertexDistance = 0.5f;
+                    trail.inheritParticleColor = true;
+                    trail.dieWithParticles = true;
+                    trail.colorOverLifetime = new ParticleSystem.MinMaxGradient(FadeGradient(Color.white, Color.white));
+                    renderer.trailMaterial = GlowParticles;
+                }
+            });
         }
 
         private static Gradient FadeGradient(Color from, Color to)
@@ -365,11 +396,10 @@ namespace SpiderSurge.Vfx
             }
             float scale = radius * 2f / spriteSize;
             transform.localScale = new Vector3(scale, scale, 1f);
-            sprite.color = SurgeVfx.WithAlpha(color, alpha);
+            sprite.color = SurgeVfx.SetAlpha(color, alpha);
         }
     }
 
-    // Keeps an effect on a moving thing without parenting it, so freezes and scale changes on the target leave it alone
     public class Follow : MonoBehaviour
     {
         public Transform Target;

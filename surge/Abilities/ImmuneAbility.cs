@@ -199,7 +199,7 @@ namespace SpiderSurge
         {
             isUltimateCastPending = true;
             hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
-            if (spiderHealthSystem != null) channel = ChannelEffect.Attach(spiderHealthSystem.transform, UltimateDuration);
+            if (spiderHealthSystem != null) channel = ChannelEffect.Attach(spiderHealthSystem.transform);
 
             if (SoundManager.Instance != null && !IsRemote)
             {
@@ -349,12 +349,6 @@ namespace SpiderSurge
             if (spiderHealthSystem == null) return;
             IsImmune = enable;
 
-            ApplyRadiance(enable);
-            if (Net.IsHost)
-            {
-                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
-            }
-
             if (enable)
             {
                 try
@@ -383,6 +377,12 @@ namespace SpiderSurge
                 {
                     Logger.LogError($"Failed to reset immune time: {ex.Message}");
                 }
+            }
+
+            SurgeVfx.Safely(() => ApplyRadiance(enable));
+            if (Net.IsHost)
+            {
+                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
             }
         }
 

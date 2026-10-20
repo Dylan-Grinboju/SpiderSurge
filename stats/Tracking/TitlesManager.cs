@@ -29,6 +29,7 @@ public class TitleEntry
     public Color SecondaryColor { get; set; }
     public PlayerController Player { get; set; }
     public int PlayerId { get; set; } = -1;
+    public Texture Portrait { get; set; }
     public int Priority { get; set; }
     public HashSet<string> Requirements { get; set; } = new HashSet<string>();
 }
@@ -186,6 +187,7 @@ public class TitlesManager
     private List<TitleEntry> currentTitles = new List<TitleEntry>();
     private List<TitleEntry> allTitles = new List<TitleEntry>();
     private bool hasGameEndedTitles = false;
+    private readonly Dictionary<int, RenderTexture> portraits = new Dictionary<int, RenderTexture>();
 
     public List<TitleEntry> CurrentTitles => currentTitles.ToList();
     public List<TitleEntry> AllTitles => allTitles.ToList();
@@ -209,6 +211,7 @@ public class TitlesManager
         CalculationCount++;
         LastTitlesShown = false;
         LastNewlyUnlocked = null;
+        ReleasePortraits();
         currentTitles.Clear();
         allTitles.Clear();
 
@@ -246,6 +249,7 @@ public class TitlesManager
         allTitles = currentTitles.OrderByDescending(t => t.Priority).ToList();
 
         currentTitles = SelectTopAndShuffleTitles(currentTitles, MaxDisplayedTitles);
+        CapturePortraits();
 
         hasGameEndedTitles = currentTitles.Count > 0;
         Logger.LogInfo($"Calculated {currentTitles.Count} titles for {players.Count} players");
@@ -491,8 +495,30 @@ public class TitlesManager
         return weapons.Sum(weapon => data.WeaponHits[weapon]);
     }
 
+    private void CapturePortraits()
+    {
+        foreach (TitleEntry title in currentTitles)
+        {
+            if (!portraits.TryGetValue(title.PlayerId, out RenderTexture portrait))
+            {
+                portrait = SpiderPortraits.CopyOf(title.Player);
+                portraits[title.PlayerId] = portrait;
+            }
+            title.Portrait = portrait;
+        }
+    }
+
+    internal void ReleasePortraits()
+    {
+        foreach (RenderTexture portrait in portraits.Values) SpiderPortraits.DisposeTexture(portrait);
+        portraits.Clear();
+        foreach (TitleEntry title in currentTitles) title.Portrait = null;
+        foreach (TitleEntry title in allTitles) title.Portrait = null;
+    }
+
     public void ClearTitles()
     {
+        ReleasePortraits();
         currentTitles.Clear();
         allTitles.Clear();
         hasGameEndedTitles = false;
@@ -501,6 +527,7 @@ public class TitlesManager
 
     public void SetRemoteTitles(List<TitleEntry> current, List<TitleEntry> all)
     {
+        ReleasePortraits();
         currentTitles = current ?? new List<TitleEntry>();
         allTitles = all ?? new List<TitleEntry>();
         hasGameEndedTitles = currentTitles.Count > 0;

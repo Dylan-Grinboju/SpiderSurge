@@ -180,7 +180,6 @@ namespace SpiderSurge
 
                 // Visuals
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
-                public const float RingWidth = 0.3f;
                 public const float RingSpeed = 500f;
             }
 

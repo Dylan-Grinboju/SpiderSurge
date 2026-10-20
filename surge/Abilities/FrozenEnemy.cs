@@ -117,7 +117,7 @@ namespace SpiderSurge
             _enemyId = _enemy.GetInstanceID();
             FrozenEnemyIds.Add(_enemyId);
             _held = true;
-            AttachFrost();
+            SurgeVfx.Safely(AttachFrost);
 
             if (_visualOnly)
             {
