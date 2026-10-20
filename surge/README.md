@@ -40,7 +40,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ## Achievements
 
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are kept in the game's save file, and a popup announces each new one. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
 | Achievement | How to unlock it |
 |---|---|
@@ -170,7 +170,7 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 
 ## Notes and disclaimers
 
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores, and Wave Survival still shows your normal ones. BACK UP YOUR SAVE FILES JUST IN CASE.
+- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores in `SpiderSurge\progress.dat`, and Wave Survival still shows your normal ones from the game's save.
 - Surge Mode is designed for Survival Mode. Its abilities only reach versus through the [Teams](../teams/README.md) part.
 
 ## The Future
