@@ -26,6 +26,8 @@ namespace SpiderSurge
         public const string IndicatorCooldownColorKey = "surge.indicator.cooldownColor";
         public const string IndicatorActiveColorKey = "surge.indicator.activeColor";
         public const string IndicatorShowOnlyWhenReadyKey = "surge.indicator.showOnlyWhenReady";
+        public const string MeterActiveChargePerWaveKey = "surge.meter.activeChargePerWave";
+        public const string MeterScreensPerPointKey = "surge.meter.screensPerPoint";
 
         public const float MinIndicatorRadius = 0.5f;
         public const float MaxIndicatorRadius = 10f;
@@ -51,6 +53,8 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(IndicatorCooldownColorKey, "#FF0000"),
             new KeyValuePair<string, object>(IndicatorActiveColorKey, "#87CEEB"),
             new KeyValuePair<string, object>(IndicatorShowOnlyWhenReadyKey, false),
+            new KeyValuePair<string, object>(MeterActiveChargePerWaveKey, Consts.Values.Meter.DefaultActiveChargePerWave),
+            new KeyValuePair<string, object>(MeterScreensPerPointKey, Consts.Values.Meter.DefaultScreensPerPoint),
         };
 
         private static readonly Dictionary<string, (string raw, Color color)> _colors = new Dictionary<string, (string raw, Color color)>();
@@ -69,6 +73,10 @@ namespace SpiderSurge
         public static bool UnlimitedPerkChoosingTime => Settings.GetBool(UnlimitedPerkTimeKey);
 
         public static bool NoAbilities => Settings.GetBool(NoAbilitiesKey);
+
+        // Meter tuning: the charge one player makes per wave when casting on cooldown, and how many perk screens of that one point takes
+        public static float MeterActiveChargePerWave => Mathf.Clamp(Settings.GetFloat(MeterActiveChargePerWaveKey), Consts.Values.Meter.MinActiveChargePerWave, Consts.Values.Meter.MaxActiveChargePerWave);
+        public static float MeterScreensPerPoint => Mathf.Clamp(Settings.GetFloat(MeterScreensPerPointKey), Consts.Values.Meter.MinScreensPerPoint, Consts.Values.Meter.MaxScreensPerPoint);
 
         // The slider's 80 plays every Surge sound at its original volume
         public static float AbilityVolume => Mathf.Clamp(Settings.GetInt(AbilityVolumeKey), 0, MaxAbilityVolume) / (float)OriginalAbilityVolume;

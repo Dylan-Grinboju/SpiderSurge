@@ -216,8 +216,27 @@ namespace SpiderSurge.Logging
                 "\"globalPerks\":" + JsonStringArray(globalPerks) + "," +
                 "\"playerStats\":" + playerStatsJson + "," +
                 "\"titles\":" + titlesJson + "," +
+                "\"meter\":" + BuildMeterJson(snapshot.Meter) + "," +
                 "\"perkChoices\":" + perkChoicesJson + "," +
                 "\"waves\":" + wavesJson +
+                "}";
+        }
+
+        private static string BuildMeterJson(MeterReport meter)
+        {
+            if (meter == null) return "null";
+            string purchases = "[" + string.Join(",", (meter.Purchases ?? new List<MeterPurchaseRecord>()).Select(purchase => "{" +
+                "\"wave\":" + purchase.Wave + "," +
+                "\"item\":\"" + EscapeJson(purchase.Item) + "\"," +
+                "\"detail\":\"" + EscapeJson(purchase.Detail) + "\"" +
+                "}")) + "]";
+            return "{" +
+                "\"chargePerPoint\":" + meter.ChargePerPoint + "," +
+                "\"totalCharge\":" + meter.TotalCharge + "," +
+                "\"pointsEarned\":" + meter.PointsEarned + "," +
+                "\"pointsSpent\":" + meter.PointsSpent + "," +
+                "\"chargeBySource\":" + JsonCounts(meter.ChargeBySource) + "," +
+                "\"purchases\":" + purchases +
                 "}";
         }
 
@@ -236,6 +255,7 @@ namespace SpiderSurge.Logging
                 "\"aliveSeconds\":" + Math.Max(0, player.AliveSeconds) + "," +
                 "\"saves\":" + player.Saves + "," +
                 "\"killsDuringAbility\":" + player.KillsDuringAbility + "," +
+                "\"meterCharge\":" + player.MeterCharge + "," +
                 "\"enemyKills\":" + JsonCounts(player.EnemyKills) + "," +
                 "\"weaponHits\":" + JsonCounts(player.WeaponHits) +
                 "}";
@@ -277,6 +297,8 @@ namespace SpiderSurge.Logging
                 "\"picked\":" + (choice.Picked != null ? "\"" + EscapeJson(choice.Picked) + "\"" : "null") + "," +
                 "\"level\":" + choice.Level + "," +
                 "\"timedOut\":" + JsonBool(choice.TimedOut) + "," +
+                "\"rerolled\":" + JsonBool(choice.Rerolled) + "," +
+                "\"shopOffer\":" + JsonStringArray(choice.ShopOffer) + "," +
                 "\"decisionSeconds\":" + JsonSeconds(choice.DecisionSeconds) +
                 "}";
         }
@@ -291,7 +313,8 @@ namespace SpiderSurge.Logging
                 "\"livesAtStart\":" + wave.LivesAtStart + "," +
                 "\"abilityUses\":" + wave.AbilityUses + "," +
                 "\"ultimateUses\":" + wave.UltimateUses + "," +
-                "\"saves\":" + wave.Saves +
+                "\"saves\":" + wave.Saves + "," +
+                "\"meterCharge\":" + wave.MeterCharge +
                 (wave.Deaths >= 0 ? ",\"deaths\":" + wave.Deaths : "") +
                 "}";
         }

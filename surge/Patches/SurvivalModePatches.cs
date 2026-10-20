@@ -214,6 +214,7 @@ namespace SpiderSurge
                 {
                     SurgeGameModeManager.Instance.ResetRun();
                 }
+                SurgeMeter.ResetRun();
 
                 if (PerksManager.Instance != null)
                 {
@@ -260,6 +261,7 @@ namespace SpiderSurge
                 if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
                 {
                     PlayerAbilityHandler.OnWaveStarted(value);
+                    SurgeMeter.RecomputeThreshold();
 
                     // At wave 30 (Ult Upgrade), set flag for special perk selection
                     if (value == Consts.Values.Waves.UltUpgradeWave)

@@ -28,6 +28,7 @@ namespace SpiderSurge.Integration
                     lines.Add($"  {playerName}:");
                     lines.Add($"    Ability Activations: {ps.AbilityActivationCount}");
                     lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");
+                    if (snapshot.Meter != null) lines.Add($"    Meter Charge: {ps.MeterCharge}");
                 }
 
                 StatsModApi.RegisterCustomStats(lines);
@@ -46,6 +47,7 @@ namespace SpiderSurge.Integration
         private const string ReqMostPulseAbility = "SurgeMostPulseAbility";
         private const string ReqMostImmuneUlt = "SurgeMostImmuneUlt";
         private const string ReqMostPulseUlt = "SurgeMostPulseUlt";
+        private const string ReqMostMeter = "SurgeMostMeter";
 
         private static string GetActiveAbilityType()
         {
@@ -87,10 +89,12 @@ namespace SpiderSurge.Integration
         private const string LeastAbilityText = "Least Ability Activations";
         private const string MostUltText = "Most Ultimate Activations";
         private const string LeastUltText = "Least Ultimate Activations";
+        private const string MostMeterText = "Most Surge Meter Charge";
 
         private static readonly (string name, string mode, string[] requirements)[] SurgeTitles =
         {
             ("Enhanced", null, new[] { MostAbilityText }),
+            ("Power Broker", null, new[] { MostMeterText }),
             ("Ultimate Form", null, new[] { MostUltText }),
             ("Powered Up", null, new[] { MostUltText, MostAbilityText }),
             ("Maximum Power", null, new[] { MostUltText, LeastAbilityText }),
@@ -127,6 +131,11 @@ namespace SpiderSurge.Integration
 
                 TryRegisterTitle("Enhanced", LeaderReq(mostAbility, ReqMostAbility));
                 TryRegisterTitle("Ultimate Form", LeaderReq(mostUlt, ReqMostUlt));
+                if (snapshot.Meter != null)
+                {
+                    var mostMeter = GetLeader(snapshot, ps => ps.MeterCharge, descending: true, "Surge Meter Charge");
+                    TryRegisterTitle("Power Broker", LeaderReq(mostMeter, ReqMostMeter));
+                }
 
                 TryRegisterTitle("Powered Up", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(mostAbility, ReqMostAbility));
                 TryRegisterTitle("Maximum Power", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(leastAbility, ReqLeastAbility));

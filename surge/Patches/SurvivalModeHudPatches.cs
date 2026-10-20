@@ -13,11 +13,33 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc")]
     public class SurvivalModeHud_ShowPerkChoicesClientRpc_Patch
     {
+        private static SurvivalModifierChoiceCard _builtFor;
+
         [HarmonyPostfix]
         public static void Postfix(SurvivalModeHud __instance)
         {
+            Apply(__instance, false);
+        }
+
+        // The host runs this twice per show (Netcode runs its own copy of the RPC inside the send) and every machine runs it for a resend aimed at a joining player, so the widgets are only built for new cards
+        internal static void Apply(SurvivalModeHud __instance, bool rebuild)
+        {
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
+
+            var cards = PerkChoiceWidget.Cards(__instance);
+            var first = cards.Count > 0 ? cards[0] : null;
+            if (first != _builtFor)
+            {
+                _builtFor = first;
+                PerkChoiceWidget.ResetChoice();
+                rebuild = true;
+            }
+            if (rebuild)
+            {
+                PerkConfirmButton.Build(__instance);
+                PerkShopPanel.Build(__instance);
+            }
 
             // Access perkChoiceView using reflection since it might be private
             var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -90,38 +112,55 @@ namespace SpiderSurge
         }
     }
 
-    // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then
+    // A client that joins during a perk choice builds the cards before the host's Surge state arrives, so they are redrawn then, while the view may still be animating in
     public static class PerkChoiceRefresh
     {
         // The HUD keeps these private and Mono enforces that at run time, so they are reached through Harmony's field access
-        private static readonly AccessTools.FieldRef<SurvivalModeHud, List<SurvivalModifierChoiceCard>> Cards = AccessTools.FieldRefAccess<SurvivalModeHud, List<SurvivalModifierChoiceCard>>("survivalModifierChoiceCards");
         private static readonly AccessTools.FieldRef<SurvivalModeHud, PerkChoiseTimer> ChoiceTimer = AccessTools.FieldRefAccess<SurvivalModeHud, PerkChoiseTimer>("choiseTimerComponent");
         private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, int> CardIndex = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, int>("cardIndex");
 
         public static void Refresh()
         {
             var hud = SurvivalModeHud.instance;
-            if (hud == null || hud.perkChoiceView == null || !hud.perkChoiceView.IsVisible)
+            if (hud == null || hud.perkChoiceView == null || !(hud.perkChoiceView.IsVisible || hud.perkChoiceView.IsShowing))
             {
                 return;
             }
-            var cards = Cards(hud);
-            if (cards != null)
+            foreach (var card in PerkChoiceWidget.Cards(hud))
             {
-                foreach (var card in cards)
+                if (card.modifier != null)
                 {
-                    if (card != null && card.modifier != null)
-                    {
-                        SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, CardIndex(card), false);
-                    }
+                    if (card.modifierIconImage != null && card.modifier.data != null) card.modifierIconImage.sprite = card.modifier.data.icon;
+                    SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, CardIndex(card), false);
                 }
             }
-            SurvivalModeHud_ShowPerkChoicesClientRpc_Patch.Postfix(hud);
+            SurvivalModeHud_ShowPerkChoicesClientRpc_Patch.Apply(hud, true);
             var timer = ChoiceTimer(hud);
             if (timer != null)
             {
                 PerkChoiseTimer_SetTimerValue_Patch.Postfix(timer);
             }
+        }
+    }
+
+    // A new perk screen draws new shop items; a reroll re-shows the cards and keeps them, so a reroll can't be used to fish for items
+    [HarmonyPatch(typeof(SurvivalModeHud), "ShowPerkChoices")]
+    public class SurvivalModeHud_ShowPerkChoices_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(List<Modifier> modifiers)
+        {
+            if (SurgeGameModeManager.IsSurgeRunActive && SurgeMeter.Enabled && !AbilitySelection.IsChoosing && !PerkShop.RerollInProgress) PerkShop.RollOffer(modifiers);
+        }
+    }
+
+    [HarmonyPatch(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc")]
+    public class SurvivalModeHud_PerkChoiceSubmitClientRpc_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.IsSurgeRunActive) PerkChoiceWidget.MarkChoiceMade();
         }
     }
 
@@ -131,7 +170,8 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime))
+            // A reroll re-shows the cards while the first countdown still runs, so it must not start a second one
+            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime || PerkShop.RerollInProgress))
             {
                 __result = EmptyEnumerator();
                 return false;
@@ -154,7 +194,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(PerkChoiseTimer __instance)
         {
-            if (!SurgeGameModeManager.IsSurgeRunActive || (!AbilitySelection.IsChoosing && !ModConfig.UnlimitedPerkChoosingTime)) return;
+            if (!PerkConfirm.Active) return;
 
             var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
             if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;

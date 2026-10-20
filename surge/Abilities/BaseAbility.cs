@@ -25,6 +25,9 @@ namespace SpiderSurge
         protected bool IsAuthority => Net.IsAuthority;
         public int PlayerId => playerController != null ? playerController.playerID.Value : -1;
 
+        // Counts casts and ultimates alike, so the meter can cap what one cast earns
+        public int CastId { get; private set; }
+
         protected bool isActive = false;
         protected bool onCooldown = false;
         protected bool skipNextCooldown = false;
@@ -420,6 +423,7 @@ namespace SpiderSurge
             isActive = true;
             activeDuration = AbilityDuration;
             activeEndTime = Time.time + activeDuration;
+            CastId++;
             OnActivate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
@@ -486,6 +490,7 @@ namespace SpiderSurge
             isUltimateActive = true;
             activeDuration = UltimateDuration;
             activeEndTime = Time.time + activeDuration;
+            CastId++;
             OnActivateUltimate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)

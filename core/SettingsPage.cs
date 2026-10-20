@@ -27,7 +27,7 @@ namespace SpiderSurge.Common
         // The game's list moves 6 units per wheel notch; this makes a notch about two rows
         private const float ScrollSensitivity = 15f;
         public const string AchievementsHub = "achievements";
-        private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade" };
+        private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade", "Loop-Move", "Loop-Rotate", "Loop-Scale", "Loop-Fade" };
 
         private static readonly Part[] MenuOrder = { Parts.Stats, Parts.Surge, Parts.Teams, Parts.Fixes };
         private static readonly AccessTools.FieldRef<ModsMenu, UIButton> BackButtonOf = AccessTools.FieldRefAccess<ModsMenu, UIButton>("backButton");
@@ -891,7 +891,7 @@ namespace SpiderSurge.Common
         }
 
         // Doozy's click animations are DOTween sequences named after the button's RectTransform, and a finished punch starts an unnamed tween on it; left running, they fail once it is gone
-        private static void StopClickAnimations(GameObject created)
+        internal static void StopClickAnimations(GameObject created)
         {
             foreach (RectTransform rect in created.GetComponentsInChildren<RectTransform>(true))
             {

@@ -76,6 +76,8 @@ namespace SpiderSurge
         private void LateUpdate()
         {
             SurgeNet.Flush();
+            MeterNet.Flush();
+            MeterHud.Tick();
         }
     }
 }

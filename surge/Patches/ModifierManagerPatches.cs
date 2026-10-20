@@ -128,7 +128,7 @@ namespace SpiderSurge
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
 
             string key = m.data.key;
-            if (AbilitySelection.IsChoosing)
+            if (AbilitySelection.StartingChoiceOpen)
             {
                 __instance.mapNameText.text = "AVAILABLE FROM WAVE 1";
                 __instance.mapImage.gameObject.SetActive(false);
