@@ -8,19 +8,20 @@ using P = SpiderSurge.Consts.PerkNames;
 
 namespace SpiderSurge
 {
-    // A text under the perk cards: the starting ability choice explains the meter and chaos points, and a focused or locked ability or ultimate card says how it charges the meter
+    // A line under the perk cards: a focused or locked ability or ultimate card says how it charges the meter
     public class MeterHint : MonoBehaviour
     {
         public const string ObjectName = "SurgeMeterHint";
         private const float Width = 640f;
-        private const float Height = 90f;
+        private const float Height = 40f;
         private const float Gap = 10f;
+
+        // Room the cards leave under them for the line, two lines of text at most
+        public const float Reserve = Gap + 34f;
 
         private SurvivalModeHud _hud;
         private TMP_Text _text;
-        private bool _starting;
         private string _shownKey;
-        private int _shownPerPoint = -1;
 
         public static MeterHint Current { get; private set; }
 
@@ -44,7 +45,6 @@ namespace SpiderSurge
                 textObject.name = ObjectName;
                 var hint = textObject.AddComponent<MeterHint>();
                 hint._hud = hud;
-                hint._starting = AbilitySelection.StartingChoiceOpen;
                 hint._text = textObject.GetComponent<TMP_Text>();
                 SettingsPage.SetText(hint._text, "");
                 hint._text.raycastTarget = false;
@@ -98,11 +98,9 @@ namespace SpiderSurge
         {
             if (_text == null) return;
             string key = FocusedKey();
-            int perPoint = SurgeMeter.Known ? SurgeMeter.ChargePerPoint : 0;
-            if (key == _shownKey && perPoint == _shownPerPoint) return;
+            if (key == _shownKey) return;
             _shownKey = key;
-            _shownPerPoint = perPoint;
-            _text.text = Compose(key, perPoint);
+            _text.text = Compose(key);
         }
 
         // The card under the controller's focus, else the locked one
@@ -114,21 +112,11 @@ namespace SpiderSurge
             return card != null && card.modifier != null && card.modifier.data != null ? card.modifier.data.key : null;
         }
 
-        private string Compose(string key, int perPoint)
+        private static string Compose(string key)
         {
-            string text = "";
-            if (_starting)
-            {
-                text = "Casting your ability during a wave fills the team's <b>Surge meter</b> under the lives counter. Each full meter is a <b>chaos point</b> to spend in the shop beside the cards at every later perk choice.";
-                if (perPoint > 0) text += $" A chaos point takes <color={Consts.Formatting.ColorGold}>{perPoint}</color> charge for this team.";
-            }
             string how = key != null ? HowItCharges(key) : null;
-            if (how != null && PerksManager.Instance != null)
-            {
-                if (text.Length > 0) text += "\n";
-                text += $"<color={Consts.Formatting.ColorGold}>{PerksManager.Instance.GetDisplayName(key)}</color> charges the meter {how}.";
-            }
-            return text;
+            if (how == null || PerksManager.Instance == null) return "";
+            return $"<color={Consts.Formatting.ColorGold}>{PerksManager.Instance.GetDisplayName(key)}</color> charges the meter {how}.";
         }
 
         // From the same numbers the abilities charge with

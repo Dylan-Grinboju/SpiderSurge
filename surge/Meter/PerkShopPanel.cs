@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Logger = Silk.Logger;
 using System.Linq;
+using M = SpiderSurge.Consts.Values.Meter;
 
 namespace SpiderSurge
 {
@@ -17,11 +18,16 @@ namespace SpiderSurge
         public Vector2 OriginalSize;
     }
 
-    // The shop column beside the perk cards, built from the game's card prefab: a row click selects an item and Buy spends the chaos points
+    // The column beside the perk cards: the team's chaos points and meter on top, then the shop built from the game's card prefab, where a row click selects an item and Buy spends the points; the starting ability pick has no shop, so it explains the meter instead
     public class PerkShopPanel : MonoBehaviour
     {
         private const string PanelName = "SurgeShop";
-        private const float Gap = 12f;
+        private const float HeaderHeight = 24f;
+        private const float BarTop = 28f;
+        private const float BarHeight = 8f;
+        private const float CaptionTop = 39f;
+        private const float CaptionHeight = 15f;
+        private static readonly Color BarBack = new Color(1f, 1f, 1f, 0.16f);
 
         private class Entry
         {
@@ -35,7 +41,10 @@ namespace SpiderSurge
 
         private readonly List<Entry> _entries = new List<Entry>();
         private TMP_Text _header;
+        private RectTransform _fill;
+        private TMP_Text _caption;
         private SurvivalModeHud _hud;
+        private bool _infoOnly;
         private Entry _selected;
         private Button _buy;
         private Image _buyBackground;
@@ -46,7 +55,8 @@ namespace SpiderSurge
             if (hud == null || hud.perkChoiceView == null || hud.perkCardsRoot == null) return;
 
             Remove(hud);
-            if (!SurgeMeter.Enabled || AbilitySelection.StartingChoiceOpen || hud.perkCardPrefab == null)
+            var prefabCard = hud.perkCardPrefab != null ? hud.perkCardPrefab.GetComponent<SurvivalModifierChoiceCard>() : null;
+            if (!SurgeMeter.Enabled || prefabCard == null || prefabCard.perkNameText == null || prefabCard.perkDescriptionText == null)
             {
                 RestoreCards(hud);
                 PerkConfirmButton.Current?.Reposition();
@@ -56,21 +66,34 @@ namespace SpiderSurge
 
             try
             {
-                LayoutCards(hud);
+                Vector2 column = LayoutCards(hud);
                 var panelObject = new GameObject(PanelName, typeof(RectTransform));
                 var rect = (RectTransform)panelObject.transform;
                 rect.SetParent(hud.perkChoiceView.transform, false);
-                rect.anchorMin = new Vector2(1f, 0.5f);
-                rect.anchorMax = new Vector2(1f, 0.5f);
-                rect.pivot = new Vector2(1f, 1f);
-                rect.anchoredPosition = new Vector2(-27f, CardsTop(hud));
-                int count = PerkShop.Offer.Length;
-                rect.sizeDelta = new Vector2(Consts.Values.Meter.PanelWidth, Consts.Values.Meter.HeaderHeight + count * (Consts.Values.Meter.EntryHeight + Consts.Values.Meter.EntrySpacing) + Consts.Values.Meter.BuyHeight);
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(column.x, CardsTop(hud));
 
                 var panel = panelObject.AddComponent<PerkShopPanel>();
                 panel._hud = hud;
-                panel.Populate();
-                panel.LinkNavigation();
+                panel._infoOnly = AbilitySelection.StartingChoiceOpen;
+                int count = panel._infoOnly ? 0 : PerkShop.Offer.Length;
+                float minimum = M.MeterBlockHeight + count * (M.MinEntryHeight + M.EntrySpacing) + (panel._infoOnly ? 0f : M.BuyHeight);
+                float height = Mathf.Max(column.y, minimum);
+                rect.sizeDelta = new Vector2(M.PanelWidth, height);
+
+                panel.BuildMeter(prefabCard);
+                if (panel._infoOnly)
+                {
+                    panel.BuildInfo(prefabCard, height);
+                }
+                else
+                {
+                    float entryHeight = count > 0 ? Mathf.Clamp((height - M.MeterBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
+                    panel.Populate(entryHeight);
+                    panel.LinkNavigation();
+                }
                 panel.Refresh();
                 panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
@@ -94,11 +117,10 @@ namespace SpiderSurge
             PerkChoiceWidget.Remove(hud, PanelName);
         }
 
-        // Shrinks the card root to the space left of the shop; the layout group centers the cards in it and scales them to fit
-        private static void LayoutCards(SurvivalModeHud hud)
+        // Centers the cards and the column together; the cards keep their vanilla size unless they don't fit across the view or above Confirm and the hint line. Returns the column's left edge and the cards' height
+        private static Vector2 LayoutCards(SurvivalModeHud hud)
         {
-            var root = hud.perkCardsRoot as RectTransform;
-            if (root == null) return;
+            var root = (RectTransform)hud.perkCardsRoot;
             var layout = root.GetComponent<ShopCardLayout>();
             if (layout == null)
             {
@@ -106,28 +128,39 @@ namespace SpiderSurge
                 layout.OriginalPosition = root.anchoredPosition;
                 layout.OriginalSize = root.sizeDelta;
             }
-            float taken = Consts.Values.Meter.PanelWidth + Gap;
-            root.sizeDelta = new Vector2(layout.OriginalSize.x - taken, layout.OriginalSize.y);
-            root.anchoredPosition = new Vector2(layout.OriginalPosition.x - taken / 2f, layout.OriginalPosition.y);
-
-            var parent = root.parent as RectTransform;
-            float width = (parent != null ? parent.rect.width : 800f) + root.sizeDelta.x;
+            var view = root.parent as RectTransform;
+            float viewWidth = view != null ? view.rect.width : 1066f;
+            float viewHeight = view != null ? view.rect.height : 600f;
             var group = root.GetComponent<HorizontalLayoutGroup>();
-            float spacing = group != null ? group.spacing : 5f;
             var cards = PerkChoiceWidget.Cards(hud);
-            if (cards.Count == 0) return;
+            float spaces = (group != null ? group.spacing : 5f) * Mathf.Max(0, cards.Count - 1);
+
             float cardsWidth = 0f;
+            float cardsHeight = 0f;
             foreach (var card in cards)
             {
-                cardsWidth += ((RectTransform)card.transform).sizeDelta.x * PerkCardScale.Of(card).Base.x;
+                var cardRect = (RectTransform)card.transform;
+                Vector3 scale = PerkCardScale.Of(card).Base;
+                cardsWidth += cardRect.sizeDelta.x * scale.x;
+                cardsHeight = Mathf.Max(cardsHeight, cardRect.sizeDelta.y * scale.y);
             }
-            float room = width - spacing * (cards.Count - 1);
-            float factor = cardsWidth > 0f ? Mathf.Min(1f, room / cardsWidth) : 1f;
-            factor = Mathf.Min(factor, Consts.Values.Meter.CardScale);
+            float roomX = viewWidth - 2f * M.SideMargin - M.PanelGap - M.PanelWidth - spaces;
+            float below = (PerkConfirmButton.Current != null ? M.ConfirmGap + M.ConfirmHeight : 0f) + MeterHint.Reserve;
+            float roomY = CardsTop(hud) + viewHeight / 2f - M.BottomMargin - below;
+            float factor = 1f;
+            if (cardsWidth > 0f) factor = Mathf.Min(factor, roomX / cardsWidth);
+            if (cardsHeight > 0f) factor = Mathf.Min(factor, roomY / cardsHeight);
+            factor = Mathf.Max(factor, M.MinCardFactor);
             foreach (var card in cards)
             {
                 PerkCardScale.Of(card).SetFactor(factor);
             }
+
+            float width = cardsWidth * factor + spaces;
+            float left = layout.OriginalPosition.x - (width + M.PanelGap + M.PanelWidth) / 2f;
+            root.sizeDelta = new Vector2(width - viewWidth, layout.OriginalSize.y);
+            root.anchoredPosition = new Vector2(left + width / 2f, layout.OriginalPosition.y);
+            return new Vector2(left + width + M.PanelGap, cardsHeight * factor);
         }
 
         private static void RestoreCards(SurvivalModeHud hud)
@@ -151,9 +184,85 @@ namespace SpiderSurge
             return root.anchoredPosition.y + root.sizeDelta.y * (1f - root.pivot.y);
         }
 
-        private void Populate()
+        private TMP_Text CloneText(TMP_Text source, string name)
         {
-            float y = 0f;
+            var text = Instantiate(source.gameObject, transform).GetComponent<TMP_Text>();
+            text.gameObject.name = name;
+            text.gameObject.SetActive(true);
+            SettingsPage.SetText(text, "");
+            text.raycastTarget = false;
+            text.enableAutoSizing = false;
+            text.rectTransform.localScale = Vector3.one;
+            text.rectTransform.localRotation = Quaternion.identity;
+            return text;
+        }
+
+        private static void PlaceTop(RectTransform rect, float top, float height, float inset)
+        {
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -top);
+            rect.sizeDelta = new Vector2(-2f * inset, height);
+        }
+
+        // The points, a bar for the charge toward the next one and the charge in numbers
+        private void BuildMeter(SurvivalModifierChoiceCard prefabCard)
+        {
+            _header = CloneText(prefabCard.perkNameText, "Points");
+            PlaceTop(_header.rectTransform, 0f, HeaderHeight, 0f);
+            _header.fontSize = 16f;
+            _header.alignment = TextAlignmentOptions.Center;
+            _header.enableWordWrapping = false;
+            _header.overflowMode = TextOverflowModes.Overflow;
+
+            var back = new GameObject("Bar", typeof(RectTransform), typeof(Image));
+            var backRect = (RectTransform)back.transform;
+            backRect.SetParent(transform, false);
+            PlaceTop(backRect, BarTop, BarHeight, 10f);
+            var backImage = back.GetComponent<Image>();
+            backImage.color = BarBack;
+            backImage.raycastTarget = false;
+
+            var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            _fill = (RectTransform)fill.transform;
+            _fill.SetParent(backRect, false);
+            _fill.anchorMin = Vector2.zero;
+            _fill.anchorMax = new Vector2(0f, 1f);
+            _fill.pivot = new Vector2(0f, 0.5f);
+            _fill.offsetMin = Vector2.zero;
+            _fill.offsetMax = Vector2.zero;
+            var fillImage = fill.GetComponent<Image>();
+            fillImage.color = Hud.Pink;
+            fillImage.raycastTarget = false;
+
+            _caption = CloneText(prefabCard.perkDescriptionText, "Charge");
+            PlaceTop(_caption.rectTransform, CaptionTop, CaptionHeight, 0f);
+            _caption.fontSize = 11f;
+            _caption.alignment = TextAlignmentOptions.Center;
+            _caption.enableWordWrapping = false;
+            _caption.overflowMode = TextOverflowModes.Overflow;
+            _caption.color = Hud.Muted;
+        }
+
+        private void BuildInfo(SurvivalModifierChoiceCard prefabCard, float height)
+        {
+            var info = CloneText(prefabCard.perkDescriptionText, "About");
+            PlaceTop(info.rectTransform, M.MeterBlockHeight, height - M.MeterBlockHeight, 8f);
+            info.fontSize = 13f;
+            info.alignment = TextAlignmentOptions.Top;
+            info.enableWordWrapping = true;
+            info.overflowMode = TextOverflowModes.Overflow;
+            info.color = Color.white;
+            info.text = "Casting your ability during a wave charges the team's <b>Surge meter</b>, shown here and under the lives counter.\n\n"
+                + "Each full meter is a <b>chaos point</b>. At every later perk choice this column is a shop where the team spends them.";
+        }
+
+        private void Populate(float entryHeight)
+        {
+            float y = M.MeterBlockHeight;
+            float iconSize = Mathf.Min(entryHeight - 16f, 56f);
+            float textLeft = 8f + iconSize + 10f;
             foreach (ShopItem item in PerkShop.Offer)
             {
                 GameObject entryObject = Instantiate(_hud.perkCardPrefab, transform);
@@ -171,22 +280,13 @@ namespace SpiderSurge
                     entry.Title = card.perkNameText;
                     entry.Description = card.perkDescriptionText;
                     PerkChoiceWidget.HideCardParts(card, true, true);
-                    if (_header == null && card.perkNameText != null)
-                    {
-                        _header = Instantiate(card.perkNameText.gameObject, transform).GetComponent<TMP_Text>();
-                        _header.gameObject.name = "Points";
-                    }
                     Destroy(card);
                 }
 
                 var rect = (RectTransform)entryObject.transform;
                 rect.localScale = Vector3.one;
-                rect.anchorMin = new Vector2(0f, 1f);
-                rect.anchorMax = new Vector2(1f, 1f);
-                rect.pivot = new Vector2(0.5f, 1f);
-                rect.anchoredPosition = new Vector2(0f, -(Consts.Values.Meter.HeaderHeight + y));
-                rect.sizeDelta = new Vector2(0f, Consts.Values.Meter.EntryHeight);
-                y += Consts.Values.Meter.EntryHeight + Consts.Values.Meter.EntrySpacing;
+                PlaceTop(rect, y, entryHeight, 0f);
+                y += entryHeight + M.EntrySpacing;
 
                 if (entry.Icon != null)
                 {
@@ -195,7 +295,7 @@ namespace SpiderSurge
                     iconRect.anchorMax = new Vector2(0f, 0.5f);
                     iconRect.pivot = new Vector2(0f, 0.5f);
                     iconRect.anchoredPosition = new Vector2(8f, 0f);
-                    iconRect.sizeDelta = new Vector2(42f, 42f);
+                    iconRect.sizeDelta = new Vector2(iconSize, iconSize);
                     entry.Icon.sprite = IconLoader.GetIcon(PerkShop.IconOf(item));
                     entry.Icon.color = Color.white;
                     entry.Icon.preserveAspect = true;
@@ -207,15 +307,14 @@ namespace SpiderSurge
                     titleRect.anchorMin = Vector2.zero;
                     titleRect.anchorMax = Vector2.one;
                     titleRect.pivot = new Vector2(0.5f, 0.5f);
-                    titleRect.offsetMin = new Vector2(56f, Consts.Values.Meter.EntryHeight - 28f);
-                    titleRect.offsetMax = new Vector2(-6f, -3f);
-                    entry.Title.fontSize = 12f;
+                    titleRect.offsetMin = new Vector2(textLeft, entryHeight - 30f);
+                    titleRect.offsetMax = new Vector2(-6f, -6f);
                     entry.Title.alignment = TextAlignmentOptions.MidlineLeft;
                     entry.Title.enableWordWrapping = false;
                     entry.Title.overflowMode = TextOverflowModes.Ellipsis;
                     entry.Title.enableAutoSizing = true;
-                    entry.Title.fontSizeMin = Consts.Values.Meter.MinLabelFontSize;
-                    entry.Title.fontSizeMax = 12f;
+                    entry.Title.fontSizeMin = M.MinLabelFontSize;
+                    entry.Title.fontSizeMax = 15f;
                 }
                 if (entry.Description != null)
                 {
@@ -224,9 +323,11 @@ namespace SpiderSurge
                     descriptionRect.anchorMin = Vector2.zero;
                     descriptionRect.anchorMax = Vector2.one;
                     descriptionRect.pivot = new Vector2(0.5f, 0.5f);
-                    descriptionRect.offsetMin = new Vector2(56f, 4f);
-                    descriptionRect.offsetMax = new Vector2(-6f, -28f);
-                    entry.Description.fontSize = 9f;
+                    descriptionRect.offsetMin = new Vector2(textLeft, 6f);
+                    descriptionRect.offsetMax = new Vector2(-6f, -32f);
+                    entry.Description.enableAutoSizing = true;
+                    entry.Description.fontSizeMin = M.MinLabelFontSize;
+                    entry.Description.fontSizeMax = 12f;
                     entry.Description.alignment = TextAlignmentOptions.TopLeft;
                     entry.Description.enableWordWrapping = true;
                     entry.Description.overflowMode = TextOverflowModes.Truncate;
@@ -240,21 +341,6 @@ namespace SpiderSurge
                 _entries.Add(entry);
             }
             BuildBuyButton(y);
-
-            if (_header != null)
-            {
-                SettingsPage.SetText(_header, "");
-                var headerRect = _header.rectTransform;
-                headerRect.anchorMin = new Vector2(0f, 1f);
-                headerRect.anchorMax = new Vector2(1f, 1f);
-                headerRect.pivot = new Vector2(0.5f, 1f);
-                headerRect.anchoredPosition = Vector2.zero;
-                headerRect.sizeDelta = new Vector2(0f, Consts.Values.Meter.HeaderHeight);
-                headerRect.localScale = Vector3.one;
-                _header.fontSize = 14f;
-                _header.alignment = TextAlignmentOptions.Center;
-                _header.enableWordWrapping = false;
-            }
         }
 
         private void BuildBuyButton(float y)
@@ -272,11 +358,7 @@ namespace SpiderSurge
             }
             var rect = (RectTransform)buyObject.transform;
             rect.localScale = Vector3.one;
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -(Consts.Values.Meter.HeaderHeight + y));
-            rect.sizeDelta = new Vector2(0f, Consts.Values.Meter.BuyHeight);
+            PlaceTop(rect, y, M.BuyHeight, 0f);
             if (_buyLabel != null)
             {
                 SettingsPage.SetText(_buyLabel, "");
@@ -286,20 +368,19 @@ namespace SpiderSurge
                 labelRect.pivot = new Vector2(0.5f, 0.5f);
                 labelRect.offsetMin = new Vector2(6f, 2f);
                 labelRect.offsetMax = new Vector2(-6f, -2f);
-                _buyLabel.fontSize = 12f;
                 _buyLabel.alignment = TextAlignmentOptions.Center;
                 _buyLabel.enableWordWrapping = false;
                 _buyLabel.overflowMode = TextOverflowModes.Ellipsis;
                 _buyLabel.enableAutoSizing = true;
-                _buyLabel.fontSizeMin = Consts.Values.Meter.MinLabelFontSize;
-                _buyLabel.fontSizeMax = 12f;
+                _buyLabel.fontSizeMin = M.MinLabelFontSize;
+                _buyLabel.fontSizeMax = 13f;
             }
             if (_buy != null)
             {
                 _buy.onClick.RemoveAllListeners();
                 _buy.onClick.AddListener(OnBuy);
                 ColorBlock colors = _buy.colors;
-                colors.disabledColor = Consts.Values.Meter.ConfirmDisabledTint;
+                colors.disabledColor = M.ConfirmDisabledTint;
                 _buy.colors = colors;
             }
         }
@@ -384,7 +465,7 @@ namespace SpiderSurge
         // A client gets the cards and the host's offer in separate messages, so the panel is redrawn when the offer arrives later
         private void Rebuild()
         {
-            if (this == null || _hud == null) return;
+            if (this == null || _hud == null || _infoOnly) return;
             if (!_entries.Select(entry => entry.Item).SequenceEqual(PerkShop.Offer)) Build(_hud);
         }
 
@@ -395,6 +476,15 @@ namespace SpiderSurge
             if (_header != null)
             {
                 _header.text = $"Chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
+            }
+            if (_fill != null)
+            {
+                _fill.anchorMax = new Vector2(SurgeMeter.Fill, 1f);
+                _fill.offsetMax = Vector2.zero;
+            }
+            if (_caption != null)
+            {
+                _caption.text = SurgeMeter.Known ? $"{SurgeMeter.Charge} / {SurgeMeter.ChargePerPoint} charge to the next point" : "";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -417,7 +507,7 @@ namespace SpiderSurge
                 if (entry.Icon != null) entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);
                 if (entry.Background != null)
                 {
-                    Color tint = entry == _selected ? Consts.Values.Meter.LockedCardTint : Color.white;
+                    Color tint = entry == _selected ? M.LockedCardTint : Color.white;
                     entry.Background.color = PerkChoiceWidget.Faded(tint, can ? 1f : 0.6f);
                 }
             }
