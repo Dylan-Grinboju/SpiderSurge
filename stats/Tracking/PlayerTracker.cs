@@ -365,6 +365,7 @@ namespace StatsMod
 
             if (activePlayers.TryGetValue(player, out PlayerData playerData))
             {
+                MatchHistory.PlayerLeaving(player, playerData);
                 activePlayers.Remove(player);
                 RosterVersion++;
                 ForgetLooseWeapons(player);

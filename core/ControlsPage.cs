@@ -33,6 +33,11 @@ namespace SpiderSurge.Common
                 page.Binding(Controls.TitlesWindow);
                 page.Note("The titles key also skips the reveal at the end of a run.");
                 page.Binding(Controls.SwitchWindows);
+                page.Binding(Controls.PreviousPresetKeyboard);
+                page.Binding(Controls.NextPresetKeyboard);
+                page.Binding(Controls.PreviousPresetController);
+                page.Binding(Controls.NextPresetController);
+                page.Note("Preset controls work while the big window is open. The ultimate takes priority over a shared preset button.");
                 page.Note("Steps through the small window, the big window and the titles on any controller.");
                 string effective = StatsMod.ModConfig.SwitchWindowsBinding;
                 if (effective != Controls.Get(Controls.SwitchWindows))

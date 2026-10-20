@@ -51,6 +51,7 @@ public static class TitleCollection
     public static int? Record(IEnumerable<string> names)
     {
         DateTime now = DateTime.UtcNow;
+        foreach (var title in TitlesManager.Instance.CurrentTitles) title.EarnedUtc = now;
         var run = names.Select(Clean).Where(name => name != null).Distinct(StringComparer.Ordinal).ToList();
         if (!EnsureLoaded())
         {
@@ -58,6 +59,7 @@ public static class TitleCollection
             return null;
         }
 
+        CollectionSeen.Ensure("titles", _titles.Entries.Keys);
         int room = MaxTitles - _titles.Entries.Count;
         var newlyUnlocked = new List<string>();
         var earned = new List<KeyValuePair<string, UnlockedTitle>>();
@@ -72,6 +74,7 @@ public static class TitleCollection
             earned.Add(Earned(name, now));
         }
         _titles.Add(earned);
+        foreach (var title in TitlesManager.Instance.CurrentTitles) title.IsNew = newlyUnlocked.Contains(title.TitleName);
         if (newlyUnlocked.Count > 0) Logger.LogInfo($"New titles unlocked: {string.Join(", ", newlyUnlocked)}");
         Changed?.Invoke();
         return newlyUnlocked.Count;
@@ -84,6 +87,7 @@ public static class TitleCollection
             Logger.LogWarning($"Couldn't reset the title collection: {FilePath} can't be read right now");
             return;
         }
+        CollectionSeen.Reset("titles");
         Logger.LogInfo("Title collection reset");
         Changed?.Invoke();
     }
@@ -104,6 +108,9 @@ public static class TitleCollection
     {
         EnsureLoaded();
         var names = waited.Where(entry => _titles.TryGet(entry.Key, out UnlockedTitle title) && title.FirstEarnedUtc == entry.Value.FirstEarnedUtc).Select(entry => entry.Key).ToList();
+        CollectionSeen.Ensure("titles", _titles.Entries.Keys.Where(name => !names.Contains(name)));
+        foreach (var title in TitlesManager.Instance.CurrentTitles)
+            if (_titles.TryGet(title.TitleName, out var earned) && earned.FirstEarnedUtc == title.EarnedUtc) title.IsNew = true;
         if (names.Count > 0) Logger.LogInfo($"New titles unlocked: {string.Join(", ", names)}");
         Changed?.Invoke();
     }

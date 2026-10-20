@@ -77,6 +77,12 @@ namespace StatsMod
             ("display.bigUI.columns.weaponKills.sawDisc", false),
             ("display.bigUI.columns.weaponKills.explosions", false),
             ("tracking.saveStatsToFile", true),
+            ("tracking.saveHistory", true),
+            ("display.presets.combat", true),
+            ("display.presets.enemies", true),
+            ("display.presets.weapons", true),
+            ("display.presets.accuracy", true),
+            ("display.presets.movement", true),
             ("titles.enabled", true),
             ("titles.revealDelaySeconds", 2.0f),
         }.Select(pair => new KeyValuePair<string, object>(Prefix + pair.key, pair.value))
@@ -161,7 +167,7 @@ namespace StatsMod
             ? Controls.Without(Controls.Get(Controls.SwitchWindows), Controls.Get(Controls.UltimateController))
             : Controls.Get(Controls.SwitchWindows);
 
-        private static bool SurgeUltimateTaken => Parts.Surge.Running && (SpiderSurge.BaseAbility.UltimateBound || !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled);
+        internal static bool SurgeUltimateTaken => Parts.Surge.Running && (SpiderSurge.BaseAbility.UltimateBound || !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled);
 
         // The small window is dragged with the mouse, so its position is saved once it stops moving, as a percentage of the screen so a new resolution keeps it in place
         public static void SetDisplayPosition(Vector2 position)

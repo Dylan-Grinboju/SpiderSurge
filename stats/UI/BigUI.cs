@@ -7,13 +7,14 @@ using System.Linq;
 
 namespace StatsMod
 {
-    public class BigUI : MonoBehaviour
+    public partial class BigUI : MonoBehaviour
     {
         private enum Tone { Good, Bad, Warm, Plain }
 
         private sealed class Column
         {
             public string Label;
+            public string Group;
             public string Header;
             public float Width;
             public Func<bool> Shown;
@@ -30,10 +31,10 @@ namespace StatsMod
             new Column { Label = label, Width = width, Shown = shown, Tone = Tone.Plain, Time = time };
 
         private static Column Enemy(string label, string key, Func<bool> shown) =>
-            Count(label, COL_WIDTH_ENEMY_KILLS, shown, Tone.Good, p => p.EnemyKills.TryGetValue(key, out int v) ? v : 0);
+            new Column { Label = label, Group = "enemies", Width = COL_WIDTH_ENEMY_KILLS, Shown = shown, Tone = Tone.Good, Count = p => p.EnemyKills.TryGetValue(key, out int v) ? v : 0 };
 
         private static Column Weapon(string label, string key, Func<bool> shown) =>
-            Count(label, COL_WIDTH_WEAPON_KILLS, shown, Tone.Good, p => p.WeaponHits.TryGetValue(key, out int v) ? v : 0);
+            new Column { Label = label, Group = "weapons", Width = COL_WIDTH_WEAPON_KILLS, Shown = shown, Tone = Tone.Good, Count = p => p.WeaponHits.TryGetValue(key, out int v) ? v : 0 };
 
         private const float COL_WIDTH_ENEMY_KILLS = 100f;
         private const float COL_WIDTH_WEAPON_KILLS = 100f;
@@ -55,6 +56,7 @@ namespace StatsMod
             Count("Friendly Shields", 110f, () => ModConfig.BigUIShowFriendlyShields, Tone.Warm, p => p.FriendlyShieldsHit),
             Count("Wave Clutches", 110f, () => ModConfig.BigUIShowWaveClutches, Tone.Good, p => p.WaveClutches),
             Duration("Alive Time", 120f, () => ModConfig.BigUIShowAliveTime, p => p.GetCurrentAliveTime()),
+            Count("Airborne Kills", 100f, () => false, Tone.Good, p => p.KillsWhileAirborne),
             Count("Web Swings", 100f, () => ModConfig.BigUIShowWebSwings, Tone.Good, p => p.WebSwings),
             Duration("Web Swing Time", 120f, () => ModConfig.BigUIShowWebSwingTime, p => p.GetCurrentWebSwingTime()),
             Duration("Airborne Time", 120f, () => ModConfig.BigUIShowAirborneTime, p => p.GetCurrentAirborneTime()),
@@ -105,7 +107,7 @@ namespace StatsMod
         public float BASE_MIN_WIDTH = 620f;
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
         public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
-        public float COL_WIDTH_PLAYER_NAME = 190f;
+        public float COL_WIDTH_PLAYER_NAME = 230f;
         #endregion
 
         #region Font Sizes
@@ -150,11 +152,13 @@ namespace StatsMod
         #region Display Control
         public void ToggleDisplay()
         {
+            if (!isDisplayVisible) { preset = 0; presetPage = 0; }
             isDisplayVisible = !isDisplayVisible;
         }
 
         public void ShowDisplay()
         {
+            if (!isDisplayVisible) { preset = 0; presetPage = 0; }
             isDisplayVisible = true;
         }
 
@@ -190,7 +194,9 @@ namespace StatsMod
         #region GUI Drawing
         private void OnGUI()
         {
-            if (!isDisplayVisibleAtAll || !isDisplayVisible || Event.current.type != EventType.Repaint || GameMenus.Open) return;
+            if (!isDisplayVisibleAtAll || !isDisplayVisible || GameMenus.Open) return;
+            HandlePresetMouse();
+            if (Event.current.type != EventType.Repaint) return;
 
             InitializeStyles();
 
@@ -212,15 +218,14 @@ namespace StatsMod
 
         private void Draw(GameStatsSnapshot statsSnapshot)
         {
+            SelectColumns();
             visibleColumns.Clear();
             float columnsWidth = COL_WIDTH_PLAYER_NAME;
-            foreach (Column column in Columns)
+            for (int i = presetPage * 6; i < Mathf.Min(presetColumns.Count, (presetPage + 1) * 6); i++)
             {
-                if (column.Shown())
-                {
-                    visibleColumns.Add(column);
-                    columnsWidth += column.Width;
-                }
+                Column column = presetColumns[i];
+                visibleColumns.Add(column);
+                columnsWidth += column.Width;
             }
 
             bool showTiles = ModConfig.ShowPlayTime || ModConfig.ShowEnemyDeaths;
@@ -228,7 +233,7 @@ namespace StatsMod
             int playerCount = statsSnapshot.ActivePlayers?.Count ?? 0;
 
             float baseWidth = Mathf.Max(BASE_MIN_WIDTH, showTable ? columnsWidth : 0f) + BASE_PADDING * 2;
-            float baseHeight = BASE_PADDING * 2 + BASE_TITLE_HEIGHT;
+            float baseHeight = BASE_PADDING * 2 + BASE_TITLE_HEIGHT + 36f;
             if (showTable)
             {
                 baseHeight += BASE_SECTION_SPACING + BASE_COLUMN_HEADER_HEIGHT + BASE_HEADER_LINE_HEIGHT + Mathf.Max(playerCount, 1) * BASE_PLAYER_ROW_HEIGHT;
@@ -238,6 +243,7 @@ namespace StatsMod
             ApplyScale(scale);
 
             Rect panel = new Rect((Screen.width - baseWidth * scale) * 0.5f, (Screen.height - baseHeight * scale) * 0.5f, baseWidth * scale, baseHeight * scale);
+            panelRect = panel;
             Hud.Fill(panel, Hud.Ink);
             Hud.Fill(new Rect(panel.x, panel.y, panel.width, 3f * scale), Hud.Pink);
 
@@ -246,6 +252,7 @@ namespace StatsMod
 
             DrawTitleRow(statsSnapshot, new Rect(content.x, content.y, content.width, BASE_TITLE_HEIGHT * scale), showTiles, scale);
 
+            DrawPresetNavigation(content, scale);
             if (showTable)
             {
                 float tableY = content.y + (BASE_TITLE_HEIGHT + BASE_SECTION_SPACING) * scale;
@@ -327,7 +334,7 @@ namespace StatsMod
             float headerHeight = BASE_COLUMN_HEADER_HEIGHT * scale;
             float rowHeight = BASE_PLAYER_ROW_HEIGHT * scale;
             float barWidth = 4f * scale;
-            float nameInset = barWidth + 12f * scale;
+            float nameInset = barWidth + 52f * scale;
             float nameWidth = COL_WIDTH_PLAYER_NAME * scale;
             float headerInset = 4f * scale;
 
@@ -364,6 +371,10 @@ namespace StatsMod
                 Color playerColor = Hud.Readable(playerData.PlayerColor);
                 float barInset = rowHeight * 0.2f;
                 Hud.Fill(new Rect(row.x, row.y + barInset, barWidth, rowHeight - barInset * 2), playerColor);
+                Rect portraitRect = new Rect(row.x + barWidth + 6f * scale, row.y + 3f * scale, 36f * scale, 36f * scale);
+                Texture portrait = SpiderPortraits.ViewOf(playerEntry.Key);
+                if (portrait != null) GUI.DrawTexture(portraitRect, portrait, ScaleMode.ScaleToFit);
+                else Hud.Fill(portraitRect, playerColor);
                 Hud.Label(new Rect(row.x + nameInset, row.y, nameWidth - nameInset, rowHeight), playerData.PlayerName, nameStyle, playerColor);
 
                 x = row.x + nameWidth;

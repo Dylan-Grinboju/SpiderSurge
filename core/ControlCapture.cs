@@ -139,6 +139,14 @@ namespace SpiderSurge.Common
                     Set(Controls.Dpad);
                     return;
                 }
+                if (Current.Allows(ControlExtras.Direction))
+                {
+                    foreach (string path in Controls.DpadDirections)
+                    {
+                        var direction = pad[path.Substring("<Gamepad>/".Length)] as ButtonControl;
+                        if (direction != null && direction.wasPressedThisFrame) { Set(path); return; }
+                    }
+                }
                 int first = PressedAfter(pad, -1);
                 if (first < 0) continue;
                 var button = Controls.ControllerButtons[first];

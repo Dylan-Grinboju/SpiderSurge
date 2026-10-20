@@ -12,7 +12,7 @@ namespace SpiderSurge
         public static void Build(SettingsPage page)
         {
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
-            if (page.Current == SurgeGuide.Page) { SurgeGuide.Build(page); return; }
+            if (page.Current == SurgeGuide.Page || page.Current.StartsWith(SurgeGuide.Page + ".", StringComparison.Ordinal)) { SurgeGuide.Build(page); return; }
             if (page.Current == AchievementsPage.Page) { AchievementsPage.Build(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
@@ -27,6 +27,9 @@ namespace SpiderSurge
             page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)}. Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}.");
 
             page.Spacer();
+            page.Header("Effects");
+            page.Toggle("Reduced visual effects", ModConfig.ReducedEffectsKey);
+            page.Note("Softens decorative flashes and particles. Danger rings and warnings stay visible.");
             page.Header("Sound");
             page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%");
             page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");

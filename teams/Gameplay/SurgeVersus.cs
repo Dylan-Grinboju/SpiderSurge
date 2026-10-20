@@ -56,6 +56,7 @@ namespace SpiderTeams
             _round++;
             bool firstRound = _round == 1;
             RoundActive = true;
+            SpiderSurge.Common.MatchHistory.MarkSurgeVersus();
             CurrentAbility = ability;
             _lastPick = ability;
             Logger.LogInfo($"SpiderTeams Surge round: {Describe(ability)}");

@@ -92,6 +92,7 @@ namespace SpiderSurge
         {
             if (!Net.IsAuthority || IsUnlocked(id) || Array.Find(All, candidate => candidate.Id == id) == null) return;
             bool loaded = _unlocks.Loaded;
+            if (loaded) CollectionSeen.Ensure("achievements", _unlocks.Entries.Keys);
             _unlocks.Add(id, new AchievementUnlock { Date = DateTime.Now, Player = player != null ? Players.NameOf(player) : "" });
             if (loaded) Announce(id);
         }
@@ -103,6 +104,7 @@ namespace SpiderSurge
                 Logger.LogWarning($"Couldn't reset the achievements: {ModData.FilePath} can't be read right now");
                 return;
             }
+            CollectionSeen.Reset("achievements");
             Logger.LogInfo("Achievements reset");
         }
 
@@ -110,6 +112,7 @@ namespace SpiderSurge
         private static void AnnounceAll(List<KeyValuePair<string, AchievementUnlock>> waited)
         {
             ImportLegacy();
+            CollectionSeen.Ensure("achievements", _unlocks.Entries.Keys.Except(waited.Select(entry => entry.Key)));
             foreach (var entry in waited)
             {
                 if (_unlocks.TryGet(entry.Key, out AchievementUnlock unlock) && unlock == entry.Value) Announce(entry.Key);

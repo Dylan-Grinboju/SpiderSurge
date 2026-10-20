@@ -19,6 +19,15 @@ namespace SpiderSurge.Enemies
             }
         }
 
+        internal Color PreviewColor(SpriteRenderer renderer)
+        {
+            int index = System.Array.IndexOf(renderers, renderer);
+            if (index < 0) return renderer.color;
+            var color = Color.Lerp(unshieldedColors[index], shieldColor, 0.7f);
+            color.a = unshieldedColors[index].a;
+            return color;
+        }
+
         private void OnEnable()
         {
             if (renderers == null) return;

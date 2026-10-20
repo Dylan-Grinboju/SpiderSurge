@@ -192,6 +192,7 @@ namespace StatsMod
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
 
+            if (bigUI != null && bigUI.HandlePresetInput(keyboard)) return;
             if (smallWindowKey.WasPressed(Controls.Get(Controls.SmallWindow), keyboard))
             {
                 HandleSmallWindowKey();
@@ -213,6 +214,7 @@ namespace StatsMod
             Gamepad gamepad = Gamepad.current;
             if (gamepad == null || GameMenus.Open) return;
 
+            if (bigUI != null && bigUI.HandlePresetInput(gamepad)) return;
             if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding, gamepad))
             {
                 CycleUIState();

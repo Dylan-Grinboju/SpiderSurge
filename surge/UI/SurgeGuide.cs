@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Linq;
+using SpiderSurge.Enemies;
 using Doozy.Engine.UI;
 using SpiderSurge.Common;
 using Unity.Netcode;
@@ -54,7 +56,7 @@ namespace SpiderSurge
         {
             if (_guideKey.WasPressed(Controls.Get(Controls.SurgeGuide), Keyboard.current))
             {
-                if (SettingsPage.IsShowing(Page)) HudController.instance.Resume();
+                if (SettingsPage.IsShowingTree(Page)) HudController.instance.Resume();
                 else Open();
             }
 
@@ -81,7 +83,7 @@ namespace SpiderSurge
         {
             _opening = true;
             HudController hud = HudController.instance;
-            if (hud != null && SettingsPage.CanShow && !SettingsPage.IsShowing(Page))
+            if (hud != null && SettingsPage.CanShow && !SettingsPage.IsShowingTree(Page))
             {
                 if (!hud.paused && hud.canPauseMenu) hud.Pause();
                 if (hud.paused)
@@ -102,48 +104,81 @@ namespace SpiderSurge
         public static void Build(SettingsPage page)
         {
             page.Title("Surge guide");
-            page.Line(Section("General information",
-                "• <b>To play:</b> stand on the <b>Surge Survival</b> platform in the lobby, above and to the left of Wave Survival.",
-                "• Surge Survival brings new wave logic and enemies. The Wave Survival platform still starts the normal game.",
-                "• Surge highscores are kept separately from the vanilla game. It is still recommended to back up your save files."));
-            page.Line(Section("Abilities",
-                "• Special Abilities perks appear at the first perk choice.",
-                "• Your Ultimate is guaranteed as a choice at wave 30 and can appear in later perk choices until unlocked.",
-                "• At wave 60, you can unlock your Ultimate or switch to another ability with its Ultimate.",
-                "• <b>Choose wisely:</b> Ultimates have longer cooldowns but high impact!"));
-            page.Line(Section("How to activate abilities",
-                $"<b>Ability:</b> {Controls.Display(Controls.AbilityKeyboard)} (keyboard) / {Controls.Display(Controls.AbilityController)} (controller)",
-                $"<b>Ultimate:</b> {Controls.Display(Controls.UltimateKeyboard)} (keyboard) / {Controls.Display(Controls.UltimateController)} (controller)"));
-            page.Line(Section("Customize controls",
-                "<b>Change the buttons for everyone:</b> Mods > SpiderSurge > Controls.",
-                "<b>Set your own ability button on a controller:</b> while holding Menu/Start, double-tap any button.",
-                "<b>Back to the default:</b> hold <b>Menu/Start</b> for <b>3 seconds</b>.",
-                "• Each player has their own. Settings persist until you leave or reset."));
-            page.Line(Section("Ability indicator",
-                $"<color={Hex(ModConfig.IndicatorAvailableColor)}><b>Ready:</b></color> the ability is ready to use.",
-                $"<color={Hex(ModConfig.IndicatorActiveColor)}><b>Active:</b></color> the ability is active.",
-                $"<color={Hex(ModConfig.IndicatorCooldownColor)}><b>Cooldown:</b></color> the ability is on cooldown.",
-                "• Change the indicator's <b>size, offset and colors</b> in Mods > SpiderSurge > Surge > Ability indicator."));
-            page.Line(Section("Synergy perks",
-                $"Combine mod abilities with vanilla perks for bonus effects! Synergized perks are marked with <color={Cyan}>Synergized</color> in the perk selection."));
-            page.Line(Synergy("Null Field", "Shield perks",
-                "• <b>Start Shields</b>, <b>Positive Encouragement</b> or <b>Safety Net</b>: if you have a shield when activating Null Field and avoid getting hit, you keep the shield after immunity ends."));
-            page.Line(Synergy("Bottomless Clip", "Efficiency",
-                "• <b>No Efficiency:</b> when the effect ends or the weapon is dropped, the weapon is <b>disintegrated</b>.",
-                "• <b>Efficiency Lv1:</b> keeps the weapon's ammo at its value from before the effect.",
-                "• <b>Efficiency Lv2:</b> the held weapon is kept at least at <b>50%</b> capacity.",
-                "• Dropped or thrown, Lv1 and Lv2 both keep the ammo from before the effect."));
-            page.Line(Synergy("Kinetic Pulse", "Explosion perks",
-                "• <b>Bigger Boom:</b> increases <b>knockback strength</b>.",
-                "• <b>Too Cool:</b> increases the <b>death radius</b> of the ultimate."));
-            page.Line(Synergy("Pocket Dimension", "Weapon perks",
-                "• <b>More Guns</b>, <b>More Boom</b> or <b>More Particles</b> level 1: keep matching stored weapons between rounds.",
-                "• Level 2: keep matching stored weapons even after <b>death</b>.",
-                "• More Guns = guns, More Boom = explosives, throwables and mines, More Particles = particle and melee weapons."));
-            if (Controls.Get(Controls.SurgeGuide) != Controls.None)
+            string section = page.Current;
+            if (section == Page)
             {
-                page.Note($"Press {Controls.Display(Controls.SurgeGuide)} to open this guide at any time.");
+                page.Line("Stand on the Surge Survival platform above and left of Wave Survival. Surge brings new abilities, perks and enemies. Wave Survival still starts the normal game.");
+                page.Button("Abilities and ultimates", () => page.Open(Page + ".abilities"));
+                page.Button("Perks and synergies", () => page.Open(Page + ".perks"));
+                page.Button("Enemies", () => page.Open(Page + ".enemies"));
+                page.Button("Controls and indicators", () => page.Open(Page + ".controls"));
+                page.Button("Progression and records", () => page.Open(Page + ".progression"));
+                return;
             }
+            if (section == Page + ".abilities")
+            {
+                page.Title("Abilities and ultimates");
+                page.Line("An ability and its ultimate share a cooldown. Using the ultimate usually means waiting longer before either can be used again. Unlock the ultimate through a perk before using it.");
+                Ability(page, "Null Field", "immune_ability", "Become immune briefly. A shield present when you cast is kept only if you avoid hits during the effect.", "Neural Backup", "After a cast, revive a random dead player. In Survival, Astral ghosts count as dead, including your own ghost. A fully dead caster cannot revive themselves. If nobody is dead, summon friendly Wasps instead. In team versus, revives target another teammate.");
+                Ability(page, "Bottomless Clip", "ammo_ability", "Shoot without spending ammo for a short time. Without Efficiency, most weapons disintegrate when the effect ends or you drop it.", "Care Package", "Spawn weapons around the map. Its upgrade places weapons at more existing spawn points.");
+                Ability(page, "Kinetic Pulse", "pulse_ability", "Destroy nearby projectiles and push enemies and spiders away. Use it to clear space or push enemies into lava.", "Thermal Detonation", "A lethal pulse near the caster. Take care around teammates; team versus respects the friendly-fire setting.");
+                Ability(page, "Pocket Dimension", "storage_ability", "Store the held weapon, retrieve the stored one, or swap them. The weapon beside your ring is the one in storage. Matching weapon perks determine whether storage survives a map change or death.", "Banish", "Remove the nearest eligible enemy or other spider in range. It can take a teammate when friendly fire allows it. Missing has a shorter cooldown.");
+                Ability(page, "Freeze Time", "freeze_ability", "Freeze nearby enemies and shots. Spiders and held weapons remain free. Frozen blades, saws, poison and shots still hurt on contact. Shots continue moving when thawed; overlapping freezes keep the longer remaining freeze.", "Rewind", "Turn nearby enemies into plain Wasps. Shielded enemies keep their shields.");
+                return;
+            }
+            if (section == Page + ".perks")
+            {
+                page.Title("Perks and synergies");
+                page.Line("Ability Cooldown strengthens the ability first, then the ultimate. Ability Duration strengthens the ability first, then the ultimate; its effect depends on the ability. Look for Bigger Pulse, Faster Retrieval or Deep Freeze.");
+                page.Line("Short Term Investment strengthens the ability at the ultimate's expense. Long Term Investment strengthens the ultimate at the ability's expense.");
+                page.Line("Luck can offer a higher-level perk before its lower level. Lucky upgrades are marked on the choice screen.");
+                page.Line(Synergy("Null Field", "Shield perks", "Start Shields, Positive Encouragement or Safety Net can provide the shield that Null Field preserves if you avoid hits. Starting Neural Backup with a shield can give the revived player a shield, or summon an extra friendly Wasp."));
+                page.Line(Synergy("Bottomless Clip", "Efficiency", "Without Efficiency, most weapons are consumed. Grenades, mines, Boomsticks, Laser Cubes and Death Cubes are exempt. The first level preserves its original ammo; the second also refills a held weapon to at least half capacity. Dropping it preserves its original ammo at either level."));
+                page.Line(Synergy("Kinetic Pulse", "Explosion perks", "Bigger Boom first strengthens Kinetic Pulse knockback; its second level also strengthens Thermal Detonation knockback. Too Cool widens the ultimate's lethal area."));
+                page.Line(Synergy("Pocket Dimension", "Weapon perks", "More Guns preserves guns, More Boom preserves explosives, throwables and mines, and More Particles preserves particle and melee weapons. The first level keeps them between rounds; the second also keeps them after death."));
+                return;
+            }
+            if (section == Page + ".enemies")
+            {
+                page.Title("Surge enemies");
+                Enemy(page, "Twin Whisp", CustomEnemies.TwinWhispPrefab, "Two cores fire paired shots. Leave room to dodge both. The shielded variant needs its shield broken first.");
+                Enemy(page, "Shielded Twin Whisp", CustomEnemies.ShieldedTwinWhispPrefab, "The paired shots remain dangerous while you work through its shield.");
+                Enemy(page, "Missile Whisp", CustomEnemies.MissileWhispPrefab, "A flying turret-shaped enemy that fires rockets. Watch the blast area as well as the rocket. Its unshielded body is cyan.");
+                Enemy(page, "Shielded Missile Whisp", CustomEnemies.ShieldedMissileWhispPrefab, "Purple while shielded. Breaking the shield exposes the cyan body, but it still fires rockets.");
+                Enemy(page, "Twin Blade Whisp", CustomEnemies.TwinBladeMeleeWhispPrefab, "Carries a double-ended particle blade. Both ends are dangerous, even if the enemy is frozen.");
+                Enemy(page, "Power Twin Blade Whisp", CustomEnemies.TwinBladePowerMeleeWhispPrefab, "The stronger twin-blade variant. Keep clear of the weapon's reach.");
+                Enemy(page, "Wasp Cocoon", CustomEnemies.WaspCocoonPrefab, "A stationary enemy that keeps hatching Wasps until destroyed, with a limit on its living offspring. Its Wasps must also die before the wave ends. Freeze Time pauses hatching.");
+                Enemy(page, "Shielded Wasp Cocoon", CustomEnemies.ShieldedWaspCocoonPrefab, "Hatches Shielded Wasps while its own shield holds. Break the cocoon's shield to stop future offspring receiving that protection.");
+                Enemy(page, "Laser enemies", CustomEnemies.LaserPrefabs.Values.FirstOrDefault(), "Red-shielded variants periodically show a faint warning ring and play a charge sound, followed by a lethal laser ring. Stay clear of the ring. Breaking the red shield removes the laser attack permanently. Exploding Rollers do not get this variant.");
+                return;
+            }
+            if (section == Page + ".controls")
+            {
+                page.Title("Controls and indicators");
+                page.Line($"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}\nUltimate: {Controls.Display(Controls.UltimateKeyboard)} / {Controls.Display(Controls.UltimateController)}");
+                page.Button("Change controls", () => page.Open(ControlsPage.Page));
+                page.Line("To remap only your controller's ability, hold Start or Select and double-tap the desired button. Hold Start or Select for 3 seconds to reset it. Personal overrides last until you leave.");
+                page.Line($"The ring fills clockwise as cooldown expires. <color={Hex(ModConfig.IndicatorAvailableColor)}>Ready</color>, <color={Hex(ModConfig.IndicatorActiveColor)}>active</color>, and <color={Hex(ModConfig.IndicatorCooldownColor)}>cooling down</color> use your chosen colors. The ready and active rings are complete.");
+                page.Line("Pocket Dimension shows the stored weapon beside the ring. No weapon means an empty slot. The preview remains visible during cooldown, even with Only show when ready enabled.");
+                page.Button("Ability indicator settings", () => page.Open("surge.indicator"));
+                page.Line("Reduced visual effects softens decorative particles and flashes while keeping danger warnings visible. Find it on the Surge settings page.");
+                return;
+            }
+            page.Title("Progression and records");
+            page.Line("Choose an ability at the first perk choice. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
+            page.Line("Play without abilities removes ability, ultimate and ability-upgrade choices for the next Surge run. Luck remains available. Unlimited time to choose perks lets everyone take their time.");
+            page.Line("Surge highscores are separate from normal Survival. Achievements and the title collection live under Mods > SpiderSurge > Achievements. Titles unlock when displayed after a Survival run with at least two players. NEW marks a first unlock.");
+            page.Line("Match history has separate Survival and Versus pages under Mods > SpiderSurge. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. New matches are recorded while Stats and Save match history are enabled.");
+        }
+
+        private static void Ability(SettingsPage page, string name, string icon, string description, string ultimate, string effect)
+        {
+            page.Line($"<b>{name}</b>\n{description}\n<color={Gold}><b>{ultimate}</b></color>\n{effect}", illustration: IconLoader.GetIcon(icon));
+        }
+
+        private static void Enemy(SettingsPage page, string name, GameObject prefab, string description)
+        {
+            page.Line($"<b>{name}</b>\n{description}", enemy: prefab);
         }
 
         private static string Section(string title, params string[] lines)

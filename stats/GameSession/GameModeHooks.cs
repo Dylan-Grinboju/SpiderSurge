@@ -34,6 +34,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(SurvivalMode), "StopGameMode")]
     public class SurvivalModeStopPatch
     {
+        [HarmonyAfter("com.SpiderSurge.surge")]
         static void Prefix(SurvivalMode __instance)
         {
             try
@@ -58,6 +59,7 @@ namespace StatsMod
         {
             try
             {
+                SpiderSurge.Common.MatchHistory.MarkSurvivalCompletion(__instance);
                 GameSessionManager.Instance.CheckWaveClutch();
             }
             catch (Exception ex)
@@ -103,6 +105,7 @@ namespace StatsMod
     [HarmonyPatch(typeof(VersusMode), "EndMatch")]
     public class VersusModeEndPatch
     {
+        [HarmonyPriority(Priority.First)]
         static void Prefix(VersusMode __instance)
         {
             try

@@ -214,6 +214,7 @@ namespace SpiderSurge.Vfx
             ParticleSystem.EmissionModule emission = system.emission;
             emission.rateOverTime = 0f;
             emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+            system.gameObject.AddComponent<ReducedParticles>().Initialize(system);
             system.Play();
             return system;
         }
@@ -229,6 +230,7 @@ namespace SpiderSurge.Vfx
             main.duration = 1f;
             ParticleSystem.EmissionModule emission = system.emission;
             emission.rateOverTime = rate;
+            system.gameObject.AddComponent<ReducedParticles>().Initialize(system);
             system.Play();
             return system;
         }
@@ -337,7 +339,7 @@ namespace SpiderSurge.Vfx
                 Destroy(gameObject);
                 return;
             }
-            light2D.intensity = startIntensity * (1f - t);
+            light2D.intensity = startIntensity * (1f - t) * (ModConfig.ReducedEffects ? 0.25f : 1f);
         }
     }
 
@@ -383,7 +385,7 @@ namespace SpiderSurge.Vfx
         {
             float radius;
             float alpha;
-            if (pulse)
+            if (pulse && !ModConfig.ReducedEffects)
             {
                 float wave = Mathf.Sin(t * Mathf.PI);
                 radius = Mathf.Lerp(startRadius, endRadius, wave);

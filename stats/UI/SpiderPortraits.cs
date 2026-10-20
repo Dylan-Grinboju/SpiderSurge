@@ -29,6 +29,33 @@ namespace StatsMod
         private int shooting = -1;
         private Transform subject;
 
+        private static readonly Dictionary<PlayerController, RenderTexture> finished = new Dictionary<PlayerController, RenderTexture>();
+
+        internal static void ClearFinished()
+        {
+            foreach (var texture in finished.Values) DisposeTexture(texture);
+            finished.Clear();
+        }
+
+        internal static void CaptureFinished(IEnumerable<PlayerController> players)
+        {
+            ClearFinished();
+            foreach (var player in players)
+            {
+                var copy = CopyOf(player);
+                if (copy != null) finished[player] = copy;
+            }
+        }
+
+        public static Texture ViewOf(PlayerController player)
+        {
+            if (!ReferenceEquals(player, null) && finished.TryGetValue(player, out var saved)) return saved;
+            if (Instance == null || player == null) return null;
+            int id = player.playerID.Value;
+            return Instance.captured.Contains(id) && Instance.owners.TryGetValue(id, out var owner) && owner == player
+                && Instance.portraits.TryGetValue(id, out var texture) && texture != null && texture.IsCreated() ? texture : null;
+        }
+
         public static RenderTexture CopyOf(PlayerController player)
         {
             if (Instance == null || player == null) return null;
@@ -239,6 +266,7 @@ namespace StatsMod
                 DisposeTexture(texture);
             }
             portraits.Clear();
+            ClearFinished();
             if (Instance == this) Instance = null;
         }
     }

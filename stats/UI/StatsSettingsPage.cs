@@ -35,6 +35,15 @@ namespace StatsMod
                 return;
             }
 
+            if (page.Current == "stats.presets")
+            {
+                page.Title("Scoreboard presets");
+                page.Note("Default is recommended and always available. Only Default uses your customized columns.");
+                page.Button("Customize Default columns", () => page.Open(ColumnsPage));
+                for (int i = 1; i < BigUI.PresetKeys.Length; i++)
+                    page.Toggle(BigUI.PresetNames[i], "stats.display.presets." + BigUI.PresetKeys[i]);
+                return;
+            }
             page.Title("Stats");
             page.Header("Windows");
             page.Toggle("Show the stats windows", Key("display.showStatsWindow"));
@@ -50,13 +59,14 @@ namespace StatsMod
             page.Toggle("Run time", Key("display.showPlayTime"));
             page.Toggle("Enemies killed", Key("display.showEnemyDeaths"));
             page.Toggle("Player table", Key("display.showPlayers"));
-            page.Button("Player table columns", () => page.Open(ColumnsPage));
+            page.Button("Scoreboard presets", () => page.Open("stats.presets"));
 
             page.Spacer();
             page.Header("End of run");
             page.Toggle("Titles", Key("titles.enabled"));
             page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s");
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
+            page.Toggle("Save match history", Key("tracking.saveHistory"));
 
             page.Spacer();
             page.ConfirmButton("Reset Stats settings to defaults", () => Settings.Reset("stats", ModConfig.PositionXKey, ModConfig.PositionYKey));
@@ -112,34 +122,30 @@ namespace StatsMod
 
             var unlocked = TitleCollection.Unlocked;
             var catalog = TitleCatalog.All;
-            var locked = catalog.Where(title => !unlocked.ContainsKey(title.Name)).ToList();
-            var others = unlocked.Values.Where(title => !catalog.Any(known => known.Name == title.Name)).OrderBy(title => title.FirstEarnedUtc).ToList();
-            page.Note($"{catalog.Count - locked.Count} of {catalog.Count} unlocked. A title unlocks when it shows on the end screen of a Survival run with two or more players.");
-
-            page.Spacer();
-            page.Header("Unlocked");
-            if (unlocked.Count == 0) page.Note("None yet.");
-            foreach (var title in catalog.Where(title => unlocked.ContainsKey(title.Name)))
+            CollectionSeen.Ensure("titles", unlocked.Keys);
+            int filter = CollectionFilters.Add(page, "titles");
+            page.Note($"{catalog.Count(title => unlocked.ContainsKey(title.Name))} of {catalog.Count} unlocked. Titles unlock when shown after a Survival run with two or more players.");
+            var rows = catalog.Select(title => (Name: title.Name, How: title.HowToEarn))
+                .Concat(unlocked.Keys.Where(name => !catalog.Any(title => title.Name == name)).Select(name => (Name: name, How: "From another mod or an older version")));
+            if (filter == 3) rows = rows.OrderByDescending(row => unlocked.TryGetValue(row.Name, out var title) ? title.LastEarnedUtc : System.DateTime.MinValue);
+            int shown = 0;
+            foreach (var row in rows)
             {
-                page.Line(UnlockedLine(title.Name, title.HowToEarn, unlocked[title.Name]));
+                bool earned = unlocked.TryGetValue(row.Name, out var title);
+                if ((filter == 1 && earned) || (filter >= 2 && !earned)) continue;
+                shown++;
+                string name = row.Name;
+                if (earned)
+                    page.Line(UnlockedLine(name, row.How, title) + CollectionFilters.Badge("titles", name), () => CollectionSeen.Mark("titles", new[] { name }));
+                else
+                {
+                    string how = page.Revealed(name) ? $"\n<size=90%><noparse>{row.How}</noparse></size>" : "";
+                    page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{how}</color>", () => page.ToggleRevealed(name));
+                }
             }
-            foreach (var title in others)
-            {
-                page.Line(UnlockedLine(title.Name, "From another mod or an older version", title));
-            }
-
+            if (shown == 0) page.Note("No titles in this view.");
             page.Spacer();
-            page.Header("Locked");
-            if (locked.Count == 0) page.Note("Every title is unlocked.");
-            else page.Note("Click a locked title to see how to earn it.");
-            foreach (var title in locked)
-            {
-                string name = title.Name;
-                string requirements = page.Revealed(name) ? $"\n<size=90%><noparse>{title.HowToEarn}</noparse></size>" : "";
-                page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{requirements}</color>", () => page.ToggleRevealed(name));
-            }
-
-            page.Spacer();
+            page.Button("Mark all seen", () => CollectionSeen.Mark("titles", unlocked.Keys));
             page.ConfirmButton("Reset the title collection", TitleCollection.Reset);
             page.Note($"Saved in <noparse>{TitleCollection.FilePath}</noparse>");
         }

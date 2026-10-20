@@ -5,377 +5,129 @@ namespace SpiderSurge
 {
     public class AbilityIndicator : MonoBehaviour
     {
-        [Header("Indicator Settings")]
-        [SerializeField]
-        [Range(0.5f, 10f)]
-        [Tooltip("Radius of the indicator dot")]
         public float indicatorRadius = 1.5f;
-
-        [SerializeField]
-        [Tooltip("Offset from the spider's position")]
         public Vector3 offset = new Vector3(3f, 8f, 0f);
-
-        [Header("Colors")]
-        [SerializeField]
-        [Tooltip("Color when ability is available")]
         public Color availableColor = Color.green;
-
-        [SerializeField]
-        [Tooltip("Color when ability is on cooldown")]
         public Color cooldownColor = Color.red;
-
-        [SerializeField]
-        [Tooltip("Color when ability is currently active")]
         public Color activeColor = Color.blue;
+        public bool showOnlyWhenReady;
+        private const int Segments = 64;
+        private BaseAbility ability;
+        private Transform target;
+        private LineRenderer track;
+        private LineRenderer fill;
+        private SpriteRenderer weapon;
+        private Material material;
+        private float drawnProgress = -1f;
+        private readonly Vector3[] points = new Vector3[Segments + 1];
 
-        [Header("Glow Settings")]
-        [SerializeField]
-        [Range(0.1f, 2f)]
-        [Tooltip("Glow pulse speed")]
-        public float glowPulseSpeed = 0.5f;
-
-        [SerializeField]
-        [Range(0.1f, 1f)]
-        [Tooltip("Minimum glow intensity")]
-        public float minGlowIntensity = 0.3f;
-
-        [SerializeField]
-        [Range(0.1f, 1f)]
-        [Tooltip("Maximum glow intensity")]
-        public float maxGlowIntensity = 0.8f;
-
-        [Header("Visibility")]
-        [SerializeField]
-        [Tooltip("If true, the indicator will only be visible when the ability is ready")]
-        public bool showOnlyWhenReady = false;
-        private BaseAbility trackedAbility;
-        private GameObject circleObject;
-        private SpriteRenderer spriteRenderer;
-        private GameObject glowObject;
-        private SpriteRenderer glowRenderer;
-        private Transform targetTransform;
-
-        private void Awake()
+        public void Initialize(BaseAbility tracked, Transform follow)
         {
-            _activeInstanceCount++;
-            Settings.Changed += OnSettingsChanged;
-        }
-
-        public void Initialize(BaseAbility ability, Transform followTarget)
-        {
-            trackedAbility = ability;
-            targetTransform = followTarget;
-
-            CreateIndicatorVisual();
+            ability = tracked;
+            target = follow;
+            material = new Material(Shader.Find("Sprites/Default"));
+            track = MakeRing("CooldownTrack", 32765);
+            fill = MakeRing("CooldownFill", 32766);
+            var holder = new GameObject("StoredWeaponPreview");
+            holder.transform.SetParent(transform, false);
+            weapon = holder.AddComponent<SpriteRenderer>();
+            weapon.sortingLayerName = "Foreground";
+            weapon.sortingOrder = 32767;
+            Settings.Changed += Changed;
             ApplySettings();
         }
 
-        private void OnSettingsChanged(string key)
+        private LineRenderer MakeRing(string name, int order)
         {
-            if (Settings.Affects(key, "surge.indicator") || key.StartsWith("surge.indicator.", System.StringComparison.Ordinal))
-            {
-                ApplySettings();
-            }
+            var holder = new GameObject(name);
+            holder.transform.SetParent(transform, false);
+            var ring = holder.AddComponent<LineRenderer>();
+            ring.useWorldSpace = false;
+            ring.sharedMaterial = material;
+            ring.sortingLayerName = "Foreground";
+            ring.sortingOrder = order;
+            ring.numCapVertices = 3;
+            ring.numCornerVertices = 2;
+            return ring;
+        }
+
+        private void Changed(string key)
+        {
+            if (Settings.Affects(key, "surge.indicator") || key.StartsWith("surge.indicator.")) ApplySettings();
         }
 
         private void ApplySettings()
         {
-            SetRadius(ModConfig.IndicatorRadius);
-            SetOffset(new Vector3(ModConfig.IndicatorOffsetX, ModConfig.IndicatorOffsetY, 0f));
-            SetAvailableColor(ModConfig.IndicatorAvailableColor);
-            SetCooldownColor(ModConfig.IndicatorCooldownColor);
-            SetActiveColor(ModConfig.IndicatorActiveColor);
-            SetShowOnlyWhenReady(ModConfig.IndicatorShowOnlyWhenReady);
-            UpdateIndicatorState();
+            indicatorRadius = ModConfig.IndicatorRadius;
+            offset = new Vector3(ModConfig.IndicatorOffsetX, ModConfig.IndicatorOffsetY, 0f);
+            availableColor = ModConfig.IndicatorAvailableColor;
+            cooldownColor = ModConfig.IndicatorCooldownColor;
+            activeColor = ModConfig.IndicatorActiveColor;
+            showOnlyWhenReady = ModConfig.IndicatorShowOnlyWhenReady;
+            Resize();
         }
 
-        private static Sprite _cachedCircleSprite;
-        private static Sprite _cachedGlowSprite;
-        private static int _activeInstanceCount;
-
-        private Sprite CreateCircleSprite()
+        private void Resize()
         {
-            if (_cachedCircleSprite != null) return _cachedCircleSprite;
+            if (track == null) return;
+            track.startWidth = track.endWidth = fill.startWidth = fill.endWidth = indicatorRadius * 0.2f;
+            DrawArc(track, 1f);
+            drawnProgress = -1f;
+        }
 
-            // Create a small texture for the circle
-            int textureSize = 64;
-            Texture2D texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Bilinear;
-
-            Color[] pixels = new Color[textureSize * textureSize];
-            float center = textureSize / 2f;
-            float radius = textureSize / 2f - 1;
-
-            for (int y = 0; y < textureSize; y++)
+        private void DrawArc(LineRenderer ring, float progress)
+        {
+            int count = Mathf.Max(2, Mathf.CeilToInt(Segments * progress) + 1);
+            ring.positionCount = count;
+            for (int i = 0; i < count; i++)
             {
-                for (int x = 0; x < textureSize; x++)
-                {
-                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
-                    if (distance <= radius)
-                    {
-                        // Smooth edge with anti-aliasing
-                        float alpha = Mathf.Clamp01((radius - distance) / 2f);
-                        pixels[y * textureSize + x] = new Color(1f, 1f, 1f, alpha);
-                    }
-                    else
-                    {
-                        pixels[y * textureSize + x] = Color.clear;
-                    }
-                }
-            }
-
-            texture.SetPixels(pixels);
-            texture.Apply();
-
-            // Create sprite from texture (100 pixels per unit)
-            _cachedCircleSprite = Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
-            return _cachedCircleSprite;
-        }
-
-        private Sprite CreateGlowSprite()
-        {
-            if (_cachedGlowSprite != null) return _cachedGlowSprite;
-
-            // Create a larger texture for the glow
-            int textureSize = 128;
-            Texture2D texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Bilinear;
-
-            Color[] pixels = new Color[textureSize * textureSize];
-            float center = textureSize / 2f;
-            float innerRadius = textureSize / 4f; // Smaller inner radius for glow
-            float outerRadius = textureSize / 2f - 1;
-
-            for (int y = 0; y < textureSize; y++)
-            {
-                for (int x = 0; x < textureSize; x++)
-                {
-                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
-                    if (distance <= outerRadius)
-                    {
-                        // Create glow effect: high alpha near center, fading to transparent
-                        float alpha;
-                        if (distance <= innerRadius)
-                        {
-                            alpha = 1.0f; // Strong glow in center
-                        }
-                        else
-                        {
-                            // Fade out from inner to outer radius
-                            float fadeFactor = (outerRadius - distance) / (outerRadius - innerRadius);
-                            alpha = Mathf.Clamp01(fadeFactor * 0.8f); // Max 0.8 alpha for glow
-                        }
-                        pixels[y * textureSize + x] = new Color(1f, 1f, 1f, alpha);
-                    }
-                    else
-                    {
-                        pixels[y * textureSize + x] = Color.clear;
-                    }
-                }
-            }
-
-            texture.SetPixels(pixels);
-            texture.Apply();
-
-            // Create sprite from texture (100 pixels per unit)
-            _cachedGlowSprite = Sprite.Create(texture, new Rect(0, 0, textureSize, textureSize), new Vector2(0.5f, 0.5f), 100f);
-            return _cachedGlowSprite;
-        }
-
-        private void CreateIndicatorVisual()
-        {
-            // Create glow object first (behind)
-            glowObject = new GameObject("AbilityIndicatorGlow");
-            glowObject.transform.SetParent(transform);
-
-            glowRenderer = glowObject.AddComponent<SpriteRenderer>();
-            glowRenderer.sprite = CreateGlowSprite();
-            glowRenderer.sortingLayerName = "Foreground";
-            glowRenderer.sortingOrder = 32766; // One less than main
-
-            // Create main circle object
-            circleObject = new GameObject("AbilityIndicatorDot");
-            circleObject.transform.SetParent(transform);
-
-            spriteRenderer = circleObject.AddComponent<SpriteRenderer>();
-            spriteRenderer.sprite = CreateCircleSprite();
-
-            // Set to highest possible sorting order to render on top of other sprites
-            spriteRenderer.sortingLayerName = "Foreground";
-            spriteRenderer.sortingOrder = 32767;
-            UpdateIndicatorScale();
-        }
-
-        private void UpdateGlowPulse()
-        {
-            if (glowRenderer == null) return;
-
-            // Create pulsing effect using sine wave
-            float pulse = Mathf.Sin(Time.time * glowPulseSpeed * 2f * Mathf.PI) * 0.5f + 0.5f; // 0 to 1
-            float intensity = Mathf.Lerp(minGlowIntensity, maxGlowIntensity, pulse);
-
-            Color currentColor = glowRenderer.color;
-            currentColor.a = currentColor.a * (intensity / maxGlowIntensity); // Scale based on max intensity
-            glowRenderer.color = currentColor;
-        }
-
-        private void UpdateIndicatorScale()
-        {
-            if (circleObject != null)
-            {
-                float targetDiameter = indicatorRadius * 2f;
-                float currentDiameter = 0.64f;
-                float scale = targetDiameter / currentDiameter;
-                circleObject.transform.localScale = new Vector3(scale, scale, 1f);
-            }
-
-            if (glowObject != null)
-            {
-                float targetDiameter = indicatorRadius * 4f; // Glow is 2x larger
-                float currentDiameter = 1.28f; // Since glow texture is 128px vs 64px for main
-                float scale = targetDiameter / currentDiameter;
-                glowObject.transform.localScale = new Vector3(scale, scale, 1f);
+                float angle = progress * Mathf.PI * 2f * i / (count - 1);
+                points[i] = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f) * indicatorRadius;
+                ring.SetPosition(i, points[i]);
             }
         }
 
         private void Update()
         {
-            if (targetTransform == null || circleObject == null)
+            if (target == null || ability == null || track == null) return;
+            transform.position = target.position + offset;
+            bool alive = ability.IsPlayerAlive() && ability.IsUnlocked();
+            bool active = ability.IsActive();
+            bool ready = !active && !ability.IsOnCooldown();
+            bool shown = alive && (!showOnlyWhenReady || ready);
+            float progress = active ? 1f : ability.CooldownProgress;
+            track.enabled = shown;
+            fill.enabled = shown && progress > 0f;
+            Color color = active ? activeColor : ready ? availableColor : cooldownColor;
+            track.startColor = track.endColor = new Color(color.r, color.g, color.b, 0.2f);
+            fill.startColor = fill.endColor = color;
+            if (Mathf.Abs(progress - drawnProgress) > 0.001f || progress == 1f && drawnProgress != 1f)
             {
-                return;
+                DrawArc(fill, progress);
+                drawnProgress = progress;
             }
-
-            // Follow the target with offset
-            transform.position = targetTransform.position + offset;
-
-            UpdateIndicatorState();
-
-            UpdateGlowPulse();
-        }
-
-        private void UpdateIndicatorState()
-        {
-            if (spriteRenderer == null || glowRenderer == null || trackedAbility == null)
+            Sprite sprite = ability is StorageAbility storage ? storage.StoredWeaponSprite : null;
+            weapon.enabled = alive && sprite != null;
+            if (sprite != null)
             {
-                return;
-            }
-
-            if (!trackedAbility.IsPlayerAlive())
-            {
-                spriteRenderer.enabled = false;
-                glowRenderer.enabled = false;
-                return;
-            }
-
-            bool isActive = trackedAbility.IsActive();
-            bool canUse = trackedAbility.IsUnlocked() && !trackedAbility.IsOnCooldown() && !isActive;
-
-            Color baseColor;
-            // Priority: Active (blue) > Cooldown (red) > Available (green)
-            if (isActive)
-            {
-                baseColor = activeColor;
-            }
-            else if (canUse)
-            {
-                baseColor = availableColor;
-            }
-            else
-            {
-                baseColor = cooldownColor;
-            }
-
-            // Main indicator uses full color
-            spriteRenderer.color = baseColor;
-
-            // Glow uses the same color but with base alpha (will be modulated in Update)
-            Color glowColor = baseColor;
-            glowColor.a = baseColor.a * maxGlowIntensity; // Start with max intensity
-            glowRenderer.color = glowColor;
-
-            if (showOnlyWhenReady)
-            {
-                spriteRenderer.enabled = canUse;
-                glowRenderer.enabled = canUse;
-            }
-            else
-            {
-                spriteRenderer.enabled = true;
-                glowRenderer.enabled = true;
+                weapon.sprite = sprite;
+                float size = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+                weapon.transform.localScale = Vector3.one * (indicatorRadius * 2.2f / Mathf.Max(0.01f, size));
+                weapon.transform.localPosition = new Vector3(indicatorRadius * 2.6f, 0f, 0f);
             }
         }
 
-        public void SetRadius(float newRadius)
-        {
-            indicatorRadius = Mathf.Clamp(newRadius, 0.5f, 10f);
-            UpdateIndicatorScale();
-        }
-
-        public void SetOffset(Vector3 newOffset)
-        {
-            offset = newOffset;
-        }
-
-        public void SetAvailableColor(Color c)
-        {
-            availableColor = c;
-        }
-
-        public void SetCooldownColor(Color c)
-        {
-            cooldownColor = c;
-        }
-
-        public void SetShowOnlyWhenReady(bool v)
-        {
-            showOnlyWhenReady = v;
-        }
-
-        public void SetActiveColor(Color c)
-        {
-            activeColor = c;
-        }
+        public void SetRadius(float value) { indicatorRadius = Mathf.Clamp(value, 0.5f, 10f); Resize(); }
+        public void SetOffset(Vector3 value) => offset = value;
+        public void SetAvailableColor(Color value) => availableColor = value;
+        public void SetCooldownColor(Color value) => cooldownColor = value;
+        public void SetActiveColor(Color value) => activeColor = value;
+        public void SetShowOnlyWhenReady(bool value) => showOnlyWhenReady = value;
 
         private void OnDestroy()
         {
-            Settings.Changed -= OnSettingsChanged;
-            _activeInstanceCount--;
-            if (_activeInstanceCount <= 0)
-            {
-                CleanupStaticSprites();
-            }
-
-            if (circleObject != null)
-            {
-                Destroy(circleObject);
-            }
-            if (glowObject != null)
-            {
-                Destroy(glowObject);
-            }
-        }
-
-        private static void CleanupStaticSprites()
-        {
-            if (_cachedCircleSprite != null)
-            {
-                if (_cachedCircleSprite.texture != null)
-                {
-                    Destroy(_cachedCircleSprite.texture);
-                }
-                Destroy(_cachedCircleSprite);
-                _cachedCircleSprite = null;
-            }
-
-            if (_cachedGlowSprite != null)
-            {
-                if (_cachedGlowSprite.texture != null)
-                {
-                    Destroy(_cachedGlowSprite.texture);
-                }
-                Destroy(_cachedGlowSprite);
-                _cachedGlowSprite = null;
-            }
+            Settings.Changed -= Changed;
+            if (material != null) Destroy(material);
         }
     }
 }
