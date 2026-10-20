@@ -160,23 +160,11 @@ namespace SpiderSurge
             }
         }
 
-        // Centered under the card root, which stretches across the view and moves left when the shop is beside it
         public void Reposition()
         {
-            var root = _hud != null ? _hud.perkCardsRoot as RectTransform : null;
-            if (root == null) return;
-            LayoutRebuilder.ForceRebuildLayoutImmediate(root);
-            Vector3 local = root.localPosition;
-            float bottom = local.y + root.rect.yMin;
-            bool any = false;
-            foreach (var choice in PerkChoiceWidget.Cards(_hud))
-            {
-                var card = (RectTransform)choice.transform;
-                float cardBottom = local.y + card.localPosition.y + card.rect.yMin * card.localScale.y;
-                bottom = any ? Mathf.Min(bottom, cardBottom) : cardBottom;
-                any = true;
-            }
-            transform.localPosition = new Vector3(local.x + root.rect.center.x, bottom - Consts.Values.Meter.ConfirmGap, 0f);
+            if (_hud == null || _hud.perkCardsRoot == null) return;
+            Vector2 below = PerkChoiceWidget.BelowCards(_hud);
+            transform.localPosition = new Vector3(below.x, below.y - Consts.Values.Meter.ConfirmGap, 0f);
         }
 
         // The host's pick is final; a client's is a vote, so it can confirm another card the way a vanilla click moves the vote

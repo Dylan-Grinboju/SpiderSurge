@@ -46,6 +46,9 @@ namespace SpiderSurge
 
         public static float Fill => ChargePerPoint > 0 ? Mathf.Clamp01(Charge / (float)ChargePerPoint) : 0f;
 
+        // A client only knows the threshold once the host's first state arrives
+        public static bool Known => Net.IsAuthority || _remoteSynced;
+
         // True on every machine during a Surge Survival run with abilities, which is the only time the meter exists
         public static bool Enabled =>
             SurgeGameModeManager.IsSurgeRunActive

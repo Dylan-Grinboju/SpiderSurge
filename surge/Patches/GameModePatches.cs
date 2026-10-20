@@ -27,6 +27,7 @@ namespace SpiderSurge
             PerkShop.ClearOffer();
             PerkShopPanel.Clear();
             PerkConfirmButton.Clear();
+            MeterHint.Clear();
         }
     }
 
@@ -50,6 +51,7 @@ namespace SpiderSurge
                 PerkShop.ClearOffer();
                 PerkShopPanel.Clear();
                 PerkConfirmButton.Clear();
+                MeterHint.Clear();
 
                 SurgeGameModeManager.SelectMode(false);
                 SurgeLobbyPlatform.EnsureCreated();

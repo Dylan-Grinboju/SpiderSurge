@@ -50,6 +50,7 @@ namespace SpiderSurge
             {
                 RestoreCards(hud);
                 PerkConfirmButton.Current?.Reposition();
+                MeterHint.Current?.Reposition();
                 return;
             }
 
@@ -73,6 +74,7 @@ namespace SpiderSurge
                 panel.Refresh();
                 panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
+                MeterHint.Current?.Reposition();
             }
             catch (System.Exception ex)
             {

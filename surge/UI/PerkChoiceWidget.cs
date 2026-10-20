@@ -29,6 +29,25 @@ namespace SpiderSurge
             return cards;
         }
 
+        // The middle of the card root and the lowest card bottom, in the perk choice view's space; the root stretches across the view and moves left when the shop is beside it
+        public static Vector2 BelowCards(SurvivalModeHud hud)
+        {
+            var root = hud != null ? hud.perkCardsRoot as RectTransform : null;
+            if (root == null) return Vector2.zero;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(root);
+            Vector3 local = root.localPosition;
+            float bottom = local.y + root.rect.yMin;
+            bool any = false;
+            foreach (var choice in Cards(hud))
+            {
+                var card = (RectTransform)choice.transform;
+                float cardBottom = local.y + card.localPosition.y + card.rect.yMin * card.localScale.y;
+                bottom = any ? Mathf.Min(bottom, cardBottom) : cardBottom;
+                any = true;
+            }
+            return new Vector2(local.x + root.rect.center.x, bottom);
+        }
+
         public static Selectable FirstCard(SurvivalModeHud hud)
         {
             var cards = Cards(hud);
