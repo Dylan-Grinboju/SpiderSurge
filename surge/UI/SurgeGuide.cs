@@ -161,8 +161,9 @@ namespace SpiderSurge
                 page.Line($"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}\nUltimate: {Controls.Display(Controls.UltimateKeyboard)} / {Controls.Display(Controls.UltimateController)}");
                 page.Button("Change controls", () => page.Open(ControlsPage.Page));
                 page.Line("To remap only your controller's ability, hold Start or Select and double-tap the desired button. Hold Start or Select for 3 seconds to reset it. Personal overrides last until you leave.");
-                page.Line($"The ring fills clockwise as cooldown expires. <color={Hex(ModConfig.IndicatorAvailableColor)}>Ready</color>, <color={Hex(ModConfig.IndicatorActiveColor)}>active</color>, and <color={Hex(ModConfig.IndicatorCooldownColor)}>cooling down</color> use your chosen colors. The ready and active rings are complete.");
+                page.Line($"The ring drains as a timed ability or ultimate runs out, then fills clockwise as cooldown expires. <color={Hex(ModConfig.IndicatorAvailableColor)}>Ready</color>, <color={Hex(ModConfig.IndicatorActiveColor)}>active</color>, and <color={Hex(ModConfig.IndicatorCooldownColor)}>cooling down</color> use your chosen colors. The ready ring is complete. Active effects without a duration also keep a complete ring.");
                 page.Line("Pocket Dimension shows the stored weapon beside the ring. No weapon means an empty slot. The preview remains visible during cooldown, even with Only show when ready enabled.");
+                page.Line("Use compact ability HUD replaces the rings with a fixed panel at the bottom right. Each player has a named row: active time drains with a seconds countdown, cooldown progress fills with a seconds countdown, and Ready means the ability can be used. The same cooldown is shared with the ultimate. Both timers use game time and stop while paused.");
                 page.Button("Ability indicator settings", () => page.Open("surge.indicator"));
                 page.Line("Reduced visual effects softens decorative particles and flashes while keeping danger warnings visible. Find it on the Surge settings page.");
                 return;
@@ -199,7 +200,7 @@ namespace SpiderSurge
                 return;
             }
             page.Title("Progression and records");
-            page.Line("Choose an ability at the first perk choice. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
+            page.Line("Choose the group's shared ability from all five options before wave 1. The arena waits until you choose, and the first earned perk choice offers normal upgrades. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
             page.Line("Play without abilities removes ability, ultimate and ability-upgrade choices for the next Surge run. Luck remains available. Unlimited time to choose perks lets everyone take their time.");
             page.Line("Surge highscores are separate from normal Survival. Achievements and the title collection live under Mods > SpiderSurge > Achievements. Titles unlock when displayed after a Survival run with at least two players. NEW marks a first unlock.");
             page.Line("Match history has separate Survival and Versus pages under Mods > SpiderSurge. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. New matches are recorded while Stats and Save match history are enabled.");

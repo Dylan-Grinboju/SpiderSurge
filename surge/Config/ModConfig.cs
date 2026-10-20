@@ -19,6 +19,7 @@ namespace SpiderSurge
         public const string StatsLoggingKey = "surge.statsLogging";
         public const string TelemetryKey = "surge.telemetry";
         public const string IndicatorRadiusKey = "surge.indicator.radius";
+        public const string IndicatorCompactHudKey = "surge.indicator.compactHud";
         public const string IndicatorOffsetXKey = "surge.indicator.offset.x";
         public const string IndicatorOffsetYKey = "surge.indicator.offset.y";
         public const string IndicatorAvailableColorKey = "surge.indicator.availableColor";
@@ -43,6 +44,7 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(StatsLoggingKey, true),
             new KeyValuePair<string, object>(TelemetryKey, false),
             new KeyValuePair<string, object>(IndicatorRadiusKey, 1.5f),
+            new KeyValuePair<string, object>(IndicatorCompactHudKey, false),
             new KeyValuePair<string, object>(IndicatorOffsetXKey, 3f),
             new KeyValuePair<string, object>(IndicatorOffsetYKey, 8f),
             new KeyValuePair<string, object>(IndicatorAvailableColorKey, "#00FF00"),
@@ -56,6 +58,7 @@ namespace SpiderSurge
 
         // Ability indicator configuration
         public static float IndicatorRadius => Mathf.Clamp(Settings.GetFloat(IndicatorRadiusKey), MinIndicatorRadius, MaxIndicatorRadius);
+        public static bool IndicatorCompactHud => Settings.GetBool(IndicatorCompactHudKey);
         public static float IndicatorOffsetX => Settings.GetFloat(IndicatorOffsetXKey);
         public static float IndicatorOffsetY => Settings.GetFloat(IndicatorOffsetYKey);
         public static Color IndicatorAvailableColor => ReadColor(IndicatorAvailableColorKey);
