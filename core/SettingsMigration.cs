@@ -53,8 +53,25 @@ namespace SpiderSurge.Common
             { "surge.longTermInvestment", "teams.surge.longTermInvestment" },
         };
 
-        // Merges the files of earlier versions into the one settings file; a file whose old DLL is still installed stays where it is
+        private const string Sticks = "<Gamepad>/leftStickPress|<Gamepad>/rightStickPress";
+
+        // Settings that became rows of the Controls page, with how an old value becomes a binding; null keeps the default
+        private static readonly (string from, string to, Func<string, string> convert)[] MovedKeys =
+        {
+            ("surge.dpadUltimate", Controls.UltimateController.Key, raw => Settings.TryParseBool(raw, out bool on) && on ? Controls.Dpad : null),
+            ("stats.input.cycleInput", Controls.SwitchWindows.Key, StatsSwitchBinding),
+            ("teams.buttonGamepad", Controls.TeamController.Key, raw => raw),
+            ("teams.buttonKeyboard", Controls.TeamKeyboard.Key, raw => raw),
+        };
+
         public static void Run()
+        {
+            MergeOldFiles();
+            MoveKeys();
+        }
+
+        // Merges the files of earlier versions into the one settings file; a file whose old DLL is still installed stays where it is
+        private static void MergeOldFiles()
         {
             string path = Settings.FilePath;
             string statsPath = Config.GetModConfigPath(OldStatsId);
@@ -81,7 +98,9 @@ namespace SpiderSurge.Common
                 }
                 if (stats != null)
                 {
-                    moved += Map(stats, Settings.Keys.Where(key => key.StartsWith("stats.")).ToDictionary(key => key.Substring("stats.".Length)), values);
+                    var statsKeys = Settings.Keys.Where(key => key.StartsWith("stats.")).ToDictionary(key => key.Substring("stats.".Length));
+                    statsKeys["input.cycleInput"] = "stats.input.cycleInput";
+                    moved += Map(stats, statsKeys, values);
                     MovePixelPosition(stats, "", values);
                 }
                 if (pixelPosition)
@@ -170,6 +189,74 @@ namespace SpiderSurge.Common
             }
         }
 
+        private static void MoveKeys()
+        {
+            string path = Settings.FilePath;
+            try
+            {
+                Dictionary<string, object> tree = Read(path);
+                if (tree == null || MovedKeys.All(moved => Find(tree, moved.from) == null))
+                {
+                    return;
+                }
+
+                var names = new List<string>();
+                foreach (var moved in MovedKeys)
+                {
+                    string raw = Find(tree, moved.from);
+                    if (raw == null)
+                    {
+                        continue;
+                    }
+                    string binding = moved.convert(raw);
+                    if (binding != null && Find(tree, moved.to) == null)
+                    {
+                        Settings.SetPath(tree, moved.to, binding);
+                    }
+                    Remove(tree, moved.from);
+                    names.Add(moved.from);
+                }
+
+                Backup(path);
+                File.WriteAllText(path, new SerializerBuilder().Build().Serialize(tree));
+                Logger.LogInfo($"Moved {string.Join(", ", names)} to the controls section; change them in Mods > SpiderSurge > Controls");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Could not move the old control settings in {path}: {ex.Message}");
+            }
+        }
+
+        private static string StatsSwitchBinding(string raw)
+        {
+            switch (raw.ToLowerInvariant())
+            {
+                case "joystick":
+                    return Sticks;
+                case "both":
+                    return Controls.Dpad + Controls.AlternativeSeparator + Sticks;
+                case "none":
+                    return Controls.None;
+                default:
+                    return null;
+            }
+        }
+
+        private static bool TryMove(string key, string raw, out string to, out string binding)
+        {
+            foreach (var moved in MovedKeys)
+            {
+                if (moved.from == key)
+                {
+                    to = moved.to;
+                    binding = moved.convert(raw);
+                    return true;
+                }
+            }
+            to = binding = null;
+            return false;
+        }
+
         // The small Stats window was placed in pixels; a percentage of the screen keeps its spot on any resolution
         private static void MovePixelPosition(Dictionary<string, object> source, string prefix, Dictionary<string, object> values)
         {
@@ -195,13 +282,21 @@ namespace SpiderSurge.Common
             int moved = 0;
             foreach (var pair in keys)
             {
-                if (!Settings.IsDefined(pair.Value))
+                string raw = Find(source, pair.Key);
+                if (raw == null)
                 {
                     continue;
                 }
 
-                string raw = Find(source, pair.Key);
-                if (raw != null && TryConvert(raw, Settings.Default(pair.Value), out object value))
+                if (TryMove(pair.Value, raw, out string to, out string binding))
+                {
+                    if (binding != null)
+                    {
+                        values[to] = binding;
+                        moved++;
+                    }
+                }
+                else if (Settings.IsDefined(pair.Value) && TryConvert(raw, Settings.Default(pair.Value), out object value))
                 {
                     values[pair.Value] = value;
                     moved++;

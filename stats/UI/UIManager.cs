@@ -28,10 +28,6 @@ namespace StatsMod
                 _scalingInitialized = false;
                 StyleVersion++;
             }
-            if (Settings.Affects(key, ModConfig.CycleInputKey))
-            {
-                _configuredCycleInput = null;
-            }
         }
 
         #region Singleton
@@ -56,7 +52,10 @@ namespace StatsMod
         #region Controller Cycling State
         private UIState currentUIState = UIState.Off;
         private Coroutine delayedPauseCoroutine;
-        private static string _configuredCycleInput;
+        private readonly ControlPoller smallWindowKey = new ControlPoller();
+        private readonly ControlPoller bigWindowKey = new ControlPoller();
+        private readonly ControlPoller titlesKey = new ControlPoller();
+        private readonly ControlPoller switchButton = new ControlPoller();
         #endregion
 
         #region UI Scaling
@@ -183,6 +182,7 @@ namespace StatsMod
         #region Input Handling
         private void Update()
         {
+            if (ControlCapture.Busy) return;
             HandleKeyboardInput();
             HandleGamepadInput();
         }
@@ -192,19 +192,19 @@ namespace StatsMod
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
 
-            if (keyboard.f1Key.wasPressedThisFrame)
+            if (smallWindowKey.WasPressed(Controls.Get(Controls.SmallWindow), keyboard))
             {
-                HandleF1Press();
+                HandleSmallWindowKey();
             }
 
-            if (keyboard.f2Key.wasPressedThisFrame)
+            if (bigWindowKey.WasPressed(Controls.Get(Controls.BigWindow), keyboard))
             {
-                HandleF2Press();
+                HandleBigWindowKey();
             }
 
-            if (keyboard.f3Key.wasPressedThisFrame)
+            if (titlesKey.WasPressed(Controls.Get(Controls.TitlesWindow), keyboard))
             {
-                HandleF3Press();
+                HandleTitlesKey();
             }
         }
 
@@ -213,26 +213,7 @@ namespace StatsMod
             Gamepad gamepad = Gamepad.current;
             if (gamepad == null || GameMenus.Open) return;
 
-            bool cyclePressed = false;
-            bool dpadPressed = gamepad.dpad.up.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame ||
-                               gamepad.dpad.left.wasPressedThisFrame || gamepad.dpad.right.wasPressedThisFrame;
-            bool joystickPressed = gamepad.leftStickButton.wasPressedThisFrame || gamepad.rightStickButton.wasPressedThisFrame;
-            switch (ModConfig.CycleInputFor(_configuredCycleInput ??= ModConfig.ConfiguredCycleInput))
-            {
-                case "dpad":
-                    cyclePressed = dpadPressed;
-                    break;
-                case "joystick":
-                    cyclePressed = joystickPressed;
-                    break;
-                case "both":
-                    cyclePressed = dpadPressed || joystickPressed;
-                    break;
-                default:
-                    break;
-            }
-
-            if (cyclePressed)
+            if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding, gamepad))
             {
                 CycleUIState();
             }
@@ -308,7 +289,7 @@ namespace StatsMod
             }
         }
 
-        private void HandleF1Press()
+        private void HandleSmallWindowKey()
         {
             bool isSmallVisible = smallUI != null && smallUI.IsVisible();
             HideBigUI();
@@ -325,7 +306,7 @@ namespace StatsMod
             }
         }
 
-        private void HandleF2Press()
+        private void HandleBigWindowKey()
         {
             bool isBigVisible = bigUI != null && bigUI.IsVisible();
             HideSmallUI();
@@ -342,7 +323,7 @@ namespace StatsMod
             }
         }
 
-        private void HandleF3Press()
+        private void HandleTitlesKey()
         {
             if (!CanShowTitles) return;
             // If currently animating, skip the animation

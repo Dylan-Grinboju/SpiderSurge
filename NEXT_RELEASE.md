@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press the backtick key to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 
@@ -64,12 +64,12 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Small stats window | **F1** | D-pad (cycles the windows) |
 | Big stats window | **F2** | |
 | Titles | **F3** (also skips the reveal) | |
-| Surge ability | **Q** | **L1**, or any button you pick: hold **Start** and double-tap it |
-| Surge ultimate | **C** | **L3 + R3** together, or any D-pad direction if you turn that on |
+| Surge ability | **Q** | **L1**, or your own button: hold **Start** and double-tap it |
+| Surge ultimate | **C** | **L3 + R3** together |
 | Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
-On a controller you can switch the stats windows with a stick press instead of the D-pad. While Surge's ultimate is on the D-pad, only the stick press switches them.
+Change any of them in **Mods** > **SpiderSurge** > **Controls**: select a row, then press the new key or button. The controller ultimate and the stats switch can also be two buttons pressed together or the whole D-pad. A row that shares a button with another one shows a warning, and a button that casts Surge's ultimate on its own doesn't also switch the stats windows.
 
 ## Installation
 
@@ -97,6 +97,7 @@ Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 - **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
 - **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
+- **Controls**: every key and button the mod uses, on one page.
 - **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version and credits.
 
@@ -109,6 +110,17 @@ All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It ha
 `parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
+
+`controls`: The keys and buttons of the **Controls** page, as Unity Input System paths such as `<Keyboard>/f1` or `<Gamepad>/buttonNorth`. `none` turns one off and `a|b` lets either one work. The controller ultimate and the stats switch also take `<Gamepad>/dpad` (any D-pad direction) and `a+b` (two buttons together). Older `surge.dpadUltimate`, `stats.input.cycleInput`, `teams.buttonGamepad` and `teams.buttonKeyboard` values move here on the first launch.
+
+| Key | Default |
+|---|---|
+| `controls.ability.keyboard`, `controls.ability.controller` | `<Keyboard>/q`, `<Gamepad>/leftShoulder` |
+| `controls.ultimate.keyboard`, `controls.ultimate.controller` | `<Keyboard>/c`, `<Gamepad>/leftStickPress+<Gamepad>/rightStickPress` |
+| `controls.surgeGuide.keyboard` | `<Keyboard>/backquote` |
+| `controls.stats.smallWindow`, `controls.stats.bigWindow`, `controls.stats.titlesWindow` | `<Keyboard>/f1`, `<Keyboard>/f2`, `<Keyboard>/f3` |
+| `controls.stats.switchWindows` | `<Gamepad>/dpad` |
+| `controls.teams.keyboard`, `controls.teams.controller` | `<Keyboard>/t`, `<Gamepad>/buttonNorth` |
 
 Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
 

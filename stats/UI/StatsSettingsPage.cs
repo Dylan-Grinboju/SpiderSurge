@@ -12,7 +12,6 @@ namespace StatsMod
         internal const string TitlesPage = "stats.titles";
         private const string AccuracyPrefix = "accuracy.";
         private const string OverallAccuracy = AccuracyPrefix + "overall";
-        private static readonly string[] CycleInputNames = { "D-pad", "Stick press (L3 or R3)", "D-pad or stick press", "Nothing" };
 
         private static readonly (string title, string prefix)[] ColumnGroups =
         {
@@ -39,12 +38,8 @@ namespace StatsMod
             page.Title("Stats");
             page.Header("Windows");
             page.Toggle("Show the stats windows", Key("display.showStatsWindow"));
-            page.Note("F1 shows the small window, F2 the big one and F3 the titles. On a controller, the button below switches between them.");
-            page.Cycle("Switch windows with", Key("input.cycleInput"), ModConfig.CycleInputs, CycleInputNames);
-            if (ModConfig.DpadTakenBySurge && ModConfig.ConfiguredCycleInput != ModConfig.CycleInput)
-            {
-                page.Warning("Surge's ultimate is on the D-pad, so the D-pad doesn't switch windows.");
-            }
+            page.Note($"Small window: {KeyLabel(Controls.SmallWindow)}. Big window: {KeyLabel(Controls.BigWindow)}. Titles: {KeyLabel(Controls.TitlesWindow)}. Switch windows on a controller: <noparse>{Controls.Label(ModConfig.SwitchWindowsBinding)}</noparse>.");
+            page.Button("Change these keys", () => page.Open(ControlsPage.Page));
             page.Toggle("Small window background", Key("display.smallUIShowBackground"));
             page.Toggle("Scale with the screen size", ModConfig.AutoScaleKey);
             page.Slider("Size", ModConfig.UIScaleKey, ModConfig.MinScale, ModConfig.MaxScale, 0.1f, "x");
@@ -161,6 +156,8 @@ namespace StatsMod
         }
 
         private static string Key(string key) => ModConfig.Prefix + key;
+
+        private static string KeyLabel(Control control) => $"<noparse>{Controls.Label(control)}</noparse>";
 
         private static string ColumnLabel(string column)
         {

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using SpiderSurge.Common;
 
@@ -34,9 +33,6 @@ namespace SpiderTeams
             page.Checkbox("Show team markers", () => ModConfig.ShowMarker, ModConfig.SetShowMarker);
             page.Checkbox("Spawn teammates together", () => ModConfig.GroupTeammates, ModConfig.SetGroupTeammates);
 
-            page.Spacer();
-            page.Button($"Team button (controller): {GamepadLabel()}", CycleGamepadBinding);
-            page.Button($"Team button (keyboard): {KeyboardLabel()}", CycleKeyboardBinding);
 
             var manager = TeamManager.Instance;
             if (manager != null && ModConfig.TeamsEnabled && (TeamManager.IsHost || Net.HostHasMod))
@@ -135,7 +131,7 @@ namespace SpiderTeams
             page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
             page.Note(Consts.Surge.LongTermDescription);
 
-            page.Note("Ability: Q or L1 (hold Start and double-tap a button to remap it). Ultimate: C, or L3 and R3 together. Changes apply from the next round.");
+            page.Note($"Ability: <noparse>{Controls.Label(Controls.AbilityKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.AbilityController)}</noparse> (hold Start and double-tap a button to pick your own). Ultimate: <noparse>{Controls.Label(Controls.UltimateKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.UltimateController)}</noparse>. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
             page.Note("Abilities need SpiderSurge on every player's machine; a match with a player who lacks it plays without them.");
         }
 
@@ -206,55 +202,28 @@ namespace SpiderTeams
             }
         }
 
-        private static void CycleGamepadBinding()
-        {
-            ModConfig.SetCycleTeamGamepad(NextPreset(Consts.Bindings.GamepadPaths, ModConfig.CycleTeamGamepad));
-        }
+        private static string GamepadLabel() => "<noparse>" + Controls.Label(ModConfig.CycleTeamGamepad) + "</noparse>";
 
-        private static void CycleKeyboardBinding()
-        {
-            ModConfig.SetCycleTeamKeyboard(NextPreset(Consts.Bindings.KeyboardPaths, ModConfig.CycleTeamKeyboard));
-        }
-
-        private static string GamepadLabel()
-        {
-            return PresetLabel(Consts.Bindings.GamepadPaths, Consts.Bindings.GamepadLabels, ModConfig.CycleTeamGamepad);
-        }
-
-        private static string KeyboardLabel()
-        {
-            return PresetLabel(Consts.Bindings.KeyboardPaths, Consts.Bindings.KeyboardLabels, ModConfig.CycleTeamKeyboard);
-        }
-
-        private static string PresetLabel(string[] paths, string[] labels, string current)
-        {
-            int index = Array.FindIndex(paths, path => string.Equals(path, current, StringComparison.OrdinalIgnoreCase));
-            return index >= 0 ? labels[index] : "<noparse>" + current + "</noparse>";
-        }
-
-        private static string NextPreset(string[] paths, string current)
-        {
-            int index = Array.FindIndex(paths, path => string.Equals(path, current, StringComparison.OrdinalIgnoreCase));
-            return paths[(index + 1) % paths.Length];
-        }
+        private static string KeyboardLabel() => "<noparse>" + Controls.Label(ModConfig.CycleTeamKeyboard) + "</noparse>";
 
         private static string PickHint()
         {
-            bool gamepad = ModConfig.CycleTeamGamepad != Consts.Bindings.None;
-            bool keyboard = ModConfig.CycleTeamKeyboard != Consts.Bindings.None;
+            const string change = " Change the team buttons in Mods > SpiderSurge > Controls.";
+            bool gamepad = ModConfig.CycleTeamGamepad != Controls.None;
+            bool keyboard = ModConfig.CycleTeamKeyboard != Controls.None;
             if (gamepad && keyboard)
             {
-                return $"In the lobby, press {GamepadLabel()} (controller) or {KeyboardLabel()} (keyboard) to switch team.";
+                return $"In the lobby, press {GamepadLabel()} (controller) or {KeyboardLabel()} (keyboard) to switch team." + change;
             }
             if (gamepad)
             {
-                return $"In the lobby, press {GamepadLabel()} on a controller to switch team.";
+                return $"In the lobby, press {GamepadLabel()} on a controller to switch team." + change;
             }
             if (keyboard)
             {
-                return $"In the lobby, press {KeyboardLabel()} on the keyboard to switch team.";
+                return $"In the lobby, press {KeyboardLabel()} on the keyboard to switch team." + change;
             }
-            return "The team buttons are off; the host can move players in the list below.";
+            return "The team buttons are off; the host can move players in the list below." + change;
         }
 
         private static string Plural(int count, string noun)

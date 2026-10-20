@@ -353,6 +353,109 @@ namespace SpiderSurge
         }
     }
 
+    // Not On My Watch: a laser stops on a spider inside Null Field, and the next thing on its line is a teammate it would have hit
+    internal static class LaserBlock
+    {
+        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> ImmuneTill = AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
+        private static readonly RaycastHit2D[] Behind = new RaycastHit2D[16];
+
+        public static bool Watching => Net.IsAuthority && ImmuneAbility.AnyImmune && !SurgeAchievements.IsUnlocked(SurgeAchievements.NotOnMyWatch);
+
+        public static SpiderHealthSystem SpiderOf(Collider2D collider)
+        {
+            if (collider == null) return null;
+            SpiderHealthSystem spider = collider.GetComponent<SpiderHealthSystem>();
+            if (spider == null && collider.attachedRigidbody != null) spider = collider.attachedRigidbody.GetComponent<SpiderHealthSystem>();
+            return spider;
+        }
+
+        // The beam ends harmlessly on its own weapon or the shooter's body, so those never count as the teammate
+        public static void Check(RaycastHit2D hit, Vector2 origin, Vector2 direction, float radius, float distance, LayerMask layers, GameObject weapon, GameObject shooter)
+        {
+            SpiderHealthSystem protector = SpiderOf(hit.collider);
+            if (protector == null || AchievementTracker.Gone(protector)) return;
+            ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(protector);
+            if (nullField == null || !nullField.IsImmune || !nullField.isActiveAndEnabled) return;
+
+            PlayerController protectorPlayer = Players.Of(protector);
+            Transform protectorRoot = protector.rootObject != null ? protector.rootObject.transform : protector.transform;
+            int count = Physics2D.CircleCastNonAlloc(origin, radius, direction, Behind, distance, layers);
+            RaycastHit2D next = default;
+            float nearest = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit2D candidate = Behind[i];
+                if (candidate.collider == null || candidate.distance < hit.distance || candidate.distance >= nearest) continue;
+                if (candidate.collider.transform.IsChildOf(protectorRoot)) continue;
+                Weapon held = candidate.collider.GetComponentInParent<Weapon>();
+                if (held != null && held.gameObject != weapon && AchievementTracker.HolderOf(held) == protectorPlayer) continue;
+                next = candidate;
+                nearest = candidate.distance;
+            }
+            if (next.collider == null || next.collider.gameObject == weapon || next.collider.gameObject == shooter) return;
+
+            SpiderHealthSystem teammate = SpiderOf(next.collider);
+            if (teammate == null || teammate == protector || AchievementTracker.Gone(teammate) || ImmuneTill(teammate) > Time.time) return;
+            ImmuneAbility teammateField = ImmuneAbility.GetByHealthSystem(teammate);
+            if (teammateField != null && teammateField.IsImmune) return;
+
+            if (AchievementTracker.AreTeammates(protectorPlayer, Players.Of(teammate)))
+            {
+                SurgeAchievements.Unlock(SurgeAchievements.NotOnMyWatch, protectorPlayer);
+            }
+        }
+    }
+
+    // Repeats the cannon's casts from the same frame: each segment stops at its first hit and reflects from there
+    [HarmonyPatch(typeof(LaserCannon), "Beam")]
+    public static class LaserCannon_Beam_Achievement_Patch
+    {
+        private const float Range = 2000f;
+        private static readonly AccessTools.FieldRef<LaserCannon, Vector2> StartPoint = AccessTools.FieldRefAccess<LaserCannon, Vector2>("startPoint");
+
+        [HarmonyPostfix]
+        public static void Postfix(LaserCannon __instance)
+        {
+            if (!LaserBlock.Watching) return;
+            AchievementTracker.Run("Laser block", () =>
+            {
+                GameObject shooter = __instance.equipped && __instance.owner != null && __instance.owner.healthSystem != null ? __instance.owner.healthSystem.gameObject : null;
+                Vector2 origin = StartPoint(__instance);
+                Vector2 direction = __instance.transform.up;
+                for (int i = 0; i < __instance.countRays; i++)
+                {
+                    RaycastHit2D hit = Physics2D.CircleCast(origin, __instance.halfBeamWidth, direction, Range, __instance.laserColliderLayers);
+                    if (!hit) return;
+                    GameObject hitObject = hit.collider.gameObject;
+                    if (hitObject == shooter || hitObject == __instance.gameObject) return;
+                    LaserBlock.Check(hit, origin, direction, __instance.halfBeamWidth, Range, __instance.laserColliderLayers, __instance.gameObject, shooter);
+                    origin = hit.normal * 2f + hit.point;
+                    direction = Vector2.Reflect(direction, hit.normal);
+                }
+            });
+        }
+    }
+
+    [HarmonyPatch(typeof(LaserCube), nameof(LaserCube.Beam))]
+    public static class LaserCube_Beam_Achievement_Patch
+    {
+        private const float Range = 500f;
+
+        [HarmonyPostfix]
+        public static void Postfix(LaserCube __instance, Vector3 direction, LineRenderer lineRenderer)
+        {
+            if (!LaserBlock.Watching || lineRenderer == null) return;
+            AchievementTracker.Run("Laser block", () =>
+            {
+                float radius = __instance.beamWidth / 2f;
+                Vector2 origin = lineRenderer.transform.position + direction * radius;
+                RaycastHit2D hit = Physics2D.CircleCast(origin, radius, direction, Range, __instance.laserColliderLayers);
+                if (!hit || hit.collider.gameObject == __instance.gameObject) return;
+                LaserBlock.Check(hit, origin, direction, radius, Range, __instance.laserColliderLayers, __instance.gameObject, null);
+            });
+        }
+    }
+
     // The perk timer picks a card itself when it runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
     [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
     public static class SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch

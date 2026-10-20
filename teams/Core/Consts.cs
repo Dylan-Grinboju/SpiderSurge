@@ -16,8 +16,6 @@ namespace SpiderTeams
             public const string RecolorSpiders = "teams.recolorSpiders";
             public const string ShowMarker = "teams.showMarker";
             public const string GroupTeammates = "teams.groupTeammates";
-            public const string CycleTeamGamepad = "teams.buttonGamepad";
-            public const string CycleTeamKeyboard = "teams.buttonKeyboard";
             public const string SurgeEnabled = "teams.surge.enabled";
             public const string SurgeAbility = "teams.surge.ability";
             public const string SurgeUltimate = "teams.surge.ultimate";
@@ -35,8 +33,6 @@ namespace SpiderTeams
             public const bool RecolorSpiders = true;
             public const bool ShowMarker = false;
             public const bool GroupTeammates = true;
-            public const string CycleTeamGamepad = "<Gamepad>/buttonNorth";
-            public const string CycleTeamKeyboard = "<Keyboard>/t";
             public const bool SurgeEnabled = false;
             public const string SurgeAbility = "pulse";
             public const bool SurgeUltimate = false;
@@ -53,8 +49,6 @@ namespace SpiderTeams
                 new KeyValuePair<string, object>(Keys.RecolorSpiders, RecolorSpiders),
                 new KeyValuePair<string, object>(Keys.ShowMarker, ShowMarker),
                 new KeyValuePair<string, object>(Keys.GroupTeammates, GroupTeammates),
-                new KeyValuePair<string, object>(Keys.CycleTeamGamepad, CycleTeamGamepad),
-                new KeyValuePair<string, object>(Keys.CycleTeamKeyboard, CycleTeamKeyboard),
                 new KeyValuePair<string, object>(Keys.SurgeEnabled, SurgeEnabled),
                 new KeyValuePair<string, object>(Keys.SurgeAbility, SurgeAbility),
                 new KeyValuePair<string, object>(Keys.SurgeUltimate, SurgeUltimate),
@@ -110,17 +104,6 @@ namespace SpiderTeams
             public const string DurationDescription = "Level 1 strengthens the ability, level 2 also the ultimate.";
             public const string ShortTermDescription = "Buffs the ability's duration and cooldown, but nerfs the ultimate's.";
             public const string LongTermDescription = "Buffs the ultimate's duration and cooldown, but nerfs the ability's.";
-        }
-
-        public static class Bindings
-        {
-            public const string None = "none";
-
-            public static readonly string[] GamepadPaths = { "<Gamepad>/buttonNorth", "<Gamepad>/leftStickPress", "<Gamepad>/rightStickPress", "<Gamepad>/select", None };
-            public static readonly string[] GamepadLabels = { "Y / Triangle", "L3", "R3", "Select / Back", "Off" };
-
-            public static readonly string[] KeyboardPaths = { "<Keyboard>/t", "<Keyboard>/g", "<Keyboard>/r", "<Keyboard>/tab", None };
-            public static readonly string[] KeyboardLabels = { "T", "G", "R", "Tab", "Off" };
         }
 
         public static class Timing

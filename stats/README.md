@@ -14,7 +14,8 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
   - Press **F3** to view player titles after a Survival run
-  - Press **D-pad** on a controller to cycle the UIs. You can switch to a stick press instead. While Surge's ultimate is on the D-pad, only the stick press works
+  - Press **D-pad** on a controller to cycle the UIs
+  - Change these keys in **Mods** > **SpiderSurge** > **Controls**. A button that also casts Surge's ultimate on its own casts the ultimate and doesn't switch the windows
 - **Log File**: All the stats are saved to a local txt file when the game ends 
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
 - **Versus Mode Support**: Opponent kills count toward Kills, Total Offence, kill streaks and weapon stats. Breaking an opponent's shield counts toward Enemy Shields and Total Offence. With Teams on, only teammate kills and shield breaks count as friendly fire; without teams, every other spider is an opponent. Solo kills and streaks mean no living teammates, even while opponents are alive.
@@ -86,7 +87,7 @@ To stop tracking altogether, turn off the Stats part (`parts.stats`).
 The title collection isn't a setting, so it isn't in this file; see [Title collection](#title-collection).
 
 ### Input:
-`stats.input.cycleInput`: Controls which input on a controller cycles the UI. Options are `dpad`, `joystick`, `both`, or `none`. The joystick input refers to pressing down either joystick. The default and recommended is `dpad`. While Surge's ultimate is on the D-pad (`surge.dpadUltimate`), `dpad` works like `none` and `both` like `joystick`.
+The window keys and the controller switch are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `stats.input.cycleInput` moves to `controls.stats.switchWindows` on the first launch: `joystick` becomes either stick press, `both` the D-pad or either stick press, and `none` turns it off.
 
 </details>
 

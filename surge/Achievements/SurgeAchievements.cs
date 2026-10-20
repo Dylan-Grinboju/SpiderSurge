@@ -48,6 +48,7 @@ namespace SpiderSurge
         public const string YayIGuess = "yayIGuess";
         public const string NotDoneYet = "notDoneYet";
         public const string KissOfDeath = "kissOfDeath";
+        public const string NotOnMyWatch = "notOnMyWatch";
 
         public static readonly Achievement[] All =
         {
@@ -62,6 +63,7 @@ namespace SpiderSurge
             new Achievement(YayIGuess, "Yay I Guess?", "Pick the Nothing perk when Luck made it a Lucky Upgrade."),
             new Achievement(NotDoneYet, "You Are Not Done Yet", "Revive an astral ghost with Neural Backup."),
             new Achievement(KissOfDeath, "Kiss of Death", "Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability."),
+            new Achievement(NotOnMyWatch, "Not On My Watch", "Block a laser beam headed for a teammate while Null Field makes you immune."),
         };
 
         private static readonly Dictionary<string, AchievementUnlock> NoneYet = new Dictionary<string, AchievementUnlock>();

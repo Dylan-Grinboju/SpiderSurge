@@ -82,9 +82,9 @@ namespace SpiderTeams
                             }
 
                             Logger.LogDebug($"SpiderTeams: game binding {action.name} = {path}");
-                            if (action.name != ShowNamesAction && (SamePath(path, _gamepadPath) || SamePath(path, _keyboardPath)))
+                            if (action.name != ShowNamesAction && (Uses(_gamepadPath, path) || Uses(_keyboardPath, path)))
                             {
-                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button on the versus settings page if they clash");
+                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button in Mods > SpiderSurge > Controls if they clash");
                             }
                         }
                     }
@@ -117,18 +117,28 @@ namespace SpiderTeams
             return false;
         }
 
-        private static bool IsPressed(InputDevice device, string path)
+        private static bool IsPressed(InputDevice device, string binding)
         {
-            if (string.IsNullOrEmpty(path) || path == Consts.Bindings.None)
+            foreach (string path in Controls.PressPaths(binding))
             {
-                return false;
+                if (InputControlPath.TryFindControl(device, path) is ButtonControl button && button.isPressed)
+                {
+                    return true;
+                }
             }
-            return InputControlPath.TryFindControl(device, path) is ButtonControl button && button.isPressed;
+            return false;
         }
 
-        private static bool SamePath(string a, string b)
+        private static bool Uses(string binding, string path)
         {
-            return !string.IsNullOrEmpty(b) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            foreach (string bound in Controls.PressPaths(binding))
+            {
+                if (string.Equals(bound, path, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void Rebuild()
@@ -148,22 +158,26 @@ namespace SpiderTeams
         }
 
         // Pass-through skips the conflict resolution that drops a second pad's press while another pad holds the button.
-        private InputAction CreateAction(string name, string path)
+        private InputAction CreateAction(string name, string binding)
         {
-            if (string.IsNullOrEmpty(path) || path == Consts.Bindings.None)
+            if (string.IsNullOrEmpty(binding) || binding == Controls.None)
             {
                 return null;
             }
 
             try
             {
-                var action = new InputAction(name, InputActionType.PassThrough, path);
+                var action = new InputAction(name, InputActionType.PassThrough);
+                foreach (string path in Controls.PressPaths(binding))
+                {
+                    action.AddBinding(path);
+                }
                 action.performed += OnPerformed;
                 return action;
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"SpiderTeams could not bind '{path}': {ex.Message}");
+                Logger.LogWarning($"SpiderTeams could not bind '{binding}': {ex.Message}");
                 return null;
             }
         }
@@ -237,7 +251,7 @@ namespace SpiderTeams
                 }
 
                 // While Start or Select is held the press belongs to Surge's ability-button remap, not to a team pick
-                if (SpiderSurge.PlayerControlSettings.IsMenuHeld(device))
+                if (SpiderSurge.PlayerControlSettings.IsMenuHeld(device) || ControlCapture.Busy)
                 {
                     return;
                 }

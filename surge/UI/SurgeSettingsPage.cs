@@ -23,8 +23,8 @@ namespace SpiderSurge
             page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
             page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
             page.Note("Surge Survival runs have no abilities, no ultimates and no ability perks: the first perk choice is a normal one, and waves 30 and 60 bring no ultimate choice. Luck still appears. Applies from the next run.");
-            page.Toggle("Ultimate on the D-pad", ModConfig.DpadUltimateKey);
-            page.Note("Any D-pad direction casts the ultimate, instead of L3 and R3 together. Applies from the next run. While it's on, the D-pad doesn't switch the Stats windows.");
+            page.Button("Ability and ultimate buttons", () => page.Open(ControlsPage.Page));
+            page.Note($"Ability: <noparse>{Controls.Label(Controls.AbilityKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.AbilityController)}</noparse>. Ultimate: <noparse>{Controls.Label(Controls.UltimateKeyboard)}</noparse> or <noparse>{Controls.Label(Controls.UltimateController)}</noparse>.");
 
             page.Spacer();
             page.Header("Sound");
