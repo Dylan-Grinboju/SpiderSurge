@@ -113,6 +113,9 @@ namespace SpiderSurge
                 page.Button("Enemies", () => page.Open(Page + ".enemies"));
                 page.Button("Controls and indicators", () => page.Open(Page + ".controls"));
                 page.Button("Progression and records", () => page.Open(Page + ".progression"));
+                page.Button("Stats, titles and history", () => page.Open(Page + ".stats"));
+                page.Button("Teams and versus", () => page.Open(Page + ".teams"));
+                page.Button("Settings and support", () => page.Open(Page + ".support"));
                 return;
             }
             if (section == Page + ".abilities")
@@ -162,6 +165,37 @@ namespace SpiderSurge
                 page.Line("Pocket Dimension shows the stored weapon beside the ring. No weapon means an empty slot. The preview remains visible during cooldown, even with Only show when ready enabled.");
                 page.Button("Ability indicator settings", () => page.Open("surge.indicator"));
                 page.Line("Reduced visual effects softens decorative particles and flashes while keeping danger warnings visible. Find it on the Surge settings page.");
+                return;
+            }
+            if (section == Page + ".stats")
+            {
+                page.Title("Stats, titles and history");
+                page.Line($"Small stats: {Controls.Display(Controls.SmallWindow)}. Full scoreboard: {Controls.Display(Controls.BigWindow)}. Results titles: {Controls.Display(Controls.TitlesWindow)}. The small window can be dragged with the mouse; size, opacity and visible statistics live in Stats settings.");
+                page.Line($"The full scoreboard opens on Default, the recommended preset. Customize its columns in Stats > Scoreboard presets. Combat, Enemy kills, Weapon kills, Accuracy and Movement are fixed presets; hide any you do not want in settings. Move through their pages with {Controls.Display(Controls.PreviousPresetKeyboard)} / {Controls.Display(Controls.NextPresetKeyboard)}, {Controls.Display(Controls.PreviousPresetController)} / {Controls.Display(Controls.NextPresetController)}, the arrows or the mouse wheel.");
+                page.Line("The controller window button cycles the small window and Off during a match. In the lobby it also offers the full scoreboard and titles. A button assigned to an ultimate takes priority over scoreboard navigation. Tiny spiders identify players in the full scoreboard.");
+                page.Line("Titles reward outstanding and unusual performances after Survival with two or more players. Only titles shown on the results screen enter the collection. Achievements > Titles explains how to earn them; All, Locked, Unlocked and Recently earned help you browse. Select an unlocked entry or use Mark all seen to clear its NEW marker. The results screen still remembers which titles were new that run.");
+                page.Line("Match history keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles. It keeps every recorded match, with pages for browsing. Save match history needs Stats enabled; existing history remains available with Stats off. Saving history is independent of text reports and telemetry. Clear match history removes these records after confirmation.");
+                if (Parts.Stats.Running) page.Button("Stats settings", () => page.Open("stats"));
+                page.Button("Match history", () => page.Open("history"));
+                return;
+            }
+            if (section == Page + ".teams")
+            {
+                page.Title("Teams and versus");
+                page.Line("Enable Teams in Enable or disable parts, then restart the game. Team options appear in Versus Battle setup. Turn on Team versus, choose the team count and move players with the roster arrows; Shuffle and Balance help arrange the teams.");
+                page.Line($"While team selection is open, switch your team with {Controls.Display(Controls.TeamKeyboard)} / {Controls.Display(Controls.TeamController)}. Team colors and markers identify teammates; Spawn teammates together groups their starting positions.");
+                page.Line("Friendly fire has three choices: Push lets teammates knock each other back without killing or breaking shields; Ignore makes their hits do nothing; Damage lets their hits hurt normally. Teams share a score and win together.");
+                page.Line("Give everyone an ability adds the same Surge ability to every player in versus. Choose an ability or choose Random to change it each round; ultimates and upgrades can be configured there too. Surge must be running. Matches that used this option carry a Surge abilities badge in history.");
+                return;
+            }
+            if (section == Page + ".support")
+            {
+                page.Title("Settings and support");
+                page.Line("Mods > SpiderSurge groups the settings for Stats, Surge, Controls and the enabled parts. Settings save automatically. Changes to enabled parts take effect after restarting; General can reload manual changes to the settings file.");
+                page.Line("The Fixes part handles base-game problems such as Whisp cooldowns, controller reconnection, off-screen enemy arrows, pain-level color unlocks and the custom-maps warning. It works independently of Surge runs.");
+                page.Line("About SpiderSurge > Support opens the logs, config and save folders. Copy diagnostic information copies versions and enabled-part status. Report a bug opens the issue form for you to fill in. These actions do not upload your logs or save data.");
+                page.Line("Surge achievements, collected titles and highscores are kept in the mod's progress file. Match history is stored separately beside it, so retaining more matches does not expand that progress file. Resetting a collection and clearing history are separate actions.");
+                page.Button("Support", () => page.Open("support"));
                 return;
             }
             page.Title("Progression and records");
