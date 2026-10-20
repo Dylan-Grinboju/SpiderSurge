@@ -11,6 +11,8 @@ namespace SpiderSurge
     {
         public const string UnlimitedPerkTimeKey = "surge.unlimitedPerkTime";
         public const string NoAbilitiesKey = "surge.noAbilities";
+        public const string ReducedEffectsKey = "surge.reducedEffects";
+        public static bool ReducedEffects => Settings.GetBool(ReducedEffectsKey);
         public const string AbilityVolumeKey = "surge.abilityVolume";
         public const string ShowTutorialKey = "surge.showTutorial";
         public const string ShowTelemetryPromptKey = "surge.showTelemetryPrompt";
@@ -35,6 +37,7 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
             new KeyValuePair<string, object>(NoAbilitiesKey, false),
             new KeyValuePair<string, object>(AbilityVolumeKey, DefaultAbilityVolume),
+            new KeyValuePair<string, object>(ReducedEffectsKey, false),
             new KeyValuePair<string, object>(ShowTutorialKey, true),
             new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
             new KeyValuePair<string, object>(StatsLoggingKey, true),

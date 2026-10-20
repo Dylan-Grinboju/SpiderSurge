@@ -73,6 +73,9 @@ namespace SpiderSurge
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
+        public Sprite StoredWeaponSprite => _storedWeaponData?.WeaponRef != null
+            ? (_storedWeaponData.WeaponRef.GetComponent<SpriteRenderer>()?.sprite
+                ?? _storedWeaponData.WeaponRef.GetComponentInChildren<SpriteRenderer>(true)?.sprite) : null;
 
         private static readonly Dictionary<Weapon, float> restoredAmmo = new Dictionary<Weapon, float>();
 

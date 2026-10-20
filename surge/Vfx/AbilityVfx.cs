@@ -285,15 +285,16 @@ namespace SpiderSurge.Vfx
             }
             else
             {
-                float pulse = 1f + 0.05f * Mathf.Sin(Time.time * 6f);
+                float pulse = ModConfig.ReducedEffects ? 1f : 1f + 0.05f * Mathf.Sin(Time.time * 6f);
                 scale = Radius * 2f / spriteSize * pulse;
             }
             shell.transform.localScale = new Vector3(scale, scale, 1f);
             shell.transform.Rotate(0f, 0f, 40f * Time.deltaTime);
 
             flash = Mathf.MoveTowards(flash, 0f, Time.deltaTime * 4f);
-            Color color = Color.Lerp(Consts.Values.Vfx.NullFieldColor, Color.white, flash * 0.7f);
-            color.a = Mathf.Lerp(baseAlpha, Mathf.Min(1f, baseAlpha * 3f), flash);
+            float visibleFlash = flash * (ModConfig.ReducedEffects ? 0.25f : 1f);
+            Color color = Color.Lerp(Consts.Values.Vfx.NullFieldColor, Color.white, visibleFlash * 0.7f);
+            color.a = Mathf.Lerp(baseAlpha, Mathf.Min(1f, baseAlpha * 3f), visibleFlash);
             shell.color = color;
         }
     }

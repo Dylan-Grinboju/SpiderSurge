@@ -49,6 +49,8 @@ namespace SpiderSurge
             }
             MainThread.Drain();
             Settings.Tick();
+            HistoryStore.Tick();
+            CollectionSeen.Tick();
             Net.Tick();
         }
 
@@ -57,6 +59,8 @@ namespace SpiderSurge
             if (Instance is not null)
             {
                 Settings.Flush();
+                HistoryStore.FinishWrites();
+                CollectionSeen.Flush();
             }
         }
 
@@ -67,7 +71,9 @@ namespace SpiderSurge
                 return;
             }
             Logger.LogInfo("Unloading SpiderSurge...");
+            CollectionSeen.Flush();
             Parts.StopAll();
+            HistoryStore.FinishWrites();
             Net.Shutdown();
             Settings.Flush();
             OldMods.Release();

@@ -54,6 +54,8 @@ namespace SpiderSurge.Common
         private GameObject _lastSelected;
         private Action _confirmation;
         private string _confirmationLabel;
+        private string _confirmationActionLabel;
+        private string _confirmationCancelLabel;
         private readonly List<Selectable> _controls = new List<Selectable>();
         private readonly List<GameObject> _created = new List<GameObject>();
         private readonly Dictionary<int, Control> _bindingRows = new Dictionary<int, Control>();
@@ -75,6 +77,8 @@ namespace SpiderSurge.Common
         }
 
         public static bool IsOpen => _open != null && _open._menu != null && _open._view.IsVisible;
+
+        public static bool IsShowingTree(string page) => IsOpen && (_open.Current == page || _open.Current.StartsWith(page + "."));
 
         public static bool IsShowing(string page) => IsOpen && _open.Current == page;
 
@@ -364,15 +368,17 @@ namespace SpiderSurge.Common
             if (Current == "general") { AddGeneral(); return; }
             if (Current == "parts") { AddParts(); return; }
             if (Current == "about") { AddAbout(); return; }
+            if (Current == "support") { SupportPage.Build(this); return; }
+            if (Current == "history" || Current.StartsWith("history.", StringComparison.Ordinal)) { MatchHistoryPage.Build(this); return; }
             if (Current == AchievementsHub) { AddAchievements(); return; }
             if (Current == ControlsPage.Page) { ControlsPage.Build(this); return; }
             if (Current == "confirm")
             {
-                Title("Confirm reset");
+                Title("Confirm " + _confirmationActionLabel.ToLowerInvariant());
                 Paragraph(_confirmationLabel + "?");
                 Note("This cannot be undone.");
-                Button("Keep current settings", Back);
-                Button("Reset", () =>
+                Button(_confirmationCancelLabel, Back);
+                Button(_confirmationActionLabel, () =>
                 {
                     Action action = _confirmation;
                     Back();
@@ -400,6 +406,7 @@ namespace SpiderSurge.Common
             if (Parts.Surge.Running || Parts.Stats.Running) Button("Achievements", () => Open(AchievementsHub));
             if (Parts.Surge.Running || Parts.Stats.Running || Parts.Teams.Running) Button("Controls", () => Open(ControlsPage.Page));
             Button("Enable or disable parts", () => Open("parts"));
+            Button("Match history", () => Open("history"));
             Button("General", () => Open("general"));
             Button("About SpiderSurge", () => Open("about"));
         }
@@ -457,6 +464,7 @@ namespace SpiderSurge.Common
         {
             Title("About SpiderSurge");
             Paragraph($"Version {SpiderSurgeMod.Version}");
+            Button("Support", () => Open("support"));
             Header("Credits");
             Paragraph("Icons by these artists from game-icons.net: delapouite, lorc, pierre-leducq");
             Note("Icons licensed under CC BY 3.0: https://creativecommons.org/licenses/by/3.0/");
@@ -534,7 +542,7 @@ namespace SpiderSurge.Common
         }
 
         // Text the controller can select, so a page of reading scrolls with the D-pad and sticks like the other pages; with onClick, a click or the submit button runs it
-        public void Line(string text, Action onClick = null)
+        public void Line(string text, Action onClick = null, Sprite illustration = null, GameObject enemy = null)
         {
             TMP_Text paragraph = _menu.CreateParagraph(text);
             if (paragraph == null)
@@ -550,6 +558,20 @@ namespace SpiderSurge.Common
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
+            if (enemy != null) EnemyIllustration.Add(row.transform, enemy);
+            else if (illustration != null)
+            {
+                var picture = new GameObject("Illustration", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+                picture.transform.SetParent(row.transform, false);
+                var image = picture.GetComponent<Image>();
+                image.sprite = illustration;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+                var size = picture.GetComponent<LayoutElement>();
+                size.minWidth = size.preferredWidth = 80f;
+                size.minHeight = size.preferredHeight = 80f;
+                size.flexibleWidth = 0f;
+            }
             paragraph.transform.SetParent(row.transform, false);
             SetText(paragraph, text);
             paragraph.fontSize = FontSize;
@@ -638,12 +660,14 @@ namespace SpiderSurge.Common
             if (clash != null) Warning(clash);
         }
 
-        public void ConfirmButton(string label, Action onConfirm)
+        public void ConfirmButton(string label, Action onConfirm, string confirmLabel = "Reset", string cancelLabel = "Keep current settings")
         {
             Button(label, () =>
             {
                 _confirmation = onConfirm;
                 _confirmationLabel = label;
+                _confirmationActionLabel = confirmLabel;
+                _confirmationCancelLabel = cancelLabel;
                 Open("confirm");
             });
         }

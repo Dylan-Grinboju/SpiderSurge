@@ -84,6 +84,8 @@ namespace StatsMod
             currentGameMode = mode;
             sessionStartTime = DateTime.Now;
 
+            MatchHistory.Begin();
+            SpiderPortraits.ClearFinished();
             HitLogic.Clear();
             playerTracker.RefreshIdentities();
             playerTracker.ResetPlayerStats();
@@ -150,6 +152,7 @@ namespace StatsMod
 
             GameStatsSnapshot statsSnapshot = GetStatsSnapshot();
 
+            SpiderPortraits.CaptureFinished(statsSnapshot.ActivePlayers.Keys);
             TitlesManager.Instance.CalculateAndStoreTitles(statsSnapshot);
             statsSnapshot.Titles = TitlesManager.Instance.AllTitles;
             lastGameMode = currentGameMode;
@@ -169,6 +172,7 @@ namespace StatsMod
                                     TitlesManager.Instance.TitleCount > 0;
             int? newlyUnlocked = shouldShowTitles ? TitleCollection.Record(TitlesManager.Instance.CurrentTitles.Select(title => title.TitleName)) : null;
             TitlesManager.Instance.SetRunOutcome(shouldShowTitles, newlyUnlocked);
+            MatchHistory.Complete(statsSnapshot, restartRequested);
 
             if (shouldShowTitles && restartRequested)
             {

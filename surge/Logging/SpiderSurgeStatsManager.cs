@@ -84,9 +84,12 @@ namespace SpiderSurge.Logging
             DontDestroyOnLoad(gameObject);
         }
 
+        public SpiderSurgeStatsSnapshot LastFinished { get; private set; }
+
         public void StartTracking()
         {
-            if (!ModConfig.EnableStatsLogging || !Net.IsAuthority) return;
+            LastFinished = null;
+            if ((!ModConfig.EnableStatsLogging && !MatchHistory.Enabled) || !Net.IsAuthority) return;
 
             SendPendingTelemetry();
             _titleCalculationsAtStart = StatsMod.TitlesManager.Instance.CalculationCount;
@@ -182,14 +185,15 @@ namespace SpiderSurge.Logging
             }
 
             // A plain Survival run is only reported to telemetry; the local report and Surge's stats and titles stay with Surge runs
+            LastFinished = snapshot;
             if (_surgeRun)
             {
-                SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
+                if (ModConfig.EnableStatsLogging) SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
                 Integration.StatsModBridge.SendSurgeStats(snapshot);
                 Integration.StatsModBridge.SendSurgeTitles(snapshot);
             }
 
-            if (ShouldUploadTelemetryFromThisClient())
+            if (ModConfig.EnableStatsLogging && ShouldUploadTelemetryFromThisClient())
             {
                 Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
                 SendPendingTelemetry();

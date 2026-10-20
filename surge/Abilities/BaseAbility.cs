@@ -31,6 +31,8 @@ namespace SpiderSurge
         protected Coroutine durationCoroutine;
         protected Coroutine cooldownCoroutine;
         protected float cooldownEndTime = 0f;
+        private float cooldownDuration;
+        public float CooldownProgress => !onCooldown ? 1f : cooldownDuration <= 0f ? 0f : Mathf.Clamp01(1f - (cooldownEndTime - Time.time) / cooldownDuration);
 
         // Rate limit for ability not ready sound (once per second, per player)
         private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
@@ -588,6 +590,7 @@ namespace SpiderSurge
             }
 
             onCooldown = true;
+            cooldownDuration = cooldown;
             cooldownEndTime = Time.time + cooldown;
             cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
         }
@@ -748,6 +751,7 @@ namespace SpiderSurge
             {
                 StopCoroutine(cooldownCoroutine);
             }
+            cooldownDuration = cooldown;
             cooldownEndTime = Time.time + cooldown;
             cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
         }

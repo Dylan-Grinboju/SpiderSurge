@@ -456,6 +456,8 @@ namespace StatsMod
             Hud.Fill(card, Hud.Card);
             Hud.Fill(new Rect(card.x, card.y, card.width, CARD_BAND_HEIGHT * scale), playerColor);
 
+            if (title.IsNew)
+                Hud.Label(new Rect(card.x + 8f * scale, card.y + 3f * scale, card.width - 16f * scale, 20f * scale), "NEW", cardDescriptionStyle, Hud.Good);
             float padding = CARD_PADDING * scale;
             float innerWidth = card.width - padding * 2;
             float y = card.y + CARD_BAND_HEIGHT * scale + padding;

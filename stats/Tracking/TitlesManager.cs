@@ -22,6 +22,8 @@ public class TitleEntry
         }
     }
 
+    public bool IsNew { get; set; }
+    internal DateTime EarnedUtc { get; set; }
     public string TitleName { get; set; }
     public string Description { get; set; }
     public string PlayerName { get; set; }

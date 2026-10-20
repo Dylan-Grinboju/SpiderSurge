@@ -20,7 +20,8 @@ namespace SpiderSurge.Common
         None = 0,
         Dpad = 1,
         Combo = 2,
-        Alternatives = 4
+        Alternatives = 4,
+        Direction = 8
     }
 
     public sealed class Control
@@ -70,6 +71,11 @@ namespace SpiderSurge.Common
         public static readonly Control BigWindow = new Control("controls.stats.bigWindow", "Big window", ControlDevice.Keyboard, "<Keyboard>/f2", ControlExtras.Alternatives, Parts.Stats);
         public static readonly Control TitlesWindow = new Control("controls.stats.titlesWindow", "Titles", ControlDevice.Keyboard, "<Keyboard>/f3", ControlExtras.Alternatives, Parts.Stats);
         public static readonly Control SwitchWindows = new Control("controls.stats.switchWindows", "Switch windows", ControlDevice.Controller, Dpad, ControlExtras.Dpad | ControlExtras.Combo | ControlExtras.Alternatives, Parts.Stats);
+        public static readonly Control PreviousPresetKeyboard = new Control("controls.stats.previousPresetKeyboard", "Previous stats preset", ControlDevice.Keyboard, "<Keyboard>/pageUp", ControlExtras.None, Parts.Stats);
+        public static readonly Control NextPresetKeyboard = new Control("controls.stats.nextPresetKeyboard", "Next stats preset", ControlDevice.Keyboard, "<Keyboard>/pageDown", ControlExtras.None, Parts.Stats);
+        public static readonly Control PreviousPresetController = new Control("controls.stats.previousPresetController", "Previous stats preset", ControlDevice.Controller, "<Gamepad>/dpad/left", ControlExtras.Direction, Parts.Stats);
+        public static readonly Control NextPresetController = new Control("controls.stats.nextPresetController", "Next stats preset", ControlDevice.Controller, "<Gamepad>/dpad/right", ControlExtras.Direction, Parts.Stats);
+
         public static readonly Control TeamKeyboard = new Control("controls.teams.keyboard", "Switch team", ControlDevice.Keyboard, "<Keyboard>/t", ControlExtras.Alternatives, Parts.Teams);
         public static readonly Control TeamController = new Control("controls.teams.controller", "Switch team", ControlDevice.Controller, "<Gamepad>/buttonNorth", ControlExtras.Alternatives, Parts.Teams);
 
@@ -77,6 +83,7 @@ namespace SpiderSurge.Common
         {
             AbilityKeyboard, AbilityController, UltimateKeyboard, UltimateController, SurgeGuide,
             SmallWindow, BigWindow, TitlesWindow, SwitchWindows,
+            PreviousPresetKeyboard, NextPresetKeyboard, PreviousPresetController, NextPresetController,
             TeamKeyboard, TeamController
         };
 
@@ -190,7 +197,7 @@ namespace SpiderSurge.Common
         {
             if (control.Device == ControlDevice.Controller)
             {
-                return IsDpad(path) || ControllerButtons.Any(button => string.Equals(button.path, path, StringComparison.OrdinalIgnoreCase));
+                return IsDpad(path) || (control.Allows(ControlExtras.Direction) && DpadDirections.Contains(path, StringComparer.OrdinalIgnoreCase)) || ControllerButtons.Any(button => string.Equals(button.path, path, StringComparison.OrdinalIgnoreCase));
             }
             if (!path.StartsWith(KeyboardDevice, StringComparison.OrdinalIgnoreCase)) return false;
             string key = path.Substring(KeyboardDevice.Length);
