@@ -6,20 +6,19 @@ using Logger = Silk.Logger;
 
 namespace StatsMod
 {
-    // Keeps a small picture of every player's live spider, re-shot while it is alive, so a title card can show the spider itself
+    // Keeps a small picture of every player's spider, shot once after each spawn while it is still alive (a dead spider is gone by the time titles show)
     public class SpiderPortraits : MonoBehaviour
     {
         public const int Size = 192;
         private const float ViewRadius = 7.5f;
-        private const float RefreshSeconds = 1f;
-        private const float FirstShotDelay = 0.6f;
+        private const float ShotDelay = 1.5f;
         private static readonly Color Backdrop = new Color(0.075f, 0.06f, 0.115f, 1f);
 
         public static SpiderPortraits Instance { get; private set; }
 
         private readonly Dictionary<int, RenderTexture> portraits = new Dictionary<int, RenderTexture>();
-        private readonly Dictionary<int, float> nextShot = new Dictionary<int, float>();
-        private readonly Dictionary<int, float> seenAlive = new Dictionary<int, float>();
+        private readonly Dictionary<int, float> dueAt = new Dictionary<int, float>();
+        private readonly HashSet<int> shotThisLife = new HashSet<int>();
         private Camera cam;
         private int shooting = -1;
 
@@ -81,21 +80,21 @@ namespace StatsMod
                 SpiderHealthSystem health = player.spiderHealthSystem;
                 if (health == null || health.dead || health.astralDead || !health.gameObject.activeInHierarchy)
                 {
-                    seenAlive.Remove(id);
+                    dueAt.Remove(id);
+                    shotThisLife.Remove(id);
                     continue;
                 }
+                if (shotThisLife.Contains(id)) continue;
 
-                if (!seenAlive.TryGetValue(id, out float since))
+                if (!dueAt.TryGetValue(id, out float due))
                 {
-                    since = now;
-                    seenAlive[id] = now;
-                    nextShot[id] = portraits.ContainsKey(id) ? now + FirstShotDelay : now + FirstShotDelay * 0.5f;
+                    due = now + ShotDelay;
+                    dueAt[id] = due;
                 }
-                if (now < since + FirstShotDelay * 0.5f) continue;
-                if (nextShot.TryGetValue(id, out float due) && now < due) continue;
+                if (now < due) continue;
 
                 Shoot(id, health);
-                nextShot[id] = now + RefreshSeconds;
+                shotThisLife.Add(id);
                 break;
             }
         }
