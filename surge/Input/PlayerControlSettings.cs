@@ -71,12 +71,11 @@ namespace SpiderSurge
         {
             Logger.LogInfo("[PlayerControlSettings] Setting up input actions...");
 
-            // Menu/Start button for holding
+            // Select only, since Start also opens the pause menu
             menuButtonAction = new InputAction(
                 name: "MenuButton",
                 type: InputActionType.PassThrough
             );
-            menuButtonAction.AddBinding("<Gamepad>/start");
             menuButtonAction.AddBinding("<Gamepad>/select");
             menuButtonAction.performed += OnMenuButtonChanged;
             menuButtonAction.canceled += OnMenuButtonChanged;
@@ -101,7 +100,7 @@ namespace SpiderSurge
 
         }
 
-        // A player holds the menu button while Start or Select is down on their pad.
+        // A player holds the menu button while Select is down on their pad.
         private void OnMenuButtonChanged(InputAction.CallbackContext context)
         {
             InputControl control = context.control;
@@ -135,7 +134,7 @@ namespace SpiderSurge
             }
         }
 
-        // While a pad holds Start or Select, its button presses belong to the remap gesture, not to abilities
+        // While a pad holds Select, its button presses belong to the remap gesture, not to abilities
         public static bool IsMenuHeld(InputDevice device)
         {
             return Instance != null && device != null && Instance.IsMenuHeldOn(device);

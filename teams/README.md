@@ -52,7 +52,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **Give everyone an ability** under **Surge abilities in versus** on the versus setup page; it is off by default. It works in normal free-for-all versus too, not only with teams.
 
 - Everyone gets the same ability. Pick one, or **Random** for a new one every round, never the same one twice in a row. The ability is announced at the start of the match, and every round in Random mode.
-- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge; **Mods** > **SpiderSurge** > **Controls** changes them. To move your own ability to another button, hold **Start** and double-tap that button.
+- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge; **Mods** > **SpiderSurge** > **Controls** changes them. To move your own ability to another button, hold **Select** and double-tap that button.
 - Each round starts fresh, so stored weapons don't carry over.
 - Changes on the versus setup page apply from the next round.
 

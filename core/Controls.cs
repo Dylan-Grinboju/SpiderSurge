@@ -313,7 +313,7 @@ namespace SpiderSurge.Common
             return result;
         }
 
-        // While a control is being set, or a pad holds Start or Select for the ability remap, no mod button reacts
+        // While a control is being set, or a pad holds Select for the ability remap, no mod button reacts
         public static bool Ignored(InputDevice device) => ControlCapture.Busy || SpiderSurge.PlayerControlSettings.IsMenuHeld(device);
 
         public static string Label(Control control) => Label(Get(control));

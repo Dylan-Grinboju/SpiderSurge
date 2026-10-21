@@ -64,7 +64,7 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Small stats window | **F1** | D-pad (cycles the windows) |
 | Big stats window | **F2** | |
 | Titles | **F3** (also skips the reveal) | |
-| Surge ability | **Q** | **L1**, or your own button: hold **Start** and double-tap it |
+| Surge ability | **Q** | **L1**, or your own button: hold **Select** and double-tap it |
 | Surge ultimate | **C** | **L3 + R3** together |
 | Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
 | Switch team in the lobby | **T** | **Y / Triangle** |

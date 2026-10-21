@@ -17,7 +17,7 @@ namespace SpiderSurge.Common
                 page.Header("Surge");
                 page.Binding(Controls.AbilityKeyboard);
                 page.Binding(Controls.AbilityController);
-                page.Note("Once a spider has an ability, its ability button stops doing what it does in the game, so by default L1 no longer jumps. Each player can also pick their own controller button in the game: hold Start or Select and double-tap it. Holding Start or Select for 3 seconds goes back to the button above.");
+                page.Note("Once a spider has an ability, its ability button stops doing what it does in the game, so by default L1 no longer jumps. Each player can also pick their own controller button in the game: hold Select and double-tap it. Holding Select for 3 seconds goes back to the button above.");
                 page.Binding(Controls.UltimateKeyboard);
                 page.Binding(Controls.UltimateController);
                 page.Note("For the controller ultimate, press a second button while holding the first to make a combo, or press any D-pad direction to use the whole D-pad.");
