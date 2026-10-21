@@ -21,12 +21,17 @@ namespace SpiderSurge
             if (__runOriginal) TryRecordHit(__instance);
         }
 
-        // Lava is the only thing that disintegrates a spider inside a Null Field (the Black Hole spares it)
+        // Lava disintegrates a spider inside a Null Field (the Black Hole spares it); so does falling below the map, which only delays the death and isn't a hit
         [HarmonyPatch("Disintegrate")]
         [HarmonyPrefix]
         public static void Disintegrate_Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
-            if (__runOriginal) TryRecordHit(__instance, lava: true);
+            if (__runOriginal && !BelowMap(__instance)) TryRecordHit(__instance, lava: true);
+        }
+
+        private static bool BelowMap(SpiderHealthSystem healthSystem)
+        {
+            return healthSystem.transform.position.y < (CustomMapEditor.ParkourActive() ? -700f : -4000f);
         }
 
         [HarmonyPatch("ExplodeInDirection")]

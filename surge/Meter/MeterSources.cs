@@ -1,13 +1,34 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderSurge
 {
-    // Marks a weapon a Care Package dropped, so every kill with it charges the player who cast it
-    public class CarePackageDrop : MonoBehaviour
+    // The weapons a Care Package dropped and the ones they launched, so every kill with them charges the player who cast it.
+    // Kept by reference, which still matches once the weapon is destroyed: a grenade, rocket or disc can kill after its weapon is gone
+    public static class CarePackageDrops
     {
-        public int PlayerId = -1;
+        private static readonly Dictionary<Weapon, int> casters = new Dictionary<Weapon, int>();
+
+        public static void Mark(Weapon weapon, int playerId)
+        {
+            if (weapon != null && playerId >= 0) casters[weapon] = playerId;
+        }
+
+        public static bool TryGetCaster(Weapon weapon, out int playerId)
+        {
+            playerId = -1;
+            return !ReferenceEquals(weapon, null) && casters.TryGetValue(weapon, out playerId);
+        }
+
+        public static void OnWeaponLaunched(Weapon launched, Weapon launcher)
+        {
+            if (TryGetCaster(launcher, out int playerId)) Mark(launched, playerId);
+        }
+
+        // Dropped weapons are destroyed with the scene
+        public static void Clear() => casters.Clear();
     }
 
     // Marks a friendly wasp with the player whose Neural Backup summoned it, so its kills charge the meter
@@ -45,13 +66,9 @@ namespace SpiderSurge
         {
             if (!SurgeMeter.CanEarn || enemy == null || !enemy.needToKillToCompleteLevel) return;
 
-            if (weapon != null)
+            if (CarePackageDrops.TryGetCaster(weapon, out int caster))
             {
-                CarePackageDrop drop = weapon.GetComponent<CarePackageDrop>();
-                if (drop != null)
-                {
-                    SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, Consts.Values.Meter.CarePackageChargePerKill);
-                }
+                SurgeMeter.Add(MeterSource.CarePackage, caster, Consts.Values.Meter.CarePackageChargePerKill);
             }
 
             if (player == null) return;

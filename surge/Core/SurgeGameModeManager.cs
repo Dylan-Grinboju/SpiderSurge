@@ -67,10 +67,11 @@ namespace SpiderSurge
             RunUsedSurge = false;
         }
 
-        internal void ApplyRemote(bool active, bool runUsedSurge)
+        internal void ApplyRemote(bool active, bool runUsedSurge, bool noAbilities)
         {
             IsActive = active;
             RunUsedSurge = runUsedSurge;
+            NoAbilitiesThisRun = noAbilities;
         }
 
         private void LateUpdate()

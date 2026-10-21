@@ -18,5 +18,8 @@ namespace SpiderSurge.Common
 
         // The game also turns player input off while a level loads or ends
         public static bool AcceptPlayerInput => !Open && (GameController.instance == null || GameController.instance.acceptingInputs);
+
+        // A client checked its request against its own menus; on the host only the shared pause and input state can refuse it
+        public static bool AcceptRemotePlayerInput => GameController.instance == null || (!GameController.instance.gamePaused && GameController.instance.acceptingInputs);
     }
 }

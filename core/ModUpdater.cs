@@ -23,6 +23,7 @@ namespace SpiderSurge.Common
         private static readonly HttpClient _httpClient = new HttpClient();
         private static CancellationTokenSource _checkCancellation;
         private static bool _watchingSettings;
+        private static bool _offLogged;
 
         private static string CurrentVersion => SpiderSurgeMod.Version;
 
@@ -43,9 +44,11 @@ namespace SpiderSurge.Common
             if (!CheckForUpdates)
             {
                 CancelCheck();
-                Logger.LogInfo("Update checking is turned off in the settings");
+                if (!_offLogged) Logger.LogInfo("Update checking is turned off in the settings");
+                _offLogged = true;
                 return;
             }
+            _offLogged = false;
             if (_checkCancellation != null) return;
 
             _checkCancellation = new CancellationTokenSource();

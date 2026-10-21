@@ -52,6 +52,7 @@ namespace SpiderSurge
         private float trackedOriginalAmmo = 0f;
         private Weapon lastResolvedWeapon;
         private int lastResolvedFrame = -1;
+        private bool showingRemote;
         private static WeaponSpawner[] cachedWeaponSpawners;
         private static string cachedSceneName;
 
@@ -238,7 +239,35 @@ namespace SpiderSurge
                 ClipVfx.Cast(spiderHealthSystem.transform.position);
                 aura = WeaponAura.Attach(spiderHealthSystem.transform);
                 ShowAuraOn(trackedWeapon);
+                if (Net.IsHost) SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
             }
+        }
+
+        // Peers other than the host and the caster only see the aura; the host tells them when it starts and ends
+        public static void ShowRemoteClip(int playerId, Vector3 position, bool on)
+        {
+            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility clip) || clip == null) return;
+            clip.StopAura();
+            clip.showingRemote = on && clip.spiderHealthSystem != null;
+            if (!clip.showingRemote) return;
+            ClipVfx.Cast(position);
+            clip.aura = WeaponAura.Attach(clip.spiderHealthSystem.transform);
+            clip.ShowAuraOn(clip.weaponManager != null ? clip.weaponManager.equippedWeapon : null);
+        }
+
+        // Only the host spawns the weapons, so it tells every client where they land
+        public static void ShowRemoteDrop(Vector3 position)
+        {
+            WeaponSpawner nearest = null;
+            float nearestDistance = 1f;
+            foreach (WeaponSpawner spawner in FindObjectsOfType<WeaponSpawner>())
+            {
+                float distance = (spawner.transform.position - position).sqrMagnitude;
+                if (distance >= nearestDistance) continue;
+                nearest = spawner;
+                nearestDistance = distance;
+            }
+            if (nearest != null) ClipVfx.Drop(nearest);
         }
 
         private WeaponAura aura;
@@ -258,6 +287,7 @@ namespace SpiderSurge
         protected override void OnDeactivate()
         {
             StopAura();
+            if (Net.IsHost) SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
             Weapon equippedWeapon = weaponManager?.equippedWeapon;
 
             if (equippedWeapon != null)
@@ -287,7 +317,10 @@ namespace SpiderSurge
                 return;
 
             if (!ability.isActive)
+            {
+                if (ability.showingRemote) ability.ShowAuraOn(weapon);
                 return;
+            }
 
             ability.EnsureTrackedWeapon(weapon);
             ability.ShowAuraOn(weapon);
@@ -307,6 +340,7 @@ namespace SpiderSurge
 
             if (!ability.isActive)
             {
+                if (ability.showingRemote) ability.ShowAuraOn(null);
                 return;
             }
 
@@ -450,9 +484,9 @@ namespace SpiderSurge
                             netObj.DestroyWithScene = true;
                         }
                         ClipVfx.Drop(spawner);
+                        SurgeNet.SendFx(SurgeFx.CareDrop, PlayerId, spawner.transform.position, 0f, false);
 
-                        var drop = spawnedWeapon.AddComponent<CarePackageDrop>();
-                        drop.PlayerId = PlayerId;
+                        CarePackageDrops.Mark(spawnedWeapon.GetComponent<Weapon>(), PlayerId);
 
                         spawnedCount++;
                     }
@@ -489,6 +523,7 @@ namespace SpiderSurge
 
         protected override void OnDestroy()
         {
+            showingRemote = false;
             StopAura();
             base.OnDestroy();
 

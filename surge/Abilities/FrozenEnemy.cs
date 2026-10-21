@@ -5,6 +5,7 @@ using SpiderSurge.Common;
 using SpiderSurge.Vfx;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
 
 namespace SpiderSurge
 {
@@ -30,6 +31,7 @@ namespace SpiderSurge
         private int _enemyId;
         private int _frozenBy = -1;
         private float _thawTime;
+        private float _pullEnd;
         private float? _fuseLeft;
         private bool _held;
         private bool _visualOnly;
@@ -109,10 +111,16 @@ namespace SpiderSurge
             Apply(enemy, duration, visualOnly: true);
         }
 
-        // The Black Hole's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked
+        // The Black Hole's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked and thaws into the pull
         public static void HoldForPull(EnemyHealthSystem enemy, float duration)
         {
-            if (!CanFreeze(enemy) || duration <= 0f || enemy.GetComponent<FrozenEnemy>() != null) return;
+            if (!CanFreeze(enemy) || duration <= 0f) return;
+            FrozenEnemy frozen = enemy.GetComponent<FrozenEnemy>();
+            if (frozen != null)
+            {
+                if (!frozen._pulled && !frozen._visualOnly) frozen._pullEnd = Mathf.Max(frozen._pullEnd, Time.time + duration);
+                return;
+            }
 
             FrozenEnemy held = enemy.gameObject.AddComponent<FrozenEnemy>();
             held._enemy = enemy;
@@ -124,7 +132,9 @@ namespace SpiderSurge
         public static void EndPull(EnemyHealthSystem enemy)
         {
             FrozenEnemy held = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
-            if (held != null && held._pulled) held._thawTime = Time.time;
+            if (held == null) return;
+            held._pullEnd = 0f;
+            if (held._pulled) held._thawTime = Time.time;
         }
 
         private static bool Apply(EnemyHealthSystem enemy, float duration, bool visualOnly)
@@ -175,7 +185,11 @@ namespace SpiderSurge
                 // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
                 if (brain.IsInvoking("LaunchChargeAttack")) StopChargeCosmetics(brain);
                 brain.CancelInvoke("LaunchChargeAttack");
-                if (brain is WhispBrain whisp) CalmChargeLight(whisp);
+                if (brain is WhispBrain whisp)
+                {
+                    CalmChargeLight(whisp);
+                    SurgeNet.SendEnemyFx(EnemyFx.ChargeCalmed, whisp.NetworkObject, 0f);
+                }
                 _brains.Add(brain);
                 FrozenBrainIds.Add(brain.GetInstanceID());
                 if (brain is ExplodingRoller roller && RollerTriggered(roller))
@@ -219,16 +233,16 @@ namespace SpiderSurge
             }
         }
 
-        // Only the whisp's brain turns its aiming light back from the charge's red beam, so it is set to its resting look, the one the brain returns it to
-        private static void CalmChargeLight(WhispBrain whisp)
+        // Only the whisp's brain turns its aiming light back from the charge's red beam, on the host and through its RPC on clients, so a held whisp's light is set to the resting look the brain returns it to
+        internal static void CalmChargeLight(WhispBrain whisp)
         {
-            Traverse light = Traverse.Create(whisp).Field("chargeLight");
-            if (!(light.GetValue() is Object value) || value == null) return;
-            light.Property("intensity").SetValue(1f);
-            light.Property("pointLightInnerAngle").SetValue(50f);
-            light.Property("pointLightOuterAngle").SetValue(100f);
-            light.Property("pointLightOuterRadius").SetValue(100f);
-            light.Property("color").SetValue(whisp.energyColor);
+            Light2D light = whisp != null ? whisp.chargeLight : null;
+            if (light == null) return;
+            light.intensity = 1f;
+            light.pointLightInnerAngle = 50f;
+            light.pointLightOuterAngle = 100f;
+            light.pointLightOuterRadius = 100f;
+            light.color = whisp.energyColor;
         }
 
         // The frost follows the enemy's moving body and spreads as wide as its sprites
@@ -261,8 +275,37 @@ namespace SpiderSurge
         private void Update()
         {
             if (Time.time < _thawTime) return;
+            if (Time.time < _pullEnd && Soften()) return;
             Thaw();
             Destroy(this);
+        }
+
+        // A freeze that ends while the Black Hole still pulls the enemy frees its bodies for the pull and keeps its brain held until the pull ends
+        private bool Soften()
+        {
+            if (!_held || _pulled || _visualOnly || _enemy == null || _enemy.IsDead() || SwallowedTarget.IsSwallowed(gameObject)) return false;
+
+            FrozenEnemyIds.Remove(_enemyId);
+            PulledEnemyIds.Add(_enemyId);
+            _pulled = true;
+            _frozenBy = -1;
+            _thawTime = _pullEnd;
+            _pullEnd = 0f;
+
+            if (_frost != null)
+            {
+                _frost.Release(true);
+                _frost = null;
+            }
+            PlayThawSound();
+            foreach (var pair in _bodies)
+            {
+                if (pair.Key != null) pair.Key.constraints = pair.Value;
+            }
+            _bodies.Clear();
+            RestoreTints();
+            _tints.Clear();
+            return true;
         }
 
         // EnemyHealthSystem.Explode sends this to every component on the host whenever an enemy dies
@@ -352,6 +395,14 @@ namespace SpiderSurge
             {
                 if (brain != null) FrozenBrainIds.Remove(brain.GetInstanceID());
             }
+        }
+
+        // A dead enemy is hidden for 2 s before it is destroyed, so its frost goes with it
+        private void OnDisable()
+        {
+            if (_frost == null) return;
+            _frost.Release(false);
+            _frost = null;
         }
 
         private void OnDestroy()

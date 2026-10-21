@@ -24,6 +24,8 @@ namespace SpiderSurge
         Immune = 1,
         Freeze = 2,
         BlackHole = 3,
+        Clip = 4,
+        CareDrop = 5,
     }
 
     public enum EnemyFx : byte
@@ -34,6 +36,9 @@ namespace SpiderSurge
         CloudFrozen = 3,
         ShieldBroken = 4,
         Swallowed = 5,
+        ShotFrozen = 6,
+        ChargeCalmed = 7,
+        HatchCancelled = 8,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -162,7 +167,7 @@ namespace SpiderSurge
             });
         }
 
-        // Effects on an enemy that only the host runs: the freeze tint and the laser ring's timing
+        // Effects on an enemy or shot that only the host runs: the freeze tint and hold, and the laser ring's timing
         public static void SendEnemyFx(EnemyFx fx, NetworkObject target, float value)
         {
             if (!Net.HasRemotePlayers || target == null || !target.IsSpawned)
@@ -182,11 +187,11 @@ namespace SpiderSurge
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
 
-            // Players join a run already going, so they also get the enemies Freeze Time is holding right now
+            // Players join a run already going, so they also get the enemies Freeze Time is holding right now; the Black Hole's holds aren't shown as frozen
             foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
             {
                 NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = frozen.TimeLeft;
+                float left = FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>());
                 if (target == null || !target.IsSpawned || left <= 0f) continue;
                 Net.SendTo(clientId, EnemyChannel, writer =>
                 {
@@ -203,6 +208,18 @@ namespace SpiderSurge
                 Net.SendTo(clientId, EnemyChannel, writer =>
                 {
                     writer.Write((byte)EnemyFx.CloudFrozen);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(left);
+                });
+            }
+            foreach (FrozenShot frozen in UnityEngine.Object.FindObjectsOfType<FrozenShot>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = frozen.TimeLeft;
+                if (target == null || !target.IsSpawned || left <= 0f) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.ShotFrozen);
                     writer.Write(target.NetworkObjectId);
                     writer.Write(left);
                 });
@@ -247,6 +264,7 @@ namespace SpiderSurge
             writer.Write(SurgeGameModeManager.IsModeEnabled);
             writer.Write(mode != null && mode.IsActive);
             writer.Write(mode != null && mode.RunUsedSurge);
+            writer.Write(mode != null && mode.NoAbilitiesThisRun);
             int wave = SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() ? SurvivalMode.instance.CurrentWave : 0;
             writer.Write(wave);
             writer.Write(perks != null && perks.IsFirstNormalPerkSelection);
@@ -292,6 +310,7 @@ namespace SpiderSurge
                 bool modeEnabled = reader.ReadBoolean();
                 bool active = reader.ReadBoolean();
                 bool runUsed = reader.ReadBoolean();
+                bool noAbilities = reader.ReadBoolean();
                 int wave = reader.ReadInt32();
                 bool first = reader.ReadBoolean();
                 bool ultUpgrade = reader.ReadBoolean();
@@ -315,7 +334,7 @@ namespace SpiderSurge
                 int spawnEpoch = reader.ReadInt32();
 
                 SurgeGameModeManager.SelectMode(modeEnabled);
-                SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed);
+                SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
@@ -388,6 +407,13 @@ namespace SpiderSurge
             float radius = reader.ReadSingle();
             bool flag = reader.ReadBoolean();
 
+            // Only the host spawns a Care Package's weapons, so the caster draws the drops too
+            if (fx == SurgeFx.CareDrop)
+            {
+                AmmoAbility.ShowRemoteDrop(position);
+                return;
+            }
+
             // A local caster already drew its own effect when it pressed the button
             if (Players.IsLocal(playerId))
             {
@@ -407,6 +433,9 @@ namespace SpiderSurge
                     break;
                 case SurgeFx.BlackHole:
                     StorageAbility.DrawRemoteBlackHole(playerId, radius);
+                    break;
+                case SurgeFx.Clip:
+                    AmmoAbility.ShowRemoteClip(playerId, position, flag);
                     break;
             }
         }
@@ -431,6 +460,15 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.CloudFrozen:
                     FrozenCloud.ShowFrozen(target.GetComponent<DeathCloud>(), value);
+                    break;
+                case EnemyFx.ShotFrozen:
+                    FrozenShot.ShowFrozen(target, value);
+                    break;
+                case EnemyFx.ChargeCalmed:
+                    foreach (WhispBrain whisp in target.GetComponentsInChildren<WhispBrain>()) FrozenEnemy.CalmChargeLight(whisp);
+                    break;
+                case EnemyFx.HatchCancelled:
+                    SpawnerBrain.ShowHatchCancelled(target);
                     break;
                 case EnemyFx.LaserPhase:
                     target.GetComponentInChildren<LaserRing>(true)?.Sync(value);

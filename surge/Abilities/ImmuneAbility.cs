@@ -7,6 +7,7 @@ using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
 using SpiderSurge.Vfx;
+using UnityEngine.Experimental.Rendering.Universal;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -51,7 +52,6 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
         private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
-        private static FieldInfo _spiderLightField;
 
         private bool hadBarrierOnSessionStart = false;
         private bool wasHitDuringSession = false;
@@ -91,12 +91,6 @@ namespace SpiderSurge
             if (_breakShieldMethod == null)
             {
                 _breakShieldMethod = typeof(SpiderHealthSystem).GetMethod("BreakShieldClientRpc",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-            }
-
-            if (_spiderLightField == null)
-            {
-                _spiderLightField = typeof(SpiderHealthSystem).GetField("spiderLight",
                     BindingFlags.NonPublic | BindingFlags.Instance);
             }
         }
@@ -258,6 +252,8 @@ namespace SpiderSurge
 
 
         private Dictionary<SpriteRenderer, Color> _originalColors = new Dictionary<SpriteRenderer, Color>();
+        private static readonly Color RadianceLightColor = new Color(1f, 0.6f, 0f);
+        private const float RadianceLightIntensity = 4f;
         private Color? _originalLightColor;
         private float? _originalLightIntensity;
 
@@ -293,7 +289,7 @@ namespace SpiderSurge
                     spiderHealthSystem.head.color = new Color(1f, 0.84f, 0.0f, 1f);
                 }
 
-                // -- 2. Apply to Light (Via Reflection) --
+                // -- 2. Apply to Light --
                 ApplyLightRadiance(true);
             }
             else
@@ -313,48 +309,25 @@ namespace SpiderSurge
             }
         }
 
+        // Reduced effects keeps the light's own brightness and only turns it gold
         private void ApplyLightRadiance(bool enable)
         {
-            try
+            Light2D light = spiderHealthSystem.spiderLight;
+            if (light == null) return;
+
+            if (enable)
             {
-                if (_spiderLightField == null) return;
-
-                var lightObj = _spiderLightField.GetValue(spiderHealthSystem);
-                if (lightObj == null) return;
-
-                var lightType = lightObj.GetType();
-                var colorProp = lightType.GetProperty("color");
-                var intensityProp = lightType.GetProperty("intensity");
-
-                if (enable)
-                {
-                    if (colorProp != null && _originalLightColor == null)
-                        _originalLightColor = (Color)colorProp.GetValue(lightObj, null);
-
-                    if (intensityProp != null && _originalLightIntensity == null)
-                        _originalLightIntensity = (float)intensityProp.GetValue(lightObj, null);
-
-                    if (colorProp != null) colorProp.SetValue(lightObj, new Color(1f, 0.6f, 0.0f), null);
-                    if (intensityProp != null) intensityProp.SetValue(lightObj, 4.0f, null);
-                }
-                else
-                {
-                    if (colorProp != null && _originalLightColor != null)
-                    {
-                        colorProp.SetValue(lightObj, _originalLightColor.Value, null);
-                        _originalLightColor = null;
-                    }
-
-                    if (intensityProp != null && _originalLightIntensity != null)
-                    {
-                        intensityProp.SetValue(lightObj, _originalLightIntensity.Value, null);
-                        _originalLightIntensity = null;
-                    }
-                }
+                if (_originalLightColor == null) _originalLightColor = light.color;
+                if (_originalLightIntensity == null) _originalLightIntensity = light.intensity;
+                light.color = RadianceLightColor;
+                light.intensity = ModConfig.ReducedEffects ? _originalLightIntensity.Value : RadianceLightIntensity;
             }
-            catch (System.Exception ex)
+            else
             {
-                Logger.LogWarning($"[SpiderSurge] Failed to apply light radiance: {ex.Message}");
+                if (_originalLightColor != null) light.color = _originalLightColor.Value;
+                if (_originalLightIntensity != null) light.intensity = _originalLightIntensity.Value;
+                _originalLightColor = null;
+                _originalLightIntensity = null;
             }
         }
 
@@ -365,7 +338,7 @@ namespace SpiderSurge
             {
                 if (ability != null && ability.PlayerId == playerId)
                 {
-                    ability.ApplyRadiance(on);
+                    SurgeVfx.Safely(() => ability.ApplyRadiance(on));
                     return;
                 }
             }

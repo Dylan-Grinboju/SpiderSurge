@@ -76,6 +76,9 @@ namespace StatsMod
         // An enemy kill credited to a player: the weapon that made it, when one is known, and the time of the killing hit
         public static event Action<EnemyHealthSystem, PlayerController, Weapon, float> EnemyKilled;
 
+        // A weapon a launcher fired, such as a Grenade Launcher's grenade, and the launcher
+        public static event Action<Weapon, Weapon> WeaponLaunched;
+
         private static readonly Dictionary<SerializationEnemyName, string> enemyDisplayNames = new Dictionary<SerializationEnemyName, string>
         {
             { SerializationEnemyName.Wasp, "Wasp" },
@@ -407,7 +410,11 @@ namespace StatsMod
             weapon.ownerWeaponClientId = ownerId;
             try
             {
-                SetWeaponPlayer(weapon, WeaponPlayer(launcher as Weapon));
+                PlayerController player = WeaponPlayer(launcher as Weapon);
+                SetWeaponPlayer(weapon, player);
+                // A Grenade Launcher's grenades come out armed, so they belong to the launcher's player from the start
+                if (weapon is Grenade grenade && grenade.preArmed && player != null) StoreOwner(explosiveArmers, weapon.GetInstanceID(), player, weapon);
+                WeaponLaunched?.Invoke(weapon, launcher as Weapon);
             }
             catch (Exception ex)
             {

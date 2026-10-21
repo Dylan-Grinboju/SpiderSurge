@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace SpiderSurge
@@ -13,6 +14,8 @@ namespace SpiderSurge
         private static readonly HashSet<int> FrozenIds = new HashSet<int>();
         private static readonly Dictionary<SawDisc, float> DiscStarts = new Dictionary<SawDisc, float>();
         private static readonly AccessTools.FieldRef<BasicProjectile, float> SpawnedAt = AccessTools.FieldRefAccess<BasicProjectile, float>("_spawnedAt");
+        private static readonly AccessTools.FieldRef<SawDiscAttractor, GameObject> GravityZone = AccessTools.FieldRefAccess<SawDiscAttractor, GameObject>("attractor");
+        private static readonly AccessTools.FieldRef<SawDiscAttractor, float> GravitySpawnedAt = AccessTools.FieldRefAccess<SawDiscAttractor, float>("_spawnTime");
 
         private int _id;
         private float _thawTime;
@@ -22,7 +25,12 @@ namespace SpiderSurge
         private RigidbodyConstraints2D _constraints;
         private SawDisc _disc;
         private float? _discLifeLeft;
+        private SawDiscAttractor _gravity;
+        private float _frozenAt;
+        private readonly List<Collider2D> _pull = new List<Collider2D>();
         private readonly Dictionary<SpriteRenderer, (Color original, Color shown)> _tints = new Dictionary<SpriteRenderer, (Color, Color)>();
+
+        public float TimeLeft => Mathf.Max(0f, _thawTime - Time.time);
 
         public static bool IsFrozen(Component shot) => shot != null && FrozenIds.Contains(shot.gameObject.GetInstanceID());
 
@@ -56,6 +64,20 @@ namespace SpiderSurge
             if (shot == null || body == null || !shot.gameObject.activeInHierarchy) return;
             if (Vector2.Distance(origin, body.position) > range) return;
 
+            FrozenShot frozen = Apply(shot.gameObject, body, shot as SawDisc, until);
+            SurgeNet.SendEnemyFx(EnemyFx.ShotFrozen, shot.GetComponent<NetworkObject>(), frozen.TimeLeft);
+        }
+
+        // Online clients hold it too: its position syncs from the host, but a Gravity Saw pulls each spider on its own player's machine
+        public static void ShowFrozen(NetworkObject target, float duration)
+        {
+            Rigidbody2D body = target.GetComponent<Rigidbody2D>();
+            if (body == null || duration <= 0f || !target.gameObject.activeInHierarchy) return;
+            Apply(target.gameObject, body, target.GetComponent<SawDisc>(), Time.time + duration);
+        }
+
+        private static FrozenShot Apply(GameObject shot, Rigidbody2D body, SawDisc disc, float until)
+        {
             FrozenShot frozen = shot.GetComponent<FrozenShot>();
             if (frozen != null)
             {
@@ -63,10 +85,11 @@ namespace SpiderSurge
             }
             else
             {
-                frozen = shot.gameObject.AddComponent<FrozenShot>();
-                frozen.Hold(body, shot as SawDisc, until);
+                frozen = shot.AddComponent<FrozenShot>();
+                frozen.Hold(body, disc, until);
             }
-            FrozenParticles.FreezeUnder(shot.gameObject, frozen._thawTime);
+            FrozenParticles.FreezeUnder(shot, frozen._thawTime);
+            return frozen;
         }
 
         private void Hold(Rigidbody2D body, SawDisc disc, float until)
@@ -82,7 +105,9 @@ namespace SpiderSurge
             body.angularVelocity = 0f;
             body.constraints = RigidbodyConstraints2D.FreezeAll;
 
+            _frozenAt = Time.time;
             _disc = disc;
+            HoldGravity(disc as SawDiscAttractor);
             if (disc != null && disc.IsInvoking(Disintegrate) && DiscStarts.TryGetValue(disc, out float start))
             {
                 disc.CancelInvoke(Disintegrate);
@@ -95,6 +120,21 @@ namespace SpiderSurge
                 tinted.a = sprite.color.a;
                 _tints[sprite] = (sprite.color, tinted);
                 sprite.color = tinted;
+            }
+        }
+
+        // A Gravity Saw stops pulling, and one not yet open waits as long as it was held before it opens
+        private void HoldGravity(SawDiscAttractor gravity)
+        {
+            if (gravity == null) return;
+            _gravity = gravity;
+            GameObject zone = GravityZone(gravity);
+            if (zone == null || !zone.activeSelf) return;
+            foreach (Collider2D pull in zone.GetComponentsInChildren<Collider2D>())
+            {
+                if (!pull.enabled) continue;
+                pull.enabled = false;
+                _pull.Add(pull);
             }
         }
 
@@ -119,6 +159,15 @@ namespace SpiderSurge
                 DiscStarts[_disc] = Time.time - (_disc.lifeTime - _discLifeLeft.Value);
                 _disc.Invoke(Disintegrate, _discLifeLeft.Value);
                 _discLifeLeft = null;
+            }
+            if (_gravity != null)
+            {
+                GravitySpawnedAt(_gravity) += Time.time - _frozenAt;
+                foreach (Collider2D pull in _pull)
+                {
+                    if (pull != null) pull.enabled = true;
+                }
+                _pull.Clear();
             }
             foreach (var pair in _tints)
             {
@@ -201,6 +250,14 @@ namespace SpiderSurge
         }
 
         private static bool Prefix(BasicProjectile __instance) => !FrozenShot.Hold(__instance);
+    }
+
+    [HarmonyPatch]
+    public static class FrozenShot_SawDiscAttractor_Patch
+    {
+        private static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(SawDiscAttractor), "FixedUpdate");
+
+        private static bool Prefix(SawDiscAttractor __instance) => !FrozenShot.IsFrozen(__instance);
     }
 
     [HarmonyPatch(typeof(SawDisc), "Start")]
