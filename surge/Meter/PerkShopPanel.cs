@@ -107,11 +107,13 @@ namespace SpiderSurge
             }
         }
 
-        // Called when a run ends, so a stale panel never waits for the next run's first perk screen
+        // Called when a run ends, so a stale panel never waits for the next run's first perk screen; the card root outlives the run, so a plain Survival run after it gets the vanilla layout back
         public static void Clear()
         {
             var hud = SurvivalModeHud.instance;
-            if (hud != null && hud.perkChoiceView != null) Remove(hud);
+            if (hud == null || hud.perkChoiceView == null) return;
+            Remove(hud);
+            RestoreCards(hud);
         }
 
         public static void Remove(SurvivalModeHud hud)

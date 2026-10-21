@@ -27,6 +27,7 @@ namespace SpiderSurge
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
 
+            PerkChoiceWidget.HideStaleCards(__instance);
             var cards = PerkChoiceWidget.Cards(__instance);
             var first = cards.Count > 0 ? cards[0] : null;
             if (first != _builtFor)

@@ -48,6 +48,19 @@ namespace SpiderSurge
             return new Vector2(local.x + root.rect.center.x, bottom);
         }
 
+        // A layout forced in the frame the old cards are destroyed would put the new ones after them, and Doozy keeps that spot as the first card's rest position when the view selects it at once
+        public static void HideStaleCards(SurvivalModeHud hud)
+        {
+            var root = hud != null ? hud.perkCardsRoot : null;
+            if (root == null) return;
+            var cards = Cards(hud);
+            foreach (Transform child in root)
+            {
+                var card = child.GetComponent<SurvivalModifierChoiceCard>();
+                if (card != null && !cards.Contains(card)) child.gameObject.SetActive(false);
+            }
+        }
+
         public static Selectable FirstCard(SurvivalModeHud hud)
         {
             var cards = Cards(hud);
