@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -46,13 +47,51 @@ namespace SpiderSurge.Common
         public static void Save(HistoryMatch match)
         {
             string path = Folder;
-            byte[] bytes;
-            using (var stream = new MemoryStream())
-            {
-                new DataContractJsonSerializer(typeof(HistoryMatch)).WriteObject(stream, match);
-                bytes = stream.ToArray();
-            }
+            byte[] bytes = Serialize(match);
             Schedule(() => { pending[match.Summary.Id] = new PendingWrite { Summary = match.Summary, Bytes = bytes }; Flush(path); });
+        }
+        public static void ResolveTitleUnlocks(Dictionary<string, long> firstEarned, Action<bool> complete)
+        {
+            string path = Folder;
+            var snapshot = new Dictionary<string, long>(firstEarned, StringComparer.Ordinal);
+            Schedule(() =>
+            {
+                bool saved = false;
+                try
+                {
+                    foreach (var item in pending.Values)
+                    {
+                        var match = Read<HistoryMatch>(item.Bytes);
+                        if (ResolveTitles(match, snapshot)) item.Bytes = Serialize(match);
+                    }
+                    if (Directory.Exists(path)) foreach (string file in Directory.EnumerateFiles(path, "*.json"))
+                    {
+                        string id = Path.GetFileNameWithoutExtension(file);
+                        if (!Guid.TryParseExact(id, "N", out _) || pending.ContainsKey(id)) continue;
+                        HistoryMatch match;
+                        try { match = Read<HistoryMatch>(file); }
+                        catch (SerializationException) { continue; }
+                        if (!ValidMatch(match) || match.Summary.Id != id) continue;
+                        if (ResolveTitles(match, snapshot)) Write(file, match);
+                    }
+                    saved = pending.Count == 0 || Flush(path);
+                }
+                catch (Exception ex) { Report("Could not preserve new-title markers in match history. " + ex.Message); }
+                MainThread.Enqueue(() => complete?.Invoke(saved));
+            });
+        }
+        private static bool ResolveTitles(HistoryMatch match, Dictionary<string, long> firstEarned)
+        {
+            if (firstEarned == null) return false;
+            bool changed = false;
+            foreach (var title in match.Titles)
+            {
+                if (title.PendingUnlockTicks <= 0) continue;
+                title.New = firstEarned.TryGetValue(title.Name, out long earned) && earned == title.PendingUnlockTicks;
+                title.PendingUnlockTicks = 0;
+                changed = true;
+            }
+            return changed;
         }
         public static void Tick()
         {
@@ -72,7 +111,7 @@ namespace SpiderSurge.Common
             try { worker.Wait(3000); }
             catch (Exception ex) { ThreadSafeLog.LogWarning("Match history shutdown: " + ex.Message); }
         }
-        private static void Flush(string path)
+        private static bool Flush(string path)
         {
             try
             {
@@ -88,8 +127,9 @@ namespace SpiderSurge.Common
                 Write(Path.Combine(path, "index.json"), new HistoryIndex { Matches = index });
                 pending.Clear();
                 Publish(index.ToList(), skippedWarning);
+                return true;
             }
-            catch (Exception ex) { Report("Match history could not be saved; retrying during this session. " + ex.Message); }
+            catch (Exception ex) { Report("Match history could not be saved; retrying during this session. " + ex.Message); return false; }
         }
         public static void Load(bool refresh = false)
         {
@@ -164,12 +204,18 @@ namespace SpiderSurge.Common
         {
             if (!Guid.TryParseExact(id, "N", out _)) return;
             string path = Path.Combine(Folder, id + ".json");
+            var firstEarned = StatsMod.TitleCollection.FirstEarnedSnapshot();
             Schedule(() =>
             {
                 try
                 {
-                    var match = Read<HistoryMatch>(path);
+                    var match = pending.TryGetValue(id, out var item) ? Read<HistoryMatch>(item.Bytes) : Read<HistoryMatch>(path);
                     if (!ValidMatch(match) || match.Summary.Id != id) throw new InvalidDataException("Unsupported or damaged match.");
+                    if (ResolveTitles(match, firstEarned))
+                    {
+                        pending[id] = new PendingWrite { Summary = match.Summary, Bytes = Serialize(match) };
+                        Flush(Folder);
+                    }
                     MainThread.Enqueue(() => complete(match));
                 }
                 catch (Exception ex) { Report("Could not open this match. " + ex.Message); MainThread.Enqueue(() => complete(null)); }
@@ -200,14 +246,19 @@ namespace SpiderSurge.Common
         {
             using (var stream = File.OpenRead(path)) return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(stream);
         }
-        private static void Write<T>(string path, T value)
+        private static T Read<T>(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes)) return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(stream);
+        }
+        private static byte[] Serialize<T>(T value)
         {
             using (var stream = new MemoryStream())
             {
                 new DataContractJsonSerializer(typeof(T)).WriteObject(stream, value);
-                WriteBytes(path, stream.ToArray());
+                return stream.ToArray();
             }
         }
+        private static void Write<T>(string path, T value) => WriteBytes(path, Serialize(value));
         private static void WriteBytes(string path, byte[] bytes)
         {
             string temp = path + ".tmp";

@@ -56,6 +56,7 @@ namespace SpiderSurge.Common
         public int Player;
         public bool Shown;
         public bool New;
+        public long PendingUnlockTicks;
     }
     public sealed class HistoryTeam
     {
@@ -152,8 +153,12 @@ namespace SpiderSurge.Common
                 }
                 var shown = new HashSet<TitleEntry>(TitlesManager.Instance.CurrentTitles);
                 foreach (var title in snapshot.Titles)
+                {
+                    bool displayed = TitlesManager.Instance.LastTitlesShown && shown.Contains(title);
                     match.Titles.Add(new HistoryTitle { Name = title.TitleName, Description = title.Description, Player = title.PlayerId,
-                        Shown = TitlesManager.Instance.LastTitlesShown && shown.Contains(title), New = title.IsNew });
+                        Shown = displayed, New = title.IsNew,
+                        PendingUnlockTicks = displayed && !TitlesManager.Instance.LastNewlyUnlocked.HasValue ? title.EarnedUtc.Ticks : 0 });
+                }
                 HistoryStore.Save(match);
             }
             catch (Exception ex) { HistoryStore.Report("Could not record this match: " + ex.Message); }
