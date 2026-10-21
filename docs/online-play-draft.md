@@ -38,7 +38,7 @@ The first run found that a client dropped every message from the host: NGO turns
 - Storage: a stored weapon is hidden from clients with `NetworkHide` and `CheckObjectVisibility` because NGO doesn't sync `SetActive`, then shown again when it comes back out.
 - Object visibility: NGO 1.0.0-pre makes a joining client an observer of every object and puts every object in its join sync, ignoring `CheckObjectVisibility`. Two postfixes (`NetworkSpawnManager.UpdateObservedNetworkObjects`, `SceneEventData.AddSpawnedNetworkObjects`) apply it, so stored weapons stay hidden from joiners too.
 - Leaving a host resets the run, perks, lucky keys and stored weapons.
-- Banish: only the host picks and pulls the target (`TryBanishNearest`); every machine draws the ring (other machines from a `surge.fx` message), and only the caster's machine plays the sound, as with the other abilities. The kinetic pulse's enemy launch (`PulseKnockback`) runs inside `ApplyPulsePhysics`, so it is host-only too.
+- Banish: only the host's `BanishField` holds and pulls enemies and spiders, since it moves every body, and takes what reaches the inner circle. Clients see the take's shrink from a `surge.enemy` `Banished` message. Every machine draws the field and its inner ring (other machines from a `surge.fx` message), and only the caster's machine plays the sound, as with the other abilities. The kinetic pulse's enemy launch (`PulseKnockback`) runs inside `ApplyPulsePhysics`, so it is host-only too.
 
 ## Stats (`stats/Net/StatsNet.cs`)
 
@@ -58,7 +58,7 @@ The first run found that a client dropped every message from the host: NGO turns
 5. **Stats restart.** When the host restarts without visiting the lobby, clients only show titles if `restartRequested` arrived in the stopped snapshot; verify the ordering in practice.
 6. **Pausing.** `PauseHandler` keys off `Time.timeScale`, which the host controls online. Clients ignore pause for their timers; session time on a client interpolates from the last snapshot and keeps running through a host pause until the next snapshot corrects it.
 7. **Telemetry.** `SpiderSurgeStatsManager` records only on the authority and now logs `PlayerId`; the JSON key stays `playerIndex`. The relay sees online matches as the host's.
-8. **Banish on a client.** The caster's machine cannot know whether the pull hit, so it never gets the miss refund on its cooldown, and the target's shrink while being pulled is not replicated (positions are, through the game's own sync).
+8. **Banish on a client.** The caster's machine cannot know whether the pull took anything, so a client caster never gets the miss refund on its cooldown. The pull itself shows through the game's own position sync.
 9. **Not touched:** leaderboards, the Surge versus variant, SpiderInspector's `act/start?surge=` on clients, and any client-side prediction.
 10. **Testing.** Needs two game instances with separate EOS logins. The Steam build only runs once per PC, so the Xbox build is the second instance, with SpiderInspector on another port (`spiderinspector-port.txt` next to its DLL, or `SPIDERINSPECTOR_PORT`). The host turns online mode on (`GameSettings.SaveGameMode(true)`) and starts through `HudController.StartSurvival(config, false)` or `StartVersus(false)`; the client sets `HudController.bucketId` to the host's `GameController.bucketId` and calls `ConnectBucketId` (the first attempt sometimes fails; retry once).
 

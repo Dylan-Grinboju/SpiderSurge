@@ -33,9 +33,9 @@ namespace SpiderSurge
 
             page.Spacer();
             page.Header("Surge meter");
-            page.Slider("Charge per wave for active play", ModConfig.MeterActiveChargePerWaveKey, Consts.Values.Meter.MinActiveChargePerWave, Consts.Values.Meter.MaxActiveChargePerWave, 1f);
-            page.Slider("Perk screens per chaos point", ModConfig.MeterScreensPerPointKey, Consts.Values.Meter.MinScreensPerPoint, Consts.Values.Meter.MaxScreensPerPoint, 0.25f);
-            page.Note($"One chaos point takes the charge a player casting on cooldown makes in that many perk screens, times the number of players. Defaults: {Consts.Values.Meter.DefaultActiveChargePerWave:0} and {Consts.Values.Meter.DefaultScreensPerPoint:0.##}, which is {MeterExample()} charge per chaos point for one player. Changes apply at the next wave.");
+            page.Slider("Charge per player per wave", ModConfig.MeterChargePerWaveKey, Consts.Values.Meter.MinChargePerWave, Consts.Values.Meter.MaxChargePerWave, 0.5f);
+            page.Slider("Waves per chaos point", ModConfig.MeterWavesPerPointKey, Consts.Values.Meter.MinWavesPerPoint, Consts.Values.Meter.MaxWavesPerPoint, 0.5f);
+            page.Note($"One chaos point takes that charge for each player and each of those waves: {MeterExample()} for one player, twice that for two. Defaults: {Consts.Values.Meter.DefaultChargePerWave:0.##} and {Consts.Values.Meter.DefaultWavesPerPoint:0.##}. Changes apply at the next wave.");
 
             page.Spacer();
             page.Header("Sound");
@@ -65,10 +65,9 @@ namespace SpiderSurge
             page.Note("Applies to both displays. Turn this off to see active time and cooldown progress.");
         }
 
-        // The solo threshold at pain 1-4, where perk screens come every 3 waves
         private static string MeterExample()
         {
-            return Mathf.RoundToInt(ModConfig.MeterActiveChargePerWave * 3f * ModConfig.MeterScreensPerPoint).ToString();
+            return Mathf.RoundToInt(ModConfig.MeterChargePerWave * ModConfig.MeterWavesPerPoint).ToString();
         }
 
         // A value that isn't a color matches the default the indicator falls back to

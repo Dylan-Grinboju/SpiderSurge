@@ -36,6 +36,7 @@ namespace SpiderSurge
             public const string StartShields = "startShields";
             public const string PositiveEncouragement = "positiveencouragement";
             public const string SafetyNet = "safetynet";
+            public const string KnockbackSuspension = "knockbacksuspension";
         }
 
         // Sound file names (without extension) - must match embedded .wav filenames
@@ -191,10 +192,18 @@ namespace SpiderSurge
                 public const float AbilityDurationReductionPerLevel = 1f;
                 public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
-                // Twice Thermal Detonation's knockback reach, since Banish takes only one enemy
-                public const float BanishBaseRange = 300f;
-                public const float BanishRangeIncreasePerLevel = 100f;
-                public const float BanishPullTime = 0.3f;
+                // Thermal Detonation's knockback reach, moved by the same perks and by the same step
+                public const float BanishBaseRange = 150f;
+                public const float BanishRangeIncreasePerLevel = 50f;
+                public const float BanishPullTime = 3f;
+                // An enemy whose body or weapon the pull brings this close to the caster goes in, and so does a spider's body, shrinking into the caster over the take time
+                public const float BanishCoreRadius = 20f;
+                public const float BanishTakeTime = 0.3f;
+                // An enemy caught this far out of the range, in open air, reaches the inner circle just as the field closes
+                public const float BanishReachFraction = 0.75f;
+                // The pull on spiders at the caster, applied the way the Gravity Grenade's Attractor applies its 1000
+                public const float BanishPullForce = 250f;
+                public const float BanishCloseTime = 0.3f;
                 public const float BanishEndScale = 0.1f;
                 public const float BanishMissCooldownFraction = 0.25f;
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.65f, 0.25f, 1f, 0.8f);
@@ -249,12 +258,13 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                public const float DefaultActiveChargePerWave = 6f;
-                public const float DefaultScreensPerPoint = 1.5f;
-                public const float MinActiveChargePerWave = 1f;
-                public const float MaxActiveChargePerWave = 20f;
-                public const float MinScreensPerPoint = 0.25f;
-                public const float MaxScreensPerPoint = 5f;
+                // A player casting on cooldown made 2 to 4 a wave with Pulse, Freeze Time and Clip, so half that use still buys a point every 2 waves
+                public const float DefaultChargePerWave = 1.5f;
+                public const float DefaultWavesPerPoint = 2f;
+                public const float MinChargePerWave = 0.5f;
+                public const float MaxChargePerWave = 20f;
+                public const float MinWavesPerPoint = 0.5f;
+                public const float MaxWavesPerPoint = 10f;
                 public const int MinChargePerPoint = 1;
                 // Pulse, Thermal Detonation and Rewind give the first enemy of a cast this much and each next one 1 more
                 public const int PulseFirstEnemyCharge = 1;
@@ -503,7 +513,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Pull the nearest enemy or spider into the pocket dimension, forever</color>",
+                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">For 3 seconds, pull the enemies and spiders around you toward you; whatever reaches you goes into the pocket dimension</color>",
                 [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn back time on nearby enemies, turning them into wasps. Shields stay</color>"
             };
 

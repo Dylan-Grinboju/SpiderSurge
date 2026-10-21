@@ -25,7 +25,6 @@ namespace SpiderSurge
     public static class SurgeMeter
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
 
         private static readonly Dictionary<MeterSource, int> _chargeBySource = new Dictionary<MeterSource, int>();
 
@@ -71,20 +70,12 @@ namespace SpiderSurge
             MeterNet.MarkDirty();
         }
 
-        // activeChargePerWave × players × wavesPerScreen × screensPerPoint: the same effort per player for a team of any size
+        // chargePerWave × players × wavesPerPoint: every player has to do the same for a point, whatever the team size
         public static void RecomputeThreshold()
         {
             if (!Net.IsAuthority) return;
             int players = Mathf.Max(1, LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1);
-            int wavesPerLevel = 3;
-            var mode = SurvivalMode.instance;
-            if (mode != null)
-            {
-                SurvivalConfig config = Config(mode);
-                if (config != null && config.wavesPerLevel > 0) wavesPerLevel = config.wavesPerLevel;
-            }
-            int wavesPerScreen = Mathf.Max(1, wavesPerLevel + players - 1);
-            float perPoint = ModConfig.MeterActiveChargePerWave * players * wavesPerScreen * ModConfig.MeterScreensPerPoint;
+            float perPoint = ModConfig.MeterChargePerWave * players * ModConfig.MeterWavesPerPoint;
             int threshold = Mathf.Max(Consts.Values.Meter.MinChargePerPoint, Mathf.RoundToInt(perPoint));
             if (threshold == ChargePerPoint) return;
             ChargePerPoint = threshold;

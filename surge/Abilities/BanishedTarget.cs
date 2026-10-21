@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace SpiderSurge
 {
     // A target taken by Banish: frozen and harmless, pulled into the caster while it shrinks, then gone for good.
-    // An enemy is removed without a death, a spider dies
+    // An enemy is removed without a death, a spider dies. On a client an enemy only shrinks, since the host moves it
     public class BanishedTarget : MonoBehaviour
     {
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying =
@@ -23,16 +24,31 @@ namespace SpiderSurge
         private Vector2 _startPosition;
         private Vector3 _startScale;
         private float _elapsed;
+        private float _pullTime;
+        private bool _visualOnly;
 
-        public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerController caster)
+        public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerController caster, float pullTime)
         {
             if (enemy == null || IsBanished(enemy.gameObject)) return;
 
             BanishedTarget banished = enemy.gameObject.AddComponent<BanishedTarget>();
             banished._enemy = enemy;
             banished.Caster = caster;
+            banished._pullTime = pullTime;
             banished.FreezeEnemy();
             banished.StartPull(target);
+            SurgeNet.SendEnemyFx(EnemyFx.Banished, enemy.GetComponent<NetworkObject>(), pullTime);
+        }
+
+        public static void ShowBanished(EnemyHealthSystem enemy, float pullTime)
+        {
+            if (enemy == null || IsBanished(enemy.gameObject)) return;
+
+            BanishedTarget banished = enemy.gameObject.AddComponent<BanishedTarget>();
+            banished._enemy = enemy;
+            banished._pullTime = pullTime;
+            banished._visualOnly = true;
+            banished._startScale = banished.transform.localScale;
         }
 
         public static void BeginSpider(SpiderHealthSystem spider, Transform target, PlayerController caster)
@@ -42,6 +58,7 @@ namespace SpiderSurge
             BanishedTarget banished = spider.rootObject.AddComponent<BanishedTarget>();
             banished._spider = spider;
             banished.Caster = caster;
+            banished._pullTime = Consts.Values.Storage.BanishTakeTime;
             banished.FreezeSpider();
             banished.StartPull(target);
         }
@@ -137,10 +154,15 @@ namespace SpiderSurge
             if (_target != null) _targetPosition = _target.position;
 
             _elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(_elapsed / Consts.Values.Storage.BanishPullTime);
+            float t = Mathf.Clamp01(_elapsed / _pullTime);
             float eased = t * t;
 
             transform.localScale = Vector3.Lerp(_startScale, _startScale * Consts.Values.Storage.BanishEndScale, eased);
+            if (_visualOnly)
+            {
+                if (t >= 1f) enabled = false;
+                return;
+            }
             Vector2 offset = Vector2.Lerp(_startPosition, _targetPosition, eased) - BodyPosition();
             transform.position += (Vector3)offset;
 

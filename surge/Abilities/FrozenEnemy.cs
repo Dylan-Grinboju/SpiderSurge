@@ -9,10 +9,11 @@ using UnityEngine;
 namespace SpiderSurge
 {
     // An enemy held by Freeze Time: brains off, bodies and the shaman's cloud locked, fuses held, tinted ice blue until it thaws.
-    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact
+    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact. Banish's pull holds one the same way without locking or tinting it
     public class FrozenEnemy : MonoBehaviour
     {
         private static readonly HashSet<int> FrozenEnemyIds = new HashSet<int>();
+        private static readonly HashSet<int> PulledEnemyIds = new HashSet<int>();
         private static readonly HashSet<int> FrozenBrainIds = new HashSet<int>();
         private static readonly AccessTools.FieldRef<ExplodingRoller, bool> RollerTriggered =
             AccessTools.FieldRefAccess<ExplodingRoller, bool>("_triggered");
@@ -32,6 +33,7 @@ namespace SpiderSurge
         private float? _fuseLeft;
         private bool _held;
         private bool _visualOnly;
+        private bool _pulled;
         private readonly List<EnemyBrain> _brains = new List<EnemyBrain>();
         private readonly List<EnemyBrain> _disabledBrains = new List<EnemyBrain>();
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
@@ -51,6 +53,8 @@ namespace SpiderSurge
 
         public static bool IsFrozenBrain(EnemyBrain brain) => brain != null && FrozenBrainIds.Contains(brain.GetInstanceID());
 
+        public static bool IsHeld(EnemyHealthSystem enemy) => IsFrozen(enemy) || (enemy != null && PulledEnemyIds.Contains(enemy.GetInstanceID()));
+
         public static bool CanFreeze(EnemyHealthSystem enemy)
         {
             return enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel && !BanishedTarget.IsBanished(enemy.gameObject);
@@ -59,7 +63,7 @@ namespace SpiderSurge
         public static float TimeLeftOn(EnemyHealthSystem enemy)
         {
             FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
-            return frozen != null ? frozen.TimeLeft : 0f;
+            return frozen != null && !frozen._pulled ? frozen.TimeLeft : 0f;
         }
 
         public static float ThawTimeOf(EnemyHealthSystem enemy)
@@ -77,7 +81,7 @@ namespace SpiderSurge
         internal static void SetBaseColor(SpriteRenderer sprite, Color color)
         {
             FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
-            if (frozen != null && frozen._held)
+            if (frozen != null && frozen._held && !frozen._pulled)
             {
                 Color tinted = Color.Lerp(color, Consts.Values.Freeze.TintColor, Consts.Values.Freeze.TintStrength);
                 tinted.a = color.a;
@@ -105,6 +109,24 @@ namespace SpiderSurge
             Apply(enemy, duration, visualOnly: true);
         }
 
+        // Banish's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked
+        public static void HoldForPull(EnemyHealthSystem enemy, float duration)
+        {
+            if (!CanFreeze(enemy) || duration <= 0f || enemy.GetComponent<FrozenEnemy>() != null) return;
+
+            FrozenEnemy held = enemy.gameObject.AddComponent<FrozenEnemy>();
+            held._enemy = enemy;
+            held._pulled = true;
+            held._thawTime = Time.time + duration;
+            held.Hold();
+        }
+
+        public static void EndPull(EnemyHealthSystem enemy)
+        {
+            FrozenEnemy held = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
+            if (held != null && held._pulled) held._thawTime = Time.time;
+        }
+
         private static bool Apply(EnemyHealthSystem enemy, float duration, bool visualOnly)
         {
             if (!CanFreeze(enemy) || duration <= 0f) return false;
@@ -113,6 +135,7 @@ namespace SpiderSurge
             if (frozen != null)
             {
                 frozen._thawTime = Mathf.Max(frozen._thawTime, Time.time + duration);
+                if (frozen._pulled && !visualOnly) frozen.Harden();
             }
             else
             {
@@ -129,16 +152,24 @@ namespace SpiderSurge
         private void Hold()
         {
             _enemyId = _enemy.GetInstanceID();
-            FrozenEnemyIds.Add(_enemyId);
+            (_pulled ? PulledEnemyIds : FrozenEnemyIds).Add(_enemyId);
             _held = true;
-            SurgeVfx.Safely(AttachFrost);
 
-            if (_visualOnly)
-            {
-                TintAll();
-                return;
-            }
+            if (!_visualOnly) HoldBrains();
+            if (!_pulled) Lock();
+        }
 
+        // A freeze on an enemy Banish is pulling locks it where it is
+        private void Harden()
+        {
+            PulledEnemyIds.Remove(_enemyId);
+            FrozenEnemyIds.Add(_enemyId);
+            _pulled = false;
+            Lock();
+        }
+
+        private void HoldBrains()
+        {
             foreach (EnemyBrain brain in Brains(_enemy))
             {
                 // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
@@ -157,15 +188,21 @@ namespace SpiderSurge
                 brain.enabled = false;
                 _disabledBrains.Add(brain);
             }
+        }
 
-            foreach (Rigidbody2D body in _enemy.GetComponentsInChildren<Rigidbody2D>(true))
+        private void Lock()
+        {
+            SurgeVfx.Safely(AttachFrost);
+            if (!_visualOnly)
             {
-                _bodies.Add(new KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>(body, body.constraints));
-                body.velocity = Vector2.zero;
-                body.angularVelocity = 0f;
-                body.constraints = RigidbodyConstraints2D.FreezeAll;
+                foreach (Rigidbody2D body in _enemy.GetComponentsInChildren<Rigidbody2D>(true))
+                {
+                    _bodies.Add(new KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>(body, body.constraints));
+                    body.velocity = Vector2.zero;
+                    body.angularVelocity = 0f;
+                    body.constraints = RigidbodyConstraints2D.FreezeAll;
+                }
             }
-
             TintAll();
         }
 
@@ -271,7 +308,7 @@ namespace SpiderSurge
                 return;
             }
             ReleaseFrost(alive);
-            if (alive) PlayThawSound();
+            if (alive && !_pulled) PlayThawSound();
 
             foreach (var pair in _bodies)
             {
@@ -310,6 +347,7 @@ namespace SpiderSurge
         private void Release()
         {
             FrozenEnemyIds.Remove(_enemyId);
+            PulledEnemyIds.Remove(_enemyId);
             foreach (EnemyBrain brain in _brains)
             {
                 if (brain != null) FrozenBrainIds.Remove(brain.GetInstanceID());

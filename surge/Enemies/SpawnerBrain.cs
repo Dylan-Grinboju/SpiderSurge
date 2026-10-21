@@ -131,7 +131,7 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private bool Held => FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(gameObject);
+        private bool Held => FrozenEnemy.IsHeld(health) || BanishedTarget.IsBanished(gameObject);
 
         private void OnCharacterDied()
         {

@@ -107,7 +107,7 @@ Stats columns are grouped by totals, enemy kills, weapon kills, shooting accurac
 
 All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
 
-`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
+`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge's meter needs Stats to credit kills, so to only hide the stats, turn off `stats.display.showStatsWindow` and `stats.titles.enabled` instead. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 

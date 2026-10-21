@@ -33,6 +33,7 @@ namespace SpiderSurge
         LaserHold = 2,
         CloudFrozen = 3,
         ShieldBroken = 4,
+        Banished = 5,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -415,6 +416,9 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.LaserHold:
                     target.GetComponentInChildren<LaserRing>(true)?.Hold();
+                    break;
+                case EnemyFx.Banished:
+                    BanishedTarget.ShowBanished(target.GetComponent<EnemyHealthSystem>(), value);
                     break;
                 case EnemyFx.ShieldBroken:
                     GameObject shield = target.GetComponent<EnemyHealthSystem>()?.shield;

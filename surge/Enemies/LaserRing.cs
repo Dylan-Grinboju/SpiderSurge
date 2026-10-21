@@ -108,7 +108,7 @@ namespace SpiderSurge.Enemies
             if (!synced) return;
 
             // Freeze Time and Banish make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
-            if (remoteHold || FrozenEnemy.IsFrozen(health) || BanishedTarget.IsBanished(health.gameObject))
+            if (remoteHold || FrozenEnemy.IsHeld(health) || BanishedTarget.IsBanished(health.gameObject))
             {
                 // Clients don't see Banish, so the host tells them when a hold starts; its next warning sync ends it
                 if (!held && Net.IsHost)

@@ -86,7 +86,7 @@ namespace SpiderTeams
                 "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
                 "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
                 "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
-                "Pulls the nearest enemy or spider close to you into the pocket dimension, forever. Teammates only with friendly fire set to damage. A miss has a shorter cooldown.",
+                "For 3 seconds, pulls the spiders around you toward you, and any that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is ignored, and taken only with it set to damage. Taking nobody has a shorter cooldown.",
             };
 
             public const string CooldownPerk = "abilityCooldown";

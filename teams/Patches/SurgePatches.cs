@@ -25,32 +25,55 @@ namespace SpiderTeams
         }
     }
 
-    // Banish can't push, so it takes a teammate only when friendly fire does damage.
+    // Banish takes a teammate only when friendly fire does damage.
     [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanBanish))]
     public static class StorageAbility_CanBanish_Patch
     {
         [HarmonyPostfix]
         public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
         {
-            if (!__result || ModConfig.FriendlyFire == FriendlyFireMode.Damage || !TeamManager.TeamMatchActive)
+            if (__result && ModConfig.FriendlyFire != FriendlyFireMode.Damage && BanishTeammates.Same(__instance, spider, "Banish friendly fire"))
             {
-                return;
+                __result = false;
+            }
+        }
+    }
+
+    // Its pull is a push toward the caster, so it pulls a teammate unless friendly fire is ignored.
+    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanPull))]
+    public static class StorageAbility_CanPull_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
+        {
+            if (__result && ModConfig.FriendlyFire == FriendlyFireMode.Ignore && BanishTeammates.Same(__instance, spider, "Banish pull"))
+            {
+                __result = false;
+            }
+        }
+    }
+
+    internal static class BanishTeammates
+    {
+        public static bool Same(StorageAbility ability, SpiderHealthSystem spider, string scope)
+        {
+            if (!TeamManager.TeamMatchActive)
+            {
+                return false;
             }
 
             try
             {
-                var caster = __instance.GetComponentInParent<PlayerController>();
+                var caster = ability.GetComponentInParent<PlayerController>();
                 var victim = spider.GetComponentInParent<PlayerController>();
                 var manager = TeamManager.Instance;
-                if (caster != null && victim != null && manager.TryGetTeamOfPlayerId(caster.playerID.Value, out int team) &&
-                    manager.TryGetTeamOfPlayerId(victim.playerID.Value, out int victimTeam) && team == victimTeam)
-                {
-                    __result = false;
-                }
+                return caster != null && victim != null && manager.TryGetTeamOfPlayerId(caster.playerID.Value, out int team) &&
+                    manager.TryGetTeamOfPlayerId(victim.playerID.Value, out int victimTeam) && team == victimTeam;
             }
             catch (Exception ex)
             {
-                PatchScopes.Report("Banish friendly fire", ex);
+                PatchScopes.Report(scope, ex);
+                return false;
             }
         }
     }
