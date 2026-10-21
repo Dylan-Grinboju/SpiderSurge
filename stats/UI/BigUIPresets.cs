@@ -14,8 +14,8 @@ namespace StatsMod
         private readonly List<Column> presetColumns = new List<Column>();
         private readonly ControlPoller previousKey = new ControlPoller();
         private readonly ControlPoller nextKey = new ControlPoller();
-        private readonly ControlPoller previousPad = new ControlPoller();
-        private readonly ControlPoller nextPad = new ControlPoller();
+        private readonly AnyPadPoller previousPad = new AnyPadPoller();
+        private readonly AnyPadPoller nextPad = new AnyPadPoller();
         private readonly BindingCache keyboardBindings = new BindingCache();
         private readonly BindingCache padBindings = new BindingCache();
         private sealed class BindingCache
@@ -58,18 +58,24 @@ namespace StatsMod
             presetPage = direction > 0 ? 0 : Mathf.Max(0, (presetColumns.Count - 1) / 6);
         }
 
-        public bool HandlePresetInput(InputDevice device)
+        public bool HandlePresetInput(Keyboard keyboard)
         {
-            if (!IsVisible() || GameMenus.Open || Controls.Ignored(device)) return false;
-            bool keyboard = device is Keyboard;
-            string left = Controls.Get(keyboard ? Controls.PreviousPresetKeyboard : Controls.PreviousPresetController);
-            string right = Controls.Get(keyboard ? Controls.NextPresetKeyboard : Controls.NextPresetController);
-            var bindings = keyboard ? keyboardBindings : padBindings;
-            bindings.Update(left, right, ModConfig.SurgeUltimateTaken ? Controls.Get(keyboard ? Controls.UltimateKeyboard : Controls.UltimateController) : null);
-            bool prev = (keyboard ? previousKey : previousPad).WasPressed(bindings.EffectiveLeft, device);
-            bool next = (keyboard ? nextKey : nextPad).WasPressed(bindings.EffectiveRight, device);
-            if (prev || next) Navigate(prev ? -1 : 1);
-            return prev || next;
+            if (!IsVisible() || GameMenus.Open || Controls.Ignored(keyboard)) return false;
+            keyboardBindings.Update(Controls.Get(Controls.PreviousPresetKeyboard), Controls.Get(Controls.NextPresetKeyboard), ModConfig.SurgeUltimateTaken ? Controls.Get(Controls.UltimateKeyboard) : null);
+            return Page(previousKey.WasPressed(keyboardBindings.EffectiveLeft, keyboard), nextKey.WasPressed(keyboardBindings.EffectiveRight, keyboard));
+        }
+
+        public bool HandlePresetPads()
+        {
+            if (!IsVisible() || GameMenus.Open) return false;
+            padBindings.Update(Controls.Get(Controls.PreviousPresetController), Controls.Get(Controls.NextPresetController), ModConfig.SurgeUltimateTaken ? Controls.Get(Controls.UltimateController) : null);
+            return Page(previousPad.WasPressed(padBindings.EffectiveLeft), nextPad.WasPressed(padBindings.EffectiveRight));
+        }
+
+        private bool Page(bool previous, bool next)
+        {
+            if (previous || next) Navigate(previous ? -1 : 1);
+            return previous || next;
         }
 
         private void HandlePresetMouse()

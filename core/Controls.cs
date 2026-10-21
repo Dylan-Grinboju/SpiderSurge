@@ -452,4 +452,27 @@ namespace SpiderSurge.Common
             alternatives.Add(buttons);
         }
     }
+
+    // A press on any gamepad, not only the one Unity calls current, which is whichever pad last sent input
+    public sealed class AnyPadPoller
+    {
+        private readonly List<ControlPoller> _pollers = new List<ControlPoller>();
+
+        public bool WasPressed(string binding)
+        {
+            var pads = Gamepad.all;
+            while (_pollers.Count < pads.Count)
+            {
+                _pollers.Add(new ControlPoller());
+            }
+            for (int i = 0; i < pads.Count; i++)
+            {
+                if (_pollers[i].WasPressed(binding, pads[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 }
