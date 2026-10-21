@@ -37,6 +37,9 @@ namespace SpiderSurge
             public const string PositiveEncouragement = "positiveencouragement";
             public const string SafetyNet = "safetynet";
             public const string KnockbackSuspension = "knockbacksuspension";
+            public const string Adrenaline = "adrenaline";
+            public const string Blademaster = "blademaster";
+            public const string CoolExplosions = "coolexplosions";
         }
 
         // Sound file names (without extension) - must match embedded .wav filenames
@@ -211,6 +214,7 @@ namespace SpiderSurge
 
             public static class Freeze
             {
+                public const float SlowMotionCooldownRefund = 0.2f;
                 public const float AbilityBaseCooldown = 15f;
                 public const float AbilityCooldownReductionPerLevel = 4f;
                 public const float AbilityBaseDuration = 5f;
@@ -249,6 +253,7 @@ namespace SpiderSurge
             // The shared Surge meter: charge comes from what abilities do, a full meter is one shop point
             public static class Meter
             {
+                public const int PointsPerWave = 1;
                 public const int RerollCost = 1;
                 public const int LifeCost = 2;
                 public const int PerkCost = 3;

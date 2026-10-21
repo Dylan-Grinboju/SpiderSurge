@@ -140,15 +140,16 @@ namespace SpiderSurge
                 page.Line(Synergy("Bottomless Clip", "Efficiency", "Without Efficiency, most weapons are consumed. Grenades, mines, Boomsticks, Laser Cubes and Death Cubes are exempt. The first level preserves its original ammo; the second also refills a held weapon to at least half capacity. Dropping it preserves its original ammo at either level."));
                 page.Line(Synergy("Kinetic Pulse", "Explosion perks", "Bigger Boom first strengthens Kinetic Pulse knockback; its second level also strengthens Thermal Detonation knockback. Too Cool widens the ultimate's lethal area."));
                 page.Line(Synergy("Pocket Dimension", "Weapon perks", "More Guns preserves guns, More Boom preserves explosives, throwables and mines, and More Particles preserves particle and melee weapons. The first level keeps them between rounds; the second also keeps them after death."));
+                page.Line(Synergy("Freeze Time", "Slow-motion perks", "Adrenaline, Blademaster and Cool Explosions remove an extra 0.2 seconds from Freeze Time / Rewind's shared cooldown per real second of their slow motion. Overlapping effects do not stack. Pauses and menus do not count."));
                 return;
             }
             if (section == Page + ".meter")
             {
                 page.Title("Surge meter and shop");
-                page.Line("The bar under the lives counter is the team's <b>Surge meter</b>. It fills from what your abilities do during a wave, and a full bar is one <b>chaos point</b>. It never resets between waves.");
+                page.Line("The bar under the lives counter is the team's <b>Surge meter</b>. A full bar earns one <b>chaos point</b>, up to <b>one ability-earned point per wave</b> for the whole team. Charging then stops until the next wave; retrying the same wave keeps its cap. Unfinished charge carries between waves. Blood Pact points are separate.");
                 page.Line("Kinetic Pulse launching enemies, kills while Bottomless Clip or Null Field runs, Null Field blocking hits, the Pocket Dimension giving back a stored weapon, and Freeze Time freezing enemies and frozen enemies dying all charge it. Ultimates charge it too: enemies hit by Thermal Detonation, kills with Care Package weapons, Neural Backup revives and its Wasps' kills, Black Hole and Rewind.");
                 page.Line("Every enemy a cast reaches counts. A chaos point takes more charge in a bigger team, as much more as its waves have more enemies, so everyone has to cast.");
-                page.Line("Every perk screen shows the chaos points and the meter beside the cards, and under the cards the focused ability or ultimate says how it charges the meter.");
+                page.Line("Every perk screen shows the chaos points and the meter beside the cards. Under the cards, a focused ability or ultimate explains its charge, and a focused synergy perk explains its bonus for the offered level.");
                 page.Line($"Spend chaos points in the <b>shop</b> beside the cards at every perk choice after the starting ability pick: press right from the last card. Each screen sells two of these five, drawn at random: <color={Gold}>1</color> Reroll the cards, <color={Gold}>2</color> an extra life, <color={Gold}>3</color> a random perk you don't have, <color={Gold}>5</color> +1 max lives, and the <b>Blood Pact</b>, a life for a chaos point. Pick an item, then press <b>Buy</b> under it. Unspent chaos points carry on.");
                 page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice works the same way.");
                 return;

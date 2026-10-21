@@ -261,7 +261,7 @@ namespace SpiderSurge
             info.overflowMode = TextOverflowModes.Overflow;
             info.color = Color.white;
             info.text = "Casting your ability during a wave charges the team's <b>Surge meter</b>, shown here and under the lives counter.\n\n"
-                + "Each full meter is a <b>chaos point</b>. At every later perk choice this column is a shop where the team spends them.";
+                + "Each full meter is a <b>chaos point</b>, up to <b>one per wave</b> for the team. Unfinished charge carries forward. At later perk choices, spend points here in the shop.";
         }
 
         private void Populate(float entryHeight)
@@ -515,7 +515,9 @@ namespace SpiderSurge
             }
             if (_caption != null)
             {
-                _caption.text = SurgeMeter.Known ? $"{SurgeMeter.Charge} / {SurgeMeter.ChargePerPoint} charge to the next point" : "";
+                _caption.text = !SurgeMeter.Known ? "" : SurgeMeter.WaveCapped
+                    ? "Wave cap reached · next wave"
+                    : $"{SurgeMeter.Charge} / {SurgeMeter.ChargePerPoint} charge to the next point";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)

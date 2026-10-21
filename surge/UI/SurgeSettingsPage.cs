@@ -35,7 +35,7 @@ namespace SpiderSurge
             page.Header("Surge meter");
             page.Slider("Charge per player per wave", ModConfig.MeterChargePerWaveKey, Consts.Values.Meter.MinChargePerWave, Consts.Values.Meter.MaxChargePerWave, 0.5f, effectiveValue: ModConfig.MeterChargePerWave);
             page.Slider("Waves per chaos point", ModConfig.MeterWavesPerPointKey, Consts.Values.Meter.MinWavesPerPoint, Consts.Values.Meter.MaxWavesPerPoint, 0.5f, effectiveValue: ModConfig.MeterWavesPerPoint);
-            page.Note($"One chaos point takes that charge for each of those waves: {MeterExample()} for one player. A bigger team's point grows with the extra enemies its waves bring. Defaults: {Consts.Values.Meter.DefaultChargePerWave:0.##} and {Consts.Values.Meter.DefaultWavesPerPoint:0.##}. Changes apply at the next wave.");
+            page.Note($"One chaos point takes that charge for each of those waves: {MeterExample()} for one player. A bigger team's point grows with the extra enemies its waves bring. The team can earn at most one point per wave from abilities; Blood Pact is separate. Defaults: {Consts.Values.Meter.DefaultChargePerWave:0.##} and {Consts.Values.Meter.DefaultWavesPerPoint:0.##}. Changes apply at the next wave.");
 
             page.Spacer();
             page.Header("Sound");

@@ -35,6 +35,9 @@ namespace SpiderSurge
         public static int TotalCharge { get; private set; }
         public static int PointsEarned { get; private set; }
         public static int PointsSpent { get; private set; }
+        public static int PointsEarnedThisWave { get; private set; }
+        private static int _wave;
+        public static bool WaveCapped => PointsEarnedThisWave >= Consts.Values.Meter.PointsPerWave;
 
         public static IReadOnlyDictionary<MeterSource, int> ChargeBySource => _chargeBySource;
 
@@ -43,7 +46,7 @@ namespace SpiderSurge
         public static event Action Changed;
         public static event Action PointEarned;
 
-        public static float Fill => ChargePerPoint > 0 ? Mathf.Clamp01(Charge / (float)ChargePerPoint) : 0f;
+        public static float Fill => WaveCapped ? 1f : ChargePerPoint > 0 ? Mathf.Clamp01(Charge / (float)ChargePerPoint) : 0f;
 
         // A client only knows the threshold once the host's first state arrives
         public static bool Known => Net.IsAuthority || _remoteSynced;
@@ -64,8 +67,21 @@ namespace SpiderSurge
             TotalCharge = 0;
             PointsEarned = 0;
             PointsSpent = 0;
+            PointsEarnedThisWave = 0;
+            _wave = 0;
             _remoteSynced = false;
             _chargeBySource.Clear();
+            RecomputeThreshold();
+            Raise(Changed);
+            MeterNet.MarkDirty();
+        }
+
+        // Retrying a failed wave keeps its cap; only reaching a later wave opens another point.
+        public static void OnWaveStarted(int wave)
+        {
+            if (!Net.IsAuthority || wave <= _wave) return;
+            _wave = wave;
+            PointsEarnedThisWave = 0;
             RecomputeThreshold();
             Raise(Changed);
             MeterNet.MarkDirty();
@@ -98,6 +114,10 @@ namespace SpiderSurge
         public static void Add(MeterSource source, int playerId, int amount)
         {
             if (amount <= 0 || !CanEarn) return;
+            OnWaveStarted(SurvivalMode.instance.CurrentWave);
+            if (WaveCapped) return;
+            amount = Mathf.Min(amount, Mathf.Max(0, ChargePerPoint - Charge));
+            if (amount == 0) return;
 
             Charge += amount;
             TotalCharge += amount;
@@ -135,7 +155,7 @@ namespace SpiderSurge
         }
 
         // The first state after joining or a reset only catches up, so it doesn't play the point sound
-        internal static void ApplyRemote(int charge, int points, int chargePerPoint, int totalCharge)
+        internal static void ApplyRemote(int charge, int points, int chargePerPoint, int totalCharge, int pointsEarnedThisWave)
         {
             bool earned = _remoteSynced && (points > Points || (points == Points && totalCharge > TotalCharge && charge < Charge));
             _remoteSynced = true;
@@ -143,22 +163,19 @@ namespace SpiderSurge
             Points = points;
             ChargePerPoint = Mathf.Max(1, chargePerPoint);
             TotalCharge = totalCharge;
+            PointsEarnedThisWave = pointsEarnedThisWave;
             Raise(Changed);
             if (earned) Raise(PointEarned);
         }
 
         private static void ConvertCharge()
         {
-            bool earned = false;
-            while (Charge >= ChargePerPoint)
+            if (!WaveCapped && Charge >= ChargePerPoint)
             {
-                Charge -= ChargePerPoint;
+                Charge = 0;
                 Points++;
                 PointsEarned++;
-                earned = true;
-            }
-            if (earned)
-            {
+                PointsEarnedThisWave++;
                 Logger.LogInfo($"[Surge meter] Chaos point earned, the team has {Points} (threshold {ChargePerPoint})");
                 Raise(PointEarned);
             }

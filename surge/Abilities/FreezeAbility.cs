@@ -29,6 +29,29 @@ namespace SpiderSurge
         private static readonly Dictionary<string, GameObject> EnemyPrefabs = new Dictionary<string, GameObject>();
 
         private bool _frozeAny;
+        private bool _refundDirty;
+        private float _nextRefundSync;
+        private float _lastRefundSample;
+
+        private void Update()
+        {
+            if (!IsAuthority) return;
+            float elapsed = FreezeSlowMotion.ElapsedSince(_lastRefundSample);
+            _lastRefundSample = Time.realtimeSinceStartup;
+            bool refunding = onCooldown && IsUnlocked() && IsPlayerAlive() && GameMenus.AcceptPlayerInput
+                && FreezeSlowMotion.Active;
+            if (refunding)
+            {
+                ReduceCooldown(elapsed * Consts.Values.Freeze.SlowMotionCooldownRefund);
+                _refundDirty = true;
+            }
+            if (_refundDirty && (!refunding || CooldownRemaining <= 0f || Time.unscaledTime >= _nextRefundSync))
+            {
+                SurgeNet.SendFreezeCooldown(PlayerId, CooldownRemaining);
+                _nextRefundSync = Time.unscaledTime + 0.25f;
+                _refundDirty = false;
+            }
+        }
 
         public float FreezeRange
         {

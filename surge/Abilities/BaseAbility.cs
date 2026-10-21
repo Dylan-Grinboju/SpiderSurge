@@ -567,27 +567,18 @@ namespace SpiderSurge
                 return;
             }
 
-            float remaining = cooldownEndTime - Time.time;
-            if (remaining <= 0f)
-            {
-                SetCooldownToZero();
-                return;
-            }
+            cooldownEndTime = Mathf.Max(Time.time, cooldownEndTime - amount);
+        }
 
-            remaining -= amount;
-            if (remaining <= 0f)
+        internal void ApplyCooldownRemaining(float remaining)
+        {
+            if (isActive || float.IsNaN(remaining) || float.IsInfinity(remaining)) return;
+            cooldownEndTime = Time.time + Mathf.Max(0f, remaining);
+            if (!onCooldown && remaining > 0f)
             {
-                SetCooldownToZero();
-                return;
+                cooldownDuration = remaining;
+                cooldownCoroutine = StartCoroutine(CooldownCoroutine());
             }
-
-            if (cooldownCoroutine != null)
-            {
-                StopCoroutine(cooldownCoroutine);
-            }
-
-            cooldownEndTime = Time.time + remaining;
-            cooldownCoroutine = StartCoroutine(CooldownCoroutine(remaining));
         }
 
         public void ForceStartCooldown(bool wasUltimate = false)
@@ -612,7 +603,7 @@ namespace SpiderSurge
             onCooldown = true;
             cooldownDuration = cooldown;
             cooldownEndTime = Time.time + cooldown;
-            cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine());
         }
 
         public bool IsUnlocked()
@@ -774,17 +765,18 @@ namespace SpiderSurge
             }
             cooldownDuration = cooldown;
             cooldownEndTime = Time.time + cooldown;
-            cooldownCoroutine = StartCoroutine(CooldownCoroutine(cooldown));
+            cooldownCoroutine = StartCoroutine(CooldownCoroutine());
         }
 
-        private IEnumerator CooldownCoroutine(float cooldownTime)
+        private IEnumerator CooldownCoroutine()
         {
             onCooldown = true;
 
-            yield return new WaitForSeconds(cooldownTime);
+            while (Time.time < cooldownEndTime) yield return null;
 
             onCooldown = false;
             cooldownEndTime = 0f;
+            cooldownCoroutine = null;
 
             if (IsUnlocked() && spiderHealthSystem != null && IsPlayerAlive())
             {

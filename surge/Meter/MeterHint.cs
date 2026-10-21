@@ -8,7 +8,7 @@ using P = SpiderSurge.Consts.PerkNames;
 
 namespace SpiderSurge
 {
-    // A line under the perk cards: a focused or locked ability or ultimate card says how it charges the meter
+    // A line under the focused or locked card explains its meter charge or perk synergy.
     public class MeterHint : MonoBehaviour
     {
         public const string ObjectName = "SurgeMeterHint";
@@ -22,6 +22,7 @@ namespace SpiderSurge
         private SurvivalModeHud _hud;
         private TMP_Text _text;
         private string _shownKey;
+        private int _shownLevel = -1;
 
         public static MeterHint Current { get; private set; }
 
@@ -81,6 +82,12 @@ namespace SpiderSurge
             float top = confirm != null
                 ? confirm.transform.localPosition.y - M.ConfirmHeight - Gap
                 : below.y - Gap;
+            var parent = _hud.perkChoiceView.transform as RectTransform;
+            if (parent != null && _text != null)
+            {
+                float space = 2f * Mathf.Min(below.x - parent.rect.xMin - M.SideMargin, parent.rect.xMax - M.SideMargin - below.x);
+                _text.rectTransform.sizeDelta = new Vector2(Mathf.Clamp(space, 1f, Width), Height);
+            }
             transform.localPosition = new Vector3(below.x, top, 0f);
         }
 
@@ -97,23 +104,29 @@ namespace SpiderSurge
         private void Refresh()
         {
             if (_text == null) return;
-            string key = FocusedKey();
-            if (key == _shownKey) return;
+            var card = FocusedCard();
+            string key = card?.modifier?.data?.key;
+            int level = (card?.modifier?.levelInSurvival ?? 0) + 1;
+            if (key != null && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key)) level = 2;
+            if (key == _shownKey && level == _shownLevel) return;
             _shownKey = key;
-            _text.text = Compose(key);
+            _shownLevel = level;
+            _text.text = Compose(key, level);
         }
 
         // The card under the controller's focus, else the locked one
-        private string FocusedKey()
+        private SurvivalModifierChoiceCard FocusedCard()
         {
             GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             var card = selected != null ? selected.GetComponent<SurvivalModifierChoiceCard>() : null;
             if (card == null || card.transform.parent != _hud.perkCardsRoot) card = PerkConfirm.Locked;
-            return card != null && card.modifier != null && card.modifier.data != null ? card.modifier.data.key : null;
+            return card;
         }
 
-        private static string Compose(string key)
+        private static string Compose(string key, int level)
         {
+            string synergy = PerkSynergy.Describe(key, level);
+            if (synergy != null) return $"<color={Consts.Formatting.ColorGold}>Synergy:</color> {synergy}";
             string how = key != null ? HowItCharges(key) : null;
             if (how == null || PerksManager.Instance == null) return "";
             return $"<color={Consts.Formatting.ColorGold}>{PerksManager.Instance.GetDisplayName(key)}</color> charges the meter {how}.";
