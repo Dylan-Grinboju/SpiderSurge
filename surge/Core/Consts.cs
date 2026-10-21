@@ -214,8 +214,6 @@ namespace SpiderSurge
                 public const float UltimateRangeIncreasePerLevel = 50f;
                 public const float RewindRingTime = 0.4f;
                 public const float TintStrength = 0.6f;
-                // How far a shaman's poison cloud spreads from its center
-                public const float CloudReach = 15f;
                 public const string WaspName = "Wasp";
                 public const string ShieldedWaspName = "Wasp Shielded";
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.7f, 0.95f, 1f, 0.9f);

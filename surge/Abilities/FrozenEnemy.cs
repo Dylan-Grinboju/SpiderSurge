@@ -342,12 +342,12 @@ namespace SpiderSurge
 
         public static bool IsFrozen(DeathCloud cloud) => cloud != null && FrozenIds.Contains(cloud.GetInstanceID());
 
-        // A cloud is frozen whole once its smoke reaches into the ring, so no part of it is left behind
+        // A cloud is frozen whole once its kill zone reaches into the ring, so no part that can hurt a player is left behind
         public static void FreezeAround(Vector2 origin, float range, float until)
         {
             foreach (DeathCloud cloud in Object.FindObjectsOfType<DeathCloud>())
             {
-                if (Vector2.Distance(origin, cloud.transform.position) <= range + Consts.Values.Freeze.CloudReach) Freeze(cloud, until);
+                if (Vector2.Distance(origin, cloud.transform.position) <= range + cloud.killRadius) Freeze(cloud, until);
             }
         }
 
@@ -398,7 +398,7 @@ namespace SpiderSurge
                 _glowShown.a = _glowBase.a;
                 _cloud.glow.color = _glowShown;
             }
-            _frost = FrostAura.Attach(_cloud.transform, Consts.Values.Freeze.CloudReach);
+            _frost = FrostAura.Attach(_cloud.transform, _cloud.killRadius);
         }
 
         // A cloud whose shaman died fades out the way the game fades it, so it thaws first
