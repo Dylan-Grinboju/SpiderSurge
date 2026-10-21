@@ -33,13 +33,13 @@ namespace SpiderSurge
 
             page.Spacer();
             page.Header("Surge meter");
-            page.Slider("Charge per player per wave", ModConfig.MeterChargePerWaveKey, Consts.Values.Meter.MinChargePerWave, Consts.Values.Meter.MaxChargePerWave, 0.5f);
-            page.Slider("Waves per chaos point", ModConfig.MeterWavesPerPointKey, Consts.Values.Meter.MinWavesPerPoint, Consts.Values.Meter.MaxWavesPerPoint, 0.5f);
+            page.Slider("Charge per player per wave", ModConfig.MeterChargePerWaveKey, Consts.Values.Meter.MinChargePerWave, Consts.Values.Meter.MaxChargePerWave, 0.5f, effectiveValue: ModConfig.MeterChargePerWave);
+            page.Slider("Waves per chaos point", ModConfig.MeterWavesPerPointKey, Consts.Values.Meter.MinWavesPerPoint, Consts.Values.Meter.MaxWavesPerPoint, 0.5f, effectiveValue: ModConfig.MeterWavesPerPoint);
             page.Note($"One chaos point takes that charge for each of those waves: {MeterExample()} for one player. A bigger team's point grows with the extra enemies its waves bring. Defaults: {Consts.Values.Meter.DefaultChargePerWave:0.##} and {Consts.Values.Meter.DefaultWavesPerPoint:0.##}. Changes apply at the next wave.");
 
             page.Spacer();
             page.Header("Sound");
-            page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%");
+            page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%", ModConfig.AbilityVolume * ModConfig.OriginalAbilityVolume);
             page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");
 
             page.Spacer();
@@ -54,7 +54,7 @@ namespace SpiderSurge
             page.Toggle("Use compact ability HUD", ModConfig.IndicatorCompactHudKey);
             page.Note("Replaces the ring beside each spider with a fixed panel at the bottom right. Active effects count down; cooldown bars fill until ready. Changes apply immediately.");
             page.Header("Ring position and size");
-            page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f);
+            page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f, effectiveValue: ModConfig.IndicatorRadius);
             page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
             page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
             page.Header("Colors and visibility");
@@ -82,12 +82,12 @@ namespace SpiderSurge
         {
             page.Header("Telemetry");
             page.Toggle("Record each run", ModConfig.StatsLoggingKey);
-            page.Note("Builds a report of every Survival run: waves, perks, deaths, and each player's ability and ultimate use. Surge runs save it as a text file in Silk\\Logs\\SpiderSurge and give the Stats titles their ability counts. Sharing needs it on.");
+            page.Note("Builds a report of every Survival run: waves, perks, deaths, and each player's ability and ultimate use. Surge runs save it as a text file in Silk\\Logs\\SpiderSurge and give the Stats titles their ability counts. Sharing new reports needs it on.");
             page.Toggle("Share anonymous run reports", ModConfig.TelemetryKey);
             page.Note("Uploads the report of each finished Survival run, with or without Surge, to help balance and improve the mod. No personal identifiers are sent.");
             if (ModConfig.TelemetryEnabled && !ModConfig.EnableStatsLogging)
             {
-                page.Warning("Nothing is shared while Record each run is off.");
+                page.Warning("No new reports are shared while Record each run is off. Older reports already queued may still upload while Share anonymous run reports is on.");
             }
             string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetAnonymousIdOrNull() ?? "not set";
             page.Paragraph($"<b>Anonymous ID:</b> <noparse>{anonId}</noparse>");

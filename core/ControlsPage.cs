@@ -38,7 +38,7 @@ namespace SpiderSurge.Common
                 page.Binding(Controls.PreviousPresetController);
                 page.Binding(Controls.NextPresetController);
                 page.Note("Preset controls work while the big window is open. The ultimate takes priority over a shared preset button.");
-                page.Note("Steps through the small window, the big window and the titles on any controller.");
+                page.Note("During a match, the controller window button switches between the small window and Off. In the lobby it also offers the big window and Survival titles.");
                 string effective = StatsMod.ModConfig.SwitchWindowsBinding;
                 if (effective != Controls.Get(Controls.SwitchWindows))
                 {

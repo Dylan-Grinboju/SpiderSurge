@@ -21,6 +21,8 @@ namespace SpiderSurge.Common
         private const int RequestTimeoutMs = 5000;
 
         private static readonly HttpClient _httpClient = new HttpClient();
+        private static CancellationTokenSource _checkCancellation;
+        private static bool _watchingSettings;
 
         private static string CurrentVersion => SpiderSurgeMod.Version;
 
@@ -33,19 +35,30 @@ namespace SpiderSurge.Common
 
         public static void ScheduleCheck()
         {
+            if (!_watchingSettings)
+            {
+                Settings.Changed += OnSettingsChanged;
+                _watchingSettings = true;
+            }
             if (!CheckForUpdates)
             {
+                CancelCheck();
                 Logger.LogInfo("Update checking is turned off in the settings");
                 return;
             }
+            if (_checkCancellation != null) return;
+
+            _checkCancellation = new CancellationTokenSource();
+            CancellationToken cancellation = _checkCancellation.Token;
 
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await Task.Delay(StartDelayMs);
-                    await CheckForUpdatesAsync();
+                    await Task.Delay(StartDelayMs, cancellation);
+                    await CheckForUpdatesAsync(cancellation);
                 }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
                 catch (Exception ex)
                 {
                     Logger.LogError($"Update check failed: {ex.Message}");
@@ -53,30 +66,56 @@ namespace SpiderSurge.Common
             });
         }
 
-        private static async Task CheckForUpdatesAsync()
+        public static void Shutdown()
+        {
+            if (_watchingSettings) Settings.Changed -= OnSettingsChanged;
+            _watchingSettings = false;
+            CancelCheck();
+        }
+
+        private static void OnSettingsChanged(string key)
+        {
+            if (Settings.Affects(key, CheckForUpdatesKey)) ScheduleCheck();
+        }
+
+        private static void CancelCheck()
+        {
+            if (_checkCancellation == null) return;
+            _checkCancellation.Cancel();
+            _checkCancellation.Dispose();
+            _checkCancellation = null;
+        }
+
+        private static async Task CheckForUpdatesAsync(CancellationToken cancellation)
         {
             try
             {
-                var latestVersion = await GetLatestVersionAsync();
+                var latestVersion = await GetLatestVersionAsync(cancellation);
+                cancellation.ThrowIfCancellationRequested();
                 Logger.LogInfo($"Latest version: {latestVersion}, current version: {CurrentVersion}");
 
                 if (IsNewerVersion(latestVersion, CurrentVersion))
                 {
                     Logger.LogInfo("A new version of SpiderSurge is available!");
-                    MainThread.Enqueue(() => ShowUpdatePrompt(latestVersion));
+                    MainThread.Enqueue(() =>
+                    {
+                        if (!cancellation.IsCancellationRequested) ShowUpdatePrompt(latestVersion);
+                    });
                 }
             }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
             catch (Exception ex)
             {
                 Logger.LogError($"Failed to check for SpiderSurge updates: {ex.Message}");
             }
         }
 
-        private static async Task<string> GetLatestVersionAsync()
+        private static async Task<string> GetLatestVersionAsync(CancellationToken cancellation)
         {
-            using (var timeout = new CancellationTokenSource(RequestTimeoutMs))
+            using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
             using (var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl))
             {
+                timeout.CancelAfter(RequestTimeoutMs);
                 request.Headers.UserAgent.ParseAdd("SpiderSurge");
                 request.Headers.Accept.ParseAdd("application/vnd.github+json");
                 using (var response = await _httpClient.SendAsync(request, timeout.Token))

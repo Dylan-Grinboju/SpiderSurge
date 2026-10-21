@@ -12,7 +12,7 @@ public sealed class TitleDefinition
         Requirements = requirements;
         BonusPriority = bonusPriority;
         Condition = condition;
-        HowToEarn = string.Join(" + ", requirements.Select(TitleCatalog.Label).Concat(conditionText != null ? new[] { conditionText } : Array.Empty<string>()));
+        HowToEarn = string.Join(" + ", requirements.Select(TitleCatalog.HowToEarnLabel).Concat(conditionText != null ? new[] { conditionText } : Array.Empty<string>()));
     }
 
     public TitleDefinition(string name, string howToEarn)
@@ -74,6 +74,14 @@ public static class TitleCatalog
     };
 
     public static string Label(string requirement) => Labels.TryGetValue(requirement, out string label) ? label : requirement;
+
+    internal static string HowToEarnLabel(string requirement) => requirement switch
+    {
+        Req.BestAccuracy => "Best Accuracy (at least 10 shots and 1 hit)",
+        Req.BestRailvolverAccuracy => "Best Railvolver Accuracy (at least 5 combined Railvolver or Double Railvolver shots and 1 hit)",
+        Req.WorstAccuracy => "Worst Accuracy (at least 10 shots, below the best player's accuracy)",
+        _ => Label(requirement),
+    };
 
     public static bool IsHighAltitude(float highestPoint) => highestPoint >= HighAltitude;
 
