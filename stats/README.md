@@ -63,7 +63,7 @@ Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats**. Changes app
 
 ### Using the Yaml file:
 
-Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See [Settings](../README.md#settings) for how the file works.
+Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See the [upcoming release's Settings](../NEXT_RELEASE.md#settings) for how the current file works.
 
 <details>
 <summary>Explanation of the fields</summary>
