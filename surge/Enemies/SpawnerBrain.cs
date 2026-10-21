@@ -115,28 +115,44 @@ namespace SpiderSurge.Enemies
 
         private static bool SpawningStopped => SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() && SurvivalMode.instance.CanSpawnNewPlayer();
 
+        // The spawn warning is a local effect on every machine, so clients are told to remove theirs too
         private void CancelHatch()
         {
             StopAllCoroutines();
             hatching = false;
-            GameObject effect = EnemySpawner.instance.spawnEffect;
+            RemoveWarning(telegraphPosition, 0.1f);
+            SurgeNet.SendEnemyFx(EnemyFx.HatchCancelled, GetComponent<NetworkObject>(), 0f);
+        }
+
+        // A client only knows where the cocoon is, which is where it started the warning
+        public static void ShowHatchCancelled(NetworkObject cocoon)
+        {
+            RemoveWarning(cocoon.transform.position, 3f);
+        }
+
+        private static void RemoveWarning(Vector3 position, float radius)
+        {
+            GameObject effect = EnemySpawner.instance != null ? EnemySpawner.instance.spawnEffect : null;
             if (effect == null) return;
             string effectName = effect.name + "(Clone)";
+            ParticleSystem nearest = null;
+            float nearestDistance = radius * radius;
             foreach (ParticleSystem particles in FindObjectsOfType<ParticleSystem>())
             {
-                if (particles.name == effectName && ((Vector2)(particles.transform.position - telegraphPosition)).sqrMagnitude < 0.01f)
-                {
-                    Destroy(particles.gameObject);
-                }
+                float distance = ((Vector2)(particles.transform.position - position)).sqrMagnitude;
+                if (particles.name != effectName || distance >= nearestDistance) continue;
+                nearest = particles;
+                nearestDistance = distance;
             }
+            if (nearest != null) Destroy(nearest.gameObject);
         }
 
         private bool Held => FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(gameObject);
 
         private void OnCharacterDied()
         {
+            if (hatching) CancelHatch();
             StopAllCoroutines();
-            hatching = false;
         }
 
         // Hatchlings and enemies from a shared spawn point appear inside the cocoon, which would otherwise push them out

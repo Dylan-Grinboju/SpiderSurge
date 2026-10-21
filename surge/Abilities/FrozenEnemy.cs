@@ -5,6 +5,7 @@ using SpiderSurge.Common;
 using SpiderSurge.Vfx;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
 
 namespace SpiderSurge
 {
@@ -184,7 +185,11 @@ namespace SpiderSurge
                 // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
                 if (brain.IsInvoking("LaunchChargeAttack")) StopChargeCosmetics(brain);
                 brain.CancelInvoke("LaunchChargeAttack");
-                if (brain is WhispBrain whisp) CalmChargeLight(whisp);
+                if (brain is WhispBrain whisp)
+                {
+                    CalmChargeLight(whisp);
+                    SurgeNet.SendEnemyFx(EnemyFx.ChargeCalmed, whisp.NetworkObject, 0f);
+                }
                 _brains.Add(brain);
                 FrozenBrainIds.Add(brain.GetInstanceID());
                 if (brain is ExplodingRoller roller && RollerTriggered(roller))
@@ -228,16 +233,16 @@ namespace SpiderSurge
             }
         }
 
-        // Only the whisp's brain turns its aiming light back from the charge's red beam, so it is set to its resting look, the one the brain returns it to
-        private static void CalmChargeLight(WhispBrain whisp)
+        // Only the whisp's brain turns its aiming light back from the charge's red beam, on the host and through its RPC on clients, so a held whisp's light is set to the resting look the brain returns it to
+        internal static void CalmChargeLight(WhispBrain whisp)
         {
-            Traverse light = Traverse.Create(whisp).Field("chargeLight");
-            if (!(light.GetValue() is Object value) || value == null) return;
-            light.Property("intensity").SetValue(1f);
-            light.Property("pointLightInnerAngle").SetValue(50f);
-            light.Property("pointLightOuterAngle").SetValue(100f);
-            light.Property("pointLightOuterRadius").SetValue(100f);
-            light.Property("color").SetValue(whisp.energyColor);
+            Light2D light = whisp != null ? whisp.chargeLight : null;
+            if (light == null) return;
+            light.intensity = 1f;
+            light.pointLightInnerAngle = 50f;
+            light.pointLightOuterAngle = 100f;
+            light.pointLightOuterRadius = 100f;
+            light.color = whisp.energyColor;
         }
 
         // The frost follows the enemy's moving body and spreads as wide as its sprites

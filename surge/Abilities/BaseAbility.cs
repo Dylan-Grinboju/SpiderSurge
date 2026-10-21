@@ -23,6 +23,7 @@ namespace SpiderSurge
         // A proxy for a player another machine controls: it takes no input; the host runs its effects, clients draw them
         protected bool IsRemote => playerController != null && !playerController.IsOwner;
         protected bool IsAuthority => Net.IsAuthority;
+        private bool fromNetwork;
         public int PlayerId => playerController != null ? playerController.playerID.Value : -1;
 
         protected bool isActive = false;
@@ -398,7 +399,7 @@ namespace SpiderSurge
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked() || !GameMenus.AcceptPlayerInput)
+            if (!IsUnlocked() || !AcceptsInput)
             {
                 return;
             }
@@ -467,7 +468,7 @@ namespace SpiderSurge
         {
             UpdatePerkModifiers();
 
-            if (!IsUnlocked() || !GameMenus.AcceptPlayerInput)
+            if (!IsUnlocked() || !AcceptsInput)
             {
                 return;
             }
@@ -515,16 +516,26 @@ namespace SpiderSurge
             }
         }
 
-        // The host runs a client's request through the same checks its own press would pass
+        private bool AcceptsInput => fromNetwork ? GameMenus.AcceptRemotePlayerInput : GameMenus.AcceptPlayerInput;
+
+        // The host runs a client's request through the same checks its own press would pass, except for the host's own menus
         public void ActivateFromNetwork(bool ultimate)
         {
-            if (ultimate)
+            fromNetwork = true;
+            try
             {
-                ActivateUltimate();
+                if (ultimate)
+                {
+                    ActivateUltimate();
+                }
+                else
+                {
+                    Activate();
+                }
             }
-            else
+            finally
             {
-                Activate();
+                fromNetwork = false;
             }
         }
 
