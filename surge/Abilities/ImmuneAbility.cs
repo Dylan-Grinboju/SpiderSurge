@@ -477,7 +477,7 @@ namespace SpiderSurge
         public static bool IsGhost(PlayerController player)
         {
             SpiderHealthSystem health = player != null ? player.spiderHealthSystem : null;
-            return health != null && health.astralDead && !health.dead && !SpiderDying(health) && !BanishedTarget.IsBanished(health.rootObject);
+            return health != null && health.astralDead && !health.dead && !SpiderDying(health) && !SwallowedTarget.IsSwallowed(health.rootObject);
         }
 
         private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)

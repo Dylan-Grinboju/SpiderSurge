@@ -100,18 +100,18 @@ namespace SpiderSurge.Vfx
             });
         }
 
-        // Banish: a dark singularity grows on the caster inside a ring that moves with them, while motes fall in from its edge
-        public static BanishVfx BanishOpen(Transform body, float range, float time)
+        // Black Hole: a dark singularity grows on the caster inside a ring that moves with them, while motes fall in from its edge
+        public static BlackHoleVfx BlackHoleOpen(Transform body, float range, float time)
         {
             return SurgeVfx.Safely(() =>
             {
                 Color purple = Consts.Values.Storage.RingColor;
                 Vector3 position = body.position;
                 float fall = 0.8f;
-                return new BanishVfx
+                return new BlackHoleVfx
                 {
                     Ring = Shockwave.Hold(position, range, purple, 2f, body),
-                    Inner = Shockwave.Hold(position, Consts.Values.Storage.BanishCoreRadius, Color.white, 1f, body),
+                    Inner = Shockwave.Hold(position, Consts.Values.Storage.BlackHoleCoreRadius, Color.white, 1f, body),
                     Glow = SurgeVfx.Disc(position, purple, 0f, 13f, time * 2f, SurgeVfx.Order + 8, pulse: true, follow: body, hard: true),
                     Core = SurgeVfx.Disc(position, Color.black, 0f, 9f, time * 2f, SurgeVfx.Order + 9, pulse: true, follow: body, hard: true),
                     Motes = SurgeVfx.Stream(body, Vector3.zero, purple, Color.white, 40f, -range / fall, -range / fall, 0.8f, 1.6f, fall, range, trails: true, radiusThickness: 0f),
@@ -120,7 +120,7 @@ namespace SpiderSurge.Vfx
         }
 
         // The ring snaps shut on the singularity, which flashes out
-        public static void BanishClose(BanishVfx open, Vector3 position, float range, Transform body)
+        public static void BlackHoleClose(BlackHoleVfx open, Vector3 position, float range, Transform body)
         {
             SurgeVfx.Safely(() =>
             {
@@ -133,7 +133,7 @@ namespace SpiderSurge.Vfx
                     SurgeVfx.Fade(open.Motes);
                 }
                 Color purple = Consts.Values.Storage.RingColor;
-                Shockwave.Collapse(position, range, purple, Consts.Values.Storage.BanishCloseTime, 2f, body, at =>
+                Shockwave.Collapse(position, range, purple, Consts.Values.Storage.BlackHoleCloseTime, 2f, body, at =>
                 {
                     SurgeVfx.Flash(at, purple, 3f, range * 0.4f, 0.35f);
                     SurgeVfx.Burst(at, Color.white, purple, 30, 40f, 120f, 0.6f, 1.4f, 0.3f, 0.6f, 2f, trails: true);
@@ -142,7 +142,7 @@ namespace SpiderSurge.Vfx
         }
     }
 
-    public class BanishVfx
+    public class BlackHoleVfx
     {
         public Shockwave Ring;
         public Shockwave Inner;

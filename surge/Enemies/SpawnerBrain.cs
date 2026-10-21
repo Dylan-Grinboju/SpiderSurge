@@ -89,7 +89,7 @@ namespace SpiderSurge.Enemies
                 spawnEffectRpc.Invoke(spawner, new object[] { telegraphPosition, delay, false });
                 yield return new WaitForSeconds(delay);
                 if (!Held) break;
-                // A banished cocoon is removed at the end of its pull, so it waits like a frozen one and never hatches
+                // A swallowed cocoon is removed at the end of its pull, so it waits like a frozen one and never hatches
                 while (Held && !health.IsDead()) yield return null;
             }
             while (!health.IsDead());
@@ -131,7 +131,7 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private bool Held => FrozenEnemy.IsHeld(health) || BanishedTarget.IsBanished(gameObject);
+        private bool Held => FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(gameObject);
 
         private void OnCharacterDied()
         {

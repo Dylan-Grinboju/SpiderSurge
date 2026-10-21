@@ -81,29 +81,29 @@ namespace SpiderSurge
     }
 
     // Black Hole and I Will Keep You Safe
-    [HarmonyPatch(typeof(BanishedTarget))]
-    public static class BanishedTarget_Achievement_Patches
+    [HarmonyPatch(typeof(SwallowedTarget))]
+    public static class SwallowedTarget_Achievement_Patches
     {
-        [HarmonyPatch(nameof(BanishedTarget.BeginEnemy))]
+        [HarmonyPatch(nameof(SwallowedTarget.BeginEnemy))]
         [HarmonyPostfix]
         public static void BeginEnemy_Postfix(EnemyHealthSystem enemy, PlayerController caster)
         {
-            AchievementTracker.Run("Banish", () =>
+            AchievementTracker.Run("Black Hole", () =>
             {
-                if (enemy != null && enemy.GetComponent<HornetShamanBrain>() != null && BanishedTarget.IsBanished(enemy.gameObject))
+                if (enemy != null && enemy.GetComponent<HornetShamanBrain>() != null && SwallowedTarget.IsSwallowed(enemy.gameObject))
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.BlackHole, caster);
                 }
             });
         }
 
-        [HarmonyPatch(nameof(BanishedTarget.BeginSpider))]
+        [HarmonyPatch(nameof(SwallowedTarget.BeginSpider))]
         [HarmonyPostfix]
         public static void BeginSpider_Postfix(SpiderHealthSystem spider, PlayerController caster)
         {
-            AchievementTracker.Run("Banish", () =>
+            AchievementTracker.Run("Black Hole", () =>
             {
-                if (spider != null && BanishedTarget.IsBanished(spider.rootObject) && AchievementTracker.AreTeammates(caster, Players.Of(spider)))
+                if (spider != null && SwallowedTarget.IsSwallowed(spider.rootObject) && AchievementTracker.AreTeammates(caster, Players.Of(spider)))
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.KeepYouSafe, caster);
                 }

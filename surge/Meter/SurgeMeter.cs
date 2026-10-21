@@ -16,7 +16,7 @@ namespace SpiderSurge
         NullField = 4,
         NeuralBackup = 5,
         PocketDimension = 6,
-        Banish = 7,
+        BlackHole = 7,
         FreezeTime = 8,
         Rewind = 9,
     }

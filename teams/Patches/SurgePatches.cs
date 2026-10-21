@@ -25,14 +25,14 @@ namespace SpiderTeams
         }
     }
 
-    // Banish takes a teammate only when friendly fire does damage.
-    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanBanish))]
-    public static class StorageAbility_CanBanish_Patch
+    // The Black Hole swallows a teammate only when friendly fire does damage.
+    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanSwallow))]
+    public static class StorageAbility_CanSwallow_Patch
     {
         [HarmonyPostfix]
         public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
         {
-            if (__result && ModConfig.FriendlyFire != FriendlyFireMode.Damage && BanishTeammates.Same(__instance, spider, "Banish friendly fire"))
+            if (__result && ModConfig.FriendlyFire != FriendlyFireMode.Damage && BlackHoleTeammates.Same(__instance, spider, "Black Hole friendly fire"))
             {
                 __result = false;
             }
@@ -46,14 +46,14 @@ namespace SpiderTeams
         [HarmonyPostfix]
         public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
         {
-            if (__result && ModConfig.FriendlyFire == FriendlyFireMode.Ignore && BanishTeammates.Same(__instance, spider, "Banish pull"))
+            if (__result && ModConfig.FriendlyFire == FriendlyFireMode.Ignore && BlackHoleTeammates.Same(__instance, spider, "Black Hole pull"))
             {
                 __result = false;
             }
         }
     }
 
-    internal static class BanishTeammates
+    internal static class BlackHoleTeammates
     {
         public static bool Same(StorageAbility ability, SpiderHealthSystem spider, string scope)
         {

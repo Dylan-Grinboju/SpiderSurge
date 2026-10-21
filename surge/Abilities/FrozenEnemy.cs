@@ -9,7 +9,7 @@ using UnityEngine;
 namespace SpiderSurge
 {
     // An enemy held by Freeze Time: brains off, bodies and the shaman's cloud locked, fuses held, tinted ice blue until it thaws.
-    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact. Banish's pull holds one the same way without locking or tinting it
+    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact. The Black Hole's pull holds one the same way without locking or tinting it
     public class FrozenEnemy : MonoBehaviour
     {
         private static readonly HashSet<int> FrozenEnemyIds = new HashSet<int>();
@@ -57,7 +57,7 @@ namespace SpiderSurge
 
         public static bool CanFreeze(EnemyHealthSystem enemy)
         {
-            return enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel && !BanishedTarget.IsBanished(enemy.gameObject);
+            return enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel && !SwallowedTarget.IsSwallowed(enemy.gameObject);
         }
 
         public static float TimeLeftOn(EnemyHealthSystem enemy)
@@ -109,7 +109,7 @@ namespace SpiderSurge
             Apply(enemy, duration, visualOnly: true);
         }
 
-        // Banish's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked
+        // The Black Hole's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked
         public static void HoldForPull(EnemyHealthSystem enemy, float duration)
         {
             if (!CanFreeze(enemy) || duration <= 0f || enemy.GetComponent<FrozenEnemy>() != null) return;
@@ -159,7 +159,7 @@ namespace SpiderSurge
             if (!_pulled) Lock();
         }
 
-        // A freeze on an enemy Banish is pulling locks it where it is
+        // A freeze on an enemy the Black Hole is pulling locks it where it is
         private void Harden()
         {
             PulledEnemyIds.Remove(_enemyId);
@@ -301,8 +301,8 @@ namespace SpiderSurge
                 return;
             }
 
-            // Banish took it while frozen and holds it itself until it is gone
-            if (BanishedTarget.IsBanished(gameObject))
+            // The Black Hole took it while frozen and holds it itself until it is gone
+            if (SwallowedTarget.IsSwallowed(gameObject))
             {
                 ReleaseFrost(false);
                 return;

@@ -132,7 +132,7 @@ namespace SpiderSurge
                 case P.PulseAbilityUltimate: return Rising(M.DetonationFirstEnemyCharge, "it hits");
                 case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerWeapon} for the first kill with each weapon it drops";
                 case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives";
-                case P.StorageAbilityUltimate: return $"{M.BanishCharge} for each enemy it banishes";
+                case P.StorageAbilityUltimate: return $"{M.BlackHoleCharge} for each enemy it swallows";
                 case P.FreezeAbilityUltimate: return Rising(M.RewindFirstEnemyCharge, "it turns into a Wasp");
                 default: return null;
             }

@@ -193,19 +193,18 @@ namespace SpiderSurge
                 public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
                 // Thermal Detonation's knockback reach, moved by the same perks and by the same step
-                public const float BanishBaseRange = 150f;
-                public const float BanishRangeIncreasePerLevel = 50f;
-                public const float BanishPullTime = 3f;
+                public const float BlackHoleBaseRange = 150f;
+                public const float BlackHoleRangeIncreasePerLevel = 50f;
+                public const float BlackHolePullTime = 3f;
                 // An enemy whose body or weapon the pull brings this close to the caster goes in, and so does a spider's body, shrinking into the caster over the take time
-                public const float BanishCoreRadius = 20f;
-                public const float BanishTakeTime = 0.3f;
+                public const float BlackHoleCoreRadius = 20f;
+                public const float BlackHoleTakeTime = 0.3f;
                 // An enemy caught this far out of the range, in open air, reaches the inner circle just as the field closes
-                public const float BanishReachFraction = 0.75f;
+                public const float BlackHoleReachFraction = 0.75f;
                 // The pull on spiders at the caster, applied the way the Gravity Grenade's Attractor applies its 1000
-                public const float BanishPullForce = 250f;
-                public const float BanishCloseTime = 0.3f;
-                public const float BanishEndScale = 0.1f;
-                public const float BanishMissCooldownFraction = 0.25f;
+                public const float BlackHolePullForce = 250f;
+                public const float BlackHoleCloseTime = 0.3f;
+                public const float BlackHoleEndScale = 0.1f;
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.65f, 0.25f, 1f, 0.8f);
                 public const float SpawnDistance = 50f;
             }
@@ -280,7 +279,7 @@ namespace SpiderSurge
                 public const int FreezeChargePerKill = 2;
                 public const int CarePackageChargePerWeapon = 1;
                 public const int NeuralBackupChargePerRevive = 3;
-                public const int BanishCharge = 3;
+                public const int BlackHoleCharge = 3;
                 public const float HudBlinkSeconds = 0.8f;
                 public const float PanelWidth = 240f;
                 public const float PanelGap = 16f;
@@ -494,7 +493,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "Care Package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Banish",
+                [PerkNames.StorageAbilityUltimate] = "Black Hole",
                 [PerkNames.FreezeAbilityUltimate] = "Rewind"
             };
 
@@ -545,7 +544,7 @@ namespace SpiderSurge
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases banish range";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases Black Hole range";
             private const string DURATION_DESC_WITH_FREEZE = "Freezes enemies for longer and farther away";
             private const string DURATION_UPGRADE_DESC_WITH_FREEZE = "Increases rewind range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";

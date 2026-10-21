@@ -16,14 +16,14 @@ namespace SpiderSurge
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
-        public override float UltimateBaseDuration => Consts.Values.Storage.BanishPullTime;
+        public override float UltimateBaseDuration => Consts.Values.Storage.BlackHolePullTime;
         public override float UltimateBaseCooldown => Consts.Values.Storage.UltimateBaseCooldown;
         public override float AbilityCooldownPerPerkLevel => Consts.Values.Storage.AbilityCooldownReductionPerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Storage.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Banish";
+        public override string UltimatePerkDisplayName => "Black Hole";
         public override string UltimatePerkDescription => "Opens a pull around you for 3 seconds. It holds the enemies inside it when it opens and drags them and every spider inside it toward you, and whatever reaches your inner circle goes into the pocket dimension, forever.";
 
         public override float AbilityDuration
@@ -43,7 +43,7 @@ namespace SpiderSurge
             }
         }
 
-        public float BanishRange
+        public float BlackHoleRange
         {
             get
             {
@@ -51,10 +51,10 @@ namespace SpiderSurge
                 int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
                 int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
 
-                float range = Consts.Values.Storage.BanishBaseRange;
-                if (durationLevel == 2) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
-                if (shortTermLevel > 0) range -= Consts.Values.Storage.BanishRangeIncreasePerLevel;
-                if (longTermLevel > 0) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
+                float range = Consts.Values.Storage.BlackHoleBaseRange;
+                if (durationLevel == 2) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
+                if (shortTermLevel > 0) range -= Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
+                if (longTermLevel > 0) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
 
                 return range;
             }
@@ -117,10 +117,10 @@ namespace SpiderSurge
         {
             if (spiderHealthSystem != null)
             {
-                _banish = BanishField.Begin(this, spiderHealthSystem, playerController, BanishRange, IsAuthority);
+                BlackHoleField.Begin(this, spiderHealthSystem, playerController, BlackHoleRange, IsAuthority);
                 if (Net.IsHost)
                 {
-                    SurgeNet.SendFx(SurgeFx.Banish, PlayerId, spiderHealthSystem.transform.position, BanishRange, false);
+                    SurgeNet.SendFx(SurgeFx.BlackHole, PlayerId, spiderHealthSystem.transform.position, BlackHoleRange, false);
                 }
             }
             // Like the other abilities, only the caster's own machine plays the sound
@@ -132,24 +132,6 @@ namespace SpiderSurge
                 );
             }
         }
-
-        protected override void OnDeactivateUltimate()
-        {
-            if (IsAuthority && (_banish?.Taken ?? 0) == 0)
-            {
-                StartCoroutine(CutMissedCooldown());
-            }
-            _banish = null;
-        }
-
-        // The cooldown starts right after the ultimate ends, so a Banish that took nothing gets its cut a frame later
-        private IEnumerator CutMissedCooldown()
-        {
-            yield return null;
-            ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
-        }
-
-        private BanishField _banish;
 
         private bool _clientSlotFilled;
 
@@ -172,26 +154,26 @@ namespace SpiderSurge
             }
         }
 
-        // Another player's Banish online, drawn from the host's message
-        public static void DrawRemoteBanish(int playerId, float range)
+        // Another player's Black Hole online, drawn from the host's message
+        public static void DrawRemoteBlackHole(int playerId, float range)
         {
             SpiderHealthSystem health = Players.HealthOf(playerId);
             if (health != null)
             {
-                BanishField.Begin(GetByHealthSystem(health), health, Players.ById(playerId), range, authority: false);
+                BlackHoleField.Begin(GetByHealthSystem(health), health, Players.ById(playerId), range, authority: false);
             }
         }
 
         // Teams spares teammates here unless friendly fire does damage
-        public bool CanBanish(SpiderHealthSystem spider)
+        public bool CanSwallow(SpiderHealthSystem spider)
         {
-            return spider != null && spider != spiderHealthSystem && !BanishedTarget.IsBanished(spider.rootObject) && BanishedTarget.CanDie(spider);
+            return spider != null && spider != spiderHealthSystem && !SwallowedTarget.IsSwallowed(spider.rootObject) && SwallowedTarget.CanDie(spider);
         }
 
-        // Immune spiders are pulled too, they just can't be banished; Teams spares teammates here when friendly fire is ignored
+        // Immune spiders are pulled too, they just can't be swallowed; Teams spares teammates here when friendly fire is ignored
         public bool CanPull(SpiderHealthSystem spider)
         {
-            return spider != null && spider != spiderHealthSystem && !spider.dead && !spider.astralDead && !BanishedTarget.IsBanished(spider.rootObject);
+            return spider != null && spider != spiderHealthSystem && !spider.dead && !spider.astralDead && !SwallowedTarget.IsSwallowed(spider.rootObject);
         }
 
         private IEnumerator SwapRoutine()

@@ -107,10 +107,10 @@ namespace SpiderSurge.Enemies
             }
             if (!synced) return;
 
-            // Freeze Time and Banish make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
-            if (remoteHold || FrozenEnemy.IsHeld(health) || BanishedTarget.IsBanished(health.gameObject))
+            // Freeze Time and the Black Hole make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
+            if (remoteHold || FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(health.gameObject))
             {
-                // Clients don't see Banish, so the host tells them when a hold starts; its next warning sync ends it
+                // Clients don't see the Black Hole's hold, so the host tells them when a hold starts; its next warning sync ends it
                 if (!held && Net.IsHost)
                 {
                     SurgeNet.SendEnemyFx(EnemyFx.LaserHold, health.GetComponent<NetworkObject>(), 0f);

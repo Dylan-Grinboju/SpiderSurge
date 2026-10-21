@@ -480,8 +480,8 @@ namespace StatsMod
             return enemyDisplayNames.TryGetValue(enemy.serializationEnemyName, out displayName);
         }
 
-        // SpiderSurge's Banish removes the enemy without a death; the caster gets the kill
-        public static void OnEnemyBanished(EnemyHealthSystem enemy, PlayerController caster)
+        // SpiderSurge's Black Hole removes the enemy without a death; the caster gets the kill
+        public static void OnEnemySwallowed(EnemyHealthSystem enemy, PlayerController caster)
         {
             if (enemy == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
@@ -491,7 +491,7 @@ namespace StatsMod
             lastEnemyHits.Remove(id);
             if (caster == null) return;
 
-            Logger.LogInfo($"Recording kill for {PlayerLabel(caster)}, target:{enemy.name}, banished");
+            Logger.LogInfo($"Recording kill for {PlayerLabel(caster)}, target:{enemy.name}, Black Hole");
             PlayerTracker.Instance.IncrementPlayerKill(caster);
 
             if (TryGetKillCategory(enemy, out string displayName))
@@ -572,8 +572,8 @@ namespace StatsMod
             return new PlayerTracker.KillCredit { Killer = killer, Friendly = true };
         }
 
-        // SpiderSurge's Banish kills the spider right after this, so its own death finds no hit to credit
-        public static void OnPlayerBanished(SpiderHealthSystem spider, PlayerController caster)
+        // SpiderSurge's Black Hole kills the spider right after this, so its own death finds no hit to credit
+        public static void OnPlayerSwallowed(SpiderHealthSystem spider, PlayerController caster)
         {
             if (spider == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
             lastPlayerHits.Remove(spider.GetInstanceID());
@@ -582,7 +582,7 @@ namespace StatsMod
             if (caster == null || victim == null || victim == caster) return;
 
             bool friendly = PlayerRelations.AreTeammates(caster, victim);
-            Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(caster)}, banished");
+            Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(caster)}, Black Hole");
             deathCredits[victim] = CreditPlayerKill(caster, friendly);
             PlayerTracker.Instance.IncrementEnemyKillByName(caster, "Player");
         }

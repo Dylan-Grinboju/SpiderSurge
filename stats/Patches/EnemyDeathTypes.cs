@@ -69,19 +69,19 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.BeginEnemy))]
-    class EnemyBanishedPatch
+    [HarmonyPatch(typeof(SpiderSurge.SwallowedTarget), nameof(SpiderSurge.SwallowedTarget.BeginEnemy))]
+    class EnemySwallowedPatch
     {
         static void Prefix(EnemyHealthSystem enemy, PlayerController caster)
         {
             try
             {
-                if (enemy == null || SpiderSurge.BanishedTarget.IsBanished(enemy.gameObject)) return;
-                HitLogic.OnEnemyBanished(enemy, caster);
+                if (enemy == null || SpiderSurge.SwallowedTarget.IsSwallowed(enemy.gameObject)) return;
+                HitLogic.OnEnemySwallowed(enemy, caster);
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error recording banished enemy: {ex.Message}");
+                Logger.LogError($"Error recording an enemy swallowed by the Black Hole: {ex.Message}");
             }
         }
     }

@@ -5,9 +5,9 @@ using UnityEngine;
 
 namespace SpiderSurge
 {
-    // A target taken by Banish: frozen and harmless, pulled into the caster while it shrinks, then gone for good.
+    // A target the Black Hole swallows: frozen and harmless, pulled into the caster while it shrinks, then gone for good.
     // An enemy is removed without a death, a spider dies. On a client an enemy only shrinks, since the host moves it
-    public class BanishedTarget : MonoBehaviour
+    public class SwallowedTarget : MonoBehaviour
     {
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying =
             AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
@@ -29,43 +29,43 @@ namespace SpiderSurge
 
         public static void BeginEnemy(EnemyHealthSystem enemy, Transform target, PlayerController caster, float pullTime)
         {
-            if (enemy == null || IsBanished(enemy.gameObject)) return;
+            if (enemy == null || IsSwallowed(enemy.gameObject)) return;
 
-            BanishedTarget banished = enemy.gameObject.AddComponent<BanishedTarget>();
-            banished._enemy = enemy;
-            banished.Caster = caster;
-            banished._pullTime = pullTime;
-            banished.FreezeEnemy();
-            banished.StartPull(target);
-            SurgeNet.SendEnemyFx(EnemyFx.Banished, enemy.GetComponent<NetworkObject>(), pullTime);
+            SwallowedTarget swallowed = enemy.gameObject.AddComponent<SwallowedTarget>();
+            swallowed._enemy = enemy;
+            swallowed.Caster = caster;
+            swallowed._pullTime = pullTime;
+            swallowed.FreezeEnemy();
+            swallowed.StartPull(target);
+            SurgeNet.SendEnemyFx(EnemyFx.Swallowed, enemy.GetComponent<NetworkObject>(), pullTime);
         }
 
-        public static void ShowBanished(EnemyHealthSystem enemy, float pullTime)
+        public static void ShowSwallowed(EnemyHealthSystem enemy, float pullTime)
         {
-            if (enemy == null || IsBanished(enemy.gameObject)) return;
+            if (enemy == null || IsSwallowed(enemy.gameObject)) return;
 
-            BanishedTarget banished = enemy.gameObject.AddComponent<BanishedTarget>();
-            banished._enemy = enemy;
-            banished._pullTime = pullTime;
-            banished._visualOnly = true;
-            banished._startScale = banished.transform.localScale;
+            SwallowedTarget swallowed = enemy.gameObject.AddComponent<SwallowedTarget>();
+            swallowed._enemy = enemy;
+            swallowed._pullTime = pullTime;
+            swallowed._visualOnly = true;
+            swallowed._startScale = swallowed.transform.localScale;
         }
 
         public static void BeginSpider(SpiderHealthSystem spider, Transform target, PlayerController caster)
         {
-            if (spider == null || spider.rootObject == null || IsBanished(spider.rootObject)) return;
+            if (spider == null || spider.rootObject == null || IsSwallowed(spider.rootObject)) return;
 
-            BanishedTarget banished = spider.rootObject.AddComponent<BanishedTarget>();
-            banished._spider = spider;
-            banished.Caster = caster;
-            banished._pullTime = Consts.Values.Storage.BanishTakeTime;
-            banished.FreezeSpider();
-            banished.StartPull(target);
+            SwallowedTarget swallowed = spider.rootObject.AddComponent<SwallowedTarget>();
+            swallowed._spider = spider;
+            swallowed.Caster = caster;
+            swallowed._pullTime = Consts.Values.Storage.BlackHoleTakeTime;
+            swallowed.FreezeSpider();
+            swallowed.StartPull(target);
         }
 
-        public static bool IsBanished(GameObject root)
+        public static bool IsSwallowed(GameObject root)
         {
-            return root != null && root.GetComponent<BanishedTarget>() != null;
+            return root != null && root.GetComponent<SwallowedTarget>() != null;
         }
 
         // Nothing protects it: alive, not respawn immune and not inside a Null Field
@@ -77,7 +77,7 @@ namespace SpiderSurge
             return nullField == null || !nullField.IsImmune;
         }
 
-        // Banish ignores shields; Stats credits the caster with this kill
+        // The Black Hole ignores shields; Stats credits the caster with this kill
         public static void KillSpider(SpiderHealthSystem spider, PlayerController caster)
         {
             spider.DisableShield();
@@ -157,7 +157,7 @@ namespace SpiderSurge
             float t = Mathf.Clamp01(_elapsed / _pullTime);
             float eased = t * t;
 
-            transform.localScale = Vector3.Lerp(_startScale, _startScale * Consts.Values.Storage.BanishEndScale, eased);
+            transform.localScale = Vector3.Lerp(_startScale, _startScale * Consts.Values.Storage.BlackHoleEndScale, eased);
             if (_visualOnly)
             {
                 if (t >= 1f) enabled = false;
@@ -201,11 +201,11 @@ namespace SpiderSurge
 
     // The pull drags a spider through platforms, so the game's stuck-in-wall check must not kill it on the way in
     [HarmonyPatch(typeof(SpiderHealthSystem), "StuckInWallCheck")]
-    public class SpiderHealthSystem_StuckInWallCheck_BanishPatch
+    public class SpiderHealthSystem_StuckInWallCheck_BlackHolePatch
     {
         static bool Prefix(SpiderHealthSystem __instance)
         {
-            return !BanishedTarget.IsBanished(__instance.rootObject);
+            return !SwallowedTarget.IsSwallowed(__instance.rootObject);
         }
     }
 }

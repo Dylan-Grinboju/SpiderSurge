@@ -36,7 +36,7 @@ namespace SpiderSurge.Vfx
             return wave;
         }
 
-        // Starts at the radius and closes on the position, or on a followed transform, speeding up like Banish's pull; onComplete gets where it closed
+        // Starts at the radius and closes on the position, or on a followed transform, speeding up like the Black Hole's pull; onComplete gets where it closed
         public static Shockwave Collapse(Vector3 position, float radius, Color color, float duration, float width = 2f, Transform follow = null, System.Action<Vector3> onComplete = null)
         {
             Shockwave wave = Create(position, color, width);
