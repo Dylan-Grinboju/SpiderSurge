@@ -39,6 +39,7 @@ namespace SpiderSurge
             {
                 PerkConfirmButton.Build(__instance);
                 PerkShopPanel.Build(__instance);
+                MeterHint.Build(__instance);
             }
 
             // Access perkChoiceView using reflection since it might be private

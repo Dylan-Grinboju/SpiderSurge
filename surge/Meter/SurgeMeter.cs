@@ -46,6 +46,9 @@ namespace SpiderSurge
 
         public static float Fill => ChargePerPoint > 0 ? Mathf.Clamp01(Charge / (float)ChargePerPoint) : 0f;
 
+        // A client only knows the threshold once the host's first state arrives
+        public static bool Known => Net.IsAuthority || _remoteSynced;
+
         // True on every machine during a Surge Survival run with abilities, which is the only time the meter exists
         public static bool Enabled =>
             SurgeGameModeManager.IsSurgeRunActive
@@ -183,6 +186,27 @@ namespace SpiderSurge
                     Logger.LogError($"[Surge meter] listener failed: {ex}");
                 }
             }
+        }
+    }
+
+    // Friends join a run in the waiting room, after its first threshold was set, so a join or a leave sets it again at once instead of at the next wave
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.AddPlayer))]
+    public class LobbyController_AddPlayer_MeterPatch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive) SurgeMeter.RecomputeThreshold();
+        }
+    }
+
+    [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.RemovePlayer))]
+    public class LobbyController_RemovePlayer_MeterPatch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive) SurgeMeter.RecomputeThreshold();
         }
     }
 }
