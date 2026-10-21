@@ -126,11 +126,11 @@ namespace SpiderSurge
             {
                 case P.PulseAbility: return $"{M.PulseChargePerEnemy} for each enemy it launches";
                 case P.AmmoAbility: return $"{M.BottomlessClipChargePerKill} for each kill you make while it runs";
-                case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second and {M.NullFieldChargedHitsPerCast} per cast) and {M.NullFieldChargePerKill} for each kill you make while it runs";
+                case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (lava counts as one; at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second and {M.NullFieldChargedHitsPerCast} per cast) and {M.NullFieldChargePerKill} for each kill you make while it runs";
                 case P.StorageAbility: return $"{M.PocketDimensionChargePerSwap} each time it gives a stored weapon back";
                 case P.FreezeAbility: return $"{M.FreezeChargePerEnemy} for each enemy it freezes and {M.FreezeChargePerKill} more for each one killed while frozen";
                 case P.PulseAbilityUltimate: return $"{M.DetonationChargePerEnemy} for each enemy it hits";
-                case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerWeapon} for the first kill with each weapon it drops";
+                case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerKill} for each kill with a weapon it drops";
                 case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives and {M.NeuralBackupChargePerWaspKill} for each kill its Wasps make";
                 case P.StorageAbilityUltimate: return $"{M.BlackHoleCharge} for each enemy it swallows";
                 case P.FreezeAbilityUltimate: return $"{M.RewindChargePerEnemy} for each enemy it turns into a Wasp";

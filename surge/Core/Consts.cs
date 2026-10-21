@@ -276,7 +276,7 @@ namespace SpiderSurge
                 public const int PocketDimensionChargePerSwap = 1;
                 public const int FreezeChargePerEnemy = 1;
                 public const int FreezeChargePerKill = 2;
-                public const int CarePackageChargePerWeapon = 1;
+                public const int CarePackageChargePerKill = 1;
                 public const int NeuralBackupChargePerRevive = 3;
                 public const int NeuralBackupChargePerWaspKill = 1;
                 public const int BlackHoleCharge = 3;

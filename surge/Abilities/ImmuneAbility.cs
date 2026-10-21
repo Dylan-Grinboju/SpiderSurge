@@ -125,19 +125,21 @@ namespace SpiderSurge
 
         private float _lastChargedHit = -10f;
         private int _chargedHits;
+        private bool _chargedLava;
 
-        // Lava calls this every frame, so a blocked hit charges the meter at most twice a second and only a few times per cast
-        public void RegisterHit()
+        // Lava calls this every tick, so it charges the meter once per cast; a blocked hit charges at most twice a second and only a few times per cast
+        public void RegisterHit(bool lava = false)
         {
             if (isActive && IsImmune)
             {
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
                 if (bubble != null) bubble.Hit();
-                if (Time.time - _lastChargedHit >= Consts.Values.Meter.NullFieldHitInterval && _chargedHits < Consts.Values.Meter.NullFieldChargedHitsPerCast)
+                if (!(lava && _chargedLava) && Time.time - _lastChargedHit >= Consts.Values.Meter.NullFieldHitInterval && _chargedHits < Consts.Values.Meter.NullFieldChargedHitsPerCast)
                 {
                     _lastChargedHit = Time.time;
                     _chargedHits++;
+                    _chargedLava |= lava;
                     SurgeMeter.Add(MeterSource.NullField, PlayerId, Consts.Values.Meter.NullFieldChargePerHit);
                 }
             }
@@ -171,6 +173,7 @@ namespace SpiderSurge
             wasHitDuringSession = false;
             _lastChargedHit = -10f;
             _chargedHits = 0;
+            _chargedLava = false;
             hadBarrierOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             ApplyImmunity(true);

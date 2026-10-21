@@ -69,8 +69,8 @@ The meter is the team's, and only the host counts it. It fills while a wave runs
 | Kinetic Pulse | an enemy is launched | 1 each |
 | Thermal Detonation | an enemy is in the death zone or launched | 2 each |
 | Bottomless Clip | the caster kills an enemy while it runs | 2 each |
-| Care Package | a weapon it dropped makes its first kill, whoever holds it | 1 per weapon |
-| Null Field | a hit is blocked (at most twice a second and 3 hits per cast, so standing in lava can't fill the meter) | 5 each |
+| Care Package | a weapon it dropped kills an enemy, whoever holds it | 1 each |
+| Null Field | a hit is blocked (lava counts as one hit per cast, and at most twice a second and 3 hits per cast) | 5 each |
 | Null Field | the caster kills an enemy while it runs | 2 each |
 | Neural Backup | a player is revived | 3 |
 | Neural Backup | a Wasp it summoned kills an enemy | 1 each |

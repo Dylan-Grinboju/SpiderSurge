@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SpiderSurge
 {
-    // Marks a weapon a Care Package dropped until it makes its first kill
+    // Marks a weapon a Care Package dropped, so every kill with it charges the player who cast it
     public class CarePackageDrop : MonoBehaviour
     {
         public int PlayerId = -1;
@@ -50,8 +50,7 @@ namespace SpiderSurge
                 CarePackageDrop drop = weapon.GetComponent<CarePackageDrop>();
                 if (drop != null)
                 {
-                    SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, Consts.Values.Meter.CarePackageChargePerWeapon);
-                    Object.Destroy(drop);
+                    SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, Consts.Values.Meter.CarePackageChargePerKill);
                 }
             }
 
