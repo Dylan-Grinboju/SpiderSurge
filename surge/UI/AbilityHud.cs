@@ -9,6 +9,7 @@ namespace SpiderSurge
     {
         private static readonly Dictionary<int, AbilityHud> Rows = new Dictionary<int, AbilityHud>();
         private static readonly List<int> Gone = new List<int>();
+        private static readonly Vector3[] Corners = new Vector3[4];
 
         private BaseAbility ability;
         private string perkName;
@@ -45,9 +46,11 @@ namespace SpiderSurge
             if (Event.current.type != EventType.Repaint || GameMenus.Open || Rows.Count == 0) return;
             var players = Players.All;
             if (players == null || players.Count == 0) return;
+            float scale = Mathf.Clamp(Screen.height / 1080f, 0.5f, 1.5f);
+            float bottom = BottomInset(scale);
             foreach (var pair in Rows)
             {
-                if (!pair.Value.Draw(pair.Key, players, readyColor, activeColor, cooldownColor)) Gone.Add(pair.Key);
+                if (!pair.Value.Draw(pair.Key, players, scale, bottom, readyColor, activeColor, cooldownColor)) Gone.Add(pair.Key);
             }
             foreach (int playerId in Gone)
             {
@@ -56,8 +59,25 @@ namespace SpiderSurge
             Gone.Clear();
         }
 
+        // The game's pain-level number sits in the bottom right corner, so the rows start above it while it shows
+        private static float BottomInset(float scale)
+        {
+            float inset = 16f * scale;
+            var text = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.painLevelText : null;
+            if (text == null || !text.isActiveAndEnabled) return inset;
+            // The topmost RectTransform is the HUD canvas, which covers the whole screen
+            RectTransform canvas = null;
+            for (Transform parent = text.transform; parent != null; parent = parent.parent)
+                if (parent is RectTransform rect) canvas = rect;
+            Rect area = canvas.rect;
+            if (area.height <= 0f) return inset;
+            text.rectTransform.GetWorldCorners(Corners);
+            float top = (canvas.InverseTransformPoint(Corners[1]).y - area.yMin) / area.height * Screen.height;
+            return Mathf.Max(inset, top + 6f * scale);
+        }
+
         // False once the row is no longer needed: its ability is gone and its player left or the ability was lost at the end of the run
-        private bool Draw(int playerId, List<PlayerController> players, Color readyColor, Color activeColor, Color cooldownColor)
+        private bool Draw(int playerId, List<PlayerController> players, float scale, float bottom, Color readyColor, Color activeColor, Color cooldownColor)
         {
             bool exists = ability != null;
             var player = Players.ById(playerId);
@@ -91,7 +111,6 @@ namespace SpiderSurge
             int slot = 0;
             foreach (var entry in players)
                 if (entry != null && entry.playerID.Value < playerId) slot++;
-            float scale = Mathf.Clamp(Screen.height / 1080f, 0.5f, 1.5f);
             float width = 268f * scale;
             float height = 76f * scale;
             float gap = 5f * scale;
@@ -100,7 +119,7 @@ namespace SpiderSurge
             int column = slot / rows;
             int row = slot % rows;
             float x = Screen.width - 16f * scale - (column + 1) * (width + gap);
-            float y = Screen.height - 16f * scale - (rows - row) * (height + gap);
+            float y = Screen.height - bottom - (rows - row) * (height + gap);
             var rect = new Rect(x, y, width, height);
             Color color = !alive ? Hud.Dim : active ? activeColor : ready ? readyColor : cooldownColor;
             float progress = !alive ? 0f : active ? ability.ActiveProgress : ability.CooldownProgress;
