@@ -51,6 +51,8 @@ namespace SpiderSurge
         private TMP_Text _buyLabel;
         private int _lives = -1;
         private int _maxLives = -1;
+        private ModifierManager _modifiers;
+        private Modifier _maxLivesModifier;
 
         public static void Build(SurvivalModeHud hud)
         {
@@ -470,10 +472,25 @@ namespace SpiderSurge
         private void Update()
         {
             SurvivalMode mode = SurvivalMode.instance;
-            if (mode == null || (mode.Lives == _lives && mode.MaxLives == _maxLives)) return;
+            if (mode == null) return;
+            int maxLives = MaxLives(mode);
+            if (mode.Lives == _lives && maxLives == _maxLives) return;
             _lives = mode.Lives;
-            _maxLives = mode.MaxLives;
+            _maxLives = maxLives;
             Refresh();
+        }
+
+        // SurvivalMode.MaxLives finds the modifier with a LINQ lookup, which makes garbage every frame
+        private int MaxLives(SurvivalMode mode)
+        {
+            var manager = ModifierManager.instance;
+            if (manager != _modifiers)
+            {
+                _modifiers = manager;
+                int id = manager != null ? manager.GetModId("maxLives") : -1;
+                _maxLivesModifier = id >= 0 ? manager.GetModById(id) : null;
+            }
+            return mode._maxlives.Value + (_maxLivesModifier != null ? _maxLivesModifier.levelInSurvival : 0);
         }
 
         // A client gets the cards and the host's offer in separate messages, so the panel is redrawn when the offer arrives later
