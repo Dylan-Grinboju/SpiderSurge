@@ -31,6 +31,7 @@ namespace SpiderSurge
         Frozen = 0,
         LaserPhase = 1,
         LaserHold = 2,
+        ShieldBroken = 4,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -169,6 +170,19 @@ namespace SpiderSurge
                     writer.Write((byte)EnemyFx.Frozen);
                     writer.Write(target.NetworkObjectId);
                     writer.Write(left);
+                });
+            }
+
+            // The game sends a shield's break only as it happens, so a joiner would see every broken shield still up
+            foreach (EnemyHealthSystem enemy in UnityEngine.Object.FindObjectsOfType<EnemyHealthSystem>())
+            {
+                NetworkObject target = enemy.NetworkObject;
+                if (enemy.shield == null || enemy.shield.activeSelf || target == null || !target.IsSpawned) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.ShieldBroken);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(0f);
                 });
             }
         }
@@ -385,6 +399,10 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.LaserHold:
                     target.GetComponentInChildren<LaserRing>(true)?.Hold();
+                    break;
+                case EnemyFx.ShieldBroken:
+                    GameObject shield = target.GetComponent<EnemyHealthSystem>()?.shield;
+                    if (shield != null) shield.SetActive(false);
                     break;
             }
         }
