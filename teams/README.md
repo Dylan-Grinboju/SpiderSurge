@@ -104,7 +104,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 ### Visuals:
 `teams.recolorSpiders`: During a match, each spider's main color becomes a shade of its team's color. Teammates get slightly different shades, so you can still tell them apart. Second colors and hats are kept, and the original colors come back when the match ends. Your saved colors are never changed. Default: `true`.
 
-`teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. For now it only shows on the host's PC. Default: `false`.
+`teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. Each player turns it on for their own screen. Default: `false`.
 
 You can use both, one, or neither. With both off, teams only show in the announcements and on the versus setup page.
 
