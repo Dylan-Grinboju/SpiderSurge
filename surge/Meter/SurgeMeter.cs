@@ -40,6 +40,7 @@ namespace SpiderSurge
         public static IReadOnlyDictionary<MeterSource, int> ChargeBySource => _chargeBySource;
 
         private static bool _remoteSynced;
+        private static int _lastCastId;
 
         public static event Action Changed;
         public static event Action PointEarned;
@@ -117,6 +118,9 @@ namespace SpiderSurge
             Raise(Changed);
             MeterNet.MarkDirty();
         }
+
+        // Every spider gets new ability objects, so a per-ability counter would restart after a respawn and reuse caps already spent
+        public static int NextCastId() => ++_lastCastId;
 
         public static bool CanAfford(int cost) => Points >= cost;
 
