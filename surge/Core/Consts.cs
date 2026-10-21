@@ -36,6 +36,7 @@ namespace SpiderSurge
             public const string StartShields = "startShields";
             public const string PositiveEncouragement = "positiveencouragement";
             public const string SafetyNet = "safetynet";
+            public const string KnockbackSuspension = "knockbacksuspension";
         }
 
         // Sound file names (without extension) - must match embedded .wav filenames
@@ -191,11 +192,19 @@ namespace SpiderSurge
                 public const float AbilityDurationReductionPerLevel = 1f;
                 public const float UltimateBaseCooldown = 20f;
                 public const float UltimateCooldownReductionPerLevel = 5f;
-                public const float BanishBaseRange = 75f;
-                public const float BanishRangeIncreasePerLevel = 25f;
-                public const float BanishPullTime = 0.3f;
-                public const float BanishEndScale = 0.1f;
-                public const float BanishMissCooldownFraction = 0.25f;
+                // Thermal Detonation's knockback reach, moved by the same perks and by the same step
+                public const float BlackHoleBaseRange = 150f;
+                public const float BlackHoleRangeIncreasePerLevel = 50f;
+                public const float BlackHolePullTime = 3f;
+                // An enemy whose body or weapon the pull brings this close to the caster goes in, and so does a spider's body, shrinking into the caster over the take time
+                public const float BlackHoleCoreRadius = 20f;
+                public const float BlackHoleTakeTime = 0.3f;
+                // An enemy caught this far out of the range, in open air, reaches the inner circle just as the field closes
+                public const float BlackHoleReachFraction = 0.75f;
+                // The pull on spiders at the caster, applied the way the Gravity Grenade's Attractor applies its 1000
+                public const float BlackHolePullForce = 250f;
+                public const float BlackHoleCloseTime = 0.3f;
+                public const float BlackHoleEndScale = 0.1f;
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.65f, 0.25f, 1f, 0.8f);
                 public const float SpawnDistance = 50f;
             }
@@ -214,8 +223,6 @@ namespace SpiderSurge
                 public const float UltimateRangeIncreasePerLevel = 50f;
                 public const float RewindRingTime = 0.4f;
                 public const float TintStrength = 0.6f;
-                // How far a shaman's poison cloud spreads from its center
-                public const float CloudReach = 15f;
                 public const string WaspName = "Wasp";
                 public const string ShieldedWaspName = "Wasp Shielded";
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.7f, 0.95f, 1f, 0.9f);
@@ -250,34 +257,29 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                public const float DefaultActiveChargePerWave = 6f;
-                public const float DefaultScreensPerPoint = 1.5f;
-                public const float MinActiveChargePerWave = 1f;
-                public const float MaxActiveChargePerWave = 20f;
-                public const float MinScreensPerPoint = 0.25f;
-                public const float MaxScreensPerPoint = 5f;
+                // A player casting on cooldown made 2 to 4 a wave with Pulse, Freeze Time and Clip, so half that use still buys a point every 2 waves
+                public const float DefaultChargePerWave = 1.5f;
+                public const float DefaultWavesPerPoint = 2f;
+                public const float MinChargePerWave = 0.5f;
+                public const float MaxChargePerWave = 20f;
+                public const float MinWavesPerPoint = 0.5f;
+                public const float MaxWavesPerPoint = 10f;
                 public const int MinChargePerPoint = 1;
-                public const float NullFieldHitInterval = 0.5f;
-                public const int ClampedShotsPerCharge = 2;
                 public const int PulseChargePerEnemy = 1;
-                public const int PulseCapPerCast = 3;
-                public const int DetonationChargePerKill = 2;
-                public const int DetonationCapPerCast = 6;
-                public const int BottomlessClipCapPerCast = 3;
-                public const int CarePackageChargePerPickup = 1;
-                public const int CarePackageCapPerCast = 3;
-                public const int NullFieldChargePerHit = 1;
-                public const int NullFieldCapPerCast = 3;
-                public const int NeuralBackupChargePerEvent = 2;
-                public const int NeuralBackupCapPerCast = 4;
-                public const int PocketDimensionChargePerRecall = 2;
-                public const int PocketDimensionCapPerCast = 2;
-                public const int BanishChargePerEnemy = 2;
-                public const int BanishCapPerCast = 2;
-                public const int FreezeChargePerEnemy = 1;
-                public const int FreezeCapPerCast = 3;
+                public const int DetonationChargePerEnemy = 2;
                 public const int RewindChargePerEnemy = 1;
-                public const int RewindCapPerCast = 4;
+                public const int BottomlessClipChargePerKill = 2;
+                public const int NullFieldChargePerHit = 5;
+                public const float NullFieldHitInterval = 0.5f;
+                public const int NullFieldChargedHitsPerCast = 3;
+                public const int NullFieldChargePerKill = 2;
+                public const int PocketDimensionChargePerSwap = 1;
+                public const int FreezeChargePerEnemy = 1;
+                public const int FreezeChargePerKill = 2;
+                public const int CarePackageChargePerKill = 1;
+                public const int NeuralBackupChargePerRevive = 3;
+                public const int NeuralBackupChargePerWaspKill = 1;
+                public const int BlackHoleCharge = 3;
                 public const float HudBlinkSeconds = 0.8f;
                 public const float PanelWidth = 240f;
                 public const float PanelGap = 16f;
@@ -491,7 +493,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "Care Package",
                 [PerkNames.PulseAbilityUltimate] = "Thermal Detonation",
-                [PerkNames.StorageAbilityUltimate] = "Banish",
+                [PerkNames.StorageAbilityUltimate] = "Black Hole",
                 [PerkNames.FreezeAbilityUltimate] = "Rewind"
             };
 
@@ -510,7 +512,7 @@ namespace SpiderSurge
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
-                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Pull the nearest enemy or spider into the pocket dimension, forever</color>",
+                [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">For 3 seconds, pull the enemies and spiders around you toward you; whatever reaches you goes into the pocket dimension</color>",
                 [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn back time on nearby enemies, turning them into wasps. Shields stay</color>"
             };
 
@@ -542,7 +544,7 @@ namespace SpiderSurge
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
-            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases banish range";
+            private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases Black Hole range";
             private const string DURATION_DESC_WITH_FREEZE = "Freezes enemies for longer and farther away";
             private const string DURATION_UPGRADE_DESC_WITH_FREEZE = "Increases rewind range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";

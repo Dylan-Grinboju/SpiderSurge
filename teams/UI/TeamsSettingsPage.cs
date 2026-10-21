@@ -129,7 +129,7 @@ namespace SpiderTeams
             page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
             page.Note(Consts.Surge.LongTermDescription);
 
-            page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Start and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
+            page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Select and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
             page.Note("Abilities need SpiderSurge on every player's machine; a match with a player who lacks it plays without them.");
         }
 

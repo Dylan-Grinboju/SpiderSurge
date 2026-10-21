@@ -77,18 +77,18 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderSurge.BanishedTarget), nameof(SpiderSurge.BanishedTarget.KillSpider))]
-    public class SpiderBanishedPatch
+    [HarmonyPatch(typeof(SpiderSurge.SwallowedTarget), nameof(SpiderSurge.SwallowedTarget.KillSpider))]
+    public class SpiderSwallowedPatch
     {
         static void Prefix(SpiderHealthSystem spider, PlayerController caster)
         {
             try
             {
-                HitLogic.OnPlayerBanished(spider, caster);
+                HitLogic.OnPlayerSwallowed(spider, caster);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error recording banished spider: {ex.Message}");
+                Logger.LogError($"Error recording a spider swallowed by the Black Hole: {ex.Message}");
             }
         }
     }
@@ -120,9 +120,9 @@ namespace StatsMod
         {
             try
             {
-                // SpiderSurge's Banish kills through the same dissolve, without lava
+                // SpiderSurge's Black Hole kills through the same dissolve, without lava
                 if (!GameSessionManager.Instance.IsActive || __instance.dead || __instance.astralDead || __instance.rootObject == null ||
-                    SpiderSurge.BanishedTarget.IsBanished(__instance.rootObject))
+                    SpiderSurge.SwallowedTarget.IsSwallowed(__instance.rootObject))
                     return;
 
                 PlayerController playerInput = __instance.rootObject.GetComponentInParent<PlayerController>();

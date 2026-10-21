@@ -74,7 +74,7 @@ namespace StatsMod
         private readonly ControlPoller smallWindowKey = new ControlPoller();
         private readonly ControlPoller bigWindowKey = new ControlPoller();
         private readonly ControlPoller titlesKey = new ControlPoller();
-        private readonly ControlPoller switchButton = new ControlPoller();
+        private readonly AnyPadPoller switchButton = new AnyPadPoller();
         #endregion
 
         #region UI Scaling
@@ -231,11 +231,10 @@ namespace StatsMod
 
         private void HandleGamepadInput()
         {
-            Gamepad gamepad = Gamepad.current;
-            if (gamepad == null || GameMenus.Open) return;
+            if (Gamepad.all.Count == 0 || GameMenus.Open) return;
 
-            if (bigUI != null && bigUI.HandlePresetInput(gamepad)) return;
-            if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding, gamepad))
+            if (bigUI != null && bigUI.HandlePresetPads()) return;
+            if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding))
             {
                 CycleUIState();
             }
@@ -562,6 +561,17 @@ namespace StatsMod
             if (delaySeconds > 0f)
             {
                 yield return new WaitForSecondsRealtime(delaySeconds);
+            }
+
+            // A Surge run's starting ability choice blocks pausing, so the titles keep waiting for the pause until it closes
+            while (GameController.instance != null && !GameController.instance.CanBePaused())
+            {
+                if (currentUIState != UIState.TitlesUI || GameSessionManager.Instance == null || !GameSessionManager.Instance.IsActive)
+                {
+                    delayedPauseCoroutine = null;
+                    yield break;
+                }
+                yield return null;
             }
 
             PauseGameLikeEsc();

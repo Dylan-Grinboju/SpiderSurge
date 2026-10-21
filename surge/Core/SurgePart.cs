@@ -19,7 +19,7 @@ namespace SpiderSurge
         public override bool CanDisable => false;
         public override bool HasSettings => true;
 
-        public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey, ModConfig.NoAbilitiesKey, ModConfig.MeterActiveChargePerWaveKey, ModConfig.MeterScreensPerPointKey };
+        public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey, ModConfig.NoAbilitiesKey, ModConfig.MeterChargePerWaveKey, ModConfig.MeterWavesPerPointKey };
 
         protected internal override void OnStart()
         {
@@ -35,12 +35,15 @@ namespace SpiderSurge
 
             SurgeLobbyPlatform.EnsureCreated();
             Integration.StatsModBridge.DescribeSurgeTitles();
+            StatsMod.HitLogic.EnemyKilled += MeterKills.OnEnemyKilled;
+            if (!Parts.Stats.Enabled || Parts.Stats.BlockedBy != null) Silk.Logger.LogWarning("Stats is off, so kills don't charge the Surge meter for Bottomless Clip, Null Field and Care Package");
             Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
+            StatsMod.HitLogic.EnemyKilled -= MeterKills.OnEnemyKilled;
             SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);

@@ -118,6 +118,8 @@ namespace SpiderSurge
         {
             SurgeMeter.PointEarned -= OnPointEarned;
             _blink = null;
+            if (_fillImage != null) _fillImage.color = Hud.Pink;
+            if (_points != null) _points.color = _pointsColor;
         }
 
         private void OnDestroy()

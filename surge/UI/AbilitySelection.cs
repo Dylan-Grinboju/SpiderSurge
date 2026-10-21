@@ -14,8 +14,10 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
         private static readonly MethodInfo ShowCards = AccessTools.Method(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc");
         private static readonly MethodInfo SubmitCard = AccessTools.Method(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc");
+        private static readonly MethodInfo FailWave = AccessTools.Method(typeof(SurvivalMode), "FailWave");
 
         private static bool pending;
+        private static float closeUntil = -1f;
         private static NetworkSceneManager _scenes;
         public static bool IsChoosing { get; private set; }
 
@@ -35,14 +37,11 @@ namespace SpiderSurge
             if (IsChoosing)
             {
                 var hud = SurvivalModeHud.instance;
-                if (hud != null)
-                {
-                    if (instant) hud.ClosePerkChoiseView();
-                    else hud.perkChoiceView.Hide();
-                }
+                if (hud != null && instant) hud.ClosePerkChoiseView();
                 TimeScaleController.instance?.Reset();
                 GameController.instance?.EnableInputs();
             }
+            if (instant) closeUntil = -1f;
             Listen(false);
             pending = false;
             IsChoosing = false;
@@ -51,6 +50,13 @@ namespace SpiderSurge
         // Hold the first wave on its loaded map until the shared ability has been chosen.
         public static bool BeforeWave()
         {
+            // Starting the wave switches the card view off, so it waits until the cards not taken have greyed out and the view has hidden
+            if (closeUntil > 0f)
+            {
+                var view = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
+                if (view != null && (view.IsVisible || view.IsHiding) && UnityEngine.Time.unscaledTime < closeUntil) return false;
+                closeUntil = -1f;
+            }
             if (!pending) return true;
             if (IsChoosing) return false;
             // The game holds joiners until the loading screen has finished, which takes game time a paused choice never gives it
@@ -84,6 +90,16 @@ namespace SpiderSurge
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChoicesShown(abilities));
             Listen(true);
             return false;
+        }
+
+        // The wave loop only handles deaths during a running wave, so a wipe while the cards close needs the same failure path.
+        public static void CheckClosingWipe(SurvivalMode mode)
+        {
+            if (closeUntil <= 0f || !Net.IsAuthority || !mode.GameModeActive()) return;
+            var lobby = LobbyController.instance;
+            if (lobby == null || lobby.spawnedPlayers.Count == 0 || lobby.CountAlivePlayers() > 0) return;
+            closeUntil = -1f;
+            FailWave.Invoke(mode, null);
         }
 
         // As many cards as a normal perk choice: the pain level's base count (2 from pain level 3) plus Picky
@@ -124,6 +140,7 @@ namespace SpiderSurge
                 StatsMod.GameSessionManager.Instance.RecordPerk(PerksManager.Instance.GetDisplayName(modifier.data.key));
             // The game's submit message closes the cards on every client and greys out the ones not taken
             SubmitCard.Invoke(SurvivalModeHud.instance, new object[] { index });
+            closeUntil = UnityEngine.Time.unscaledTime + 3f;
             Reset(instant: false);
             PlayerAbilityHandler.AttachToExistingSpiders();
             PerksManager.Instance.RefreshAbilityRegistrations();
@@ -135,6 +152,12 @@ namespace SpiderSurge
     internal static class StartingAbilityWavePatch
     {
         static bool Prefix() => AbilitySelection.BeforeWave();
+    }
+
+    [HarmonyPatch(typeof(SurvivalMode), "LateUpdate")]
+    internal static class StartingAbilityClosingWipePatch
+    {
+        static void Prefix(SurvivalMode __instance) => AbilitySelection.CheckClosingWipe(__instance);
     }
 
     [HarmonyPatch(typeof(SurvivalModeHud), "PerkChoiceSubmit")]

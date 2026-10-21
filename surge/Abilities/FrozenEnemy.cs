@@ -9,10 +9,11 @@ using UnityEngine;
 namespace SpiderSurge
 {
     // An enemy held by Freeze Time: brains off, bodies and the shaman's cloud locked, fuses held, tinted ice blue until it thaws.
-    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact
+    // It doesn't move, shoot or explode, but its blades, saws, struts and poison cloud still hurt on contact. The Black Hole's pull holds one the same way without locking or tinting it
     public class FrozenEnemy : MonoBehaviour
     {
         private static readonly HashSet<int> FrozenEnemyIds = new HashSet<int>();
+        private static readonly HashSet<int> PulledEnemyIds = new HashSet<int>();
         private static readonly HashSet<int> FrozenBrainIds = new HashSet<int>();
         private static readonly AccessTools.FieldRef<ExplodingRoller, bool> RollerTriggered =
             AccessTools.FieldRefAccess<ExplodingRoller, bool>("_triggered");
@@ -27,10 +28,12 @@ namespace SpiderSurge
 
         private EnemyHealthSystem _enemy;
         private int _enemyId;
+        private int _frozenBy = -1;
         private float _thawTime;
         private float? _fuseLeft;
         private bool _held;
         private bool _visualOnly;
+        private bool _pulled;
         private readonly List<EnemyBrain> _brains = new List<EnemyBrain>();
         private readonly List<EnemyBrain> _disabledBrains = new List<EnemyBrain>();
         private readonly List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>> _bodies = new List<KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>>();
@@ -50,15 +53,17 @@ namespace SpiderSurge
 
         public static bool IsFrozenBrain(EnemyBrain brain) => brain != null && FrozenBrainIds.Contains(brain.GetInstanceID());
 
+        public static bool IsHeld(EnemyHealthSystem enemy) => IsFrozen(enemy) || (enemy != null && PulledEnemyIds.Contains(enemy.GetInstanceID()));
+
         public static bool CanFreeze(EnemyHealthSystem enemy)
         {
-            return enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel && !BanishedTarget.IsBanished(enemy.gameObject);
+            return enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel && !SwallowedTarget.IsSwallowed(enemy.gameObject);
         }
 
         public static float TimeLeftOn(EnemyHealthSystem enemy)
         {
             FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
-            return frozen != null ? frozen.TimeLeft : 0f;
+            return frozen != null && !frozen._pulled ? frozen.TimeLeft : 0f;
         }
 
         public static float ThawTimeOf(EnemyHealthSystem enemy)
@@ -67,10 +72,16 @@ namespace SpiderSurge
             return frozen != null ? frozen._thawTime : 0f;
         }
 
+        public static int FreezerOf(EnemyHealthSystem enemy)
+        {
+            FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
+            return frozen != null ? frozen._frozenBy : -1;
+        }
+
         internal static void SetBaseColor(SpriteRenderer sprite, Color color)
         {
             FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
-            if (frozen != null && frozen._held)
+            if (frozen != null && frozen._held && !frozen._pulled)
             {
                 Color tinted = Color.Lerp(color, Consts.Values.Freeze.TintColor, Consts.Values.Freeze.TintStrength);
                 tinted.a = color.a;
@@ -83,10 +94,11 @@ namespace SpiderSurge
             }
         }
 
-        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
-        public static bool Freeze(EnemyHealthSystem enemy, float duration)
+        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack; the last player to freeze it gets its kill charge
+        public static bool Freeze(EnemyHealthSystem enemy, float duration, int playerId)
         {
             if (!Apply(enemy, duration, visualOnly: false)) return false;
+            enemy.GetComponent<FrozenEnemy>()._frozenBy = playerId;
             SurgeNet.SendEnemyFx(EnemyFx.Frozen, enemy.GetComponent<NetworkObject>(), duration);
             return true;
         }
@@ -97,6 +109,24 @@ namespace SpiderSurge
             Apply(enemy, duration, visualOnly: true);
         }
 
+        // The Black Hole's pull stops the enemy's brain, fuse and charge for its pull time but leaves its bodies free for the pull; one already frozen stays locked
+        public static void HoldForPull(EnemyHealthSystem enemy, float duration)
+        {
+            if (!CanFreeze(enemy) || duration <= 0f || enemy.GetComponent<FrozenEnemy>() != null) return;
+
+            FrozenEnemy held = enemy.gameObject.AddComponent<FrozenEnemy>();
+            held._enemy = enemy;
+            held._pulled = true;
+            held._thawTime = Time.time + duration;
+            held.Hold();
+        }
+
+        public static void EndPull(EnemyHealthSystem enemy)
+        {
+            FrozenEnemy held = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
+            if (held != null && held._pulled) held._thawTime = Time.time;
+        }
+
         private static bool Apply(EnemyHealthSystem enemy, float duration, bool visualOnly)
         {
             if (!CanFreeze(enemy) || duration <= 0f) return false;
@@ -105,6 +135,7 @@ namespace SpiderSurge
             if (frozen != null)
             {
                 frozen._thawTime = Mathf.Max(frozen._thawTime, Time.time + duration);
+                if (frozen._pulled && !visualOnly) frozen.Harden();
             }
             else
             {
@@ -121,16 +152,24 @@ namespace SpiderSurge
         private void Hold()
         {
             _enemyId = _enemy.GetInstanceID();
-            FrozenEnemyIds.Add(_enemyId);
+            (_pulled ? PulledEnemyIds : FrozenEnemyIds).Add(_enemyId);
             _held = true;
-            SurgeVfx.Safely(AttachFrost);
 
-            if (_visualOnly)
-            {
-                TintAll();
-                return;
-            }
+            if (!_visualOnly) HoldBrains();
+            if (!_pulled) Lock();
+        }
 
+        // A freeze on an enemy the Black Hole is pulling locks it where it is
+        private void Harden()
+        {
+            PulledEnemyIds.Remove(_enemyId);
+            FrozenEnemyIds.Add(_enemyId);
+            _pulled = false;
+            Lock();
+        }
+
+        private void HoldBrains()
+        {
             foreach (EnemyBrain brain in Brains(_enemy))
             {
                 // A charge cut short keeps its particles and sound running, so they stop the way the game stops them
@@ -149,15 +188,21 @@ namespace SpiderSurge
                 brain.enabled = false;
                 _disabledBrains.Add(brain);
             }
+        }
 
-            foreach (Rigidbody2D body in _enemy.GetComponentsInChildren<Rigidbody2D>(true))
+        private void Lock()
+        {
+            SurgeVfx.Safely(AttachFrost);
+            if (!_visualOnly)
             {
-                _bodies.Add(new KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>(body, body.constraints));
-                body.velocity = Vector2.zero;
-                body.angularVelocity = 0f;
-                body.constraints = RigidbodyConstraints2D.FreezeAll;
+                foreach (Rigidbody2D body in _enemy.GetComponentsInChildren<Rigidbody2D>(true))
+                {
+                    _bodies.Add(new KeyValuePair<Rigidbody2D, RigidbodyConstraints2D>(body, body.constraints));
+                    body.velocity = Vector2.zero;
+                    body.angularVelocity = 0f;
+                    body.constraints = RigidbodyConstraints2D.FreezeAll;
+                }
             }
-
             TintAll();
         }
 
@@ -220,6 +265,12 @@ namespace SpiderSurge
             Destroy(this);
         }
 
+        // EnemyHealthSystem.Explode sends this to every component on the host whenever an enemy dies
+        private void OnCharacterDied()
+        {
+            if (_held && !_visualOnly && _frozenBy >= 0) SurgeMeter.Add(MeterSource.FreezeTime, _frozenBy, Consts.Values.Meter.FreezeChargePerKill);
+        }
+
         // The game recolors parts while they are frozen (a damaged roller strut turns orange); the new color becomes the one tinted and restored
         private void LateUpdate()
         {
@@ -250,14 +301,14 @@ namespace SpiderSurge
                 return;
             }
 
-            // Banish took it while frozen and holds it itself until it is gone
-            if (BanishedTarget.IsBanished(gameObject))
+            // The Black Hole took it while frozen and holds it itself until it is gone
+            if (SwallowedTarget.IsSwallowed(gameObject))
             {
                 ReleaseFrost(false);
                 return;
             }
             ReleaseFrost(alive);
-            if (alive) PlayThawSound();
+            if (alive && !_pulled) PlayThawSound();
 
             foreach (var pair in _bodies)
             {
@@ -296,6 +347,7 @@ namespace SpiderSurge
         private void Release()
         {
             FrozenEnemyIds.Remove(_enemyId);
+            PulledEnemyIds.Remove(_enemyId);
             foreach (EnemyBrain brain in _brains)
             {
                 if (brain != null) FrozenBrainIds.Remove(brain.GetInstanceID());
@@ -342,12 +394,12 @@ namespace SpiderSurge
 
         public static bool IsFrozen(DeathCloud cloud) => cloud != null && FrozenIds.Contains(cloud.GetInstanceID());
 
-        // A cloud is frozen whole once its smoke reaches into the ring, so no part of it is left behind
+        // A cloud is frozen whole once its kill zone reaches into the ring, so no part that can hurt a player is left behind
         public static void FreezeAround(Vector2 origin, float range, float until)
         {
             foreach (DeathCloud cloud in Object.FindObjectsOfType<DeathCloud>())
             {
-                if (Vector2.Distance(origin, cloud.transform.position) <= range + Consts.Values.Freeze.CloudReach) Freeze(cloud, until);
+                if (Vector2.Distance(origin, cloud.transform.position) <= range + cloud.killRadius) Freeze(cloud, until);
             }
         }
 
@@ -398,7 +450,7 @@ namespace SpiderSurge
                 _glowShown.a = _glowBase.a;
                 _cloud.glow.color = _glowShown;
             }
-            _frost = FrostAura.Attach(_cloud.transform, Consts.Values.Freeze.CloudReach);
+            _frost = FrostAura.Attach(_cloud.transform, _cloud.killRadius);
         }
 
         // A cloud whose shaman died fades out the way the game fades it, so it thaws first

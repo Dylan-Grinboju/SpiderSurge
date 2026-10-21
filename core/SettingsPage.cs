@@ -434,6 +434,10 @@ namespace SpiderSurge.Common
                 {
                     Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
                 }
+                if (part == Parts.Stats && !part.Enabled)
+                {
+                    Warning("Surge uses Stats to tell who made each kill. Without it, kills stop charging the Surge meter for Bottomless Clip, Null Field and Care Package. To only hide the stats, keep Stats on and turn off Show the stats windows and Titles in the Stats settings.");
+                }
             }
         }
 

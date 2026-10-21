@@ -23,7 +23,7 @@ namespace SpiderSurge
         PulseRing = 0,
         Immune = 1,
         Freeze = 2,
-        Banish = 3,
+        BlackHole = 3,
     }
 
     public enum EnemyFx : byte
@@ -33,6 +33,7 @@ namespace SpiderSurge
         LaserHold = 2,
         CloudFrozen = 3,
         ShieldBroken = 4,
+        Swallowed = 5,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -383,8 +384,8 @@ namespace SpiderSurge
                 case SurgeFx.Freeze:
                     FreezeAbility.DrawRemote(playerId, position, radius, flag);
                     break;
-                case SurgeFx.Banish:
-                    StorageAbility.DrawRemoteBanish(playerId, radius);
+                case SurgeFx.BlackHole:
+                    StorageAbility.DrawRemoteBlackHole(playerId, radius);
                     break;
             }
         }
@@ -415,6 +416,9 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.LaserHold:
                     target.GetComponentInChildren<LaserRing>(true)?.Hold();
+                    break;
+                case EnemyFx.Swallowed:
+                    SwallowedTarget.ShowSwallowed(target.GetComponent<EnemyHealthSystem>(), value);
                     break;
                 case EnemyFx.ShieldBroken:
                     GameObject shield = target.GetComponent<EnemyHealthSystem>()?.shield;

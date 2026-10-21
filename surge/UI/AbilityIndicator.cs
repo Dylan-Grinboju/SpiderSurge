@@ -19,7 +19,6 @@ namespace SpiderSurge
         private SpriteRenderer weapon;
         private Material material;
         private float drawnProgress = -1f;
-        private readonly AbilityHud hud = new AbilityHud();
         private readonly Vector3[] points = new Vector3[Segments + 1];
 
         public void Initialize(BaseAbility tracked, Transform follow)
@@ -36,6 +35,7 @@ namespace SpiderSurge
             weapon.sortingOrder = 32767;
             Settings.Changed += Changed;
             ApplySettings();
+            AbilityHud.Track(tracked);
         }
 
         private LineRenderer MakeRing(string name, int order)
@@ -116,12 +116,6 @@ namespace SpiderSurge
                 weapon.transform.localScale = Vector3.one * (indicatorRadius * 2.2f / Mathf.Max(0.01f, size));
                 weapon.transform.localPosition = new Vector3(indicatorRadius * 2.6f, 0f, 0f);
             }
-        }
-
-        private void OnGUI()
-        {
-            if (ModConfig.IndicatorCompactHud && ability != null)
-                hud.Draw(ability, availableColor, activeColor, cooldownColor);
         }
 
         public void SetRadius(float value) { indicatorRadius = Mathf.Clamp(value, 0.5f, 10f); Resize(); }

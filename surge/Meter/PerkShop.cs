@@ -273,6 +273,8 @@ namespace SpiderSurge
                 }
                 SurgeNet.SendStateNow();
             }
+            string title = string.IsNullOrEmpty(perk.data.title) ? perk.data.key : perk.data.title;
+            StatsMod.GameSessionManager.Instance?.RecordPerk(title + " (shop)");
             return perk.data.key;
         }
 

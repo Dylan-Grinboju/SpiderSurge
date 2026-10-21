@@ -52,7 +52,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **Give everyone an ability** under **Surge abilities in versus** on the versus setup page; it is off by default. It works in normal free-for-all versus too, not only with teams.
 
 - Everyone gets the same ability. Pick one, or **Random** for a new one every round, never the same one twice in a row. The ability is announced at the start of the match, and every round in Random mode.
-- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge; **Mods** > **SpiderSurge** > **Controls** changes them. To move your own ability to another button, hold **Start** and double-tap that button.
+- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge; **Mods** > **SpiderSurge** > **Controls** changes them. To move your own ability to another button, hold **Select** and double-tap that button.
 - Each round starts fresh, so stored weapons don't carry over.
 - Changes on the versus setup page apply from the next round.
 
@@ -61,7 +61,7 @@ Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **
 | Null Field | Become immune to all damage for a short time | **Neural Backup**: After a cast time, revive a dead teammate at the map spawn point nearest you. With nobody to revive, it summons friendly wasps, which only chase AI enemies |
 | Bottomless Clip | Shooting uses no ammo for a short time | **Care Package**: Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2 |
 | Kinetic Pulse | Release a pulse that knocks back everyone nearby | **Thermal Detonation**: The pulse kills anyone close to you. Teammates follow the friendly fire rule |
-| Pocket Dimension | Store your weapon and swap it back later | **Banish**: Pulls the nearest enemy or spider close to you into the pocket dimension, forever. Teammates only with friendly fire set to damage. A miss has a shorter cooldown |
+| Pocket Dimension | Store your weapon and swap it back later | **Black Hole**: For 3 seconds a pull around you drags spiders toward you, and any spider that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is set to ignore, and swallowed only with it set to damage |
 
 The perks work like in Surge, and everyone gets the same ones:
 
@@ -104,7 +104,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 ### Visuals:
 `teams.recolorSpiders`: During a match, each spider's main color becomes a shade of its team's color. Teammates get slightly different shades, so you can still tell them apart. Second colors and hats are kept, and the original colors come back when the match ends. Your saved colors are never changed. Default: `true`.
 
-`teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. For now it only shows on the host's PC. Default: `false`.
+`teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. Each player turns it on for their own screen. Default: `false`.
 
 You can use both, one, or neither. With both off, teams only show in the announcements and on the versus setup page.
 

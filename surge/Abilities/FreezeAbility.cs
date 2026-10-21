@@ -89,10 +89,10 @@ namespace SpiderSurge
             float duration = AbilityDuration;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
-                if (FrozenEnemy.Freeze(enemy, duration))
+                if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
-                    SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, CastId, Consts.Values.Meter.FreezeChargePerEnemy, Consts.Values.Meter.FreezeCapPerCast);
+                    SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, Consts.Values.Meter.FreezeChargePerEnemy);
                 }
             }
             FrozenShot.FreezeAround(origin, range, duration);
@@ -193,7 +193,7 @@ namespace SpiderSurge
             {
                 if (IsWasp(enemy, wasp, shieldedWasp)) continue;
                 RewindEnemy(enemy, wasp, shieldedWasp);
-                SurgeMeter.Add(MeterSource.Rewind, PlayerId, CastId, Consts.Values.Meter.RewindChargePerEnemy, Consts.Values.Meter.RewindCapPerCast);
+                SurgeMeter.Add(MeterSource.Rewind, PlayerId, Consts.Values.Meter.RewindChargePerEnemy);
             }
         }
 
@@ -209,6 +209,7 @@ namespace SpiderSurge
             GameObject prefab = shielded && shieldedWasp != null ? shieldedWasp : wasp;
             Vector3 position = enemy.rb2D != null ? (Vector3)enemy.rb2D.position : enemy.transform.position;
             float frozenFor = FrozenEnemy.TimeLeftOn(enemy);
+            int frozenBy = FrozenEnemy.FreezerOf(enemy);
             FreezeVfx.RewindPop(position);
 
             GameObject spawned = Instantiate(prefab, position, Quaternion.identity);
@@ -224,7 +225,7 @@ namespace SpiderSurge
             if (health != null)
             {
                 if (shielded && prefab == wasp && health.shield != null) health.shield.SetActive(true);
-                if (frozenFor > 0f) FrozenEnemy.Freeze(health, frozenFor);
+                if (frozenFor > 0f) FrozenEnemy.Freeze(health, frozenFor, frozenBy);
             }
 
             Destroy(enemy.gameObject);

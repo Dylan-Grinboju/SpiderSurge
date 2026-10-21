@@ -27,6 +27,7 @@ namespace SpiderSurge
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             if (PerksManager.Instance == null) return;
 
+            PerkChoiceWidget.HideStaleCards(__instance);
             var cards = PerkChoiceWidget.Cards(__instance);
             var first = cards.Count > 0 ? cards[0] : null;
             if (first != _builtFor)
@@ -191,6 +192,16 @@ namespace SpiderSurge
     {
         private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly Regex s_trailingDigits = new Regex(@"\d+$", RegexOptions.Compiled);
+
+        // The game rebuilds the text every frame while the cards show, so once it reads ∞ the rebuild is skipped
+        [HarmonyPrefix]
+        public static bool Prefix(PerkChoiseTimer __instance)
+        {
+            if (!PerkConfirm.Active) return true;
+            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+            string text = timerText != null ? timerText.text : null;
+            return string.IsNullOrEmpty(text) || !text.EndsWith("∞", System.StringComparison.Ordinal);
+        }
 
         [HarmonyPostfix]
         public static void Postfix(PerkChoiseTimer __instance)

@@ -100,25 +100,55 @@ namespace SpiderSurge.Vfx
             });
         }
 
-        // Banish: a dark singularity opens on the caster while the ring and motes fall into it, then it snaps shut
-        public static void Banish(Transform body, float range)
+        // Black Hole: a dark singularity grows on the caster inside a ring that moves with them, while motes fall in from its edge
+        public static BlackHoleVfx BlackHoleOpen(Transform body, float range, float time)
+        {
+            return SurgeVfx.Safely(() =>
+            {
+                Color purple = Consts.Values.Storage.RingColor;
+                Vector3 position = body.position;
+                float fall = 0.8f;
+                return new BlackHoleVfx
+                {
+                    Ring = Shockwave.Hold(position, range, purple, 2f, body),
+                    Inner = Shockwave.Hold(position, Consts.Values.Storage.BlackHoleCoreRadius, Color.white, 1f, body),
+                    Glow = SurgeVfx.Disc(position, purple, 0f, 13f, time * 2f, SurgeVfx.Order + 8, pulse: true, follow: body, hard: true),
+                    Core = SurgeVfx.Disc(position, Color.black, 0f, 9f, time * 2f, SurgeVfx.Order + 9, pulse: true, follow: body, hard: true),
+                    Motes = SurgeVfx.Stream(body, Vector3.zero, purple, Color.white, 40f, -range / fall, -range / fall, 0.8f, 1.6f, fall, range, trails: true, radiusThickness: 0f),
+                };
+            });
+        }
+
+        // The ring snaps shut on the singularity, which flashes out
+        public static void BlackHoleClose(BlackHoleVfx open, Vector3 position, float range, Transform body)
         {
             SurgeVfx.Safely(() =>
             {
+                if (open != null)
+                {
+                    if (open.Ring != null) open.Ring.Close();
+                    if (open.Inner != null) open.Inner.Close();
+                    if (open.Glow != null) Object.Destroy(open.Glow.gameObject);
+                    if (open.Core != null) Object.Destroy(open.Core.gameObject);
+                    SurgeVfx.Fade(open.Motes);
+                }
                 Color purple = Consts.Values.Storage.RingColor;
-                float time = Consts.Values.Storage.BanishPullTime;
-                float hold = time + 0.15f;
-                Vector3 position = body.position;
-                SurgeVfx.Disc(position, purple, 0f, 13f, hold, SurgeVfx.Order + 8, pulse: true, follow: body, hard: true);
-                SurgeVfx.Disc(position, Color.black, 0f, 9f, hold, SurgeVfx.Order + 9, pulse: true, follow: body, hard: true);
-                SurgeVfx.Burst(position, purple, Color.white, 48, -range / time, -range / time, 0.8f, 1.6f, time, time, range, trails: true, radiusThickness: 0f);
-                Shockwave.Collapse(position, range, purple, time, 2f, body, at =>
+                Shockwave.Collapse(position, range, purple, Consts.Values.Storage.BlackHoleCloseTime, 2f, body, at =>
                 {
                     SurgeVfx.Flash(at, purple, 3f, range * 0.4f, 0.35f);
                     SurgeVfx.Burst(at, Color.white, purple, 30, 40f, 120f, 0.6f, 1.4f, 0.3f, 0.6f, 2f, trails: true);
                 });
             });
         }
+    }
+
+    public class BlackHoleVfx
+    {
+        public Shockwave Ring;
+        public Shockwave Inner;
+        public DiscFade Glow;
+        public DiscFade Core;
+        public ParticleSystem Motes;
     }
 
     public static class ClipVfx

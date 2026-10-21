@@ -5,7 +5,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderTeams
 {
-    // Team-colored chevron over each spider, drawn locally on the host.
+    // Team-colored chevron over each spider, drawn on every machine whose player turned it on
     public class TeamMarkers : MonoBehaviour
     {
         public static TeamMarkers Instance { get; private set; }

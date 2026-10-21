@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Using the abilities fills the team's Surge meter, and a full meter is a chaos point to spend in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. The perk screen shows the meter beside the cards, and a line under them says how the focused ability or ultimate charges it. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Using the abilities fills the team's Surge meter, and a full meter is a chaos point to spend in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. The perk screen shows the meter beside the cards, and a line under them says how the focused ability or ultimate charges it. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 
@@ -64,7 +64,7 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Small stats window | **F1** | D-pad (cycles the windows) |
 | Big stats window | **F2** | |
 | Titles | **F3** (also skips the reveal) | |
-| Surge ability | **Q** | **L1**, or your own button: hold **Start** and double-tap it |
+| Surge ability | **Q** | **L1**, or your own button: hold **Select** and double-tap it |
 | Surge ultimate | **C** | **L3 + R3** together |
 | Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
 | Switch team in the lobby | **T** | **Y / Triangle** |
@@ -107,7 +107,7 @@ Stats columns are grouped by totals, enemy kills, weapon kills, shooting accurac
 
 All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
 
-`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
+`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge's meter needs Stats to credit kills, so to only hide the stats, turn off `stats.display.showStatsWindow` and `stats.titles.enabled` instead. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
