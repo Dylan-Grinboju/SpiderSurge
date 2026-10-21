@@ -106,7 +106,7 @@ The ability, ultimate and Surge guide keys are in the `controls` section, which 
 
 `surge.meter.screensPerPoint`: How many perk screens of that charge one chaos point takes. From 0.25 to 5. Default: `1.5`. See [Surge meter](#surge-meter) for the formula.
 
-With abilities enabled, a dedicated choice screen offers all five shared abilities before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
+With abilities enabled, a dedicated choice screen offers as many random shared abilities as a normal perk choice has cards (3, or 2 from pain level 3, plus Picky) before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
 
 `surge.indicator.compactHud`: Replaces the world rings with a compact panel at the bottom right, with a named row for each player. Active effects have a draining bar and remaining seconds; cooldowns have a filling bar and remaining seconds. Both use game time. Pocket Dimension also shows its stored weapon. Change this immediately under Surge > Ability indicator > Use compact ability HUD. The existing colors and Only show when ready setting apply to both displays; size and position settings apply to the world rings. Default: `false`.
 

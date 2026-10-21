@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using SpiderSurge.Common;
 
@@ -6,6 +8,8 @@ namespace SpiderSurge
 {
     internal static class AbilitySelection
     {
+        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
+
         private static bool pending;
         public static bool IsChoosing { get; private set; }
 
@@ -47,13 +51,10 @@ namespace SpiderSurge
             if (manager == null || hud == null || PerksManager.Instance == null) return false;
 
             var abilities = new List<Modifier>();
-            var maps = new List<GameLevel>();
             foreach (string key in PerksManager.Instance.GetAbilityPerkNames())
             {
                 int id = manager.GetModId(key);
-                if (id < 0) continue;
-                abilities.Add(manager.GetModById(id));
-                maps.Add(SurvivalMode.instance._defaultConfig.maps[0]);
+                if (id >= 0) abilities.Add(manager.GetModById(id));
             }
             if (abilities.Count == 0)
             {
@@ -62,6 +63,8 @@ namespace SpiderSurge
                 PerksManager.Instance.IsFirstNormalPerkSelection = false;
                 return true;
             }
+            abilities = abilities.OrderBy(_ => UnityEngine.Random.value).Take(ChoiceCount(SurvivalMode.instance)).ToList();
+            var maps = abilities.Select(_ => SurvivalMode.instance._defaultConfig.maps[0]).ToList();
 
             IsChoosing = true;
             TimeScaleController.instance.Pause();
@@ -69,6 +72,14 @@ namespace SpiderSurge
             hud.ShowPerkChoices(abilities, maps);
             hud.perkChoiceView.InstantShow();
             return false;
+        }
+
+        // As many cards as a normal perk choice: the pain level's base count (2 from pain level 3) plus Picky
+        private static int ChoiceCount(SurvivalMode mode)
+        {
+            SurvivalConfig config = ActiveConfig(mode);
+            if (config == null) config = mode._defaultConfig;
+            return Math.Max(1, config.basePerkChoiceCount + ModifierManager.instance.GetModLevel("picky"));
         }
 
         public static void Choose(Modifier modifier)

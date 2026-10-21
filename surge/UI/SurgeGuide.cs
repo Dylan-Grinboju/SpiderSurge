@@ -211,7 +211,7 @@ namespace SpiderSurge
                 return;
             }
             page.Title("Progression and records");
-            page.Line("Choose the group's shared ability from all five options before wave 1. The arena waits until you choose, and the first earned perk choice offers normal upgrades. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
+            page.Line("Choose the group's shared ability before wave 1, from as many random abilities as a normal perk choice offers. The arena waits until you choose, and the first earned perk choice offers normal upgrades. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
             page.Line("Play without abilities removes ability, ultimate and ability-upgrade choices for the next Surge run. Luck remains available. Unlimited time to choose perks lets everyone take their time.");
             page.Line("Surge highscores are separate from normal Survival. Achievements and the title collection live under Mods > SpiderSurge > Achievements. Titles unlock when displayed after a Survival run with at least two players. NEW marks a first unlock.");
             page.Line("Match history has separate Survival and Versus pages under Mods > SpiderSurge. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. New matches are recorded while Stats and Save match history are enabled.");
