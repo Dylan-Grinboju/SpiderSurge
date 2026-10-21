@@ -14,6 +14,7 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
         private static readonly MethodInfo ShowCards = AccessTools.Method(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc");
         private static readonly MethodInfo SubmitCard = AccessTools.Method(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc");
+        private static readonly MethodInfo FailWave = AccessTools.Method(typeof(SurvivalMode), "FailWave");
 
         private static bool pending;
         private static float closeUntil = -1f;
@@ -91,6 +92,16 @@ namespace SpiderSurge
             return false;
         }
 
+        // The wave loop only handles deaths during a running wave, so a wipe while the cards close needs the same failure path.
+        public static void CheckClosingWipe(SurvivalMode mode)
+        {
+            if (closeUntil <= 0f || !Net.IsAuthority || !mode.GameModeActive()) return;
+            var lobby = LobbyController.instance;
+            if (lobby == null || lobby.spawnedPlayers.Count == 0 || lobby.CountAlivePlayers() > 0) return;
+            closeUntil = -1f;
+            FailWave.Invoke(mode, null);
+        }
+
         // As many cards as a normal perk choice: the pain level's base count (2 from pain level 3) plus Picky
         private static int ChoiceCount(SurvivalMode mode)
         {
@@ -141,6 +152,12 @@ namespace SpiderSurge
     internal static class StartingAbilityWavePatch
     {
         static bool Prefix() => AbilitySelection.BeforeWave();
+    }
+
+    [HarmonyPatch(typeof(SurvivalMode), "LateUpdate")]
+    internal static class StartingAbilityClosingWipePatch
+    {
+        static void Prefix(SurvivalMode __instance) => AbilitySelection.CheckClosingWipe(__instance);
     }
 
     [HarmonyPatch(typeof(SurvivalModeHud), "PerkChoiceSubmit")]
