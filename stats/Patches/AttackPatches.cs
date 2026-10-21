@@ -35,35 +35,41 @@ namespace StatsMod
         {
             public string Weapon;
             public Func<object, PlayerController> Owner;
+            public Func<object, Weapon> WeaponOf;
         }
 
         private static readonly Dictionary<MethodBase, Attack> attacks = new Dictionary<MethodBase, Attack>();
 
         static AttackScopePatch()
         {
-            Add<DamageOnParticle>("OnParticleCollision", "Shotgun", particles => HitLogic.WeaponPlayer(particles.ignoreWeapon));
-            Add<RailShot>("ProcessHit", "RailShot", RailShotOwner);
-            Add<DeathCube>("Fire", "DeathCube", HitLogic.WeaponPlayer);
-            Add<DeathRay>("Fire", "DeathRay", HitLogic.WeaponPlayer);
-            Add<LaserCannon>("DamageHit", "Laser Cannon", HitLogic.WeaponPlayer);
-            Add<LaserCube>("Beam", "Laser Cube", HitLogic.WeaponPlayer);
-            Add<ForceField>("Damage", "Particle Blade", field => HitLogic.WeaponPlayer(field.GetComponentInParent<Weapon>()));
-            Add<SawDisc>("TryDamage", "SawDisc", disc => HitLogic.GetDiscOwner(disc.gameObject));
+            Add<DamageOnParticle>("OnParticleCollision", "Shotgun", particles => HitLogic.WeaponPlayer(particles.ignoreWeapon), particles => particles.ignoreWeapon);
+            Add<RailShot>("ProcessHit", "RailShot", RailShotOwner, RailShotWeapon);
+            Add<DeathCube>("Fire", "DeathCube", HitLogic.WeaponPlayer, weapon => weapon);
+            Add<DeathRay>("Fire", "DeathRay", HitLogic.WeaponPlayer, weapon => weapon);
+            Add<LaserCannon>("DamageHit", "Laser Cannon", HitLogic.WeaponPlayer, weapon => weapon);
+            Add<LaserCube>("Beam", "Laser Cube", HitLogic.WeaponPlayer, weapon => weapon);
+            Add<ForceField>("Damage", "Particle Blade", field => HitLogic.WeaponPlayer(field.GetComponentInParent<Weapon>()), field => field.GetComponentInParent<Weapon>());
+            Add<SawDisc>("TryDamage", "SawDisc", disc => HitLogic.GetDiscOwner(disc.gameObject), disc => HitLogic.GetDiscWeapon(disc.gameObject));
             Add<EnergyBall>("OnCollisionEnter2D", "EnergyBall", EnergyBallOwner);
-            Add<KhepriStaff>("Zap", "KhepriStaff", HitLogic.WeaponPlayer);
-            Add<Explosion>("KnockBack", "Explosions", ExplosionOwner);
+            Add<KhepriStaff>("Zap", "KhepriStaff", HitLogic.WeaponPlayer, weapon => weapon);
+            Add<Explosion>("KnockBack", "Explosions", ExplosionOwner, HitLogic.GetExplosionWeapon);
             Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerController>());
-            Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer);
+            Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer, weapon => weapon);
             Add<WhispBrain>("ProcessCollision", null, whisp => null);
             Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", HitLogic.PulseWeapon, SpiderSurge.PulseAbility.CasterOf);
         }
 
-        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner)
+        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null)
         {
             MethodInfo target = PatchTargets.Find(typeof(T), method);
             if (target != null)
             {
-                attacks[target] = new Attack { Weapon = weapon, Owner = instance => owner((T)instance) };
+                attacks[target] = new Attack
+                {
+                    Weapon = weapon,
+                    Owner = instance => owner((T)instance),
+                    WeaponOf = weaponOf != null ? instance => weaponOf((T)instance) : (Func<object, Weapon>)null,
+                };
             }
         }
 
@@ -75,7 +81,7 @@ namespace StatsMod
             try
             {
                 Attack attack = attacks[__originalMethod];
-                __state = HitLogic.BeginAttack(__instance, attack.Owner, attack.Weapon);
+                __state = HitLogic.BeginAttack(__instance, attack.Owner, attack.WeaponOf, attack.Weapon);
             }
             catch (Exception ex)
             {
@@ -96,6 +102,16 @@ namespace StatsMod
 
                 Weapon weapon = ignored.GetComponentInParent<Weapon>();
                 if (weapon != null) return HitLogic.WeaponPlayer(weapon);
+            }
+            return null;
+        }
+
+        private static Weapon RailShotWeapon(RailShot shot)
+        {
+            foreach (GameObject ignored in shot.ignore)
+            {
+                Weapon weapon = ignored != null ? ignored.GetComponentInParent<Weapon>() : null;
+                if (weapon != null) return weapon;
             }
             return null;
         }

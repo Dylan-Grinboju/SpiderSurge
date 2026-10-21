@@ -21,11 +21,12 @@ namespace SpiderSurge
             if (__runOriginal) TryRecordHit(__instance);
         }
 
+        // Lava is the only thing that disintegrates a spider inside a Null Field (the Black Hole spares it)
         [HarmonyPatch("Disintegrate")]
         [HarmonyPrefix]
         public static void Disintegrate_Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
-            if (__runOriginal) TryRecordHit(__instance);
+            if (__runOriginal) TryRecordHit(__instance, lava: true);
         }
 
         [HarmonyPatch("ExplodeInDirection")]
@@ -56,12 +57,12 @@ namespace SpiderSurge
             storageAbility?.OnCharacterDied();
         }
 
-        private static void TryRecordHit(SpiderHealthSystem healthSystem)
+        private static void TryRecordHit(SpiderHealthSystem healthSystem, bool lava = false)
         {
             ImmuneAbility ability = GetAbilitySafe(healthSystem);
             if (ability != null)
             {
-                ability.RegisterHit();
+                ability.RegisterHit(lava);
             }
         }
 

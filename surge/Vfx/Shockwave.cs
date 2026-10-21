@@ -22,6 +22,7 @@ namespace SpiderSurge.Vfx
         private float duration;
         private float elapsed;
         private bool inward;
+        private bool holding;
         private Transform follow;
         private System.Action<Vector3> onComplete;
 
@@ -35,7 +36,7 @@ namespace SpiderSurge.Vfx
             return wave;
         }
 
-        // Starts at the radius and closes on the position, or on a followed transform, speeding up like Banish's pull; onComplete gets where it closed
+        // Starts at the radius and closes on the position, or on a followed transform, speeding up like the Black Hole's pull; onComplete gets where it closed
         public static Shockwave Collapse(Vector3 position, float radius, Color color, float duration, float width = 2f, Transform follow = null, System.Action<Vector3> onComplete = null)
         {
             Shockwave wave = Create(position, color, width);
@@ -47,6 +48,23 @@ namespace SpiderSurge.Vfx
             wave.onComplete = onComplete;
             wave.Draw(0.5f, 1f);
             return wave;
+        }
+
+        // Stays at the radius around a followed transform, breathing, until Close
+        public static Shockwave Hold(Vector3 position, float radius, Color color, float width, Transform follow)
+        {
+            Shockwave wave = Create(position, color, width);
+            wave.maxRadius = radius;
+            wave.radius = radius;
+            wave.holding = true;
+            wave.follow = follow;
+            wave.Draw(0f, 1f);
+            return wave;
+        }
+
+        public void Close()
+        {
+            Destroy(gameObject);
         }
 
         private static Shockwave Create(Vector3 position, Color color, float width)
@@ -83,7 +101,14 @@ namespace SpiderSurge.Vfx
 
             float alpha;
             float widthScale;
-            if (inward)
+            if (holding)
+            {
+                elapsed += Time.deltaTime;
+                float breath = ModConfig.ReducedEffects ? 1f : 0.75f + 0.25f * Mathf.Sin(elapsed * 8f);
+                alpha = Mathf.Min(1f, elapsed / 0.15f) * breath;
+                widthScale = 1f;
+            }
+            else if (inward)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;

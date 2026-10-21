@@ -25,9 +25,6 @@ namespace SpiderSurge
         protected bool IsAuthority => Net.IsAuthority;
         public int PlayerId => playerController != null ? playerController.playerID.Value : -1;
 
-        // One id per cast or ultimate, unique across abilities, so the meter can cap what one cast earns
-        public int CastId { get; private set; }
-
         protected bool isActive = false;
         protected bool onCooldown = false;
         protected bool skipNextCooldown = false;
@@ -38,6 +35,8 @@ namespace SpiderSurge
         public float CooldownProgress => !onCooldown ? 1f : cooldownDuration <= 0f ? 0f : Mathf.Clamp01(1f - (cooldownEndTime - Time.time) / cooldownDuration);
         private float activeEndTime;
         private float activeDuration;
+        private float abilityActiveFrom = -1f;
+        private float abilityActiveTo = -1f;
         public float CooldownRemaining => onCooldown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
         public float ActiveRemaining => isActive ? Mathf.Max(0f, activeEndTime - Time.time) : 0f;
         public float ActiveProgress => activeDuration > 0f ? Mathf.Clamp01(ActiveRemaining / activeDuration) : 1f;
@@ -423,7 +422,8 @@ namespace SpiderSurge
             isActive = true;
             activeDuration = AbilityDuration;
             activeEndTime = Time.time + activeDuration;
-            CastId = SurgeMeter.NextCastId();
+            abilityActiveFrom = Time.time;
+            abilityActiveTo = float.MaxValue;
             OnActivate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
@@ -452,9 +452,16 @@ namespace SpiderSurge
                     isUltimateActive = false;
                     OnDeactivateUltimate();
                 }
+                else
+                {
+                    abilityActiveTo = Time.time;
+                }
                 OnDeactivate();
             }
         }
+
+        // The ability itself, not its ultimate, was running at that game time
+        public bool AbilityActiveAt(float time) => time >= abilityActiveFrom && time <= abilityActiveTo;
 
         public virtual void ActivateUltimate()
         {
@@ -490,7 +497,6 @@ namespace SpiderSurge
             isUltimateActive = true;
             activeDuration = UltimateDuration;
             activeEndTime = Time.time + activeDuration;
-            CastId = SurgeMeter.NextCastId();
             OnActivateUltimate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)

@@ -13,7 +13,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **New Abilities**:
     - **Kinetic Pulse**: Release a kinetic pulse that destroys projectiles and repels enemies.
     - **Bottomless Clip**: Grants a brief period of unlimited ammunition for equipped weapons.
-    - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics.
+    - **Pocket Dimension**: Store and recall weapons at will, enabling advanced inventory tactics. Its Ultimate, **Black Hole**, opens a field 150 units around the caster that moves with them for 3 seconds. The enemies inside it when it opens stop where they are and can't move, shoot or explode while it lasts, though their stingers, blades and struts still hurt other spiders on contact and a Hornet Shaman's poison cloud keeps chasing. The field pulls them toward the caster, Wasp Cocoons included, and an enemy with any part inside its small inner circle (20 units) is swallowed for good (no death, no drops). The inner circle is a buffer: an enemy is swallowed before any part of it can touch the caster. From open air, an enemy that starts within about three quarters of the range makes it in. One farther out, or held up by a wall, stops where the field leaves it and goes free. Enemies that come in later aren't pulled. The field also pulls every spider inside it the way a Gravity Grenade does, cutting its web, more weakly toward the edge. A spider whose body reaches the inner circle is swallowed too, teammates included, unless it is immune. A spider close in can't outrun the pull, one farther out can, and the caster can walk away to save them. **Ability Duration** level 2 and **Long Term Investment** each add 50 to the range, **Short Term Investment** takes 50 away, and the cooldown perks change its 20 second cooldown as for every ultimate.
     - **Null Field**: Become immune to all damage for a short time. Its Ultimate, **Neural Backup**, brings back a random dead player after a 10 second cast, or summons 3 friendly Wasps when nobody is dead. An Astral Heckhound ghost counts as dead and comes back where it floats, even when it is the caster's own ghost.
     - **Freeze Time**: Freeze every enemy, shot and effect inside the ice ring for 5 seconds. Frozen enemies don't move, shoot or explode, but their blades, saws and poison clouds still hurt on contact. A Hornet Shaman's poison cloud freezes with its shaman, and on its own once the ring reaches any of it: the whole cloud stops where it is. Frozen shots, from enemies or players, hang in the air and still hit whatever touches them, then fly on when they thaw. Spiders and the weapons they hold aren't frozen, so a Shotgun fired into the ring still hits. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
 - **Custom Enemies**:
@@ -23,7 +23,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Wasp Cocoon**: A stationary cocoon that starts hatching its first Wasp a second after it appears, then one every 10 seconds until it's destroyed, with at most 2 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps while its shield holds.
     - **Shielded versions**: The shielded Twin Whisp, Missile Whisp and Wasp Cocoon wear the game's pink shield bubble, which breaks on the first hit like every shielded enemy's.
     - **Laser enemies**: Red-shielded versions of most enemies (not the Exploding Roller or already shielded ones). Every 5 seconds a faint ring and the Death Ray's charge sound warn for 1 second, then a Laser Cannon ring around the enemy burns for 1 second. Breaking the red shield removes the ring for good.
-- **Surge Meter and Shop**: The team shares a meter, shown under the lives counter, that fills from what abilities do during a wave: enemies launched by Kinetic Pulse, shots Bottomless Clip paid for, hits Null Field blocked, a loaded weapon recalled from the Pocket Dimension, enemies frozen by Freeze Time, and more from the ultimates (Thermal Detonation kills, Care Package weapons picked up, Neural Backup revives and friendly Wasp kills, Banish and Rewind hits). Each cast earns at most a few charge, and a chaos point takes more charge with more players. A full meter is one chaos point; it never resets between waves. Chaos points are spent in a shop beside every perk choice after the starting ability pick, reachable with the controller by pressing right from the last card. Each perk screen puts two of the five items on sale: **1** reroll the cards, **2** an extra life (never above the max), **3** a random perk the team doesn't have yet, **5** +1 max lives without a life, and the **Blood Pact**, which costs no chaos points but a life and gives one chaos point. See [Surge meter](#surge-meter).
+- **Surge Meter and Shop**: The team shares a meter, shown under the lives counter, that fills from what abilities do during a wave: enemies launched by Kinetic Pulse, kills while Bottomless Clip or Null Field runs, hits Null Field blocked, Pocket Dimension giving back a stored weapon, enemies frozen by Freeze Time and frozen enemies that die, and more from the ultimates (enemies hit by Thermal Detonation, kills with Care Package weapons, Neural Backup revives and its Wasps' kills, Black Hole and Rewind). A chaos point takes more charge in a bigger team, as much more as its waves have more enemies. A full meter is one chaos point; it never resets between waves. Chaos points are spent in a shop beside every perk choice after the starting ability pick, reachable with the controller by pressing right from the last card. Each perk screen puts two of the five items on sale: **1** reroll the cards, **2** an extra life (never above the max), **3** a random perk the team doesn't have yet, **5** +1 max lives without a life, and the **Blood Pact**, which costs no chaos points but a life and gives one chaos point. See [Surge meter](#surge-meter).
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with its key at any time, backtick (**`**) by default. It also opens on the first launch.
@@ -46,9 +46,9 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 
 | Achievement | How to unlock it |
 |---|---|
-| Black Hole | Banish a Hornet Shaman |
+| Event Horizon | Feed a Hornet Shaman to your Black Hole |
 | Total Destruction | Kill 3 teammates with one Thermal Detonation |
-| I Will Keep You Safe | Banish a teammate |
+| I Will Keep You Safe | Feed a teammate to your Black Hole |
 | Unlimited Power | Use Bottomless Clip while holding a Particle Blade that appeared with Size Matters and Thick Blades both at level 2 |
 | Doomsday Scenario | Send an armed Biggest Grenade into the Pocket Dimension |
 | Begone | Knock an enemy into lava with Kinetic Pulse, so Stats credits you the kill. Needs Stats on |
@@ -62,22 +62,26 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 
 ## Surge meter
 
-The meter is the team's, and only the host counts it. It fills while a wave runs, from these, each capped per cast so one cast can't fill it alone:
+The meter is the team's, and only the host counts it. It fills while a wave runs, from these:
 
-| Ability | Charges the meter when | Charge | Cap per cast |
-|---|---|---|---|
-| Kinetic Pulse | an enemy is launched | 1 each | 3 |
-| Thermal Detonation | an enemy is in the death zone (2) or launched (1) | 2 / 1 | 6 |
-| Bottomless Clip | a shot that would have cost ammo is fired | 1 per 2 shots | 3 |
-| Care Package | a weapon it dropped is picked up by anyone | 1 each | 3 |
-| Null Field | a hit is blocked (at most twice a second) | 1 each | 3 |
-| Neural Backup | a player is revived, or a friendly Wasp it summoned kills an enemy | 2 each | 4 |
-| Pocket Dimension | a weapon that still has ammo is recalled | 2 | 2 |
-| Banish | an enemy is banished | 2 | 2 |
-| Freeze Time | an enemy is frozen | 1 each | 3 |
-| Rewind | an enemy is turned into a Wasp | 1 each | 4 |
+| Ability | Charges the meter when | Charge |
+|---|---|---|
+| Kinetic Pulse | an enemy is launched | 1 each |
+| Thermal Detonation | an enemy is in the death zone or launched | 2 each |
+| Bottomless Clip | the caster kills an enemy while it runs | 2 each |
+| Care Package | a weapon it dropped kills an enemy, whoever holds it | 1 each |
+| Null Field | a hit is blocked (lava counts as one hit per cast, and at most twice a second and 3 hits per cast) | 5 each |
+| Null Field | the caster kills an enemy while it runs | 2 each |
+| Neural Backup | a player is revived | 3 |
+| Neural Backup | a Wasp it summoned kills an enemy | 1 each |
+| Pocket Dimension | it gives back a stored weapon | 1 |
+| Black Hole | an enemy is swallowed | 3 each |
+| Freeze Time | an enemy is frozen, and again when a frozen enemy dies | 1 each, then 2 more |
+| Rewind | an enemy is turned into a Wasp | 1 each |
 
-A full meter is one chaos point. The charge a chaos point takes is `charge per wave for active play × players × waves between perk screens × perk screens per chaos point`: with the defaults (6 and 1.5) and perk screens every 3 waves, that is 27 charge for one player, 72 for two, 135 for three and 216 for four. From pain level 5 a level has 5 waves, so it is 45, 108, 189 and 288. It changes as soon as a player joins or leaves. A player who casts on cooldown and lands most casts buys a reroll about every other perk screen; a player who holds the ability as insurance sees the bar move but rarely shops. Both numbers can be changed in **Mods** > **SpiderSurge** > **Surge** (`surge.meter.activeChargePerWave`, `surge.meter.screensPerPoint`); the host's values apply online and a change applies at the next wave.
+The kills come from the [Stats](../stats/README.md) part's kill credit, which knows who made each kill and with which weapon, so Bottomless Clip, Null Field and Care Package only charge for kills while Stats is on. Turning Stats off in the parts page warns about this; to only hide the stats, keep it on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`. A kill counts toward an ability that was running when the killing hit landed: an enemy shot into lava during Bottomless Clip counts even when it dies after the ability ends. Freeze Time's kill charge doesn't need Stats: it counts every death of an enemy it holds, and goes to the last player who froze it. Neither do Neural Backup's Wasps, whose stings count for the player who summoned them.
+
+A full meter is one chaos point. For one player, a chaos point takes `charge per player per wave × waves per chaos point`: 3 charge with the defaults (1.5 and 2). A bigger team pays that times how many more enemies each wave sends at it than at one player, from the game's enemy budget (`startingBudget + wave × budgetPerWave + players × budgetPerPlayer`), so a point costs the same per enemy whatever the team size. With four players that is 7 charge at wave 1, 5 at wave 6 and 4 at wave 20; with two, 4 at first and 3 from wave 9. A player casting Kinetic Pulse, Freeze Time or Bottomless Clip on cooldown made 2 to 4 charge a wave in testing, so using the ability half as often still buys a point every 2 waves. It changes at every wave and as soon as a player joins or leaves. Both numbers can be changed in **Mods** > **SpiderSurge** > **Surge** (`surge.meter.chargePerWave`, `surge.meter.wavesPerPoint`); the host's values apply online and a change applies at the next wave.
 
 Every perk screen in a Surge run has a column beside the cards with the team's chaos points, the meter and the charge toward the next point. On the starting ability pick, which has no shop, the column explains the meter and chaos points. A line under the cards says how the focused ability or ultimate card charges the meter (the locked card's, while the shop or **Confirm** has the focus). The cards keep their normal size next to the column and shrink only when they wouldn't fit.
 
@@ -105,9 +109,9 @@ The ability, ultimate and Surge guide keys are in the `controls` section, which 
 
 `surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck still appears, the Surge meter and shop don't. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
 
-`surge.meter.activeChargePerWave`: The meter charge one player makes per wave when casting on cooldown, used to size a chaos point. From 1 to 20. Default: `6`.
+`surge.meter.chargePerWave`: The meter charge one player is expected to make per wave, used to size a chaos point; a bigger team's point grows with the extra enemies its waves bring. From 0.5 to 20. Default: `1.5`.
 
-`surge.meter.screensPerPoint`: How many perk screens of that charge one chaos point takes. From 0.25 to 5. Default: `1.5`. See [Surge meter](#surge-meter) for the formula.
+`surge.meter.wavesPerPoint`: How many waves of that charge one chaos point takes. From 0.5 to 10. Default: `2`. See [Surge meter](#surge-meter) for the formula.
 
 With abilities enabled, a dedicated choice screen offers as many random shared abilities as a normal perk choice has cards (3, or 2 from pain level 3, plus Picky) before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
 

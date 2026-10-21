@@ -55,9 +55,9 @@ namespace SpiderSurge
 
         public static readonly Achievement[] All =
         {
-            new Achievement(BlackHole, "Black Hole", "Banish a Hornet Shaman."),
+            new Achievement(BlackHole, "Event Horizon", "Feed a Hornet Shaman to your Black Hole."),
             new Achievement(TotalDestruction, "Total Destruction", "Kill 3 teammates with one Thermal Detonation."),
-            new Achievement(KeepYouSafe, "I Will Keep You Safe", "Banish a teammate."),
+            new Achievement(KeepYouSafe, "I Will Keep You Safe", "Feed a teammate to your Black Hole."),
             new Achievement(UnlimitedPower, "Unlimited Power", "Use Bottomless Clip while holding a Particle Blade made with Size Matters and Thick Blades at level 2."),
             new Achievement(Doomsday, "Doomsday Scenario", "Send an armed Biggest Grenade into the Pocket Dimension."),
             new Achievement(Begone, "Begone", "Knock an enemy into lava with Kinetic Pulse."),

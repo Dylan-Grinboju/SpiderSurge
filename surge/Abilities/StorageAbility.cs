@@ -16,15 +16,15 @@ namespace SpiderSurge
 
         public override float AbilityBaseDuration => Consts.Values.Storage.AbilityBaseDuration;
         public override float AbilityBaseCooldown => Consts.Values.Storage.AbilityBaseCooldown;
-        public override float UltimateBaseDuration => 0f;
+        public override float UltimateBaseDuration => Consts.Values.Storage.BlackHolePullTime;
         public override float UltimateBaseCooldown => Consts.Values.Storage.UltimateBaseCooldown;
         public override float AbilityCooldownPerPerkLevel => Consts.Values.Storage.AbilityCooldownReductionPerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Storage.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Banish";
-        public override string UltimatePerkDescription => "Pulls the nearest enemy or spider into the pocket dimension, forever.";
+        public override string UltimatePerkDisplayName => "Black Hole";
+        public override string UltimatePerkDescription => "Opens a pull around you for 3 seconds. It holds the enemies inside it when it opens and drags them and every spider inside it toward you, and whatever reaches your inner circle goes into the pocket dimension, forever.";
 
         public override float AbilityDuration
         {
@@ -43,7 +43,7 @@ namespace SpiderSurge
             }
         }
 
-        public float BanishRange
+        public float BlackHoleRange
         {
             get
             {
@@ -51,10 +51,10 @@ namespace SpiderSurge
                 int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
                 int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
 
-                float range = Consts.Values.Storage.BanishBaseRange;
-                if (durationLevel == 2) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
-                if (shortTermLevel > 0) range -= Consts.Values.Storage.BanishRangeIncreasePerLevel;
-                if (longTermLevel > 0) range += Consts.Values.Storage.BanishRangeIncreasePerLevel;
+                float range = Consts.Values.Storage.BlackHoleBaseRange;
+                if (durationLevel == 2) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
+                if (shortTermLevel > 0) range -= Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
+                if (longTermLevel > 0) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
 
                 return range;
             }
@@ -112,13 +112,16 @@ namespace SpiderSurge
             }
         }
 
+        // The caster's machine and the host each run the field; other clients start theirs from the host's message
         protected override void OnActivateUltimate()
         {
-            bool hit = IsAuthority && TryBanishNearest();
-            SpawnBanishRing();
-            if (Net.IsHost && spiderHealthSystem != null)
+            if (spiderHealthSystem != null)
             {
-                SurgeNet.SendFx(SurgeFx.Banish, PlayerId, spiderHealthSystem.transform.position, BanishRange, false);
+                BlackHoleField.Begin(this, spiderHealthSystem, playerController, BlackHoleRange, IsAuthority);
+                if (Net.IsHost)
+                {
+                    SurgeNet.SendFx(SurgeFx.BlackHole, PlayerId, spiderHealthSystem.transform.position, BlackHoleRange, false);
+                }
             }
             // Like the other abilities, only the caster's own machine plays the sound
             if (!IsRemote)
@@ -127,14 +130,6 @@ namespace SpiderSurge
                     Consts.SoundNames.StorageSend,
                     Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
                 );
-            }
-
-            isActive = false;
-            isUltimateActive = false;
-            StartCooldown(wasUltimate: true);
-            if (IsAuthority && !hit)
-            {
-                ReduceCooldown(UltimateCooldownTime * (1f - Consts.Values.Storage.BanishMissCooldownFraction));
             }
         }
 
@@ -159,88 +154,26 @@ namespace SpiderSurge
             }
         }
 
-        private void SpawnBanishRing()
-        {
-            if (spiderHealthSystem == null) return;
-            SpawnBanishRing(spiderHealthSystem.transform, BanishRange);
-        }
-
-        private static void SpawnBanishRing(Transform body, float range)
-        {
-            StorageVfx.Banish(body, range);
-        }
-
-        // Another player's Banish online, drawn from the host's message
-        public static void DrawRemoteBanish(int playerId, float range)
+        // Another player's Black Hole online, drawn from the host's message
+        public static void DrawRemoteBlackHole(int playerId, float range)
         {
             SpiderHealthSystem health = Players.HealthOf(playerId);
             if (health != null)
             {
-                SpawnBanishRing(health.transform, range);
+                BlackHoleField.Begin(GetByHealthSystem(health), health, Players.ById(playerId), range, authority: false);
             }
         }
 
-        // Pulls the closest enemy that counts for the wave, or the closest other spider that can die, within banish range
-        private bool TryBanishNearest()
+        // Teams spares teammates here unless friendly fire does damage
+        public bool CanSwallow(SpiderHealthSystem spider)
         {
-            if (spiderHealthSystem == null) return false;
-
-            Transform body = spiderHealthSystem.transform;
-            Vector2 origin = body.position;
-            float closest = BanishRange;
-            EnemyHealthSystem enemyTarget = null;
-            SpiderHealthSystem spiderTarget = null;
-
-            if (EnemyHealthSystem.s_activeEnemies != null)
-            {
-                foreach (EnemyHealthSystem enemy in EnemyHealthSystem.s_activeEnemies)
-                {
-                    if (enemy == null || enemy.IsDead() || !enemy.needToKillToCompleteLevel || BanishedTarget.IsBanished(enemy.gameObject)) continue;
-
-                    Vector2 position = enemy.rb2D != null ? enemy.rb2D.position : (Vector2)enemy.transform.position;
-                    float distance = Vector2.Distance(origin, position);
-                    if (distance <= closest)
-                    {
-                        closest = distance;
-                        enemyTarget = enemy;
-                    }
-                }
-            }
-
-            if (SpiderHealthSystem.s_activeSpiders != null)
-            {
-                foreach (SpiderHealthSystem spider in SpiderHealthSystem.s_activeSpiders)
-                {
-                    if (!CanBanish(spider)) continue;
-
-                    float distance = Vector2.Distance(origin, spider.transform.position);
-                    if (distance <= closest)
-                    {
-                        closest = distance;
-                        spiderTarget = spider;
-                        enemyTarget = null;
-                    }
-                }
-            }
-
-            if (spiderTarget != null)
-            {
-                BanishedTarget.BeginSpider(spiderTarget, body, playerController);
-                return true;
-            }
-            if (enemyTarget != null)
-            {
-                BanishedTarget.BeginEnemy(enemyTarget, body, playerController);
-                SurgeMeter.Add(MeterSource.Banish, PlayerId, CastId, Consts.Values.Meter.BanishChargePerEnemy, Consts.Values.Meter.BanishCapPerCast);
-                return true;
-            }
-            return false;
+            return spider != null && spider != spiderHealthSystem && !SwallowedTarget.IsSwallowed(spider.rootObject) && SwallowedTarget.CanDie(spider);
         }
 
-        // Teams spares teammates here when friendly fire is off
-        public bool CanBanish(SpiderHealthSystem spider)
+        // Immune spiders are pulled too, they just can't be swallowed; Teams spares teammates here when friendly fire is ignored
+        public bool CanPull(SpiderHealthSystem spider)
         {
-            return spider != null && spider != spiderHealthSystem && !BanishedTarget.IsBanished(spider.rootObject) && BanishedTarget.CanDie(spider);
+            return spider != null && spider != spiderHealthSystem && !spider.dead && !spider.astralDead && !SwallowedTarget.IsSwallowed(spider.rootObject);
         }
 
         private IEnumerator SwapRoutine()
@@ -323,11 +256,7 @@ namespace SpiderSurge
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
 
-                // Recalling a weapon that still has ammo is the swap that matters
-                if (weapon.ammo > 0f)
-                {
-                    SurgeMeter.Add(MeterSource.PocketDimension, PlayerId, CastId, Consts.Values.Meter.PocketDimensionChargePerRecall, Consts.Values.Meter.PocketDimensionCapPerCast);
-                }
+                SurgeMeter.Add(MeterSource.PocketDimension, PlayerId, Consts.Values.Meter.PocketDimensionChargePerSwap);
             }
 
             if (SoundManager.Instance != null && !IsRemote)
