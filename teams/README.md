@@ -34,7 +34,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 - Every member of the winning team gets a point, alive or dead, so everyone on a team has the same score on the scoreboard.
 - The first 8 teams are Red, Blue, Green, Yellow, Purple, Orange, Cyan and Pink. From the 9th team on, teams are numbered and get generated colors.
 - Teams are kept between matches until someone changes them or leaves. They are not saved when you quit the game.
-- Only players on the host's PC can switch with the team button. The host can move anyone, including online players, from the versus setup page.
+- Online players switch with the team button too. The host can also move anyone from the versus setup page.
 
 ## Friendly Fire
 
@@ -70,8 +70,6 @@ The perks work like in Surge, and everyone gets the same ones:
 - **Ability Duration**: Level 1 strengthens the ability, level 2 also the ultimate. With Kinetic Pulse it's called **Bigger Pulse**, and with Pocket Dimension **Faster Retrieval**.
 - **Short Term Investment**: Buffs the ability's duration and cooldown, but nerfs the ultimate's.
 - **Long Term Investment**: Buffs the ultimate's duration and cooldown, but nerfs the ability's.
-
-Surge only runs abilities for players on the host's PC, so a match with an online player plays without them, and a message says so when it starts.
 
 ## How to configure Teams
 
@@ -160,6 +158,4 @@ Teams runs on the host. Every player needs the same SpiderSurge version, since t
 
 ## The Future
 
-- Surge abilities for online players
-- Sharing the teams with online players who have the mod, so they can pick their own team and see the markers and the team win screen
 - Giving a player who joins in the middle of a match their team's score

@@ -132,6 +132,10 @@ Each save writes a new file and swaps it in, keeping the previous one as `progre
 
 Older versions kept the achievements and Surge highscores in the game's save and the titles in `titles.dat`. They move into `progress.dat` the first time the new version reads them, and the old copies are removed once the move is saved. The move happens only once, so an old copy that can't be removed doesn't bring reset progress back.
 
+## Online play
+
+Every player needs the same SpiderSurge version, and the lobby must use P2P. The host turns away anyone without SpiderSurge or with another version.
+
 ## Game fixes
 
 - Every controller can pause, even while another controller is sending input.
