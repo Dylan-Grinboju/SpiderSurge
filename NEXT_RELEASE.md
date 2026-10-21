@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Using the abilities fills the team's Surge meter, and a full meter is a chaos point to spend in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Using the abilities fills the team's Surge meter, and a full meter is a chaos point to spend in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. The perk screen shows the meter beside the cards, and a line under them says how the focused ability or ultimate charges it. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
 
 <img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
 
@@ -131,6 +131,10 @@ Surge achievements, the Stats title collection and Surge Survival highscores are
 Each save writes a new file and swaps it in, keeping the previous one as `progress.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `progress.dat.broken`. While another program (OneDrive or an antivirus, say) holds the file open, achievements, titles and highscores earned meanwhile are kept and saved once it can be read, without lowering a highscore or showing an achievement you already have again.
 
 Older versions kept the achievements and Surge highscores in the game's save and the titles in `titles.dat`. They move into `progress.dat` the first time the new version reads them, and the old copies are removed once the move is saved. The move happens only once, so an old copy that can't be removed doesn't bring reset progress back.
+
+## Online play
+
+Every player needs the same SpiderSurge version, and the lobby must use P2P. The host turns away anyone without SpiderSurge or with another version.
 
 ## Game fixes
 

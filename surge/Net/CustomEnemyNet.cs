@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
@@ -9,7 +7,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Enemies
 {
-    // Each custom enemy clone gets its own hash and prefab handler; clients without the mod are sent the original's hash
+    // Each custom enemy clone gets its own hash and prefab handler, so clients build the clone instead of the enemy it copies
     public static class CustomEnemyNet
     {
         private sealed class Handler : INetworkPrefabInstanceHandler
@@ -37,19 +35,10 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private sealed class Entry
-        {
-            public GameObject Prefab;
-            public uint CustomHash;
-            public uint OriginalHash;
-        }
-
-        // Netcode keeps these internal and Mono enforces that at run time, so they are reached through reflection
+        // Netcode keeps this internal and Mono enforces that at run time, so it is reached through reflection
         private static readonly AccessTools.FieldRef<NetworkObject, uint> GlobalObjectIdHash = AccessTools.FieldRefAccess<NetworkObject, uint>("GlobalObjectIdHash");
-        private static readonly FieldInfo PrefabOverrideLinks = AccessTools.Field(typeof(NetworkConfig), "NetworkPrefabOverrideLinks");
 
-        private static readonly Dictionary<GameObject, Entry> _entries = new Dictionary<GameObject, Entry>();
-        private static readonly Dictionary<uint, Entry> _byHash = new Dictionary<uint, Entry>();
+        private static readonly Dictionary<GameObject, uint> _entries = new Dictionary<GameObject, uint>();
 
         public static uint HashFor(string name) => Net.Hash("SpiderSurge.Enemy:" + name);
 
@@ -65,57 +54,28 @@ namespace SpiderSurge.Enemies
                 Logger.LogWarning($"[SpiderSurge] {name} has no NetworkObject, clients will not see it");
                 return;
             }
-            uint originalHash = GlobalObjectIdHash(networkObject);
-            if (_byHash.TryGetValue(originalHash, out var parent))
-            {
-                originalHash = parent.OriginalHash;
-            }
-            var entry = new Entry { Prefab = prefab, OriginalHash = originalHash, CustomHash = HashFor(name) };
-            GlobalObjectIdHash(networkObject) = entry.CustomHash;
-            _entries[prefab] = entry;
-            _byHash[entry.CustomHash] = entry;
-            AddHandler(entry);
+            uint hash = HashFor(name);
+            GlobalObjectIdHash(networkObject) = hash;
+            _entries[prefab] = hash;
+            AddHandler(prefab, hash);
         }
 
         public static void RegisterHandlers()
         {
-            foreach (var entry in _entries.Values)
+            foreach (var entry in _entries)
             {
-                AddHandler(entry);
+                AddHandler(entry.Key, entry.Value);
             }
         }
 
-        private static void AddHandler(Entry entry)
+        private static void AddHandler(GameObject prefab, uint hash)
         {
             var manager = NetworkManager.Singleton;
             if (manager == null || manager.PrefabHandler == null)
             {
                 return;
             }
-            manager.PrefabHandler.AddHandler(entry.CustomHash, new Handler(entry.Prefab));
-        }
-
-        // A clone of something the game never registers for the network (the Parkour cocoon) has no base enemy a vanilla client could build
-        public static void PrepareForSpawn(NetworkObject instance)
-        {
-            var manager = NetworkManager.Singleton;
-            if (instance == null || manager == null || !_byHash.TryGetValue(GlobalObjectIdHash(instance), out var entry))
-            {
-                return;
-            }
-            if (!(PrefabOverrideLinks?.GetValue(manager.NetworkConfig) is IDictionary links) || !links.Contains(entry.OriginalHash))
-            {
-                instance.CheckObjectVisibility = Net.ClientRunsThisVersion;
-            }
-        }
-
-        public static uint HashForClient(uint hash, ulong targetClientId)
-        {
-            if (!_byHash.TryGetValue(hash, out var entry) || Net.ClientRunsThisVersion(targetClientId))
-            {
-                return hash;
-            }
-            return entry.OriginalHash;
+            manager.PrefabHandler.AddHandler(hash, new Handler(prefab));
         }
     }
 }

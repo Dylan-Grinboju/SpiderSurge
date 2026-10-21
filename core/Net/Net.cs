@@ -10,7 +10,7 @@ using Logger = Silk.Logger;
 namespace SpiderSurge.Common
 {
     // One named Netcode message carries every mod message: a channel hash, then a byte payload written with BinaryWriter.
-    // Vanilla peers drop the message silently, so each side learns who runs the mod through the Hello/Welcome handshake.
+    // Every peer runs this SpiderSurge version, since the host refuses anyone else; a client says Hello once its handlers are bound.
     public static class Net
     {
         public delegate void Handler(ulong sender, BinaryReader reader);
@@ -24,21 +24,17 @@ namespace SpiderSurge.Common
         private const int MaxPayload = 63000;
 
         private static readonly Dictionary<uint, (string name, Handler handler)> _handlers = new Dictionary<uint, (string, Handler)>();
-        private static readonly HashSet<ulong> _moddedClients = new HashSet<ulong>();
-        private static readonly HashSet<ulong> _announcedClients = new HashSet<ulong>();
-        private static readonly Dictionary<ulong, string> _clientVersions = new Dictionary<ulong, string>();
+        private static readonly HashSet<ulong> _readyClients = new HashSet<ulong>();
         private static readonly List<ulong> _targets = new List<ulong>();
         private static CustomMessagingManager _boundTo;
         private static NetworkManager _subscribedTo;
         private static bool _registered;
+        private static bool _joinedHost;
 
         public static event Action<ulong> PeerReady;
         public static event Action<ulong> PeerLeft;
         public static event Action JoinedHost;
         public static event Action LeftHost;
-
-        public static bool HostHasMod { get; private set; }
-        public static string HostVersion { get; private set; }
 
         public static NetworkManager Manager => NetworkManager.Singleton;
 
@@ -64,25 +60,6 @@ namespace SpiderSurge.Common
 
         public static ulong LocalClientId => Available ? Manager.LocalClientId : Net.ServerId;
 
-        public static IReadOnlyCollection<ulong> ModdedClients => _moddedClients;
-
-        public static bool ClientHasMod(ulong clientId)
-        {
-            return clientId == Net.ServerId || _moddedClients.Contains(clientId);
-        }
-
-        // True from connection approval on, before the client's Hello arrives
-        public static bool ClientRunsMod(ulong clientId)
-        {
-            return ClientHasMod(clientId) || _announcedClients.Contains(clientId);
-        }
-
-        // Another SpiderSurge version may not have the same custom enemies, so it is sent the base enemies a vanilla client gets
-        public static bool ClientRunsThisVersion(ulong clientId)
-        {
-            return clientId == Net.ServerId || (_clientVersions.TryGetValue(clientId, out string version) && version == SpiderSurgeMod.Version);
-        }
-
         internal static void PrepareConnect(NetworkManager manager)
         {
             if (manager != null)
@@ -91,18 +68,28 @@ namespace SpiderSurge.Common
             }
         }
 
-        internal static void OnApproval(byte[] connectionData, ulong clientId)
+        // Mixed lobbies are not supported, so a client without this SpiderSurge version is refused
+        internal static bool Approves(byte[] connectionData, ulong clientId)
         {
-            if (clientId == Net.ServerId || connectionData == null || connectionData.Length < ConnectPrefix.Length)
+            if (clientId == Net.ServerId)
             {
-                return;
+                return true;
             }
-            string announced = Encoding.UTF8.GetString(connectionData);
-            if (announced.StartsWith(ConnectPrefix, StringComparison.Ordinal))
+            string announced = connectionData == null ? string.Empty : Encoding.UTF8.GetString(connectionData);
+            string version = announced.StartsWith(ConnectPrefix, StringComparison.Ordinal) ? announced.Substring(ConnectPrefix.Length) : null;
+            if (version != null && WithoutBuild(version) == WithoutBuild(SpiderSurgeMod.Version))
             {
-                _announcedClients.Add(clientId);
-                _clientVersions[clientId] = announced.Substring(ConnectPrefix.Length);
+                return true;
             }
+            Logger.LogWarning($"Refused client {clientId}: it runs {(version == null ? "no SpiderSurge" : "SpiderSurge " + version)}, this host runs SpiderSurge {SpiderSurgeMod.Version}");
+            return false;
+        }
+
+        // Build metadata such as "+local" says where a build was made, not what it contains
+        private static string WithoutBuild(string version)
+        {
+            int plus = version.IndexOf('+');
+            return plus < 0 ? version : version.Substring(0, plus);
         }
 
         public static void Register(string channel, Handler handler)
@@ -129,14 +116,10 @@ namespace SpiderSurge.Common
                 Invoke(channel, LocalClientId, Payload(write));
                 return;
             }
-            if (!HostHasMod)
-            {
-                return;
-            }
             Send(channel, Net.ServerId, Payload(write));
         }
 
-        // The host sends to every client that runs the mod; Netcode never delivers to the host itself
+        // The host sends to every client that has said Hello; Netcode never delivers to the host itself
         public static void SendToAll(string channel, Action<BinaryWriter> write, bool includeLocal = false)
         {
             if (!IsHost)
@@ -155,7 +138,7 @@ namespace SpiderSurge.Common
             _targets.Clear();
             foreach (ulong client in Manager.ConnectedClientsIds)
             {
-                if (client != Net.ServerId && _moddedClients.Contains(client))
+                if (client != Net.ServerId && _readyClients.Contains(client))
                 {
                     _targets.Add(client);
                 }
@@ -168,7 +151,7 @@ namespace SpiderSurge.Common
 
         public static void SendTo(ulong clientId, string channel, Action<BinaryWriter> write)
         {
-            if (!IsHost || clientId == Net.ServerId || !_moddedClients.Contains(clientId))
+            if (!IsHost || clientId == Net.ServerId || !_readyClients.Contains(clientId))
             {
                 return;
             }
@@ -257,12 +240,9 @@ namespace SpiderSurge.Common
 
         private static void ResetSession()
         {
-            bool wasJoined = HostHasMod;
-            _moddedClients.Clear();
-            _announcedClients.Clear();
-            _clientVersions.Clear();
-            HostHasMod = false;
-            HostVersion = null;
+            bool wasJoined = _joinedHost;
+            _readyClients.Clear();
+            _joinedHost = false;
             Settings.ClearRemote();
             if (wasJoined)
             {
@@ -276,7 +256,7 @@ namespace SpiderSurge.Common
             {
                 if (IsRemoteClient && clientId == LocalClientId)
                 {
-                    Send(HelloChannel, Net.ServerId, Payload(writer => writer.Write(SpiderSurgeMod.Version)));
+                    Send(HelloChannel, Net.ServerId, Payload(null));
                 }
             }
             catch (Exception ex)
@@ -291,14 +271,12 @@ namespace SpiderSurge.Common
             {
                 if (IsHost)
                 {
-                    _announcedClients.Remove(clientId);
-                    _clientVersions.Remove(clientId);
-                    if (_moddedClients.Remove(clientId))
+                    if (_readyClients.Remove(clientId))
                     {
                         Raise(PeerLeft, clientId);
                     }
                 }
-                else if (HostHasMod)
+                else if (_joinedHost)
                 {
                     ResetSession();
                 }
@@ -315,19 +293,9 @@ namespace SpiderSurge.Common
             {
                 return;
             }
-            string version = reader.ReadString();
-            _moddedClients.Add(sender);
-            _clientVersions[sender] = version;
-            Logger.LogInfo($"SpiderSurge {version} joined as client {sender}");
-            if (version != SpiderSurgeMod.Version)
-            {
-                Logger.LogWarning($"Client {sender} runs SpiderSurge {version}, this host runs {SpiderSurgeMod.Version}");
-            }
-            SendTo(sender, WelcomeChannel, writer =>
-            {
-                writer.Write(SpiderSurgeMod.Version);
-                WriteSharedSettings(writer, null);
-            });
+            _readyClients.Add(sender);
+            Logger.LogInfo($"SpiderSurge client {sender} is ready");
+            SendTo(sender, WelcomeChannel, writer => WriteSharedSettings(writer, null));
             Raise(PeerReady, sender);
         }
 
@@ -337,14 +305,9 @@ namespace SpiderSurge.Common
             {
                 return;
             }
-            HostVersion = reader.ReadString();
-            HostHasMod = true;
+            _joinedHost = true;
             ReadSharedSettings(reader);
-            Logger.LogInfo($"Joined a host running SpiderSurge {HostVersion}");
-            if (HostVersion != SpiderSurgeMod.Version)
-            {
-                MainThread.PopupLater($"The host runs SpiderSurge {HostVersion} and you run {SpiderSurgeMod.Version}. Update so online features match.");
-            }
+            Logger.LogInfo("Joined a SpiderSurge host");
             Raise(JoinedHost);
         }
 
@@ -358,7 +321,7 @@ namespace SpiderSurge.Common
 
         private static void OnSettingChanged(string key)
         {
-            if (!HasRemotePlayers || _moddedClients.Count == 0)
+            if (!HasRemotePlayers || _readyClients.Count == 0)
             {
                 return;
             }

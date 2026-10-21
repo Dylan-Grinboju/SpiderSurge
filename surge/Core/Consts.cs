@@ -214,6 +214,8 @@ namespace SpiderSurge
                 public const float UltimateRangeIncreasePerLevel = 50f;
                 public const float RewindRingTime = 0.4f;
                 public const float TintStrength = 0.6f;
+                // How far a shaman's poison cloud spreads from its center
+                public const float CloudReach = 15f;
                 public const string WaspName = "Wasp";
                 public const string ShieldedWaspName = "Wasp Shielded";
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0.7f, 0.95f, 1f, 0.9f);
@@ -277,11 +279,15 @@ namespace SpiderSurge
                 public const int RewindChargePerEnemy = 1;
                 public const int RewindCapPerCast = 4;
                 public const float HudBlinkSeconds = 0.8f;
-                public const float CardScale = 0.8f;
-                public const float PanelWidth = 200f;
-                public const float EntryHeight = 60f;
+                public const float PanelWidth = 240f;
+                public const float PanelGap = 16f;
+                public const float SideMargin = 27f;
+                public const float BottomMargin = 6f;
+                public const float MinCardFactor = 0.5f;
+                public const float MeterBlockHeight = 58f;
+                public const float MinEntryHeight = 56f;
+                public const float MaxEntryHeight = 96f;
                 public const float EntrySpacing = 5f;
-                public const float HeaderHeight = 26f;
                 public const int OfferSize = 2;
                 public const float BuyHeight = 34f;
                 public const float ConfirmWidth = 300f;

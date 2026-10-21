@@ -31,6 +31,7 @@ namespace SpiderSurge
         Frozen = 0,
         LaserPhase = 1,
         LaserHold = 2,
+        CloudFrozen = 3,
         ShieldBroken = 4,
     }
 
@@ -111,7 +112,7 @@ namespace SpiderSurge
 
         public static void SendAbility(int playerId, AbilityKind kind, bool ultimate)
         {
-            if (!Net.IsRemoteClient || !Net.HostHasMod)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }
@@ -168,6 +169,18 @@ namespace SpiderSurge
                 Net.SendTo(clientId, EnemyChannel, writer =>
                 {
                     writer.Write((byte)EnemyFx.Frozen);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(left);
+                });
+            }
+            foreach (FrozenCloud frozen in UnityEngine.Object.FindObjectsOfType<FrozenCloud>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = frozen.TimeLeft;
+                if (target == null || !target.IsSpawned || left <= 0f) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.CloudFrozen);
                     writer.Write(target.NetworkObjectId);
                     writer.Write(left);
                 });
@@ -393,6 +406,9 @@ namespace SpiderSurge
             {
                 case EnemyFx.Frozen:
                     FrozenEnemy.ShowFrozen(target.GetComponent<EnemyHealthSystem>(), value);
+                    break;
+                case EnemyFx.CloudFrozen:
+                    FrozenCloud.ShowFrozen(target.GetComponent<DeathCloud>(), value);
                     break;
                 case EnemyFx.LaserPhase:
                     target.GetComponentInChildren<LaserRing>(true)?.Sync(value);
