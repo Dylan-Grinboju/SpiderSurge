@@ -14,9 +14,11 @@ Stats is on after installing SpiderSurge. You can turn it off from the pause men
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
   - Press **F3** to view player titles after a Survival run
-  - Press **D-pad** on a controller to cycle the UIs
+  - Press **D-pad** on a controller to switch between the small window and Off during a match; in the lobby it also offers the big window and Survival titles
+  - While the big window is open, **Page Up / Page Down**, **D-pad left / right**, its arrows or the mouse wheel move through pages and scoreboard presets
   - Change these keys in **Mods** > **SpiderSurge** > **Controls**. A button that also casts Surge's ultimate on its own casts the ultimate and doesn't switch the windows
 - **Log File**: All the stats are saved to a local txt file when the game ends 
+- **Match history**: Browse saved Survival and Versus results in the Mods menu, with player statistics, accuracy, maps, perks and titles. Recording history is separate from text reports and telemetry
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
 - **Versus Mode Support**: Opponent kills count toward Kills, Total Offence, kill streaks and weapon stats. Breaking an opponent's shield counts toward Enemy Shields and Total Offence. With Teams on, only teammate kills and shield breaks count as friendly fire; without teams, every other spider is an opponent. Solo kills and streaks mean no living teammates, even while opponents are alive.
 
@@ -29,7 +31,9 @@ Each spider's kills and deaths, next to its color. A dead spider's row fades unt
 <img width="1600" alt="The small stats window during a run" src="../docs/images/stats-small-window.jpg" />
 
 ### Big window (F2)
-The run time, enemies killed and a table with the columns you pick. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. If the columns don't fit on the screen, the window shrinks to fit. In versus it shows the match time instead.
+The run time, enemies killed and a table with a portrait for each spider. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. In versus it shows the match time instead.
+
+The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page shows up to six columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it. Change the keys and buttons in **Controls**; a shared ultimate binding takes priority.
 
 <img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
 
@@ -41,17 +45,25 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 ### Title collection
 Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Achievements** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed while the Surge part is on. **Reset the title collection** at the bottom of the page locks every title again.
 
+Use **Show** to cycle through All, Locked, Unlocked and Recently earned. NEW marks an unseen unlock; select an unlocked title or use **Mark all seen** to clear the marker. The end screen and saved match history still remember which titles were new that run.
+
 The collection is saved on your PC in the game's own save folder, so updating or reinstalling the mod or the game keeps it: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\progress.dat` for Steam (`...\SPIDERHECK\SpiderSurge\progress.dat` for the Xbox app). That file also holds Surge's achievements and highscores; the collection is only title names, counts and dates. Each save writes a new file and swaps it in, keeping the previous one as `progress.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `progress.dat.broken`. Older versions kept the collection in `titles.dat` in the same folder; it moves into `progress.dat` on the first launch, and `titles.dat` is removed once the move is saved.
+
+### Match history
+
+Open **Mods** > **SpiderSurge** > **Match history**, then choose Survival or Versus. Each record shows the outcome, duration and players, plus the wave and pain level for Survival. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. Open a match for player statistics, enemy and weapon kills, shooting accuracy, maps, perks and earned titles, including which titles appeared on the end screen and which were new that run.
+
+**Save match history** needs Stats enabled. Existing records remain available with Stats off, and saving history is independent of text reports and telemetry. All recorded matches are kept on this PC, with 20 matches per list page, in the `SpiderSurge\History` folder beside `progress.dat`. History starts with this update; older text reports are available through **About SpiderSurge** > **Support** > **Open logs**. **Refresh history** rereads the files. **Clear match history** removes history after confirmation and keeps achievements, the title collection and highscores.
 
 ## How to configure Stats
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats**. Changes apply right away. The page has every setting below except the small window's position, which you set by dragging it, the big window's columns on their own page, and **Reset Stats settings to defaults**, which keeps the small window's position.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats**. Changes apply right away. The page has every setting below except the small window's position, which you set by dragging it. **Scoreboard presets** contains the preset switches and Default's column groups. **Reset Stats settings to defaults** keeps the small window's position.
 
 ### Using the Yaml file:
 
-Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See [Settings](../README.md#settings) for how the file works.
+Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See the [upcoming release's Settings](../NEXT_RELEASE.md#settings) for how the current file works.
 
 <details>
 <summary>Explanation of the fields</summary>
@@ -71,10 +83,14 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.display.position`: The position of the Small UI's top left corner as `xPercent` and `yPercent`, percentages of the screen's width and height from 0 to 100, with 0,0 being the top left corner of the screen. Being a share of the screen, it keeps the window in the same place when the resolution or window size changes. This value is saved every time you click and drag the UI, and a position saved in pixels by an older version is converted on the next launch. If the UI doesn't show up on your screen, set both values to 1. Default: `xPercent: 0.5`, `yPercent: 1`.
 
-`stats.display.bigUI.columns`: Setting a column to true will display it in the Big UI. I don't limit you but the elements can be cut off if there are too many. 
+`stats.display.bigUI.columns`: Setting a column to true includes it in the Default preset. Columns are split across pages of up to six.
+
+`stats.display.presets.combat`, `enemies`, `weapons`, `accuracy` and `movement`: Show or hide each fixed scoreboard preset. Default is always available. Each fixed preset uses its own columns, independent of the Default column settings. All are on by default.
 
 ### tracking:
 `stats.tracking.saveStatsToFile`: If true, the stats will be saved to a local txt file.
+
+`stats.tracking.saveHistory`: If true, results are saved in Match history. Default: `true`. It does not control text reports or telemetry.
 
 To stop tracking altogether, turn off the Stats part (`parts.stats`). Surge uses Stats to tell who made each kill, so with Stats off, kills stop charging the [Surge meter](../surge/README.md#surge-meter) for Bottomless Clip, Null Field and Care Package. To only hide the stats, keep the part on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`.
 
@@ -88,6 +104,8 @@ The title collection isn't a setting, so it isn't in this file; see [Title colle
 
 ### Input:
 The window keys and the controller switch are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `stats.input.cycleInput` moves to `controls.stats.switchWindows` on the first launch: `joystick` becomes either stick press, `both` the D-pad or either stick press, and `none` turns it off.
+
+`controls.stats.previousPresetKeyboard` and `controls.stats.nextPresetKeyboard` default to `<Keyboard>/pageUp` and `<Keyboard>/pageDown`. Their controller counterparts, `controls.stats.previousPresetController` and `controls.stats.nextPresetController`, default to `<Gamepad>/dpad/left` and `<Gamepad>/dpad/right`. They work while the big window is open. During an active match, the controller window switch cycles only the small window and Off; in the lobby, it also offers the big window and Survival titles.
 
 </details>
 
@@ -138,9 +156,10 @@ Lists a title in the title collection, so players see it and how to earn it whil
 ## Notes and disclaimers
 - Stats reset when starting a new game. After the game ends, you can return to the lobby and the overlay will show the last game's stats.
 - By default, the mod saves the stats in a txt file in this path: `.../Silk/Logs/SpiderStats/Spiderheck_stats_YYYY-MM-DD_HH-mm-ss.txt`
-- There are some kills that won't register such as activating a weapon with another (hitting a grenade with a particle blade). This just complicates the logic and is up to interpretation of who gets the kill in difficult scenarios. Also, this is just very complicated to track, and I wasn't feeling like coding it
-- This probably won't work with multiplayer, you are welcome to try and send me feedback, but I don't plan to support it anytime soon
+- Grenade and mine explosion kills belong to the player who armed the explosive, including arming it by hitting it with another weapon. Dropping an unarmed explosive does not give its last holder ownership
+- Online play requires the same SpiderSurge version on every player and a P2P lobby, as described in the main documentation.
 - Lobby combat does not change the last game's stats. Hit credit resets at the start of each session and versus round
+- **Mods** > **SpiderSurge** > **About SpiderSurge** > **Support** opens logs, config and save folders, copies version and mod-part diagnostics, and opens the bug report form. These actions do not upload logs, player names or save data
 
 ## The Future
 - I plan to continue expanding this mod with more fun titles and statistics

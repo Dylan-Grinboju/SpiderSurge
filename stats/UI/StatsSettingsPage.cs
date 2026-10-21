@@ -51,8 +51,8 @@ namespace StatsMod
             page.Button("Change these keys", () => page.Open(ControlsPage.Page));
             page.Toggle("Small window background", Key("display.smallUIShowBackground"));
             page.Toggle("Scale with the screen size", ModConfig.AutoScaleKey);
-            page.Slider("Size", ModConfig.UIScaleKey, ModConfig.MinScale, ModConfig.MaxScale, 0.1f, "x");
-            page.Slider("Big window opacity", Key("display.bigUIOpacity"), 0f, 100f, 5f, "%");
+            page.Slider("Size", ModConfig.UIScaleKey, ModConfig.MinScale, ModConfig.MaxScale, 0.1f, "x", ModConfig.UIScale);
+            page.Slider("Big window opacity", Key("display.bigUIOpacity"), 0f, 100f, 5f, "%", ModConfig.BigUIOpacity);
 
             page.Spacer();
             page.Header("Big window");
@@ -64,7 +64,7 @@ namespace StatsMod
             page.Spacer();
             page.Header("End of run");
             page.Toggle("Titles", Key("titles.enabled"));
-            page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s");
+            page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s", ModConfig.TitlesRevealDelaySeconds);
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
             page.Toggle("Save match history", Key("tracking.saveHistory"));
 

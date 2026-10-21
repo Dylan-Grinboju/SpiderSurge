@@ -81,6 +81,7 @@ namespace SpiderSurge
             writer.Write(SurgeMeter.Points);
             writer.Write(SurgeMeter.ChargePerPoint);
             writer.Write(SurgeMeter.TotalCharge);
+            writer.Write(SurgeMeter.PointsEarnedThisWave);
             writer.Write((byte)PerkShop.Offer.Length);
             foreach (ShopItem item in PerkShop.Offer) writer.Write((byte)item);
         }
@@ -104,10 +105,11 @@ namespace SpiderSurge
                 int points = reader.ReadInt32();
                 int perPoint = reader.ReadInt32();
                 int total = reader.ReadInt32();
+                int earnedThisWave = reader.ReadInt32();
                 var offer = new ShopItem[reader.ReadByte()];
                 for (int i = 0; i < offer.Length; i++) offer[i] = (ShopItem)reader.ReadByte();
                 PerkShop.ApplyRemoteOffer(offer);
-                SurgeMeter.ApplyRemote(charge, points, perPoint, total);
+                SurgeMeter.ApplyRemote(charge, points, perPoint, total, earnedThisWave);
             }
             catch (Exception ex)
             {

@@ -686,10 +686,10 @@ namespace SpiderSurge.Common
         }
 
         // Sliders step in whole numbers, so a value with decimals is stored as min + steps * step
-        public void Slider(string label, string key, float min, float max, float step, string unit = "")
+        public void Slider(string label, string key, float min, float max, float step, string unit = "", float? effectiveValue = null)
         {
             bool whole = Settings.Default(key) is int;
-            float value = whole ? Settings.GetInt(key) : Settings.GetFloat(key);
+            float value = effectiveValue ?? (whole ? Settings.GetInt(key) : Settings.GetFloat(key));
             int steps = Mathf.Max(1, Mathf.RoundToInt((max - min) / step));
             int start = Mathf.Clamp(Mathf.RoundToInt((value - min) / step), 0, steps);
 

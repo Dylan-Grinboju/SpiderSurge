@@ -44,6 +44,7 @@ namespace SpiderSurge
         private const string AbilityChannel = "surge.ability";
         private const string FxChannel = "surge.fx";
         private const string EnemyChannel = "surge.enemy";
+        private const string FreezeCooldownChannel = "surge.freeze.cooldown";
 
         private static bool _initialized;
         private static bool _dirty;
@@ -61,6 +62,7 @@ namespace SpiderSurge
             Net.Register(AbilityChannel, OnAbility);
             Net.Register(FxChannel, OnFx);
             Net.Register(EnemyChannel, OnEnemyFx);
+            Net.Register(FreezeCooldownChannel, OnFreezeCooldown);
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
@@ -78,6 +80,7 @@ namespace SpiderSurge
             Net.Unregister(AbilityChannel);
             Net.Unregister(FxChannel);
             Net.Unregister(EnemyChannel);
+            Net.Unregister(FreezeCooldownChannel);
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
@@ -109,6 +112,24 @@ namespace SpiderSurge
                 return;
             }
             Net.SendToAll(StateChannel, WriteState);
+        }
+
+        internal static void SendFreezeCooldown(int playerId, float remaining)
+        {
+            if (!Net.IsHost || !Net.HasRemotePlayers) return;
+            Net.SendToAll(FreezeCooldownChannel, writer =>
+            {
+                writer.Write(playerId);
+                writer.Write(remaining);
+            });
+        }
+
+        private static void OnFreezeCooldown(ulong sender, BinaryReader reader)
+        {
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
+            int playerId = reader.ReadInt32();
+            float remaining = reader.ReadSingle();
+            PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Freeze)?.ApplyCooldownRemaining(remaining);
         }
 
         public static void SendAbility(int playerId, AbilityKind kind, bool ultimate)

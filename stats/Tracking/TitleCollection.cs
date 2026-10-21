@@ -29,6 +29,7 @@ public static class TitleCollection
 
     private static readonly ProgressSection<UnlockedTitle> _titles = new ProgressSection<UnlockedTitle>("titles", TryParse, Format, Sum, OnWaitedAdded);
     private static bool _legacyChecked;
+    private static bool _resetting;
 
     public static event Action Changed;
 
@@ -46,6 +47,10 @@ public static class TitleCollection
     }
 
     public static bool Readable => EnsureLoaded();
+
+    internal static Dictionary<string, long> FirstEarnedSnapshot() => EnsureLoaded()
+        ? _titles.Entries.ToDictionary(entry => entry.Key, entry => entry.Value.FirstEarnedUtc.Ticks, StringComparer.Ordinal)
+        : null;
 
     // Each title counts once per run, however many players earned it; returns how many were new, or null while the file can't be read and the run waits
     public static int? Record(IEnumerable<string> names)
@@ -82,14 +87,29 @@ public static class TitleCollection
 
     public static void Reset()
     {
-        if (!EnsureLoaded() || !_titles.Clear())
+        if (_resetting) return;
+        var firstEarned = FirstEarnedSnapshot();
+        if (firstEarned == null)
         {
             Logger.LogWarning($"Couldn't reset the title collection: {FilePath} can't be read right now");
             return;
         }
-        CollectionSeen.Reset("titles");
-        Logger.LogInfo("Title collection reset");
-        Changed?.Invoke();
+        _resetting = true;
+        HistoryStore.ResolveTitleUnlocks(firstEarned, saved =>
+        {
+            _resetting = false;
+            if (!saved || !_titles.Clear())
+            {
+                Logger.LogWarning("Couldn't reset the title collection while its match-history markers could not be saved");
+                Announcer.InformationPopup("The title collection was kept because match history could not be updated. Try again, or clear match history first.");
+                SettingsPage.RefreshOpen();
+                return;
+            }
+            CollectionSeen.Reset("titles");
+            Logger.LogInfo("Title collection reset");
+            Changed?.Invoke();
+            SettingsPage.RefreshOpen();
+        });
     }
 
     private static bool EnsureLoaded()

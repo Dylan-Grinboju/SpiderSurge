@@ -61,6 +61,15 @@ namespace SpiderSurge.Common
             if (page.Current == "history.titles")
             {
                 page.Title("Earned titles");
+                if (selected.Titles.Any(title => title.PendingUnlockTicks > 0))
+                {
+                    page.Note("Title progress could not be read when these results were loaded. Refresh once it can be read to show new-title markers.");
+                    page.Button("Refresh title unlocks", () =>
+                    {
+                        string id = selected.Summary.Id;
+                        HistoryStore.Detail(id, match => { if (selected?.Summary.Id != id) return; selected = match; SettingsPage.RefreshOpen(); });
+                    });
+                }
                 if (selected.Titles.Count == 0) page.Note("No titles for this match.");
                 foreach (var title in selected.Titles)
                 {

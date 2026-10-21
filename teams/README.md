@@ -88,7 +88,7 @@ Changes apply right away and are saved to the Yaml file. The page only opens fro
 
 ### Using the Yaml file:
 
-Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See [Settings](../README.md#settings) for how the file works. If a value is invalid, the mod uses the default instead (or the nearest allowed team count) and writes a warning to the Silk log.
+Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See the [upcoming release's Settings](../NEXT_RELEASE.md#settings) for how the current file works. If a value is invalid, the mod uses the default instead (or the nearest allowed team count) and writes a warning to the Silk log.
 
 <details>
 <summary>Explanation of the fields</summary>

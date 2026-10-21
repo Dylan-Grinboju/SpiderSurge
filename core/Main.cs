@@ -71,6 +71,7 @@ namespace SpiderSurge
                 return;
             }
             Logger.LogInfo("Unloading SpiderSurge...");
+            ModUpdater.Shutdown();
             CollectionSeen.Flush();
             Parts.StopAll();
             HistoryStore.FinishWrites();
