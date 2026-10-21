@@ -43,14 +43,13 @@ namespace SpiderSurge.Common
             float scale = 90f / Mathf.Max(0.001f, Mathf.Max(bounds.size.x, bounds.size.y));
             var shield = prefab.GetComponent<EnemyHealthSystem>()?.shield;
             var activeShield = shield != null && shield.activeSelf ? shield.transform : null;
-            var tint = activeShield != null ? activeShield.GetComponent<SpiderSurge.Enemies.ShieldedEnemyVisuals>() : null;
             foreach (var renderer in sprites)
             {
                 var picture = new GameObject(renderer.name, typeof(RectTransform), typeof(Image));
                 picture.transform.SetParent(holder.transform, false);
                 var image = picture.GetComponent<Image>();
                 image.sprite = renderer.sprite;
-                var color = tint != null ? tint.PreviewColor(renderer) : renderer.color;
+                var color = renderer.color;
                 // A shield bubble's faint color only shows through the game's glow material, which the picture lacks
                 if (activeShield != null && renderer.transform.IsChildOf(activeShield)) color.a = 1f;
                 image.color = color;

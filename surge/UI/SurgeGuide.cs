@@ -158,8 +158,8 @@ namespace SpiderSurge
                 page.Title("Surge enemies");
                 Enemy(page, "Twin Whisp", CustomEnemies.TwinWhispPrefab, "Two cores fire paired shots. Leave room to dodge both. The shielded variant needs its shield broken first.");
                 Enemy(page, "Shielded Twin Whisp", CustomEnemies.ShieldedTwinWhispPrefab, "The paired shots remain dangerous while you work through its shield.");
-                Enemy(page, "Missile Whisp", CustomEnemies.MissileWhispPrefab, "A flying turret-shaped enemy that fires rockets. Watch the blast area as well as the rocket. Its unshielded body is cyan.");
-                Enemy(page, "Shielded Missile Whisp", CustomEnemies.ShieldedMissileWhispPrefab, "Purple while shielded. Breaking the shield exposes the cyan body, but it still fires rockets.");
+                Enemy(page, "Missile Whisp", CustomEnemies.MissileWhispPrefab, "A flying turret-shaped enemy that fires rockets. Watch the blast area as well as the rocket. Its body is blue with yellow lights.");
+                Enemy(page, "Shielded Missile Whisp", CustomEnemies.ShieldedMissileWhispPrefab, "Wears a pink shield bubble. Breaking it leaves a plain Missile Whisp, which still fires rockets.");
                 Enemy(page, "Twin Blade Whisp", CustomEnemies.TwinBladeMeleeWhispPrefab, "Carries a double-ended particle blade. Both ends are dangerous, even if the enemy is frozen.");
                 Enemy(page, "Power Twin Blade Whisp", CustomEnemies.TwinBladePowerMeleeWhispPrefab, "The stronger twin-blade variant. Keep clear of the weapon's reach.");
                 Enemy(page, "Wasp Cocoon", CustomEnemies.WaspCocoonPrefab, "A stationary enemy that keeps hatching Wasps until destroyed, with a limit on its living offspring. Its Wasps must also die before the wave ends. Freeze Time pauses hatching.");
