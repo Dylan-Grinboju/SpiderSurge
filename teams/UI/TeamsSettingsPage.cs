@@ -130,7 +130,7 @@ namespace SpiderTeams
             page.Note(Consts.Surge.LongTermDescription);
 
             page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Select and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
-            page.Note("Abilities need SpiderSurge on every player's machine; a match with a player who lacks it plays without them.");
+            page.Note("Online, every player runs the same SpiderSurge version; the host turns away anyone else.");
         }
 
         private static void CycleSurgeAbility()
