@@ -567,6 +567,7 @@ namespace SpiderSurge
             }
 
             var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
+            spawnedObj.AddComponent<FriendlyWaspOwner>().PlayerId = PlayerId;
             spawnedObj.SetActive(true);
             NullFieldVfx.Summon(spawn.position);
 

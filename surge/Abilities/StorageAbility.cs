@@ -256,7 +256,7 @@ namespace SpiderSurge
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
 
-                PocketDimensionWeapon.Mark(weapon, PlayerId);
+                SurgeMeter.Add(MeterSource.PocketDimension, PlayerId, Consts.Values.Meter.PocketDimensionChargePerSwap);
             }
 
             if (SoundManager.Instance != null && !IsRemote)

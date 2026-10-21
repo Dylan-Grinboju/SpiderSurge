@@ -25,6 +25,7 @@ namespace SpiderSurge
     public static class SurgeMeter
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
+        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
 
         private static readonly Dictionary<MeterSource, int> _chargeBySource = new Dictionary<MeterSource, int>();
 
@@ -70,18 +71,28 @@ namespace SpiderSurge
             MeterNet.MarkDirty();
         }
 
-        // chargePerWave × players × wavesPerPoint: every player has to do the same for a point, whatever the team size
+        // chargePerWave × wavesPerPoint for one player, times the extra enemies the wave brings for the team, so a point costs the same per enemy whatever the team size
         public static void RecomputeThreshold()
         {
             if (!Net.IsAuthority) return;
-            int players = Mathf.Max(1, LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1);
-            float perPoint = ModConfig.MeterChargePerWave * players * ModConfig.MeterWavesPerPoint;
+            float perPoint = ModConfig.MeterChargePerWave * ModConfig.MeterWavesPerPoint * TeamEnemyFactor();
             int threshold = Mathf.Max(Consts.Values.Meter.MinChargePerPoint, Mathf.RoundToInt(perPoint));
             if (threshold == ChargePerPoint) return;
             ChargePerPoint = threshold;
             ConvertCharge();
             Raise(Changed);
             MeterNet.MarkDirty();
+        }
+
+        // The game's enemy budget for this wave and team over the same wave's budget for one player
+        private static float TeamEnemyFactor()
+        {
+            int players = Mathf.Max(1, LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1);
+            SurvivalConfig config = SurvivalMode.instance != null ? ActiveConfig(SurvivalMode.instance) : null;
+            if (players == 1 || config == null) return 1f;
+            float waveBudget = config.startingBudget + Mathf.Max(1, SurvivalMode.instance.CurrentWave) * config.budgetPerWave;
+            float solo = waveBudget + config.budgetPerPlayer;
+            return solo > 0f ? (waveBudget + players * config.budgetPerPlayer) / solo : 1f;
         }
 
         public static void Add(MeterSource source, int playerId, int amount)

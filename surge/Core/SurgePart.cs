@@ -36,7 +36,7 @@ namespace SpiderSurge
             SurgeLobbyPlatform.EnsureCreated();
             Integration.StatsModBridge.DescribeSurgeTitles();
             StatsMod.HitLogic.EnemyKilled += MeterKills.OnEnemyKilled;
-            if (!Parts.Stats.Enabled || Parts.Stats.BlockedBy != null) Silk.Logger.LogWarning("Stats is off, so kills don't charge the Surge meter for Bottomless Clip, Null Field, Pocket Dimension and Care Package");
+            if (!Parts.Stats.Enabled || Parts.Stats.BlockedBy != null) Silk.Logger.LogWarning("Stats is off, so kills don't charge the Surge meter for Bottomless Clip, Null Field and Care Package");
             Settings.Changed += OnSettingsChanged;
         }
 

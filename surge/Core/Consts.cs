@@ -265,20 +265,20 @@ namespace SpiderSurge
                 public const float MinWavesPerPoint = 0.5f;
                 public const float MaxWavesPerPoint = 10f;
                 public const int MinChargePerPoint = 1;
-                // Pulse, Thermal Detonation and Rewind give the first enemy of a cast this much and each next one 1 more
-                public const int PulseFirstEnemyCharge = 1;
-                public const int DetonationFirstEnemyCharge = 2;
-                public const int RewindFirstEnemyCharge = 1;
+                public const int PulseChargePerEnemy = 1;
+                public const int DetonationChargePerEnemy = 2;
+                public const int RewindChargePerEnemy = 1;
                 public const int BottomlessClipChargePerKill = 2;
-                public const int NullFieldChargePerHit = 10;
+                public const int NullFieldChargePerHit = 5;
                 public const float NullFieldHitInterval = 0.5f;
                 public const int NullFieldChargedHitsPerCast = 3;
                 public const int NullFieldChargePerKill = 2;
-                public const int PocketDimensionChargePerWeapon = 1;
+                public const int PocketDimensionChargePerSwap = 1;
                 public const int FreezeChargePerEnemy = 1;
                 public const int FreezeChargePerKill = 2;
                 public const int CarePackageChargePerWeapon = 1;
                 public const int NeuralBackupChargePerRevive = 3;
+                public const int NeuralBackupChargePerWaspKill = 1;
                 public const int BlackHoleCharge = 3;
                 public const float HudBlinkSeconds = 0.8f;
                 public const float PanelWidth = 240f;

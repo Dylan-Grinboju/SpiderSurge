@@ -189,12 +189,11 @@ namespace SpiderSurge
             }
             GameObject shieldedWasp = FindEnemyPrefab(Consts.Values.Freeze.ShieldedWaspName);
 
-            int rewound = 0;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
                 if (IsWasp(enemy, wasp, shieldedWasp)) continue;
                 RewindEnemy(enemy, wasp, shieldedWasp);
-                SurgeMeter.Add(MeterSource.Rewind, PlayerId, Consts.Values.Meter.RewindFirstEnemyCharge + rewound++);
+                SurgeMeter.Add(MeterSource.Rewind, PlayerId, Consts.Values.Meter.RewindChargePerEnemy);
             }
         }
 

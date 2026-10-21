@@ -1,3 +1,4 @@
+using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
 
@@ -9,16 +10,31 @@ namespace SpiderSurge
         public int PlayerId = -1;
     }
 
-    // Marks a weapon recalled from the Pocket Dimension until it makes its first kill
-    public class PocketDimensionWeapon : MonoBehaviour
+    // Marks a friendly wasp with the player whose Neural Backup summoned it, so its kills charge the meter
+    public class FriendlyWaspOwner : MonoBehaviour
     {
         public int PlayerId = -1;
+    }
 
-        public static void Mark(Weapon weapon, int playerId)
+    // The stinger runs on the host only; an enemy that was alive before the hit and dead after it was killed by the wasp
+    [HarmonyPatch(typeof(FriendlyWaspStinger), nameof(FriendlyWaspStinger.OnCollisionEnter2D))]
+    public class FriendlyWaspStinger_OnCollisionEnter2D_MeterPatch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(Collision2D other, out EnemyHealthSystem __state)
         {
-            PocketDimensionWeapon marker = weapon.GetComponent<PocketDimensionWeapon>();
-            if (marker == null) marker = weapon.gameObject.AddComponent<PocketDimensionWeapon>();
-            marker.PlayerId = playerId;
+            __state = null;
+            if (!SurgeMeter.CanEarn || other == null || other.gameObject == null) return;
+            EnemyHealthSystem enemy = other.gameObject.GetComponentInParent<EnemyHealthSystem>();
+            if (enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel) __state = enemy;
+        }
+
+        [HarmonyPostfix]
+        public static void Postfix(FriendlyWaspStinger __instance, EnemyHealthSystem __state)
+        {
+            if (__state == null || !__state.IsDead()) return;
+            FriendlyWaspOwner owner = __instance.GetComponentInParent<FriendlyWaspOwner>();
+            if (owner != null && owner.PlayerId >= 0) SurgeMeter.Add(MeterSource.NeuralBackup, owner.PlayerId, Consts.Values.Meter.NeuralBackupChargePerWaspKill);
         }
     }
 
@@ -36,12 +52,6 @@ namespace SpiderSurge
                 {
                     SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, Consts.Values.Meter.CarePackageChargePerWeapon);
                     Object.Destroy(drop);
-                }
-                PocketDimensionWeapon recalled = weapon.GetComponent<PocketDimensionWeapon>();
-                if (recalled != null)
-                {
-                    SurgeMeter.Add(MeterSource.PocketDimension, recalled.PlayerId, Consts.Values.Meter.PocketDimensionChargePerWeapon);
-                    Object.Destroy(recalled);
                 }
             }
 

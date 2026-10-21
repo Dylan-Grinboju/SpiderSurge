@@ -124,20 +124,18 @@ namespace SpiderSurge
         {
             switch (key)
             {
-                case P.PulseAbility: return Rising(M.PulseFirstEnemyCharge, "it launches");
+                case P.PulseAbility: return $"{M.PulseChargePerEnemy} for each enemy it launches";
                 case P.AmmoAbility: return $"{M.BottomlessClipChargePerKill} for each kill you make while it runs";
                 case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second and {M.NullFieldChargedHitsPerCast} per cast) and {M.NullFieldChargePerKill} for each kill you make while it runs";
-                case P.StorageAbility: return $"{M.PocketDimensionChargePerWeapon} for the first kill with each weapon it gives back";
+                case P.StorageAbility: return $"{M.PocketDimensionChargePerSwap} each time it gives a stored weapon back";
                 case P.FreezeAbility: return $"{M.FreezeChargePerEnemy} for each enemy it freezes and {M.FreezeChargePerKill} more for each one killed while frozen";
-                case P.PulseAbilityUltimate: return Rising(M.DetonationFirstEnemyCharge, "it hits");
+                case P.PulseAbilityUltimate: return $"{M.DetonationChargePerEnemy} for each enemy it hits";
                 case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerWeapon} for the first kill with each weapon it drops";
-                case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives";
+                case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives and {M.NeuralBackupChargePerWaspKill} for each kill its Wasps make";
                 case P.StorageAbilityUltimate: return $"{M.BlackHoleCharge} for each enemy it swallows";
-                case P.FreezeAbilityUltimate: return Rising(M.RewindFirstEnemyCharge, "it turns into a Wasp");
+                case P.FreezeAbilityUltimate: return $"{M.RewindChargePerEnemy} for each enemy it turns into a Wasp";
                 default: return null;
             }
         }
-
-        private static string Rising(int first, string what) => $"{first} for the first enemy {what}, {first + 1} for the second, {first + 2} for the third and so on";
     }
 }

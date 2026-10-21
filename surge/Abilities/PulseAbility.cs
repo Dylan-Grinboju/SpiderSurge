@@ -347,12 +347,12 @@ namespace SpiderSurge
             }
         }
 
-        // Each enemy charges the meter once per pulse, and each one charges 1 more than the one before it
+        // Each enemy charges the meter once per pulse
         private void ChargeForEnemy(EnemyHealthSystem enemy, bool ultimate)
         {
             if (enemy == null || !enemy.needToKillToCompleteLevel || !_enemiesCharged.Add(enemy)) return;
-            int first = ultimate ? Consts.Values.Meter.DetonationFirstEnemyCharge : Consts.Values.Meter.PulseFirstEnemyCharge;
-            SurgeMeter.Add(ultimate ? MeterSource.ThermalDetonation : MeterSource.KineticPulse, PlayerId, first + _enemiesCharged.Count - 1);
+            if (ultimate) SurgeMeter.Add(MeterSource.ThermalDetonation, PlayerId, Consts.Values.Meter.DetonationChargePerEnemy);
+            else SurgeMeter.Add(MeterSource.KineticPulse, PlayerId, Consts.Values.Meter.PulseChargePerEnemy);
         }
 
         // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
