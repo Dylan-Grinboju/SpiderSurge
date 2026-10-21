@@ -47,7 +47,7 @@ namespace SpiderTeams
             get
             {
                 var manager = Instance;
-                if (manager == null || !manager.TeamModeThisMatch || !(IsHost || Net.HostHasMod))
+                if (manager == null || !manager.TeamModeThisMatch)
                 {
                     return false;
                 }
@@ -132,8 +132,8 @@ namespace SpiderTeams
             }
         }
 
-        // A client connected to a SpiderSurge host shows the host's roster and never assigns teams itself
-        private static bool HostOwnsRoster => Net.IsRemoteClient && Net.HostHasMod;
+        // A client shows the host's roster and never assigns teams itself
+        private static bool HostOwnsRoster => Net.IsRemoteClient;
 
         private void OnConfigChanged()
         {
@@ -232,16 +232,8 @@ namespace SpiderTeams
                 return;
             }
             _clientNoticeShown = true;
-            if (Net.HostHasMod)
-            {
-                Logger.LogInfo("SpiderTeams: the host runs SpiderSurge, so its team rules apply");
-                Toast.Show("SpiderSurge: the host's team rules apply", Color.white);
-            }
-            else
-            {
-                Logger.LogInfo("SpiderTeams: the host has no SpiderSurge, so there are no teams in this match");
-                Toast.Show("SpiderSurge: the host has no SpiderSurge, no teams this match", Color.white);
-            }
+            Logger.LogInfo("SpiderTeams: the host's team rules apply");
+            Toast.Show("SpiderSurge: the host's team rules apply", Color.white);
         }
 
         // A joining client's roster still describes its own local session, whose playerIDs mean other people here

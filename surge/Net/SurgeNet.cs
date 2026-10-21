@@ -111,7 +111,7 @@ namespace SpiderSurge
 
         public static void SendAbility(int playerId, AbilityKind kind, bool ultimate)
         {
-            if (!Net.IsRemoteClient || !Net.HostHasMod)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }

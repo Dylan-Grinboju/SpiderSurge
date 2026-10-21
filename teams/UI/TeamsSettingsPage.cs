@@ -18,9 +18,7 @@ namespace SpiderTeams
             page.Note(FriendlyFireDescription(ModConfig.FriendlyFire));
             if (Net.IsRemoteClient)
             {
-                page.Note(Net.HostHasMod
-                    ? "You are in another player's match: their team settings apply until you leave."
-                    : "The host has no SpiderSurge, so there are no teams in this match.");
+                page.Note("You are in another player's match: their team settings apply until you leave.");
             }
             page.PlacePrimaryControls();
 
@@ -35,7 +33,7 @@ namespace SpiderTeams
 
 
             var manager = TeamManager.Instance;
-            if (manager != null && ModConfig.TeamsEnabled && (TeamManager.IsHost || Net.HostHasMod))
+            if (manager != null && ModConfig.TeamsEnabled)
             {
                 AddRoster(page, manager, readOnly: Net.IsRemoteClient || !manager.PicksOpen);
             }

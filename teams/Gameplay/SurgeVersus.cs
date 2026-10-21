@@ -13,7 +13,6 @@ namespace SpiderTeams
         private static int _round;
         private static int _lastPick = -1;
         private static bool _touched;
-        private static bool _warnedRemote;
 
         public static bool RoundActive { get; private set; }
         public static int CurrentAbility { get; private set; } = -1;
@@ -22,7 +21,6 @@ namespace SpiderTeams
         {
             _round = 0;
             _lastPick = -1;
-            _warnedRemote = false;
         }
 
         // Host only. Runs before the round's spiders spawn, so SpiderSurge adds the abilities to them already unlocked.
@@ -31,18 +29,6 @@ namespace SpiderTeams
             if (!TeamManager.IsHost || waitingRoom || versus == null || !versus.GameModeActive() || !ModConfig.SurgeEnabled || !SurgeBridge.Available)
             {
                 Stop();
-                return;
-            }
-
-            if (!AllPlayersLocal())
-            {
-                Stop();
-                if (!_warnedRemote)
-                {
-                    _warnedRemote = true;
-                    Logger.LogInfo("SpiderTeams: Surge abilities are off for this match because a player has no SpiderSurge");
-                    Announcements.Broadcast("Surge abilities are off: a player has no SpiderSurge", Color.white, false);
-                }
                 return;
             }
 
@@ -160,25 +146,6 @@ namespace SpiderTeams
 
             var weapons = versus.GetWeapons();
             return weapons != null && weapons.Count > 0 ? versus.GetRandomWeapon(false) : null;
-        }
-
-        // A remote player's abilities run through SpiderSurge on its own machine, so every client must run the mod.
-        private static bool AllPlayersLocal()
-        {
-            var players = TeamManager.Players;
-            if (players == null)
-            {
-                return true;
-            }
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (players[i] != null && !players[i].IsOwner && !SpiderSurge.Common.Net.ClientHasMod(players[i].OwnerClientId))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         private static bool Apply(int ability)

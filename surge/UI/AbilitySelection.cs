@@ -1,16 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
+using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 namespace SpiderSurge
 {
     internal static class AbilitySelection
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
+        private static readonly MethodInfo ShowCards = AccessTools.Method(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc");
+        private static readonly MethodInfo SubmitCard = AccessTools.Method(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc");
 
         private static bool pending;
+        private static NetworkSceneManager _scenes;
         public static bool IsChoosing { get; private set; }
 
         // Only the host runs the starting choice; a client knows it is on screen from the synced first-selection flag
@@ -37,6 +43,7 @@ namespace SpiderSurge
                 TimeScaleController.instance?.Reset();
                 GameController.instance?.EnableInputs();
             }
+            Listen(false);
             pending = false;
             IsChoosing = false;
         }
@@ -46,6 +53,8 @@ namespace SpiderSurge
         {
             if (!pending) return true;
             if (IsChoosing) return false;
+            // The game holds joiners until the loading screen has finished, which takes game time a paused choice never gives it
+            if (LevelController.IsLoading) return false;
             var manager = ModifierManager.instance;
             var hud = SurvivalModeHud.instance;
             if (manager == null || hud == null || PerksManager.Instance == null) return false;
@@ -64,13 +73,16 @@ namespace SpiderSurge
                 return true;
             }
             abilities = abilities.OrderBy(_ => UnityEngine.Random.value).Take(ChoiceCount(SurvivalMode.instance)).ToList();
-            var maps = abilities.Select(_ => SurvivalMode.instance._defaultConfig.maps[0]).ToList();
+            int[] ids = abilities.Select(ability => manager.GetModId(ability.data.key)).ToArray();
 
             IsChoosing = true;
             TimeScaleController.instance.Pause();
             ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
-            hud.ShowPerkChoices(abilities, maps);
+            // The game's own card message; ulong.MaxValue sends it to every client
+            ShowCards.Invoke(hud, new object[] { ids, new int[ids.Length], ulong.MaxValue, false });
             hud.perkChoiceView.InstantShow();
+            Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChoicesShown(abilities));
+            Listen(true);
             return false;
         }
 
@@ -82,7 +94,27 @@ namespace SpiderSurge
             return Math.Max(1, config.basePerkChoiceCount + ModifierManager.instance.GetModLevel("picky"));
         }
 
-        public static void Choose(Modifier modifier)
+        // A client still loading the level closes the cards when its scene loads, so it gets them again once it is done, as does a client that joins now
+        private static void Listen(bool on)
+        {
+            if (_scenes != null) _scenes.OnLoadComplete -= OnClientLoaded;
+            Net.PeerReady -= SendTo;
+            _scenes = on && Net.IsHost ? Net.Manager.SceneManager : null;
+            if (_scenes != null) _scenes.OnLoadComplete += OnClientLoaded;
+            if (on) Net.PeerReady += SendTo;
+        }
+
+        private static void OnClientLoaded(ulong clientId, string sceneName, LoadSceneMode mode) => SendTo(clientId);
+
+        // The game's own late-join path: the host's cards and the current votes, sent to one client
+        private static void SendTo(ulong clientId)
+        {
+            var hud = SurvivalModeHud.instance;
+            if (!IsChoosing || hud == null || clientId == Net.ServerId) return;
+            hud.ShowPerkChoicesServerRpc(clientId);
+        }
+
+        public static void Choose(Modifier modifier, int index)
         {
             if (!IsChoosing || modifier?.data == null || !PerksManager.Instance.IsAbilityPerk(modifier.data.key)) return;
             ModifierManager.instance.SetModLevel(modifier, GameMode.Wave, 1);
@@ -90,6 +122,8 @@ namespace SpiderSurge
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChosen(modifier));
             if (StatsMod.GameSessionManager.Instance?.IsActive == true)
                 StatsMod.GameSessionManager.Instance.RecordPerk(PerksManager.Instance.GetDisplayName(modifier.data.key));
+            // The game's submit message closes the cards on every client and greys out the ones not taken
+            SubmitCard.Invoke(SurvivalModeHud.instance, new object[] { index });
             Reset(instant: false);
             PlayerAbilityHandler.AttachToExistingSpiders();
             PerksManager.Instance.RefreshAbilityRegistrations();
@@ -106,10 +140,10 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalModeHud), "PerkChoiceSubmit")]
     internal static class StartingAbilitySubmitPatch
     {
-        static bool Prefix(Modifier modifier)
+        static bool Prefix(Modifier modifier, int index)
         {
             if (!AbilitySelection.IsChoosing) return true;
-            AbilitySelection.Choose(modifier);
+            AbilitySelection.Choose(modifier, index);
             return false;
         }
     }

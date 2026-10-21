@@ -94,15 +94,21 @@ namespace SpiderSurge.Common
     public static class LobbyController_ConnectionApprovalCallback_Patch
     {
         [HarmonyPrefix]
-        public static void Prefix(byte[] connectionData, ulong clientId)
+        public static bool Prefix(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
         {
             try
             {
-                Net.OnApproval(connectionData, clientId);
+                if (Net.Approves(connectionData, clientId))
+                {
+                    return true;
+                }
+                callback(false, null, false, null, null);
+                return false;
             }
             catch (Exception ex)
             {
                 Logger.LogWarning($"SpiderSurge could not read the connection data: {ex.Message}");
+                return true;
             }
         }
     }
