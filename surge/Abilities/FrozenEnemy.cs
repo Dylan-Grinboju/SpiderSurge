@@ -27,6 +27,7 @@ namespace SpiderSurge
 
         private EnemyHealthSystem _enemy;
         private int _enemyId;
+        private int _frozenBy = -1;
         private float _thawTime;
         private float? _fuseLeft;
         private bool _held;
@@ -67,6 +68,12 @@ namespace SpiderSurge
             return frozen != null ? frozen._thawTime : 0f;
         }
 
+        public static int FreezerOf(EnemyHealthSystem enemy)
+        {
+            FrozenEnemy frozen = enemy != null ? enemy.GetComponent<FrozenEnemy>() : null;
+            return frozen != null ? frozen._frozenBy : -1;
+        }
+
         internal static void SetBaseColor(SpriteRenderer sprite, Color color)
         {
             FrozenEnemy frozen = sprite.GetComponentInParent<FrozenEnemy>();
@@ -83,10 +90,11 @@ namespace SpiderSurge
             }
         }
 
-        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
-        public static bool Freeze(EnemyHealthSystem enemy, float duration)
+        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack; the last player to freeze it gets its kill charge
+        public static bool Freeze(EnemyHealthSystem enemy, float duration, int playerId)
         {
             if (!Apply(enemy, duration, visualOnly: false)) return false;
+            enemy.GetComponent<FrozenEnemy>()._frozenBy = playerId;
             SurgeNet.SendEnemyFx(EnemyFx.Frozen, enemy.GetComponent<NetworkObject>(), duration);
             return true;
         }
@@ -218,6 +226,12 @@ namespace SpiderSurge
             if (Time.time < _thawTime) return;
             Thaw();
             Destroy(this);
+        }
+
+        // EnemyHealthSystem.Explode sends this to every component on the host whenever an enemy dies
+        private void OnCharacterDied()
+        {
+            if (_held && !_visualOnly && _frozenBy >= 0) SurgeMeter.Add(MeterSource.FreezeTime, _frozenBy, Consts.Values.Meter.FreezeChargePerKill);
         }
 
         // The game recolors parts while they are frozen (a damaged roller strut turns orange); the new color becomes the one tinted and restored

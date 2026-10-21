@@ -124,8 +124,9 @@ namespace SpiderSurge
         }
 
         private float _lastChargedHit = -10f;
+        private int _chargedHits;
 
-        // Lava calls this every frame, so a blocked hit charges the meter at most twice a second
+        // Lava calls this every frame, so a blocked hit charges the meter at most twice a second and only a few times per cast
         public void RegisterHit()
         {
             if (isActive && IsImmune)
@@ -133,10 +134,11 @@ namespace SpiderSurge
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
                 if (bubble != null) bubble.Hit();
-                if (Time.time - _lastChargedHit >= Consts.Values.Meter.NullFieldHitInterval)
+                if (Time.time - _lastChargedHit >= Consts.Values.Meter.NullFieldHitInterval && _chargedHits < Consts.Values.Meter.NullFieldChargedHitsPerCast)
                 {
                     _lastChargedHit = Time.time;
-                    SurgeMeter.Add(MeterSource.NullField, PlayerId, CastId, Consts.Values.Meter.NullFieldChargePerHit, Consts.Values.Meter.NullFieldCapPerCast);
+                    _chargedHits++;
+                    SurgeMeter.Add(MeterSource.NullField, PlayerId, Consts.Values.Meter.NullFieldChargePerHit);
                 }
             }
         }
@@ -168,6 +170,7 @@ namespace SpiderSurge
         {
             wasHitDuringSession = false;
             _lastChargedHit = -10f;
+            _chargedHits = 0;
             hadBarrierOnSessionStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
 
             ApplyImmunity(true);
@@ -417,7 +420,7 @@ namespace SpiderSurge
 
             if (TryRespawnDeadPlayer(out var revivedPlayer))
             {
-                SurgeMeter.Add(MeterSource.NeuralBackup, PlayerId, CastId, Consts.Values.Meter.NeuralBackupChargePerEvent, Consts.Values.Meter.NeuralBackupCapPerCast);
+                SurgeMeter.Add(MeterSource.NeuralBackup, PlayerId, Consts.Values.Meter.NeuralBackupChargePerRevive);
                 if (hadBarrierOnUltimateCastStart && Random.value <= Consts.Values.Immune.UltimateShieldSynergyChance)
                 {
                     StartCoroutine(ApplyShieldToRevivedPlayer(revivedPlayer));
@@ -566,9 +569,6 @@ namespace SpiderSurge
             var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
             spawnedObj.SetActive(true);
             NullFieldVfx.Summon(spawn.position);
-            var owner = spawnedObj.AddComponent<FriendlyWaspOwner>();
-            owner.PlayerId = PlayerId;
-            owner.CastId = CastId;
 
             var netObj = spawnedObj.GetComponent<NetworkObject>();
             if (netObj != null)

@@ -29,22 +29,6 @@ namespace SpiderSurge
             return ability.GetHeldWeaponFloorAmmo(weapon);
         }
 
-        // A shot the ability paid for: every second one charges the meter (the Particle Blade clamps once per hit)
-        public static void NoteClampedShot(Weapon weapon)
-        {
-            if (weapon == null || weapon.owner == null) return;
-            int playerId = Players.IdOf(weapon.owner);
-            if (playerId < 0 || !playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive || ability._settingAmmo) return;
-            ability._clampedShots++;
-            if (ability._clampedShots % Consts.Values.Meter.ClampedShotsPerCharge == 0)
-            {
-                SurgeMeter.Add(MeterSource.BottomlessClip, ability.PlayerId, ability.CastId, 1, Consts.Values.Meter.BottomlessClipCapPerCast);
-            }
-        }
-
-        private int _clampedShots;
-        private bool _settingAmmo;
-
         public override string PerkName => Consts.PerkNames.AmmoAbility;
         public override AbilityKind Kind => AbilityKind.Ammo;
 
@@ -208,10 +192,7 @@ namespace SpiderSurge
         {
             if (weapon == null || !IsAuthority) return;
 
-            // The ammo floor clamps this write too, and it is not a shot the ability paid for
-            _settingAmmo = true;
             weapon.ammo = value;
-            _settingAmmo = false;
 
             if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField != null)
             {
@@ -243,7 +224,6 @@ namespace SpiderSurge
             trackedOriginalAmmo = 0f;
             lastResolvedWeapon = null;
             lastResolvedFrame = -1;
-            _clampedShots = 0;
 
             if (weaponManager != null && weaponManager.equippedWeapon != null)
             {
@@ -473,7 +453,6 @@ namespace SpiderSurge
 
                         var drop = spawnedWeapon.AddComponent<CarePackageDrop>();
                         drop.PlayerId = PlayerId;
-                        drop.CastId = CastId;
 
                         spawnedCount++;
                     }

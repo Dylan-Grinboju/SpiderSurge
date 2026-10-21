@@ -1,42 +1,61 @@
-using HarmonyLib;
+using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderSurge
 {
-    // Marks a friendly wasp with the Neural Backup cast that summoned it, so its kills charge the meter for that cast
-    public class FriendlyWaspOwner : MonoBehaviour
-    {
-        public int PlayerId = -1;
-        public int CastId;
-    }
-
-    // Marks a weapon a Care Package dropped until someone picks it up
+    // Marks a weapon a Care Package dropped until it makes its first kill
     public class CarePackageDrop : MonoBehaviour
     {
         public int PlayerId = -1;
-        public int CastId;
     }
 
-    // The stinger runs on the host only; an enemy that was alive before the hit and dead after it was killed by the wasp
-    [HarmonyPatch(typeof(FriendlyWaspStinger), nameof(FriendlyWaspStinger.OnCollisionEnter2D))]
-    public class FriendlyWaspStinger_OnCollisionEnter2D_MeterPatch
+    // Marks a weapon recalled from the Pocket Dimension until it makes its first kill
+    public class PocketDimensionWeapon : MonoBehaviour
     {
-        [HarmonyPrefix]
-        public static void Prefix(FriendlyWaspStinger __instance, Collision2D other, out EnemyHealthSystem __state)
-        {
-            __state = null;
-            if (!SurgeMeter.CanEarn || other == null || other.gameObject == null) return;
-            EnemyHealthSystem enemy = other.gameObject.GetComponentInParent<EnemyHealthSystem>();
-            if (enemy != null && !enemy.IsDead() && enemy.needToKillToCompleteLevel) __state = enemy;
-        }
+        public int PlayerId = -1;
 
-        [HarmonyPostfix]
-        public static void Postfix(FriendlyWaspStinger __instance, EnemyHealthSystem __state)
+        public static void Mark(Weapon weapon, int playerId)
         {
-            if (__state == null || !__state.IsDead()) return;
-            FriendlyWaspOwner owner = __instance.GetComponentInParent<FriendlyWaspOwner>();
-            if (owner == null || owner.PlayerId < 0) return;
-            SurgeMeter.Add(MeterSource.NeuralBackup, owner.PlayerId, owner.CastId, Consts.Values.Meter.NeuralBackupChargePerEvent, Consts.Values.Meter.NeuralBackupCapPerCast);
+            PocketDimensionWeapon marker = weapon.GetComponent<PocketDimensionWeapon>();
+            if (marker == null) marker = weapon.gameObject.AddComponent<PocketDimensionWeapon>();
+            marker.PlayerId = playerId;
+        }
+    }
+
+    // Kills come from the Stats part's kill credit, which knows the player and weapon behind each one, so they only count while Stats runs
+    public static class MeterKills
+    {
+        public static void OnEnemyKilled(EnemyHealthSystem enemy, PlayerController player, Weapon weapon, float hitTime)
+        {
+            if (!SurgeMeter.CanEarn || enemy == null || !enemy.needToKillToCompleteLevel) return;
+
+            if (weapon != null)
+            {
+                CarePackageDrop drop = weapon.GetComponent<CarePackageDrop>();
+                if (drop != null)
+                {
+                    SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, Consts.Values.Meter.CarePackageChargePerWeapon);
+                    Object.Destroy(drop);
+                }
+                PocketDimensionWeapon recalled = weapon.GetComponent<PocketDimensionWeapon>();
+                if (recalled != null)
+                {
+                    SurgeMeter.Add(MeterSource.PocketDimension, recalled.PlayerId, Consts.Values.Meter.PocketDimensionChargePerWeapon);
+                    Object.Destroy(recalled);
+                }
+            }
+
+            if (player == null) return;
+            int playerId = player.playerID.Value;
+            if (AmmoAbility.playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility clip) && clip != null && clip.AbilityActiveAt(hitTime))
+            {
+                SurgeMeter.Add(MeterSource.BottomlessClip, playerId, Consts.Values.Meter.BottomlessClipChargePerKill);
+            }
+            ImmuneAbility field = ImmuneAbility.GetByHealthSystem(Players.HealthOf(playerId));
+            if (field != null && field.AbilityActiveAt(hitTime))
+            {
+                SurgeMeter.Add(MeterSource.NullField, playerId, Consts.Values.Meter.NullFieldChargePerKill);
+            }
         }
     }
 }

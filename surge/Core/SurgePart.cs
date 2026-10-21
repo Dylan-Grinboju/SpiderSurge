@@ -35,12 +35,14 @@ namespace SpiderSurge
 
             SurgeLobbyPlatform.EnsureCreated();
             Integration.StatsModBridge.DescribeSurgeTitles();
+            StatsMod.HitLogic.EnemyKilled += MeterKills.OnEnemyKilled;
             Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
+            StatsMod.HitLogic.EnemyKilled -= MeterKills.OnEnemyKilled;
             SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);

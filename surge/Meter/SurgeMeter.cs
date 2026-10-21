@@ -27,7 +27,6 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
 
-        private static readonly Dictionary<(int playerId, MeterSource source, int castId), int> _castUse = new Dictionary<(int, MeterSource, int), int>();
         private static readonly Dictionary<MeterSource, int> _chargeBySource = new Dictionary<MeterSource, int>();
 
         public static int Charge { get; private set; }
@@ -40,7 +39,6 @@ namespace SpiderSurge
         public static IReadOnlyDictionary<MeterSource, int> ChargeBySource => _chargeBySource;
 
         private static bool _remoteSynced;
-        private static int _lastCastId;
 
         public static event Action Changed;
         public static event Action PointEarned;
@@ -67,7 +65,6 @@ namespace SpiderSurge
             PointsEarned = 0;
             PointsSpent = 0;
             _remoteSynced = false;
-            _castUse.Clear();
             _chargeBySource.Clear();
             RecomputeThreshold();
             Raise(Changed);
@@ -96,17 +93,9 @@ namespace SpiderSurge
             MeterNet.MarkDirty();
         }
 
-        // Caps are per cast, so a wasp or a dropped weapon from an older cast still counts against that cast
-        public static void Add(MeterSource source, int playerId, int castId, int amount, int capPerCast)
+        public static void Add(MeterSource source, int playerId, int amount)
         {
             if (amount <= 0 || !CanEarn) return;
-
-            var key = (playerId, source, castId);
-            _castUse.TryGetValue(key, out int used);
-            int room = capPerCast - used;
-            if (room <= 0) return;
-            amount = Mathf.Min(amount, room);
-            _castUse[key] = used + amount;
 
             Charge += amount;
             TotalCharge += amount;
@@ -118,9 +107,6 @@ namespace SpiderSurge
             Raise(Changed);
             MeterNet.MarkDirty();
         }
-
-        // Every spider gets new ability objects, so a per-ability counter would restart after a respawn and reuse caps already spent
-        public static int NextCastId() => ++_lastCastId;
 
         public static bool CanAfford(int cost) => Points >= cost;
 

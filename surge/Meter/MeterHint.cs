@@ -124,20 +124,20 @@ namespace SpiderSurge
         {
             switch (key)
             {
-                case P.PulseAbility: return $"{M.PulseChargePerEnemy} for each enemy it launches, {Cap(M.PulseChargePerEnemy, M.PulseCapPerCast)}";
-                case P.AmmoAbility: return $"1 for every {M.ClampedShotsPerCharge} shots that would have cost ammo, {Cap(1, M.BottomlessClipCapPerCast)}";
-                case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second), {Cap(M.NullFieldChargePerHit, M.NullFieldCapPerCast)}";
-                case P.StorageAbility: return $"{M.PocketDimensionChargePerRecall} for recalling a weapon that still has ammo, {Cap(M.PocketDimensionChargePerRecall, M.PocketDimensionCapPerCast)}";
-                case P.FreezeAbility: return $"{M.FreezeChargePerEnemy} for each enemy it freezes, {Cap(M.FreezeChargePerEnemy, M.FreezeCapPerCast)}";
-                case P.PulseAbilityUltimate: return $"{M.DetonationChargePerKill} for each enemy in the death zone, {Cap(M.DetonationChargePerKill, M.DetonationCapPerCast)}, and {M.PulseChargePerEnemy} for each enemy it only launches, up to {M.PulseCapPerCast}";
-                case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerPickup} for each weapon it drops that anyone picks up, {Cap(M.CarePackageChargePerPickup, M.CarePackageCapPerCast)}";
-                case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerEvent} for each player it revives and each kill by its friendly Wasps, {Cap(M.NeuralBackupChargePerEvent, M.NeuralBackupCapPerCast)}";
-                case P.StorageAbilityUltimate: return $"{M.BanishChargePerEnemy} for banishing an enemy, {Cap(M.BanishChargePerEnemy, M.BanishCapPerCast)}";
-                case P.FreezeAbilityUltimate: return $"{M.RewindChargePerEnemy} for each enemy it turns into a Wasp, {Cap(M.RewindChargePerEnemy, M.RewindCapPerCast)}";
+                case P.PulseAbility: return Rising(M.PulseFirstEnemyCharge, "it launches");
+                case P.AmmoAbility: return $"{M.BottomlessClipChargePerKill} for each kill you make while it runs";
+                case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second and {M.NullFieldChargedHitsPerCast} per cast) and {M.NullFieldChargePerKill} for each kill you make while it runs";
+                case P.StorageAbility: return $"{M.PocketDimensionChargePerWeapon} for the first kill with each weapon it gives back";
+                case P.FreezeAbility: return $"{M.FreezeChargePerEnemy} for each enemy it freezes and {M.FreezeChargePerKill} more for each one killed while frozen";
+                case P.PulseAbilityUltimate: return Rising(M.DetonationFirstEnemyCharge, "it hits");
+                case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerWeapon} for the first kill with each weapon it drops";
+                case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives";
+                case P.StorageAbilityUltimate: return $"{M.BanishCharge} for banishing an enemy";
+                case P.FreezeAbilityUltimate: return Rising(M.RewindFirstEnemyCharge, "it turns into a Wasp");
                 default: return null;
             }
         }
 
-        private static string Cap(int charge, int cap) => cap <= charge ? "once per cast" : $"up to {cap} per cast";
+        private static string Rising(int first, string what) => $"{first} for the first enemy {what}, {first + 1} for the second, {first + 2} for the third and so on";
     }
 }

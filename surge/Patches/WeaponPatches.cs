@@ -69,14 +69,6 @@ namespace SpiderSurge
             if (weapon != null)
             {
                 AmmoAbility.HandleWeaponEquipped(__instance, weapon);
-
-                // A Care Package weapon charges the meter the first time anyone picks it up
-                var drop = weapon.GetComponent<CarePackageDrop>();
-                if (drop != null)
-                {
-                    SurgeMeter.Add(MeterSource.CarePackage, drop.PlayerId, drop.CastId, Consts.Values.Meter.CarePackageChargePerPickup, Consts.Values.Meter.CarePackageCapPerCast);
-                    Object.Destroy(drop);
-                }
             }
         }
     }
@@ -111,7 +103,6 @@ namespace SpiderSurge
             if (floor >= 0f && value < floor)
             {
                 value = floor;
-                AmmoAbility.NoteClampedShot(__instance);
             }
         }
     }
