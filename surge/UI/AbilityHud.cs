@@ -1,10 +1,17 @@
+using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderSurge
 {
+    // The compact ability HUD: one row per player in the bottom right corner instead of the ring over each spider
     internal sealed class AbilityHud
     {
+        private static readonly Dictionary<int, AbilityHud> Rows = new Dictionary<int, AbilityHud>();
+        private static readonly List<int> Gone = new List<int>();
+
+        private BaseAbility ability;
+        private string perkName;
         private GUIStyle titleStyle;
         private GUIStyle detailStyle;
         private GUIStyle timerStyle;
@@ -14,17 +21,52 @@ namespace SpiderSurge
         private int lastSeconds = -1;
         private int lastState = -1;
 
-        public void Draw(BaseAbility ability, Color readyColor, Color activeColor, Color cooldownColor)
+        // A dead player's spider is destroyed with its ability, so the row stays and shows Down until the next spider's ability takes it over
+        public static void Track(BaseAbility tracked)
         {
-            if (Event.current.type != EventType.Repaint || !ability.IsUnlocked() || GameMenus.Open) return;
+            if (tracked == null || tracked.PlayerId < 0) return;
+            if (!Rows.TryGetValue(tracked.PlayerId, out AbilityHud row))
+            {
+                row = new AbilityHud();
+                Rows[tracked.PlayerId] = row;
+            }
+            if (row.perkName != tracked.PerkName)
+            {
+                row.perkName = tracked.PerkName;
+                row.abilityName = null;
+                row.lastState = -1;
+            }
+            row.ability = tracked;
+            AbilityHudDrawer.Ensure();
+        }
+
+        public static void DrawAll(Color readyColor, Color activeColor, Color cooldownColor)
+        {
+            if (Event.current.type != EventType.Repaint || GameMenus.Open || Rows.Count == 0) return;
             var players = Players.All;
             if (players == null || players.Count == 0) return;
-            var player = Players.ById(ability.PlayerId);
-            if (player == null) return;
-            bool alive = ability.IsPlayerAlive();
+            foreach (var pair in Rows)
+            {
+                if (!pair.Value.Draw(pair.Key, players, readyColor, activeColor, cooldownColor)) Gone.Add(pair.Key);
+            }
+            foreach (int playerId in Gone)
+            {
+                Rows.Remove(playerId);
+            }
+            Gone.Clear();
+        }
+
+        // False once the row is no longer needed: its ability is gone and its player left or the ability was lost at the end of the run
+        private bool Draw(int playerId, List<PlayerController> players, Color readyColor, Color activeColor, Color cooldownColor)
+        {
+            bool exists = ability != null;
+            var player = Players.ById(playerId);
+            bool unlocked = PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(perkName) > 0;
+            if (player == null || !unlocked) return exists;
+            bool alive = exists && ability.IsPlayerAlive();
             bool active = alive && ability.IsActive();
             bool ready = alive && !active && !ability.IsOnCooldown();
-            if (ModConfig.IndicatorShowOnlyWhenReady && !ready) return;
+            if (ModConfig.IndicatorShowOnlyWhenReady && !ready) return true;
 
             Hud.EnsureFonts();
             if (titleStyle == null || fontVersion != Hud.FontVersion)
@@ -36,9 +78,9 @@ namespace SpiderSurge
                 fontVersion = Hud.FontVersion;
             }
             string name = Players.NameOf(player);
-            abilityName ??= PerksManager.Instance.GetDisplayName(ability.PerkName);
+            abilityName ??= PerksManager.Instance.GetDisplayName(perkName);
             int state = !alive ? 0 : active ? 1 : ready ? 2 : 3;
-            int seconds = Mathf.CeilToInt(active ? ability.ActiveRemaining : ability.CooldownRemaining);
+            int seconds = !alive ? 0 : Mathf.CeilToInt(active ? ability.ActiveRemaining : ability.CooldownRemaining);
             if (state != lastState || seconds != lastSeconds)
             {
                 status = !alive ? "Down" : active ? "Active  " + Hud.Number(seconds) + "s" : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
@@ -48,7 +90,7 @@ namespace SpiderSurge
 
             int slot = 0;
             foreach (var entry in players)
-                if (entry != null && entry.playerID.Value < ability.PlayerId) slot++;
+                if (entry != null && entry.playerID.Value < playerId) slot++;
             float scale = Mathf.Clamp(Screen.height / 1080f, 0.5f, 1.5f);
             float width = 268f * scale;
             float height = 76f * scale;
@@ -75,7 +117,7 @@ namespace SpiderSurge
             bar.width *= progress;
             Hud.Fill(bar, color);
 
-            if (ability is StorageAbility storage)
+            if (exists && ability is StorageAbility storage)
             {
                 Sprite sprite = storage.StoredWeaponSprite;
                 var preview = new Rect(x + width - 38f * scale, y + 5f * scale, 26f * scale, 22f * scale);
@@ -88,6 +130,53 @@ namespace SpiderSurge
                 }
                 else Hud.Label(new Rect(x + width - 60f * scale, y + 5f * scale, 48f * scale, 22f * scale), "Empty", timerStyle, Hud.Muted);
             }
+            return true;
+        }
+    }
+
+    // One object draws every row, and it is disabled while the HUD is off so Unity makes no OnGUI call for it
+    internal sealed class AbilityHudDrawer : MonoBehaviour
+    {
+        private static AbilityHudDrawer instance;
+        private Color readyColor;
+        private Color activeColor;
+        private Color cooldownColor;
+
+        public static void Ensure()
+        {
+            if (instance != null) return;
+            var holder = new GameObject("SurgeAbilityHud");
+            DontDestroyOnLoad(holder);
+            instance = holder.AddComponent<AbilityHudDrawer>();
+        }
+
+        private void Awake()
+        {
+            Settings.Changed += Changed;
+            ApplySettings();
+        }
+
+        private void OnDestroy()
+        {
+            Settings.Changed -= Changed;
+        }
+
+        private void Changed(string key)
+        {
+            if (Settings.Affects(key, "surge.indicator") || key.StartsWith("surge.indicator.")) ApplySettings();
+        }
+
+        private void ApplySettings()
+        {
+            readyColor = ModConfig.IndicatorAvailableColor;
+            activeColor = ModConfig.IndicatorActiveColor;
+            cooldownColor = ModConfig.IndicatorCooldownColor;
+            enabled = ModConfig.IndicatorCompactHud;
+        }
+
+        private void OnGUI()
+        {
+            AbilityHud.DrawAll(readyColor, activeColor, cooldownColor);
         }
     }
 }
