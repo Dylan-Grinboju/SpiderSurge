@@ -76,13 +76,14 @@ namespace SpiderSurge
             MeterNet.MarkDirty();
         }
 
-        // Retrying a failed wave keeps its cap; only reaching a later wave opens another point.
+        // Retrying a failed wave keeps its cap; only reaching a later wave opens another point. Charge carried over that the new threshold completes counts for the wave that made it
         public static void OnWaveStarted(int wave)
         {
             if (!Net.IsAuthority || wave <= _wave) return;
             _wave = wave;
-            PointsEarnedThisWave = 0;
             RecomputeThreshold();
+            PointsEarnedThisWave = 0;
+            ConvertCharge();
             Raise(Changed);
             MeterNet.MarkDirty();
         }

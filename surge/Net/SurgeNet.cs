@@ -182,11 +182,11 @@ namespace SpiderSurge
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
 
-            // Players join a run already going, so they also get the enemies Freeze Time is holding right now
+            // Players join a run already going, so they also get the enemies Freeze Time is holding right now; the Black Hole's holds aren't shown as frozen
             foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
             {
                 NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = frozen.TimeLeft;
+                float left = FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>());
                 if (target == null || !target.IsSpawned || left <= 0f) continue;
                 Net.SendTo(clientId, EnemyChannel, writer =>
                 {
@@ -247,6 +247,7 @@ namespace SpiderSurge
             writer.Write(SurgeGameModeManager.IsModeEnabled);
             writer.Write(mode != null && mode.IsActive);
             writer.Write(mode != null && mode.RunUsedSurge);
+            writer.Write(mode != null && mode.NoAbilitiesThisRun);
             int wave = SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive() ? SurvivalMode.instance.CurrentWave : 0;
             writer.Write(wave);
             writer.Write(perks != null && perks.IsFirstNormalPerkSelection);
@@ -292,6 +293,7 @@ namespace SpiderSurge
                 bool modeEnabled = reader.ReadBoolean();
                 bool active = reader.ReadBoolean();
                 bool runUsed = reader.ReadBoolean();
+                bool noAbilities = reader.ReadBoolean();
                 int wave = reader.ReadInt32();
                 bool first = reader.ReadBoolean();
                 bool ultUpgrade = reader.ReadBoolean();
@@ -315,7 +317,7 @@ namespace SpiderSurge
                 int spawnEpoch = reader.ReadInt32();
 
                 SurgeGameModeManager.SelectMode(modeEnabled);
-                SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed);
+                SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
