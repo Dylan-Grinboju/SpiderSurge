@@ -34,7 +34,7 @@ namespace SpiderSurge
         {
             if (weapon == null || weapon.owner == null) return;
             int playerId = Players.IdOf(weapon.owner);
-            if (playerId < 0 || !playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive) return;
+            if (playerId < 0 || !playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive || ability._settingAmmo) return;
             ability._clampedShots++;
             if (ability._clampedShots % Consts.Values.Meter.ClampedShotsPerCharge == 0)
             {
@@ -43,6 +43,7 @@ namespace SpiderSurge
         }
 
         private int _clampedShots;
+        private bool _settingAmmo;
 
         public override string PerkName => Consts.PerkNames.AmmoAbility;
         public override AbilityKind Kind => AbilityKind.Ammo;
@@ -207,7 +208,10 @@ namespace SpiderSurge
         {
             if (weapon == null || !IsAuthority) return;
 
+            // The ammo floor clamps this write too, and it is not a shot the ability paid for
+            _settingAmmo = true;
             weapon.ammo = value;
+            _settingAmmo = false;
 
             if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField != null)
             {
