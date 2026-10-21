@@ -563,6 +563,17 @@ namespace StatsMod
                 yield return new WaitForSecondsRealtime(delaySeconds);
             }
 
+            // A Surge run's starting ability choice blocks pausing, so the titles keep waiting for the pause until it closes
+            while (GameController.instance != null && !GameController.instance.CanBePaused())
+            {
+                if (currentUIState != UIState.TitlesUI || GameSessionManager.Instance == null || !GameSessionManager.Instance.IsActive)
+                {
+                    delayedPauseCoroutine = null;
+                    yield break;
+                }
+                yield return null;
+            }
+
             PauseGameLikeEsc();
             delayedPauseCoroutine = null;
         }
