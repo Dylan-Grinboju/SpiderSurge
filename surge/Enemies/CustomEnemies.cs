@@ -72,7 +72,7 @@ namespace SpiderSurge.Enemies
             // Create Shielded Variant if source is provided
             if (shieldSourceEnemy != null && ShieldedMissileWhispPrefab == null && MissileWhispPrefab != null)
             {
-                ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp", Consts.Values.Colors.MissileWhispShieldColor);
+                ShieldedMissileWhispPrefab = CreateShieldedEnemy(MissileWhispPrefab, shieldSourceEnemy, "ShieldedMissileWhisp");
             }
         }
 
@@ -132,7 +132,7 @@ namespace SpiderSurge.Enemies
                 var baseHealth = baseEnemy.GetComponent<EnemyHealthSystem>();
                 if (baseHealth == null || (baseHealth.shield != null && baseHealth.shield.activeSelf)) continue;
 
-                var laserEnemy = CreateShieldedEnemy(baseEnemy, shieldSourceEnemy, laserName, Consts.Values.LaserRing.Color, tintBody: false);
+                var laserEnemy = CreateShieldedEnemy(baseEnemy, shieldSourceEnemy, laserName, Consts.Values.LaserRing.Color);
                 var laserHealth = laserEnemy?.GetComponent<EnemyHealthSystem>();
                 if (laserHealth == null || laserHealth.shield == null || laserHealth.shieldShatterEffect == null)
                 {
@@ -142,22 +142,15 @@ namespace SpiderSurge.Enemies
                     continue;
                 }
 
-                AddShieldBubble(laserHealth, shieldSourceEnemy, baseEnemy.name, Consts.Values.LaserRing.Color);
                 laserHealth.shield.AddComponent<LaserRing>().Initialize(laserHealth, laserCannon, deathRay);
                 LaserPrefabs[laserName] = laserEnemy;
             }
         }
 
         // The game's shield bubble in the shield's color, fitted to the enemy's body; it lives on the shield object, so it goes when the shield breaks
-        private static void AddShieldBubble(EnemyHealthSystem health, GameObject shieldSourceEnemy, string baseName, Color color)
+        private static void AddShieldBubble(EnemyHealthSystem health, SpriteRenderer source, string baseName, Color color)
         {
-            var source = shieldSourceEnemy.GetComponent<EnemyHealthSystem>().shield.GetComponentInChildren<SpriteRenderer>(true);
-            if (source == null)
-            {
-                Logger.LogWarning($"[SpiderSurge] {health.name} has no shield bubble to copy.");
-                return;
-            }
-            var fit = Consts.Values.LaserRing.Bubbles.TryGetValue(baseName, out var size) ? size : (offsetY: 0f, scale: 1f);
+            var fit = Consts.Values.ShieldBubbles.Fits.TryGetValue(baseName, out var size) ? size : (offsetY: 0f, scale: 1f);
 
             var bubble = new GameObject("ShieldBubble");
             bubble.transform.SetParent(health.shield.transform, false);
@@ -307,16 +300,24 @@ namespace SpiderSurge.Enemies
                 }
             }
 
+            // The body leans blue, and the eye and thrusters glow yellow like the game's whisps instead of the turret's magenta
+            Transform eye = enemyObj.transform.Find("CoreBase/Eye");
             foreach (var renderer in enemyObj.GetComponentsInChildren<SpriteRenderer>(true))
             {
-                Color color = Color.Lerp(renderer.color, Consts.Values.Colors.MissileWhispColor, 0.7f);
+                bool light = renderer.transform == eye || renderer.transform.IsChildOf(thrusters.transform);
+                Color color = light ? Consts.Values.Colors.MissileWhispLightColor : Color.Lerp(renderer.color, Consts.Values.Colors.MissileWhispColor, 0.7f);
                 color.a = renderer.color.a;
                 renderer.color = color;
+            }
+            foreach (var sparks in thrusters.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = sparks.main;
+                main.startColor = Consts.Values.Colors.MissileWhispLightColor;
             }
 
             var brain = enemyObj.GetComponent<WhispBrain>();
             typeof(WhispBrain).GetField("glowRender", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(brain, thrusters);
-            brain.energyColor = turret.energyColor;
+            brain.energyColor = Consts.Values.Colors.MissileWhispLightColor;
             brain.chargeColor = turret.chargeColor;
             var charge = brain.chargeParticles.main;
             charge.startColor = turret.chargeParticles.main.startColor;
@@ -374,7 +375,8 @@ namespace SpiderSurge.Enemies
             }
         }
 
-        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name, Color? shieldTint = null, bool tintBody = true)
+        // The shield looks like the game's own: a bubble, in the source's color unless tinted, that shatters when it breaks
+        private static GameObject CreateShieldedEnemy(GameObject baseEnemy, GameObject shieldSourceEnemy, string name, Color? shieldTint = null)
         {
             if (baseEnemy == null || shieldSourceEnemy == null) return null;
 
@@ -388,17 +390,12 @@ namespace SpiderSurge.Enemies
                 GameObject newShield = new GameObject(sourceHealth.shield.name);
                 newShield.SetActive(false);
                 newShield.transform.SetParent(newEnemyObj.transform, false);
-
-                if (tintBody)
-                {
-                    var shieldRenderer = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
-                    Color shieldColor = shieldTint ?? (shieldRenderer != null ? shieldRenderer.color : Color.magenta);
-                    newShield.AddComponent<ShieldedEnemyVisuals>().Initialize(
-                        newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true), shieldColor);
-                }
-
                 healthSystem.shield = newShield;
                 newShield.SetActive(true);
+
+                var bubble = sourceHealth.shield.GetComponentInChildren<SpriteRenderer>(true);
+                if (bubble != null) AddShieldBubble(healthSystem, bubble, baseEnemy.name, shieldTint ?? bubble.color);
+                else Logger.LogWarning($"[SpiderSurge] {name} has no shield bubble to copy.");
 
                 // Clone Shatter Effect if available
                 if (sourceHealth.shieldShatterEffect != null)
