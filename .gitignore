@@ -406,25 +406,3 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-
-# Shared QA source; machine rules, run history, checkpoints and evidence stay local.
-!.claude/
-.claude/*
-!.claude/skills/
-.claude/skills/*
-!.claude/skills/qa/
-.claude/skills/qa/*
-!.claude/skills/qa/SKILL.md
-!.claude/skills/qa/access-scan.ps1
-!.claude/skills/qa/checklist.md
-!.claude/skills/qa/checkpoint.py
-!.claude/skills/qa/features.md
-!.claude/skills/qa/full-check.md
-!.claude/skills/qa/gc-measure.py
-!.claude/skills/qa/pick.py
-!.claude/skills/qa/recipes.md
-!.claude/skills/qa/reference.py
-!.claude/skills/qa/report.md
-!.claude/skills/qa/run_recipe.py
-!.claude/skills/qa/runner.md
-!.claude/skills/qa/test_qa.py
