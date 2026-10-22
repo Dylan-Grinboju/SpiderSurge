@@ -34,4 +34,18 @@ namespace SpiderSurge.Common
         [HarmonyPrefix]
         public static bool Prefix() => !SettingsPage.HandleBack();
     }
+
+    [HarmonyPatch(typeof(Selectable), nameof(Selectable.OnMove))]
+    public static class Settings_HelpNavigation_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(Selectable __instance) => !SettingsPage.ScrollingHelp(__instance);
+    }
+
+    [HarmonyPatch(typeof(Slider), nameof(Slider.OnMove))]
+    public static class Settings_HelpSliderNavigation_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(Slider __instance) => !SettingsPage.ScrollingHelp(__instance);
+    }
 }

@@ -9,7 +9,7 @@ namespace SpiderSurge
     {
         private static readonly string[] Objects =
         {
-            "SurgeGameModeManager", "PerksManager", "SoundManager", "SoundTester", "PlayerControlSettings", "TelemetryConsentUI", "SurgeGuide",
+            "SurgeGameModeManager", "PerksManager", "SoundManager", "SoundTester", "PlayerControlSettings", "TelemetryConsentUI",
         };
 
         public override string Key => "surge";
@@ -30,7 +30,6 @@ namespace SpiderSurge
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
             new GameObject("PerksManager").AddComponent<PerksManager>();
             new GameObject("SoundManager").AddComponent<SoundManager>();
-            SurgeGuide.Initialize();
             TelemetryConsentUI.Initialize();
             PlayerControlSettings.Initialize();
 
@@ -64,7 +63,6 @@ namespace SpiderSurge
             }
 
             TelemetryConsentUI.ResetInstance();
-            SurgeGuide.ResetInstance();
             InputInterceptor.ResetStaticState();
         }
 

@@ -26,7 +26,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Surge Meter and Shop**: The team shares a meter, shown under the lives counter, that fills from what abilities do during a wave: enemies launched by Kinetic Pulse, kills while Bottomless Clip or Null Field runs, hits Null Field blocked, Pocket Dimension giving back a stored weapon, enemies frozen by Freeze Time and frozen enemies that die, and more from the ultimates (enemies hit by Thermal Detonation, kills with Care Package weapons, Neural Backup revives and its Wasps' kills, Black Hole and Rewind). A chaos point takes more charge in a bigger team, as much more as its waves have more enemies. A full meter is one chaos point, up to one ability-earned point per wave for the team; unfinished charge carries between waves. Chaos points are spent in a shop beside every perk choice after the starting ability pick, reachable with the controller by pressing right from the last card. Each perk screen puts two of the five items on sale: **1** reroll the cards, **2** an extra life (never above the max), **3** a random perk the team doesn't have yet, **5** +1 max lives without a life, and the **Blood Pact**, which costs no chaos points but a life and gives one chaos point. See [Surge meter](#surge-meter).
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
-- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. It is a page of the Mods menu, so it works with a controller and the spiders stay still while you read: open it from **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or with its key at any time, backtick (**`**) by default. It also opens on the first launch.
+- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
 - **Achievements**: 13 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
@@ -38,7 +38,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
-<img width="1600" alt="The Surge guide" src="../docs/images/surge-guide.jpg" />
+<img width="1280" alt="The first-run walkthrough in How to play" src="../docs/images/guide-first-run.png" />
 
 ## Achievements
 
@@ -95,7 +95,7 @@ The shop fills that column on every perk choice after the starting ability pick,
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Changes apply right away, except **Play without abilities**, which applies from the next run. The ability, ultimate and guide keys are on the **Controls** page. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Indicator controls are on the Surge page. Changes apply right away, except **Play without abilities**, which applies from the next run. The ability and ultimate keys are on the **Controls** page. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
 
 ### Using the Yaml file:
 
@@ -107,7 +107,7 @@ Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.ya
 ### Gameplay:
 The lobby platform selects the mode for each run. Older `surge.surgeMode` and `parts.surge` settings are ignored.
 
-The ability, ultimate and Surge guide keys are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `surge.dpadUltimate: true` becomes `controls.ultimate.controller: <Gamepad>/dpad` on the first launch.
+The ability and ultimate keys are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `surge.dpadUltimate: true` becomes `controls.ultimate.controller: <Gamepad>/dpad` on the first launch.
 
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The host's setting applies online. Default: `true`.
 
@@ -119,7 +119,7 @@ The ability, ultimate and Surge guide keys are in the `controls` section, which 
 
 With abilities enabled, a dedicated choice screen offers as many random shared abilities as a normal perk choice has cards (3, or 2 from pain level 3, plus Picky) before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
 
-`surge.indicator.compactHud`: Replaces the world rings with a compact panel at the bottom right, with a named row for each player. Active effects have a draining bar and remaining seconds; cooldowns have a filling bar and remaining seconds. Both use game time. Pocket Dimension also shows its stored weapon. Change this immediately under Surge > Ability indicator > Use compact ability HUD. The existing colors and Only show when ready setting apply to both displays; size and position settings apply to the world rings. Default: `false`.
+`surge.indicator.compactHud`: Replaces the world rings with a compact panel at the bottom right, with a named row for each player. Active effects have a draining bar and remaining seconds; cooldowns have a filling bar and remaining seconds. Both use game time. Pocket Dimension also shows its stored weapon. Change this immediately under Surge > Use compact ability HUD. The existing colors and Only show when ready setting apply to both displays; size and position settings apply to the world rings. Default: `false`.
 
 The world ring drains in the active color over a timed ability or ultimate's duration, then fills clockwise in the cooldown color until ready. Active effects without a duration keep a full ring. Both timers stop while game time is paused.
 
@@ -127,7 +127,7 @@ The world ring drains in the active color over a timed ability or ultimate's dur
 `surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
 
 ### UI:
-`surge.showTutorial`: Opens the Surge guide in the lobby on the next launch, then turns itself off. Resetting the Surge settings leaves it as it is. Default: `true`.
+The guide is available from **How to play** in settings. The old `surge.showTutorial` and `controls.surgeGuide.keyboard` values are no longer used.
 
 `surge.indicator.radius`: The size of the ability indicator, from 0.5 to 10. Default: `1.5`.
 

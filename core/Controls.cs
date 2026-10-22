@@ -66,7 +66,6 @@ namespace SpiderSurge.Common
         public static readonly Control AbilityController = new Control("controls.ability.controller", "Ability", ControlDevice.Controller, "<Gamepad>/leftShoulder", ControlExtras.None, Parts.Surge);
         public static readonly Control UltimateKeyboard = new Control("controls.ultimate.keyboard", "Ultimate", ControlDevice.Keyboard, "<Keyboard>/c", ControlExtras.Alternatives, Parts.Surge);
         public static readonly Control UltimateController = new Control("controls.ultimate.controller", "Ultimate", ControlDevice.Controller, "<Gamepad>/leftStickPress+<Gamepad>/rightStickPress", ControlExtras.Dpad | ControlExtras.Combo | ControlExtras.Alternatives, Parts.Surge);
-        public static readonly Control SurgeGuide = new Control("controls.surgeGuide.keyboard", "Surge guide", ControlDevice.Keyboard, "<Keyboard>/backquote", ControlExtras.Alternatives, Parts.Surge);
         public static readonly Control SmallWindow = new Control("controls.stats.smallWindow", "Small window", ControlDevice.Keyboard, "<Keyboard>/f1", ControlExtras.Alternatives, Parts.Stats);
         public static readonly Control BigWindow = new Control("controls.stats.bigWindow", "Big window", ControlDevice.Keyboard, "<Keyboard>/f2", ControlExtras.Alternatives, Parts.Stats);
         public static readonly Control TitlesWindow = new Control("controls.stats.titlesWindow", "Titles", ControlDevice.Keyboard, "<Keyboard>/f3", ControlExtras.Alternatives, Parts.Stats);
@@ -81,7 +80,7 @@ namespace SpiderSurge.Common
 
         public static readonly Control[] All =
         {
-            AbilityKeyboard, AbilityController, UltimateKeyboard, UltimateController, SurgeGuide,
+            AbilityKeyboard, AbilityController, UltimateKeyboard, UltimateController,
             SmallWindow, BigWindow, TitlesWindow, SwitchWindows,
             PreviousPresetKeyboard, NextPresetKeyboard, PreviousPresetController, NextPresetController,
             TeamKeyboard, TeamController

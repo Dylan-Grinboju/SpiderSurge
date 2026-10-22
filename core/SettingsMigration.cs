@@ -23,7 +23,6 @@ namespace SpiderSurge.Common
             { "UnlimitedPerkChoosingTime", "surge.unlimitedPerkTime" },
             { "EnableStatsLogging", "surge.statsLogging" },
             { "TelemetryEnabled", "surge.telemetry" },
-            { "display.showTutorial", "surge.showTutorial" },
             { "display.showTelemetryConsentPrompt", "surge.showTelemetryPrompt" },
             { "indicator.radius", "surge.indicator.radius" },
             { "indicator.offset.x", "surge.indicator.offset.x" },

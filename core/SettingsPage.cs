@@ -22,8 +22,8 @@ namespace SpiderSurge.Common
         public const string Red = "#FF5555";
         public const string Gray = "#AAAAAA";
         public const string Orange = "#FFAA66";
-        private const float FontSize = 19f;
-        private const float RowHeight = 38f;
+        private const float FontSize = 16f;
+        private const float RowHeight = 28f;
         // The game's list moves 6 units per wheel notch; this makes a notch about two rows
         private const float ScrollSensitivity = 15f;
         public const string AchievementsHub = "achievements";
@@ -65,6 +65,10 @@ namespace SpiderSurge.Common
         private bool _quiet;
         private Coroutine _pending;
         private bool _pagePending;
+        private SettingsHelpPanel _help;
+        private SettingsControl _lastHelp;
+        private string _pageHelp;
+        private bool _contextHelp;
 
         public string Current { get; private set; } = MainPage;
 
@@ -81,6 +85,16 @@ namespace SpiderSurge.Common
         public static bool IsShowingTree(string page) => IsOpen && (_open.Current == page || _open.Current.StartsWith(page + "."));
 
         public static bool IsShowing(string page) => IsOpen && _open.Current == page;
+
+        internal static bool ScrollingHelp(Selectable control)
+        {
+            if (!IsOpen || !_open._contextHelp || ControlCapture.Busy || !control.transform.IsChildOf(_open._content)) return false;
+            foreach (var pad in Gamepad.all)
+            {
+                if (Mathf.Abs(pad.rightStick.ReadValue().y) > 0.2f && pad.leftStick.ReadValue().sqrMagnitude < 0.04f && pad.dpad.ReadValue().sqrMagnitude < 0.04f) return true;
+            }
+            return false;
+        }
 
         // Silk adds the SpiderSurge button to the Mods menu only once its update check is done
         public static bool CanShow => (_open != null && _open._menu != null) || (_entryMenu != null && _entryButton != null);
@@ -168,12 +182,13 @@ namespace SpiderSurge.Common
                 layout.childControlHeight = true;
                 layout.childForceExpandWidth = true;
                 layout.childForceExpandHeight = false;
-                layout.spacing = 8f;
-                layout.padding = new RectOffset(18, 32, 8, 16);
+                layout.spacing = 4f;
+                layout.padding = new RectOffset(12, 20, 6, 12);
                 _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                 _originalContent.gameObject.SetActive(false);
                 _scroll.content = _content;
                 _scroll.StopMovement();
+                _help = new SettingsHelpPanel(_scroll, _title != null ? _title : _entry.GetComponentInChildren<TMP_Text>());
                 menu.objectParent = _content;
                 _open = this;
                 _history.Clear();
@@ -211,6 +226,9 @@ namespace SpiderSurge.Common
             _bindingRows.Clear();
             _controls.Clear();
             _lastSelected = null;
+            _help?.Destroy();
+            _help = null;
+            _lastHelp = null;
             if (_menu != null)
             {
                 _view.HideBehavior.OnStart.Event.RemoveListener(Clear);
@@ -338,6 +356,12 @@ namespace SpiderSurge.Common
                     return;
                 }
 
+                _pageHelp = "Changes are saved automatically. Hover over a setting or select it with a controller to read more.";
+                _lastHelp = null;
+                _contextHelp = Current == MainPage || Current == "general" || Current == "parts" || Current == ControlsPage.Page
+                    || Current == "surge" || Current == "surge.indicator" || Current == "teams"
+                    || Current == "stats" || Current == "stats.presets" || Current.StartsWith("stats.columns", StringComparison.Ordinal);
+                _help.SetVisible(_contextHelp);
                 AddContent();
                 selectIndex = RowOf(selectedBinding, selectIndex);
                 ConfigureNavigation();
@@ -349,6 +373,7 @@ namespace SpiderSurge.Common
                     _scroll.verticalNormalizedPosition = scroll.Value;
                 }
                 KeepSelectionVisible();
+                ShowSelectedHelp();
                 _lastSelected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             }
             catch (Exception ex)
@@ -401,14 +426,35 @@ namespace SpiderSurge.Common
             Note("Choose a settings category. Changes are saved automatically.");
             foreach (Part part in MenuOrder)
             {
-                if (part.Running && part.HasSettings) Button(part.Title, () => Open(part.Key));
+                if (part.Running && part.HasSettings)
+                {
+                    Button(part.Title, () => Open(part.Key));
+                    Note(part.Description);
+                }
             }
-            if (Parts.Surge.Running || Parts.Stats.Running) Button("Achievements", () => Open(AchievementsHub));
-            if (Parts.Surge.Running || Parts.Stats.Running || Parts.Teams.Running) Button("Controls", () => Open(ControlsPage.Page));
+            if (Parts.Surge.Running)
+            {
+                Button("How to play", () => Open(SurgeGuide.Page));
+                Note("A guide to starting a run, abilities and ultimates, perk synergies, the Surge meter, enemies, controls and multiplayer.");
+            }
+            if (Parts.Surge.Running || Parts.Stats.Running)
+            {
+                Button("Achievements", () => Open(AchievementsHub));
+                Note("Browse achievements and the title collection, see unlock requirements, and check what you earned recently.");
+            }
+            if (Parts.Surge.Running || Parts.Stats.Running || Parts.Teams.Running)
+            {
+                Button("Controls", () => Open(ControlsPage.Page));
+                Note("Change keyboard and controller bindings. You can also set a personal ability button for each controller.");
+            }
             Button("Enable or disable parts", () => Open("parts"));
+            Note("Choose which optional parts of the mod run. Changes take effect after restarting the game.");
             Button("Match history", () => Open("history"));
+            Note("Review saved Survival and Versus results, including players, maps, perks, titles and weapon accuracy.");
             Button("General", () => Open("general"));
+            Note("Update checks, local run recording, optional anonymous reports and reloading the settings file.");
             Button("About SpiderSurge", () => Open("about"));
+            Note("Version, credits and support information.");
         }
 
         private void AddParts()
@@ -420,7 +466,7 @@ namespace SpiderSurge.Common
                 Spacer();
                 Header(part.Title);
                 if (part.CanDisable) Checkbox("On", part.Enabled, value => Settings.Set(part.SettingKey, value));
-                else Note("Always on.");
+                else Line("Always on.");
                 Note(part.Description);
                 if (part.BlockedBy != null)
                 {
@@ -446,6 +492,7 @@ namespace SpiderSurge.Common
             Title("General");
             Header("Updates");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
+            Note("Check whether a newer SpiderSurge release is available when the mod starts.");
             if (Parts.Surge.Running)
             {
                 Spacer();
@@ -496,7 +543,8 @@ namespace SpiderSurge.Common
 
         public void Header(string text)
         {
-            Paragraph($"<size=130%><b>{text.ToUpperInvariant()}</b></size>");
+            _lastHelp = null;
+            Paragraph($"<size=105%><color={Gray}><b>{text.ToUpperInvariant()}</b></color></size>");
         }
 
         public void Title(string text)
@@ -511,7 +559,25 @@ namespace SpiderSurge.Common
 
         public void Note(string text)
         {
+            if (_contextHelp)
+            {
+                if (_lastHelp != null) _lastHelp.Description = string.IsNullOrEmpty(_lastHelp.Description) ? text : _lastHelp.Description + "\n\n" + text;
+                else _pageHelp = text;
+                return;
+            }
             Paragraph($"<size=95%><color={Gray}>{text}</color></size>");
+        }
+
+        internal void ShowHelp(SettingsControl control)
+        {
+            if (!_contextHelp || _help == null) return;
+            _help.Show(control != null ? control.HelpTitle : "Settings", control != null && !string.IsNullOrEmpty(control.Description) ? control.Description : _pageHelp);
+        }
+
+        internal void ShowSelectedHelp()
+        {
+            var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            ShowHelp(selected != null ? selected.GetComponent<SettingsControl>() : null);
         }
 
         public void Warning(string text)
@@ -523,7 +589,7 @@ namespace SpiderSurge.Common
         {
             var spacer = new GameObject("Section spacing", typeof(RectTransform), typeof(LayoutElement));
             spacer.transform.SetParent(_menu.objectParent, false);
-            spacer.GetComponent<LayoutElement>().preferredHeight = 8f;
+            spacer.GetComponent<LayoutElement>().preferredHeight = 3f;
             _created.Add(spacer);
         }
 
@@ -659,6 +725,7 @@ namespace SpiderSurge.Common
         public void Binding(Control control)
         {
             Button(ControlsPage.RowLabel(control), () => ControlCapture.Toggle(control));
+            Note("Select to change this binding, then press the new key or button. Start or Escape cancels. Select turns a controller binding off; Backspace turns a keyboard binding off.");
             _bindingRows[_created.Count - 1] = control;
             string clash = ControlsPage.ClashWarning(control);
             if (clash != null) Warning(clash);
@@ -719,8 +786,8 @@ namespace SpiderSurge.Common
             SetText(slider.sliderValueText, Format(value, step, unit));
             StyleRow(slider.gameObject);
             StyleLabel(slider.sliderDescription, -1f, 1f);
-            StyleLabel(slider.sliderValueText, 78f, 0f);
-            SetLayout(slider.slider.gameObject, 180f, RowHeight, 0f, RowHeight);
+            StyleLabel(slider.sliderValueText, 48f, 0f);
+            SetLayout(slider.slider.gameObject, 110f, RowHeight, 0f, RowHeight);
             Register(slider.slider);
             _created.Add(slider.gameObject);
         }
@@ -747,7 +814,7 @@ namespace SpiderSurge.Common
                 layout.childForceExpandWidth = false;
                 layout.childForceExpandHeight = false;
                 layout.childAlignment = TextAnchor.MiddleLeft;
-                layout.spacing = 16f;
+                layout.spacing = 10f;
             }
         }
 
@@ -765,11 +832,25 @@ namespace SpiderSurge.Common
         {
             _controls.Add(control);
             var settingsControl = control.gameObject.AddComponent<SettingsControl>();
+            settingsControl.Page = this;
+            Transform rowRoot = control.transform;
+            while (rowRoot.parent != _content) rowRoot = rowRoot.parent;
+            var label = rowRoot.GetComponentInChildren<TMP_Text>();
+            settingsControl.HelpTitle = label != null ? label.text : control.name;
+            _lastHelp = settingsControl;
+            if (_contextHelp && rowRoot.gameObject != control.gameObject)
+            {
+                var hover = rowRoot.gameObject.AddComponent<SettingsRowHover>();
+                hover.Control = settingsControl;
+                var hitArea = rowRoot.GetComponent<Image>() ?? rowRoot.gameObject.AddComponent<Image>();
+                hitArea.color = Color.clear;
+                hitArea.raycastTarget = true;
+            }
             if (!(control is UnityEngine.UI.Button) || control.transition == Selectable.Transition.None)
             {
                 var row = control.transform.parent.gameObject;
                 settingsControl.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
-                settingsControl.Highlight.raycastTarget = false;
+                settingsControl.Highlight.raycastTarget = _contextHelp;
                 settingsControl.Highlight.color = Color.clear;
             }
             var button = control.GetComponent<UIButton>();
@@ -801,10 +882,12 @@ namespace SpiderSurge.Common
         private void LateUpdate()
         {
             if (_menu == null) return;
+            _help?.RefreshLayout();
             ControlCapture.Tick();
             if (!_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null || ControlCapture.Busy) return;
             foreach (var pad in Gamepad.all)
             {
+                if (_contextHelp) _help?.Scroll(pad.rightStick.ReadValue().y);
                 if (pad.buttonEast.wasPressedThisFrame)
                 {
                     HandleBack();
@@ -981,15 +1064,20 @@ namespace SpiderSurge.Common
         public static GameObject Hovered;
         public Image Highlight;
         public bool ForwardCancel;
+        public SettingsPage Page;
+        public string HelpTitle;
+        public string Description;
 
         public void OnPointerEnter(PointerEventData eventData)
         {
             Hovered = gameObject;
+            Page?.ShowHelp(this);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             if (Hovered == gameObject) Hovered = null;
+            Page?.ShowSelectedHelp();
         }
 
         private void OnDestroy()
@@ -1000,6 +1088,7 @@ namespace SpiderSurge.Common
         public void OnSelect(BaseEventData eventData)
         {
             if (Highlight != null) Highlight.color = new Color(1f, 0f, 0.38f, 0.22f);
+            Page?.ShowHelp(this);
         }
 
         public void OnDeselect(BaseEventData eventData)

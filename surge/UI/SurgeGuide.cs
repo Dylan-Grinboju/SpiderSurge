@@ -1,113 +1,23 @@
-using System.Collections;
 using System.Linq;
 using SpiderSurge.Enemies;
-using Doozy.Engine.UI;
 using SpiderSurge.Common;
-using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace SpiderSurge
 {
-    // The Surge guide is a page of the Mods menu; its key and the first launch open the pause menu on it
-    public class SurgeGuide : MonoBehaviour
+    public static class SurgeGuide
     {
         public const string Page = "surge.guide";
-        private const string ModsNode = "Mods";
         private const string Gold = "#FFD24A";
-        private const string Cyan = "#00FFFF";
-        private const float OpenTimeout = 3f;
-
-        private static SurgeGuide _instance;
-        private readonly ControlPoller _guideKey = new ControlPoller();
-        private bool _opening;
-
-        public static void Initialize()
-        {
-            if (_instance == null)
-            {
-                GameObject obj = new GameObject("SurgeGuide");
-                _instance = obj.AddComponent<SurgeGuide>();
-                DontDestroyOnLoad(obj);
-            }
-        }
-
-        public static void ResetInstance()
-        {
-            _instance = null;
-        }
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-        }
-
-        private void OnDestroy()
-        {
-            if (_instance == this) _instance = null;
-        }
-
-        private void Update()
-        {
-            if (_guideKey.WasPressed(Controls.Get(Controls.SurgeGuide), Keyboard.current))
-            {
-                if (SettingsPage.IsShowingTree(Page)) HudController.instance.Resume();
-                else Open();
-            }
-
-            if (ModConfig.ShowTutorial && !_opening && FirstLaunchReady())
-            {
-                Open();
-            }
-        }
-
-        // Waits for the lobby to be up and the startup popups, Surge's telemetry question included, so the guide isn't covered or closed by them
-        private static bool FirstLaunchReady()
-        {
-            return LobbyController.inLobby && !LevelController.IsLoading && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
-                && SettingsPage.CanShow && !GameMenus.Open && !ModConfig.ShowTelemetryConsentPrompt && UIPopupManager.CurrentVisibleQueuePopup == null
-                && LobbyController.instance != null && !LobbyController.instance.eulaStartPopup && !LobbyController.instance.newContentPopup;
-        }
-
-        public static void Open()
-        {
-            if (_instance != null && !_instance._opening) _instance.StartCoroutine(_instance.OpenGuide());
-        }
-
-        private IEnumerator OpenGuide()
-        {
-            _opening = true;
-            HudController hud = HudController.instance;
-            if (hud != null && SettingsPage.CanShow && !SettingsPage.IsShowingTree(Page))
-            {
-                if (!hud.paused && hud.canPauseMenu) hud.Pause();
-                if (hud.paused)
-                {
-                    UIView mods = ModsMenu.instance != null ? ModsMenu.instance.GetComponent<UIView>() : null;
-                    if (mods != null && !mods.IsVisible) hud.SetActiveGraphNode(ModsNode);
-                    float until = Time.unscaledTime + OpenTimeout;
-                    while (mods != null && !mods.IsVisible && Time.unscaledTime < until) yield return null;
-                    if (mods != null && mods.IsVisible && SettingsPage.Show(Parts.Surge.Key, Page))
-                    {
-                        ModConfig.SetShowTutorial(false);
-                    }
-                }
-            }
-            _opening = false;
-        }
 
         public static void Build(SettingsPage page)
         {
-            page.Title("Surge guide");
+            page.Title("How to play");
             string section = page.Current;
             if (section == Page)
             {
-                page.Line("Stand on the Surge Survival platform above and left of Wave Survival. Surge brings new abilities, perks and enemies. Wave Survival still starts the normal game.");
+                page.Line("Learn the essentials, then explore each system. Use the stick or D-pad to move through the guide, or scroll with the mouse. Back returns to the topic list.");
+                page.Button("Start here: your first Surge run", () => page.Open(Page + ".start"));
                 page.Button("Abilities and ultimates", () => page.Open(Page + ".abilities"));
                 page.Button("Perks and synergies", () => page.Open(Page + ".perks"));
                 page.Button("Surge meter and shop", () => page.Open(Page + ".meter"));
@@ -117,6 +27,17 @@ namespace SpiderSurge
                 page.Button("Stats, titles and history", () => page.Open(Page + ".stats"));
                 page.Button("Teams and versus", () => page.Open(Page + ".teams"));
                 page.Button("Settings and support", () => page.Open(Page + ".support"));
+                return;
+            }
+            if (section == Page + ".start")
+            {
+                page.Title("Your first Surge run");
+                page.Line(Section("1. Pick the mode", "In the lobby, stand on the Surge Survival platform above and left of Wave Survival. Bring the whole group onto it for the countdown, then choose a pain level. Wave Survival starts the original mode."));
+                page.Line(Section("2. Choose an ability", "Before wave 1, choose the group's shared ability. With unlimited perk time enabled, selecting a card locks it; move down to Confirm to start. Read the ability's effect and charge hint before confirming."));
+                page.Line(Section("3. Cast, then recharge", $"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Use it to survive and charge the team's Surge meter. Watch the ring beside your spider or the compact HUD: a full ready indicator means you can cast again. The ultimate shares that cooldown."));
+                page.Line(Section("4. Spend chaos points", "Effective ability use fills the team meter under the lives counter. A full bar earns a chaos point. At later perk choices, move right from the last card to visit the shop. Choose an item and then Buy; unspent points carry forward."));
+                page.Line(Section("5. Build around your ability", "Choose cooldown, duration or synergy perks to strengthen your build. The ultimate is guaranteed as an option at wave 30 and can appear afterwards until unlocked. Wave 60 offers an ultimate or a switch to another ability with its ultimate."));
+                page.Line(Section("6. Find help and tune the game", "Pause and open Mods > SpiderSurge. Hover or select any setting for its explanation. How to play is always available here. Controls changes key bindings; Surge changes effects, sound and the ability indicator. Settings save automatically."));
                 return;
             }
             if (section == Page + ".abilities")
