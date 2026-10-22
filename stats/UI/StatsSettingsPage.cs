@@ -49,24 +49,39 @@ namespace StatsMod
             page.Toggle("Show the stats windows", Key("display.showStatsWindow"));
             page.Note($"Small window: {Controls.Display(Controls.SmallWindow)}. Big window: {Controls.Display(Controls.BigWindow)}. Titles: {Controls.Display(Controls.TitlesWindow)}. Switch windows on a controller: {Controls.Display(ModConfig.SwitchWindowsBinding)}.");
             page.Button("Change these keys", () => page.Open(ControlsPage.Page));
+            page.Note("Choose keys for the three stats windows and controller buttons for switching windows and scoreboard presets.");
             page.Toggle("Small window background", Key("display.smallUIShowBackground"));
+            page.Note("Adds a background behind the small stats window to make its text easier to read over the arena.");
             page.Toggle("Scale with the screen size", ModConfig.AutoScaleKey);
+            page.Note("Keeps stats windows proportional to the screen resolution. Size applies an additional scale multiplier.");
             page.Slider("Size", ModConfig.UIScaleKey, ModConfig.MinScale, ModConfig.MaxScale, 0.1f, "x", ModConfig.UIScale);
+            page.Note("Scales the stats windows. This does not change the size of the settings menu.");
             page.Slider("Big window opacity", Key("display.bigUIOpacity"), 0f, 100f, 5f, "%", ModConfig.BigUIOpacity);
+            page.Note("Adjusts the full scoreboard's background opacity. A higher value makes the statistics easier to read over gameplay.");
 
             page.Spacer();
             page.Header("Big window");
             page.Toggle("Run time", Key("display.showPlayTime"));
+            page.Note("Shows elapsed run time in the full scoreboard.");
             page.Toggle("Enemies killed", Key("display.showEnemyDeaths"));
+            page.Note("Shows the enemy kill total in the full scoreboard.");
             page.Toggle("Player table", Key("display.showPlayers"));
+            page.Note("Shows each player's statistics in the full scoreboard.");
             page.Button("Scoreboard presets", () => page.Open("stats.presets"));
+            page.Note("Choose which fixed scoreboard presets are available. Default always stays available and uses your customized columns.");
+            page.Button("Player table columns", () => page.Open(ColumnsPage));
+            page.Note("Choose the columns in the Default scoreboard directly. Other presets keep their fixed columns.");
 
             page.Spacer();
             page.Header("End of run");
             page.Toggle("Titles", Key("titles.enabled"));
+            page.Note("Shows performance titles after a Survival run with at least two players. Titles enter the collection when they appear on the results screen.");
             page.Slider("Title reveal delay", Key("titles.revealDelaySeconds"), 0f, ModConfig.MaxRevealDelay, 0.5f, " s", ModConfig.TitlesRevealDelaySeconds);
+            page.Note("Time between title reveals at the end of a run. The titles key skips the reveal sequence.");
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
+            page.Note("Writes a local text report of the run's statistics. This is separate from match history and sharing anonymous reports.");
             page.Toggle("Save match history", Key("tracking.saveHistory"));
+            page.Note("Keeps Survival and Versus results for Match history. Existing records remain available when this is off. No upload is required.");
 
             page.Spacer();
             page.ConfirmButton("Reset Stats settings to defaults", () => Settings.Reset("stats", ModConfig.PositionXKey, ModConfig.PositionYKey));

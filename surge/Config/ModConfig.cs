@@ -14,7 +14,6 @@ namespace SpiderSurge
         public const string ReducedEffectsKey = "surge.reducedEffects";
         public static bool ReducedEffects => Settings.GetBool(ReducedEffectsKey);
         public const string AbilityVolumeKey = "surge.abilityVolume";
-        public const string ShowTutorialKey = "surge.showTutorial";
         public const string ShowTelemetryPromptKey = "surge.showTelemetryPrompt";
         public const string StatsLoggingKey = "surge.statsLogging";
         public const string TelemetryKey = "surge.telemetry";
@@ -41,7 +40,6 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(NoAbilitiesKey, false),
             new KeyValuePair<string, object>(AbilityVolumeKey, DefaultAbilityVolume),
             new KeyValuePair<string, object>(ReducedEffectsKey, false),
-            new KeyValuePair<string, object>(ShowTutorialKey, true),
             new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
             new KeyValuePair<string, object>(StatsLoggingKey, true),
             new KeyValuePair<string, object>(TelemetryKey, false),
@@ -83,10 +81,8 @@ namespace SpiderSurge
 
         public static bool EnableStatsLogging => Settings.GetBool(StatsLoggingKey);
         public static bool TelemetryEnabled => Settings.GetBool(TelemetryKey);
-        public static bool ShowTutorial => Settings.GetBool(ShowTutorialKey);
         public static bool ShowTelemetryConsentPrompt => Settings.GetBool(ShowTelemetryPromptKey);
 
-        public static void SetShowTutorial(bool value) => Settings.Set(ShowTutorialKey, value);
 
         public static void SetTelemetryEnabled(bool value) => Settings.Set(TelemetryKey, value);
 

@@ -21,7 +21,6 @@ namespace SpiderSurge.Common
                 page.Binding(Controls.UltimateKeyboard);
                 page.Binding(Controls.UltimateController);
                 page.Note("For the controller ultimate, press a second button while holding the first to make a combo, or press any D-pad direction to use the whole D-pad.");
-                page.Binding(Controls.SurgeGuide);
             }
 
             if (Parts.Stats.Running)
@@ -33,12 +32,15 @@ namespace SpiderSurge.Common
                 page.Binding(Controls.TitlesWindow);
                 page.Note("The titles key also skips the reveal at the end of a run.");
                 page.Binding(Controls.SwitchWindows);
+                page.Note("During a match, switches between the small window and Off. In the lobby it also offers the big window and Survival titles.");
                 page.Binding(Controls.PreviousPresetKeyboard);
+                page.Note("Shows the previous scoreboard preset while the big window is open.");
                 page.Binding(Controls.NextPresetKeyboard);
+                page.Note("Shows the next scoreboard preset while the big window is open.");
                 page.Binding(Controls.PreviousPresetController);
+                page.Note("Shows the previous preset while the big window is open. The ultimate takes priority over a shared button.");
                 page.Binding(Controls.NextPresetController);
                 page.Note("Preset controls work while the big window is open. The ultimate takes priority over a shared preset button.");
-                page.Note("During a match, the controller window button switches between the small window and Off. In the lobby it also offers the big window and Survival titles.");
                 string effective = StatsMod.ModConfig.SwitchWindowsBinding;
                 if (effective != Controls.Get(Controls.SwitchWindows))
                 {

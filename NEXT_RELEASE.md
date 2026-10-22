@@ -41,9 +41,9 @@ Achievements and the title collection have All, Locked, Unlocked and Recently ea
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Using the abilities fills the team's Surge meter, up to one chaos point per wave, with unfinished charge carrying between waves. Blood Pact grants a separate point. Chaos points are spent in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. The perk screen shows the meter beside the cards, and a line under them explains the focused ability's charge or perk synergy. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. It opens on the first launch, and you can find it in **Mods** > **SpiderSurge** > **Surge** > **Surge guide**, or press its key (backtick by default) to open it at any time.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Using the abilities fills the team's Surge meter, up to one chaos point per wave, with unfinished charge carrying between waves. Blood Pact grants a separate point. Chaos points are spent in a shop beside the perk cards, which sells two random items per perk screen out of a reroll, an extra life, a random perk, a bigger heart and a blood pact that trades a life for a chaos point. The perk screen shows the meter beside the cards, and a line under them explains the focused ability's charge or perk synergy. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated reference topics. The guide no longer opens automatically or uses the backtick key.
 
-<img width="1600" alt="The Surge guide" src="docs/images/surge-guide.jpg" />
+<img width="1600" alt="Your first Surge run, explained in How to play" src="docs/images/guide-first-run.png" />
 
 ### Teams
 
@@ -53,9 +53,9 @@ Split the lobby into teams and fight until one team is left standing. Spiders ta
 
 ### Settings in the game
 
-Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with larger text and separate category pages. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
+Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with compact rows and a side panel that explains the hovered or controller-selected setting. Use the right stick or mouse wheel to scroll long explanations. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
 
-<img width="1280" alt="The native SpiderSurge settings menu with controller selection" src="docs/images/mods-menu-native.png" />
+<img width="1280" alt="Compact settings with contextual explanations" src="docs/images/settings-context-help.png" />
 
 Team versus, team count and friendly fire are on the normal **Versus Battle** setup page, above the versus presets. Scroll down for the other team options. They are also available on the custom versus page.
 
@@ -69,7 +69,7 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 | Previous / next scoreboard page or preset | **Page Up / Page Down** | **D-pad left / right**, while the big window is open |
 | Surge ability | **Q** | **L1**, or your own button: hold **Select** and double-tap it |
 | Surge ultimate | **C** | **L3 + R3** together |
-| Surge guide | **`** (backtick) | Pause menu > **Mods** > **SpiderSurge** > **Surge** > **Surge guide** |
+| How to play | Pause menu > **Mods** > **SpiderSurge** > **How to play** | Same menu |
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
 Change any of them in **Mods** > **SpiderSurge** > **Controls**: select a row, then press the new key or button. The controller ultimate and the stats switch can also be two buttons pressed together or the whole D-pad. A row that shares a button with another one shows a warning, and a button that casts Surge's ultimate on its own doesn't also switch the stats windows.
@@ -107,7 +107,7 @@ Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 - **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version, credits and **Support**, with buttons to open the logs, config and save folders, copy diagnostic information, or open the bug report form. Diagnostic information contains versions and mod-part status; these actions do not upload logs or saves.
 
-Stats > **Scoreboard presets** lets you hide fixed presets and customize Default. Its columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Surge's ability indicator has its own page. Every reset asks for confirmation first.
+Stats > **Scoreboard presets** lets you hide fixed presets and customize Default. Its columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Indicator controls are directly on the Surge page, and Stats has a direct Player table columns link. Every reset asks for confirmation first.
 
 ### Using the Yaml file:
 
@@ -123,7 +123,6 @@ All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It ha
 |---|---|
 | `controls.ability.keyboard`, `controls.ability.controller` | `<Keyboard>/q`, `<Gamepad>/leftShoulder` |
 | `controls.ultimate.keyboard`, `controls.ultimate.controller` | `<Keyboard>/c`, `<Gamepad>/leftStickPress+<Gamepad>/rightStickPress` |
-| `controls.surgeGuide.keyboard` | `<Keyboard>/backquote` |
 | `controls.stats.smallWindow`, `controls.stats.bigWindow`, `controls.stats.titlesWindow` | `<Keyboard>/f1`, `<Keyboard>/f2`, `<Keyboard>/f3` |
 | `controls.stats.switchWindows` | `<Gamepad>/dpad` |
 | `controls.stats.previousPresetKeyboard`, `controls.stats.nextPresetKeyboard` | `<Keyboard>/pageUp`, `<Keyboard>/pageDown` |
