@@ -37,6 +37,8 @@ namespace SpiderSurge
         public static int PointsSpent { get; private set; }
         public static int PointsEarnedThisWave { get; private set; }
         private static int _wave;
+        private static int _chargeEarnedThisWave;
+        private static int WaveChargeLimit => Mathf.Max(1, Mathf.FloorToInt(ChargePerPoint / Consts.Values.Meter.WavesPerPoint));
         public static bool WaveCapped => PointsEarnedThisWave >= Consts.Values.Meter.PointsPerWave;
 
         public static IReadOnlyDictionary<MeterSource, int> ChargeBySource => _chargeBySource;
@@ -68,6 +70,7 @@ namespace SpiderSurge
             PointsEarned = 0;
             PointsSpent = 0;
             PointsEarnedThisWave = 0;
+            _chargeEarnedThisWave = 0;
             _wave = 0;
             _remoteSynced = false;
             _chargeBySource.Clear();
@@ -83,6 +86,7 @@ namespace SpiderSurge
             _wave = wave;
             RecomputeThreshold();
             PointsEarnedThisWave = 0;
+            _chargeEarnedThisWave = 0;
             ConvertCharge();
             Raise(Changed);
             MeterNet.MarkDirty();
@@ -117,10 +121,11 @@ namespace SpiderSurge
             if (amount <= 0 || !CanEarn) return;
             OnWaveStarted(SurvivalMode.instance.CurrentWave);
             if (WaveCapped) return;
-            amount = Mathf.Min(amount, Mathf.Max(0, ChargePerPoint - Charge));
+            amount = Mathf.Min(amount, Mathf.Min(Mathf.Max(0, WaveChargeLimit - _chargeEarnedThisWave), Mathf.Max(0, ChargePerPoint - Charge)));
             if (amount == 0) return;
 
             Charge += amount;
+            _chargeEarnedThisWave += amount;
             TotalCharge += amount;
             _chargeBySource.TryGetValue(source, out int bySource);
             _chargeBySource[source] = bySource + amount;

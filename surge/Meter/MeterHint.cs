@@ -132,21 +132,20 @@ namespace SpiderSurge
             return $"<color={Consts.Formatting.ColorGold}>{PerksManager.Instance.GetDisplayName(key)}</color> charges the meter {how}.";
         }
 
-        // From the same numbers the abilities charge with
         private static string HowItCharges(string key)
         {
             switch (key)
             {
-                case P.PulseAbility: return $"{M.PulseChargePerEnemy} for each enemy it launches";
-                case P.AmmoAbility: return $"{M.BottomlessClipChargePerKill} for each kill you make while it runs";
-                case P.ImmuneAbility: return $"{M.NullFieldChargePerHit} for each hit it blocks (lava counts as one; at most {Mathf.RoundToInt(1f / M.NullFieldHitInterval)} a second and {M.NullFieldChargedHitsPerCast} per cast) and {M.NullFieldChargePerKill} for each kill you make while it runs";
-                case P.StorageAbility: return $"{M.PocketDimensionChargePerSwap} each time it gives a stored weapon back";
-                case P.FreezeAbility: return $"{M.FreezeChargePerEnemy} for each enemy it freezes and {M.FreezeChargePerKill} more for each one killed while frozen";
-                case P.PulseAbilityUltimate: return $"{M.DetonationChargePerEnemy} for each enemy it hits";
-                case P.AmmoAbilityUltimate: return $"{M.CarePackageChargePerKill} for each kill with a weapon it drops";
-                case P.ImmuneAbilityUltimate: return $"{M.NeuralBackupChargePerRevive} for each player it revives and {M.NeuralBackupChargePerWaspKill} for each kill its Wasps make";
-                case P.StorageAbilityUltimate: return $"{M.BlackHoleCharge} for each enemy it swallows";
-                case P.FreezeAbilityUltimate: return $"{M.RewindChargePerEnemy} for each enemy it turns into a Wasp";
+                case P.PulseAbility: return "by launching enemies";
+                case P.AmmoAbility: return "by defeating enemies while it is active";
+                case P.ImmuneAbility: return "by blocking hits and defeating enemies while it is active";
+                case P.StorageAbility: return "by retrieving stored weapons";
+                case P.FreezeAbility: return "by freezing enemies and defeating them while frozen";
+                case P.PulseAbilityUltimate: return "by hitting enemies with the detonation";
+                case P.AmmoAbilityUltimate: return "by defeating enemies with the weapons it supplies";
+                case P.ImmuneAbilityUltimate: return "by reviving teammates and letting its Wasps defeat enemies";
+                case P.StorageAbilityUltimate: return "by swallowing enemies";
+                case P.FreezeAbilityUltimate: return "by turning enemies into Wasps";
                 default: return null;
             }
         }

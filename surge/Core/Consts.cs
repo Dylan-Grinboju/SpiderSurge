@@ -263,8 +263,8 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                // A player casting on cooldown made 2 to 4 a wave with Pulse, Freeze Time and Clip, so half that use still buys a point every 2 waves
-                public const float ChargePerWave = 1.5f;
+                // A productive wave can contribute at most half a point, so a large group hit cannot fill the meter in one wave
+                public const float ChargePerWave = 6f;
                 public const float WavesPerPoint = 2f;
                 public const int MinChargePerPoint = 1;
                 public const int PulseChargePerEnemy = 1;
