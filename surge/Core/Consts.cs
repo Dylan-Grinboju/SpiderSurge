@@ -164,17 +164,19 @@ namespace SpiderSurge
                 public const float UltimateKnockbackRadiusIncreasePerLevel = 50f;
 
                 //Bigger boom perk
-                public const float AbilityBaseKnockbackStrength = 900f;
-                public const float AbilityKnockbackStrengthIncreasePerLevel = 200f;
-                public const float UltimateBaseKnockbackStrength = 1200f;
-                public const float UltimateKnockbackStrengthIncreasePerLevel = 300f;
+                public const float AbilityBaseKnockbackStrength = 675f;
+                public const float AbilityKnockbackStrengthIncreasePerLevel = 150f;
+                public const float UltimateBaseKnockbackStrength = 900f;
+                public const float UltimateKnockbackStrengthIncreasePerLevel = 225f;
 
                 // Enemies are launched at a set speed, past the game's 150 speed cap for a moment
-                public const float AbilityBaseEnemyLaunchSpeed = 400f;
-                public const float AbilityEnemyLaunchSpeedIncreasePerLevel = 100f;
-                public const float UltimateBaseEnemyLaunchSpeed = 500f;
-                public const float UltimateEnemyLaunchSpeedIncreasePerLevel = 125f;
+                public const float AbilityBaseEnemyLaunchSpeed = 300f;
+                public const float AbilityEnemyLaunchSpeedIncreasePerLevel = 75f;
+                public const float UltimateBaseEnemyLaunchSpeed = 375f;
+                public const float UltimateEnemyLaunchSpeedIncreasePerLevel = 93.75f;
                 public const float EnemyUncappedDuration = 0.35f;
+                public const float ZeroGravityStrengthMultiplier = 0.65f;
+                public const float ZeroGravityUncappedDuration = 0.2f;
                 public const float EnemyStunDuration = 0.8f;
 
                 //too cool perk
@@ -267,7 +269,7 @@ namespace SpiderSurge
                 public const float ChargePerWave = 6f;
                 public const float WavesPerPoint = 2f;
                 public const int MinChargePerPoint = 1;
-                public const int PulseChargePerEnemy = 1;
+                public const int PulseChargePerEnemy = 2;
                 public const int DetonationChargePerEnemy = 2;
                 public const int RewindChargePerEnemy = 1;
                 public const int BottomlessClipChargePerKill = 2;

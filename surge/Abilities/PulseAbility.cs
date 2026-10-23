@@ -72,7 +72,7 @@ namespace SpiderSurge
                 if (biggerBoom > 0) strength += Consts.Values.Pulse.AbilityKnockbackStrengthIncreasePerLevel;
             }
 
-            return strength;
+            return strength * PulseKnockback.GravityStrengthMultiplier;
         }
 
         private float GetEnemyLaunchSpeed(bool isUlt)
@@ -95,7 +95,7 @@ namespace SpiderSurge
                 if (biggerBoom > 0) speed += Consts.Values.Pulse.AbilityEnemyLaunchSpeedIncreasePerLevel;
             }
 
-            return speed;
+            return speed * PulseKnockback.GravityStrengthMultiplier;
         }
 
         private static float GetDeathRadius(bool isUlt)

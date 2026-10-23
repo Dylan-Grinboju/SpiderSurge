@@ -12,6 +12,9 @@ namespace SpiderSurge
     public static class PulseKnockback
     {
         private const float ContinuousCollisionMargin = 0.1f;
+        private static bool ZeroGravity => Physics2D.gravity.sqrMagnitude < 0.0001f;
+        public static float GravityStrengthMultiplier => ZeroGravity ? Consts.Values.Pulse.ZeroGravityStrengthMultiplier : 1f;
+        public static float UncappedDuration => ZeroGravity ? Consts.Values.Pulse.ZeroGravityUncappedDuration : Consts.Values.Pulse.EnemyUncappedDuration;
 
         private class Launch
         {
@@ -26,9 +29,9 @@ namespace SpiderSurge
 
         public static bool CanLaunch(EnemyHealthSystem enemy)
         {
-            // A kinematic body (the Wasp Cocoon's) never slows down or stops at walls, so it would fly off the map for good
             Rigidbody2D body = enemy != null && !enemy.dead && !FrozenEnemy.IsFrozen(enemy) ? BodyOf(enemy) : null;
-            if (body == null || body.bodyType != RigidbodyType2D.Dynamic)
+            if (body == null || (body.bodyType != RigidbodyType2D.Dynamic &&
+                (body.bodyType != RigidbodyType2D.Kinematic || enemy.GetComponent<Enemies.SpawnerBrain>() == null)))
             {
                 return false;
             }
@@ -41,6 +44,12 @@ namespace SpiderSurge
             Vector2 direction = body.position - origin;
             Vector2 velocity = direction.sqrMagnitude > 0.0001f ? direction.normalized * speed : Vector2.up * speed;
 
+            if (body.bodyType == RigidbodyType2D.Kinematic)
+            {
+                CocoonPulseKnockback.Begin(enemy, body, velocity);
+                return;
+            }
+
             // Stingers, blades and roller struts hang on joints and would drag the body back, so every part moves together
             foreach (Rigidbody2D part in enemy.GetComponentsInChildren<Rigidbody2D>())
             {
@@ -49,7 +58,7 @@ namespace SpiderSurge
             Stun(enemy, Consts.Values.Pulse.EnemyStunDuration);
 
             ForgetDestroyed();
-            float uncappedUntil = Time.time + Consts.Values.Pulse.EnemyUncappedDuration;
+            float uncappedUntil = Time.time + UncappedDuration;
             if (launches.TryGetValue(body, out Launch launch))
             {
                 launch.UncappedUntil = uncappedUntil;

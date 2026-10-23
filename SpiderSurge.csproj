@@ -230,6 +230,10 @@
       <HintPath>./lib/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>./lib/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.AudioModule">
       <HintPath>./lib/UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
