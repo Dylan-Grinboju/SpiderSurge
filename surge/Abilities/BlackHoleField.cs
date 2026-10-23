@@ -51,12 +51,12 @@ namespace SpiderSurge
 
         private bool CasterAlive => _caster != null && !_caster.dead && !_caster.astralDead;
 
-        // The acceleration that brings an enemy from the reach fraction of the range, starting still, to the inner circle as the field closes
+        // Scale the acceleration from the reference distance so the pull brings enemies in faster at every range
         private static float EnemyPull(float range)
         {
             float time = Consts.Values.Storage.BlackHolePullTime;
             float distance = range * Consts.Values.Storage.BlackHoleReachFraction - Consts.Values.Storage.BlackHoleCoreRadius;
-            return Mathf.Max(0f, 2f * distance / (time * time));
+            return Mathf.Max(0f, 2f * distance / (time * time)) * Consts.Values.Storage.BlackHolePullStrengthMultiplier;
         }
 
         private static Vector2 EnemyPosition(EnemyHealthSystem enemy)
@@ -207,7 +207,7 @@ namespace SpiderSurge
                 Stabilizer stabilizer = spider.rootObject != null ? spider.rootObject.GetComponent<Stabilizer>() : null;
                 float grip = stabilizer != null && stabilizer.grounded && !spider.stunned ? 3.5f : 1f;
                 float falloff = 1f - distance / _range;
-                float impulse = Consts.Values.Storage.BlackHolePullForce * falloff * Time.fixedDeltaTime * grip * 13.3f / (suspension + 1);
+                float impulse = Consts.Values.Storage.BlackHolePullForce * Consts.Values.Storage.BlackHolePullStrengthMultiplier * falloff * Time.fixedDeltaTime * grip * 13.3f / (suspension + 1);
                 body.AddForce(offset / distance * impulse, ForceMode2D.Impulse);
             }
         }

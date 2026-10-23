@@ -34,13 +34,6 @@ namespace SpiderSurge
             page.Note("Softens decorative flashes and particles. Danger rings and warnings stay visible.");
 
             page.Spacer();
-            page.Header("Surge meter");
-            page.Slider("Charge per player per wave", ModConfig.MeterChargePerWaveKey, Consts.Values.Meter.MinChargePerWave, Consts.Values.Meter.MaxChargePerWave, 0.5f, effectiveValue: ModConfig.MeterChargePerWave);
-            page.Note($"Base ability charge for each wave toward one chaos point. Multiply it by Waves per chaos point for the solo target. Bigger teams need more charge. Lower values fill the meter faster. Default: {Consts.Values.Meter.DefaultChargePerWave:0.##}. Applies at the next wave.");
-            page.Slider("Waves per chaos point", ModConfig.MeterWavesPerPointKey, Consts.Values.Meter.MinWavesPerPoint, Consts.Values.Meter.MaxWavesPerPoint, 0.5f, effectiveValue: ModConfig.MeterWavesPerPoint);
-            page.Note($"One chaos point takes that charge for each of those waves: {MeterExample()} for one player. A bigger team's point grows with the extra enemies its waves bring. The team can earn at most one point per wave from abilities; Blood Pact is separate. Defaults: {Consts.Values.Meter.DefaultChargePerWave:0.##} and {Consts.Values.Meter.DefaultWavesPerPoint:0.##}. Changes apply at the next wave.");
-
-            page.Spacer();
             page.Header("Sound");
             page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%", ModConfig.AbilityVolume * ModConfig.OriginalAbilityVolume);
             page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");
@@ -73,11 +66,6 @@ namespace SpiderSurge
             page.Note("Color used while an ability or ultimate is active. Applies to both displays.");
             page.Toggle("Only show when ready", ModConfig.IndicatorShowOnlyWhenReadyKey);
             page.Note("Applies to both displays. Turn this off to see active time and cooldown progress.");
-        }
-
-        private static string MeterExample()
-        {
-            return Mathf.RoundToInt(ModConfig.MeterChargePerWave * ModConfig.MeterWavesPerPoint).ToString();
         }
 
         // A value that isn't a color matches the default the indicator falls back to

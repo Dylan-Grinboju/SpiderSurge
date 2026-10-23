@@ -202,8 +202,9 @@ namespace SpiderSurge
                 // An enemy whose body or weapon the pull brings this close to the caster goes in, and so does a spider's body, shrinking into the caster over the take time
                 public const float BlackHoleCoreRadius = 20f;
                 public const float BlackHoleTakeTime = 0.3f;
-                // An enemy caught this far out of the range, in open air, reaches the inner circle just as the field closes
+                // The reference distance for the pull; the strength multiplier brings an enemy this far out in halfway through the field's lifetime
                 public const float BlackHoleReachFraction = 0.75f;
+                public const float BlackHolePullStrengthMultiplier = 4f;
                 // The pull on spiders at the caster, applied the way the Gravity Grenade's Attractor applies its 1000
                 public const float BlackHolePullForce = 250f;
                 public const float BlackHoleCloseTime = 0.3f;
@@ -263,12 +264,8 @@ namespace SpiderSurge
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
                 // A player casting on cooldown made 2 to 4 a wave with Pulse, Freeze Time and Clip, so half that use still buys a point every 2 waves
-                public const float DefaultChargePerWave = 1.5f;
-                public const float DefaultWavesPerPoint = 2f;
-                public const float MinChargePerWave = 0.5f;
-                public const float MaxChargePerWave = 20f;
-                public const float MinWavesPerPoint = 0.5f;
-                public const float MaxWavesPerPoint = 10f;
+                public const float ChargePerWave = 1.5f;
+                public const float WavesPerPoint = 2f;
                 public const int MinChargePerPoint = 1;
                 public const int PulseChargePerEnemy = 1;
                 public const int DetonationChargePerEnemy = 2;
