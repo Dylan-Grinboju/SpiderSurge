@@ -92,7 +92,7 @@ namespace SpiderSurge
         public static void RecomputeThreshold()
         {
             if (!Net.IsAuthority) return;
-            float perPoint = ModConfig.MeterChargePerWave * ModConfig.MeterWavesPerPoint * TeamEnemyFactor();
+            float perPoint = Consts.Values.Meter.ChargePerWave * Consts.Values.Meter.WavesPerPoint * TeamEnemyFactor();
             int threshold = Mathf.Max(Consts.Values.Meter.MinChargePerPoint, Mathf.RoundToInt(perPoint));
             if (threshold == ChargePerPoint) return;
             ChargePerPoint = threshold;
