@@ -683,6 +683,7 @@ namespace SpiderSurge.Common
                 StyleLabel(checkbox.label, -1f, 1f);
                 SetLayout(checkbox.toggle.gameObject, 30f, RowHeight, 0f, RowHeight);
                 Register(checkbox.toggle);
+                checkbox.gameObject.AddComponent<SettingsToggleRow>().Toggle = checkbox.toggle;
             }
         }
 
@@ -850,7 +851,7 @@ namespace SpiderSurge.Common
             {
                 var row = control.transform.parent.gameObject;
                 settingsControl.Highlight = row.GetComponent<Image>() ?? row.AddComponent<Image>();
-                settingsControl.Highlight.raycastTarget = _contextHelp;
+                settingsControl.Highlight.raycastTarget = _contextHelp || control is Toggle;
                 settingsControl.Highlight.color = Color.clear;
             }
             var button = control.GetComponent<UIButton>();
