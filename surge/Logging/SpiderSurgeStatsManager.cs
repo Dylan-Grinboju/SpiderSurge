@@ -336,7 +336,7 @@ namespace SpiderSurge.Logging
 
         public void IncrementWave()
         {
-            if (_isTracking)
+            if (_isTracking && _currentWaveRecord != null)
             {
                 _currentWave++;
                 CloseWave(WaveResults.Won);
@@ -641,12 +641,18 @@ namespace SpiderSurge.Logging
         }
     }
 
-    [HarmonyPatch(typeof(SurvivalMode), "CompleteWave")]
+    [HarmonyPatch]
     public class SurvivalMode_CompleteWave_Patch
     {
+        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress =
+            AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
+
+        private static System.Reflection.MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "CompleteWave"));
+
         [HarmonyPrefix]
         public static void Prefix()
         {
+            if (!Net.IsAuthority || SurvivalMode.instance == null || !WaveInProgress(SurvivalMode.instance)) return;
             SpiderSurgeStatsManager.RunSafely("CompleteWave", stats => stats.IncrementWave());
         }
     }

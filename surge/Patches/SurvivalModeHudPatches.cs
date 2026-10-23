@@ -25,6 +25,7 @@ namespace SpiderSurge
         internal static void Apply(SurvivalModeHud __instance, bool rebuild)
         {
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
+            PerkChoiceHud.Attach(__instance);
             if (PerksManager.Instance == null) return;
 
             PerkChoiceWidget.HideStaleCards(__instance);
