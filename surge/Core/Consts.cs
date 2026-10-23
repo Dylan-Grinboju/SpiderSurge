@@ -306,22 +306,25 @@ namespace SpiderSurge
 
             public static class Enemies
             {
-                public const float SpeedMultiplier = 1.1f;
-                public const float SpawnCountMultiplier = 1.75f;
+                public const float SpeedMultiplier = 1.2f;
+                public const float SpawnCountMultiplier = 2.1f;
+                public const int WavesPerCapacityIncrease = 8;
+                public const float SpawnInterval = 2.5f;
+                public const float CapacityPollInterval = 0.1f;
                 public const float MissileWhispShotForce = 40f;
                 public const float TwinWhispShotMargin = 5f;
                 public const float TwinWhispCoreOffset = 4f;
-                public const float CocoonSpawnInterval = 10f;
+                public const float CocoonSpawnInterval = 7f;
                 public const float CocoonFirstHatchDelay = 1f;
-                public const int CocoonMaxWasps = 2;
+                public const int CocoonMaxWasps = 3;
             }
 
             public static class LaserRing
             {
-                public const float Period = 5f;
+                public const float Period = 4f;
                 public const float WarningDuration = 1f;
                 public const float ActiveDuration = 1f;
-                public const float Radius = 30f;
+                public const float Radius = 35f;
                 public const float Width = 3.5f;
                 public const float WarningWidth = 1f;
                 public const float WarningMinAlpha = 0.1f;

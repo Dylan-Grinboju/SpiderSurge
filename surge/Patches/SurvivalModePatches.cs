@@ -116,6 +116,7 @@ namespace SpiderSurge
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerPlayer *= Consts.Values.Enemies.SpawnCountMultiplier;
+                surgeConfig.difficultyIncreaseThreshold = Consts.Values.Enemies.WavesPerCapacityIncrease;
 
                 // Update enemy stats from config
                 foreach (var enemy in surgeConfig.enemies)
@@ -215,6 +216,7 @@ namespace SpiderSurge
                     SurgeGameModeManager.Instance.ResetRun();
                 }
                 SurgeMeter.ResetRun();
+                SurgeSpawnPressure.Reset();
 
                 if (PerksManager.Instance != null)
                 {
@@ -312,33 +314,49 @@ namespace SpiderSurge
 
     }
 
-    // Cocoon wasps don't count toward the live enemy cap that holds back a wave's spawns; the burst spawn that waits for an empty arena and the wave's end still count them
+    // Only Surge changes capacity, pacing and bursts; the game's spawn warnings and wave-end checks stay intact
     [HarmonyPatch]
     public class SurvivalMode_SpawnEnemies_Patch
     {
         static MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "SpawnEnemies"));
 
-        // EnemiesAlive is stored once and read by the cap check first, so only that first read leaves the wasps out
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo enemiesAlive = AccessTools.Method(typeof(SurvivalMode), "EnemiesAlive");
-            bool patched = false;
+            MethodInfo min = AccessTools.Method(typeof(Mathf), nameof(Mathf.Min), new[] { typeof(int), typeof(int) });
+            var result = new List<CodeInstruction>();
+            int countPatch = 0, intervalPatch = 0, pollPatch = 0, burstPatch = 0;
             int stage = 0;
             foreach (CodeInstruction instruction in instructions)
             {
-                yield return instruction;
-                if (patched) continue;
+                result.Add(instruction);
                 if (stage == 0 && instruction.Calls(enemiesAlive)) stage = 1;
                 else if (stage == 1 && instruction.IsStloc()) stage = 2;
                 else if (stage == 2 && instruction.IsLdloc())
                 {
-                    yield return CodeInstruction.Call(typeof(SurvivalMode_SpawnEnemies_Patch), nameof(WithoutHatchlings));
-                    patched = true;
+                    result.Add(CodeInstruction.Call(typeof(SurgeSpawnPressure), nameof(SurgeSpawnPressure.CountForCap)));
+                    countPatch++;
+                    stage = 3;
+                }
+                if (stage == 3 && instruction.LoadsConstant(1f))
+                {
+                    result.Add(CodeInstruction.Call(typeof(SurgeSpawnPressure), nameof(SurgeSpawnPressure.PollInterval)));
+                    pollPatch++;
+                }
+                if (instruction.LoadsConstant(3f))
+                {
+                    result.Add(CodeInstruction.Call(typeof(SurgeSpawnPressure), nameof(SurgeSpawnPressure.SpawnInterval)));
+                    intervalPatch++;
+                }
+                if (instruction.Calls(min))
+                {
+                    result.Add(CodeInstruction.Call(typeof(SurgeSpawnPressure), nameof(SurgeSpawnPressure.BurstCount)));
+                    burstPatch++;
                 }
             }
-            if (!patched) Logger.LogWarning("SurvivalMode.SpawnEnemies no longer counts live enemies; cocoon wasps count toward the enemy cap");
+            if (countPatch != 1 || intervalPatch != 1 || pollPatch != 1 || burstPatch != 1)
+                throw new InvalidOperationException("SurvivalMode.SpawnEnemies no longer matches Surge's capacity and pacing patch");
+            return result;
         }
-
-        static int WithoutHatchlings(int alive) => alive - SpawnerBrain.CountHatchlingsAlive();
     }
 }
