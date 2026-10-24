@@ -115,7 +115,6 @@ namespace SpiderSurge
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
-                    SurgeMeter.Add(MeterSource.FreezeTime, PlayerId, Consts.Values.Meter.FreezeChargePerEnemy);
                 }
             }
             FrozenShot.FreezeAround(origin, range, duration);
@@ -216,7 +215,6 @@ namespace SpiderSurge
             {
                 if (IsWasp(enemy, wasp, shieldedWasp)) continue;
                 RewindEnemy(enemy, wasp, shieldedWasp);
-                SurgeMeter.Add(MeterSource.Rewind, PlayerId, Consts.Values.Meter.RewindChargePerEnemy);
             }
         }
 

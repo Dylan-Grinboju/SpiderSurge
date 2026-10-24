@@ -41,8 +41,9 @@ namespace SpiderSurge
             {
                 PerkConfirmButton.Build(__instance);
                 PerkShopPanel.Build(__instance);
-                MeterHint.Build(__instance);
+                PerkHint.Build(__instance);
             }
+            MapBonusLabels.Refresh();
 
             // Access perkChoiceView using reflection since it might be private
             var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -153,7 +154,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static void Prefix(List<Modifier> modifiers)
         {
-            if (SurgeGameModeManager.IsSurgeRunActive && SurgeMeter.Enabled && !AbilitySelection.IsChoosing && !PerkShop.RerollInProgress) PerkShop.RollOffer(modifiers);
+            if (SurgeGameModeManager.IsSurgeRunActive && ChaosWallet.Enabled && !AbilitySelection.IsChoosing && !PerkShop.RerollInProgress) PerkShop.BeginVisit(modifiers);
         }
     }
 

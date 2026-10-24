@@ -73,12 +73,6 @@ namespace StatsMod
 
         private static AttackScope current;
 
-        // An enemy kill credited to a player: the weapon that made it, when one is known, and the time of the killing hit
-        public static event Action<EnemyHealthSystem, PlayerController, Weapon, float> EnemyKilled;
-
-        // A weapon a launcher fired, such as a Grenade Launcher's grenade, and the launcher
-        public static event Action<Weapon, Weapon> WeaponLaunched;
-
         private static readonly Dictionary<SerializationEnemyName, string> enemyDisplayNames = new Dictionary<SerializationEnemyName, string>
         {
             { SerializationEnemyName.Wasp, "Wasp" },
@@ -414,7 +408,6 @@ namespace StatsMod
                 SetWeaponPlayer(weapon, player);
                 // A Grenade Launcher's grenades come out armed, so they belong to the launcher's player from the start
                 if (weapon is Grenade grenade && grenade.preArmed && player != null) StoreOwner(explosiveArmers, weapon.GetInstanceID(), player, weapon);
-                WeaponLaunched?.Invoke(weapon, launcher as Weapon);
             }
             catch (Exception ex)
             {
@@ -472,8 +465,6 @@ namespace StatsMod
             {
                 Logger.LogWarning($"No kill category for enemy {enemy.name} ({enemy.serializationEnemyName})");
             }
-
-            EnemyKilled?.Invoke(enemy, hit.Player, hit.WeaponObject, hit.Time);
         }
 
         // Surge's wasp cocoons are cloned from the parkour target and carry the Wasp enemy name, so they get their own category by name

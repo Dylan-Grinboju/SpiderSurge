@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace SpiderSurge
 {
@@ -35,20 +34,12 @@ namespace SpiderSurge
 
             SurgeLobbyPlatform.EnsureCreated();
             Integration.StatsModBridge.DescribeSurgeTitles();
-            StatsMod.HitLogic.EnemyKilled += MeterKills.OnEnemyKilled;
-            StatsMod.HitLogic.WeaponLaunched += CarePackageDrops.OnWeaponLaunched;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            if (!Parts.Stats.Enabled || Parts.Stats.BlockedBy != null) Silk.Logger.LogWarning("Stats is off, so kills don't charge the Surge meter for Bottomless Clip, Null Field and Care Package");
             Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
-            StatsMod.HitLogic.EnemyKilled -= MeterKills.OnEnemyKilled;
-            StatsMod.HitLogic.WeaponLaunched -= CarePackageDrops.OnWeaponLaunched;
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            CarePackageDrops.Clear();
             SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);
@@ -77,11 +68,6 @@ namespace SpiderSurge
             {
                 ModConfig.ForgetColors();
             }
-        }
-
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            CarePackageDrops.Clear();
         }
     }
 }

@@ -100,7 +100,6 @@ namespace SpiderSurge.Logging
                     sb.AppendLine($"    Ability Activations: {player.AbilityActivationCount}");
                     sb.AppendLine($"    Ultimate Activations: {player.UltimateActivationCount}");
                     sb.AppendLine($"    Null Field Saves: {player.Saves}");
-                    if (stats.Meter != null) sb.AppendLine($"    Meter Charge: {player.MeterCharge}");
                     if (stats.StatsTracked)
                     {
                         sb.AppendLine($"    Deaths: {player.Deaths} ({player.LavaDeaths} in lava)");
@@ -144,8 +143,7 @@ namespace SpiderSurge.Logging
                 {
                     string deaths = wave.Deaths >= 0 ? $", {wave.Deaths} deaths" : "";
                     string saves = wave.Saves > 0 ? $", {wave.Saves} saves" : "";
-                    string meter = wave.MeterCharge > 0 ? $", {wave.MeterCharge} meter charge" : "";
-                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}, {wave.AbilityUses} abilities, {wave.UltimateUses} ultimates{saves}{meter}");
+                    sb.AppendLine($"  Wave {wave.Wave} on {wave.Map}: {wave.Result} in {wave.Seconds:0.0}s{deaths}, {wave.AbilityUses} abilities, {wave.UltimateUses} ultimates{saves}");
                 }
             }
             else
@@ -157,13 +155,9 @@ namespace SpiderSurge.Logging
             if (stats.Meter != null)
             {
                 var meter = stats.Meter;
-                sb.AppendLine("SURGE METER:");
-                sb.AppendLine($"  Charge per chaos point: {meter.ChargePerPoint}");
-                sb.AppendLine($"  Total charge: {meter.TotalCharge}, chaos points earned: {meter.PointsEarned}, chaos points spent: {meter.PointsSpent}");
-                if (meter.ChargeBySource.Count > 0)
-                {
-                    sb.AppendLine($"  Charge by source: {string.Join(", ", meter.ChargeBySource.Select(entry => $"{entry.Key} {entry.Value}"))}");
-                }
+                sb.AppendLine("CHAOS POINTS:");
+                sb.AppendLine($"  Earned: {meter.PointsEarned}, spent: {meter.PointsSpent}");
+                foreach (var entry in meter.Events) sb.AppendLine($"  Wave {entry.Wave}: {entry.Text}");
                 if (meter.Purchases.Count > 0)
                 {
                     foreach (var purchase in meter.Purchases)

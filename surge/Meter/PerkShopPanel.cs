@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Logger = Silk.Logger;
 using System.Linq;
-using M = SpiderSurge.Consts.Values.Meter;
+using M = SpiderSurge.Consts.Values.Chaos;
 
 namespace SpiderSurge
 {
@@ -18,16 +18,11 @@ namespace SpiderSurge
         public Vector2 OriginalSize;
     }
 
-    // The column beside the perk cards: the team's chaos points and meter on top, then the shop built from the game's card prefab, where a row click selects an item and Buy spends the points; the starting ability pick has no shop, so it explains the meter instead
+    // The shop column uses the game's cards and keeps the team wallet visible.
     public class PerkShopPanel : MonoBehaviour
     {
         private const string PanelName = "SurgeShop";
         private const float HeaderHeight = 24f;
-        private const float BarTop = 28f;
-        private const float BarHeight = 8f;
-        private const float CaptionTop = 39f;
-        private const float CaptionHeight = 15f;
-        private static readonly Color BarBack = new Color(1f, 1f, 1f, 0.16f);
 
         private class Entry
         {
@@ -41,10 +36,9 @@ namespace SpiderSurge
 
         private readonly List<Entry> _entries = new List<Entry>();
         private TMP_Text _header;
-        private RectTransform _fill;
-        private TMP_Text _caption;
         private SurvivalModeHud _hud;
         private bool _infoOnly;
+        private Vector2 _viewSize;
         private Entry _selected;
         private Button _buy;
         private Image _buyBackground;
@@ -60,11 +54,11 @@ namespace SpiderSurge
 
             Remove(hud);
             var prefabCard = hud.perkCardPrefab != null ? hud.perkCardPrefab.GetComponent<SurvivalModifierChoiceCard>() : null;
-            if (!SurgeMeter.Enabled || prefabCard == null || prefabCard.perkNameText == null || prefabCard.perkDescriptionText == null)
+            if (!ChaosWallet.Enabled || prefabCard == null || prefabCard.perkNameText == null || prefabCard.perkDescriptionText == null)
             {
                 RestoreCards(hud);
                 PerkConfirmButton.Current?.Reposition();
-                MeterHint.Current?.Reposition();
+                PerkHint.Current?.Reposition();
                 return;
             }
 
@@ -81,27 +75,28 @@ namespace SpiderSurge
 
                 var panel = panelObject.AddComponent<PerkShopPanel>();
                 panel._hud = hud;
+                panel._viewSize = ((RectTransform)hud.perkChoiceView.transform).rect.size;
                 panel._infoOnly = AbilitySelection.StartingChoiceOpen;
                 int count = panel._infoOnly ? 0 : PerkShop.Offer.Length;
-                float minimum = M.MeterBlockHeight + count * (M.MinEntryHeight + M.EntrySpacing) + (panel._infoOnly ? 0f : M.BuyHeight);
+                float minimum = M.WalletBlockHeight + count * (M.MinEntryHeight + M.EntrySpacing) + (panel._infoOnly ? 0f : M.BuyHeight);
                 float height = Mathf.Max(column.y, minimum);
                 rect.sizeDelta = new Vector2(M.PanelWidth, height);
 
-                panel.BuildMeter(prefabCard);
+                panel.BuildWallet(prefabCard);
                 if (panel._infoOnly)
                 {
                     panel.BuildInfo(prefabCard, height);
                 }
                 else
                 {
-                    float entryHeight = count > 0 ? Mathf.Clamp((height - M.MeterBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
+                    float entryHeight = count > 0 ? Mathf.Clamp((height - M.WalletBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
                     panel.Populate(entryHeight);
                     panel.LinkNavigation();
                 }
                 panel.Refresh();
                 if (panel.isActiveAndEnabled) panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
-                MeterHint.Current?.Reposition();
+                PerkHint.Current?.Reposition();
             }
             catch (System.Exception ex)
             {
@@ -151,7 +146,7 @@ namespace SpiderSurge
                 cardsHeight = Mathf.Max(cardsHeight, cardRect.sizeDelta.y * scale.y);
             }
             float roomX = viewWidth - 2f * M.SideMargin - M.PanelGap - M.PanelWidth - spaces;
-            float below = (PerkConfirmButton.Current != null ? M.ConfirmGap + M.ConfirmHeight : 0f) + MeterHint.Reserve;
+            float below = (PerkConfirmButton.Current != null ? M.ConfirmGap + M.ConfirmHeight : 0f) + PerkHint.Reserve;
             float roomY = CardsTop(hud) + viewHeight / 2f - M.BottomMargin - below;
             float factor = 1f;
             if (cardsWidth > 0f) factor = Mathf.Min(factor, roomX / cardsWidth);
@@ -213,59 +208,32 @@ namespace SpiderSurge
         }
 
         // The team's points and progress toward the next point
-        private void BuildMeter(SurvivalModifierChoiceCard prefabCard)
+        private void BuildWallet(SurvivalModifierChoiceCard prefabCard)
         {
             _header = CloneText(prefabCard.perkNameText, "Points");
             PlaceTop(_header.rectTransform, 0f, HeaderHeight, 0f);
-            _header.fontSize = 16f;
+            _header.fontSize = 14f;
             _header.alignment = TextAlignmentOptions.Center;
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
 
-            var back = new GameObject("Bar", typeof(RectTransform), typeof(Image));
-            var backRect = (RectTransform)back.transform;
-            backRect.SetParent(transform, false);
-            PlaceTop(backRect, BarTop, BarHeight, 10f);
-            var backImage = back.GetComponent<Image>();
-            backImage.color = BarBack;
-            backImage.raycastTarget = false;
-
-            var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
-            _fill = (RectTransform)fill.transform;
-            _fill.SetParent(backRect, false);
-            _fill.anchorMin = Vector2.zero;
-            _fill.anchorMax = new Vector2(0f, 1f);
-            _fill.pivot = new Vector2(0f, 0.5f);
-            _fill.offsetMin = Vector2.zero;
-            _fill.offsetMax = Vector2.zero;
-            var fillImage = fill.GetComponent<Image>();
-            fillImage.color = Hud.Pink;
-            fillImage.raycastTarget = false;
-
-            _caption = CloneText(prefabCard.perkDescriptionText, "Charge");
-            PlaceTop(_caption.rectTransform, CaptionTop, CaptionHeight, 0f);
-            _caption.fontSize = 11f;
-            _caption.alignment = TextAlignmentOptions.Center;
-            _caption.enableWordWrapping = false;
-            _caption.overflowMode = TextOverflowModes.Overflow;
-            _caption.color = Hud.Muted;
         }
 
         private void BuildInfo(SurvivalModifierChoiceCard prefabCard, float height)
         {
             var info = CloneText(prefabCard.perkDescriptionText, "About");
-            PlaceTop(info.rectTransform, M.MeterBlockHeight, height - M.MeterBlockHeight, 8f);
+            PlaceTop(info.rectTransform, M.WalletBlockHeight, height - M.WalletBlockHeight, 8f);
             info.fontSize = 13f;
             info.alignment = TextAlignmentOptions.Top;
             info.enableWordWrapping = true;
             info.overflowMode = TextOverflowModes.Overflow;
             info.color = Color.white;
-            info.text = "Use your abilities to earn <b>chaos points</b> for the team.\n\nSpend them in the shop at later perk choices.";
+            info.text = "Choose marked maps and complete optional challenges to earn <b>chaos points</b>.\n\nSpend them at later perk choices. Each shop item can be bought once per visit.";
         }
 
         private void Populate(float entryHeight)
         {
-            float y = M.MeterBlockHeight;
+            float y = M.WalletBlockHeight;
             float iconSize = Mathf.Min(entryHeight - 16f, 56f);
             float textLeft = 8f + iconSize + 10f;
             foreach (ShopItem item in PerkShop.Offer)
@@ -457,19 +425,24 @@ namespace SpiderSurge
 
         private void OnEnable()
         {
-            SurgeMeter.Changed += Refresh;
+            ChaosWallet.Changed += Refresh;
             PerkShop.OfferChanged += Rebuild;
         }
 
         private void OnDisable()
         {
-            SurgeMeter.Changed -= Refresh;
+            ChaosWallet.Changed -= Refresh;
             PerkShop.OfferChanged -= Rebuild;
         }
 
         // What the shop can sell depends on the lives, which a client gets after the points, so the panel redraws when they change
         private void Update()
         {
+            if (_hud != null && _viewSize != ((RectTransform)_hud.perkChoiceView.transform).rect.size)
+            {
+                Build(_hud);
+                return;
+            }
             SurvivalMode mode = SurvivalMode.instance;
             if (mode == null) return;
             int maxLives = MaxLives(mode);
@@ -502,19 +475,10 @@ namespace SpiderSurge
         public void Refresh()
         {
             if (this == null) return;
-            int points = SurgeMeter.Points;
+            int points = ChaosWallet.Points;
             if (_header != null)
             {
-                _header.text = $"Chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
-            }
-            if (_fill != null)
-            {
-                _fill.anchorMax = new Vector2(SurgeMeter.Fill, 1f);
-                _fill.offsetMax = Vector2.zero;
-            }
-            if (_caption != null)
-            {
-                _caption.text = !SurgeMeter.Known ? "" : "Use abilities to earn points";
+                _header.text = $"Team chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -531,7 +495,7 @@ namespace SpiderSurge
                 }
                 if (entry.Description != null)
                 {
-                    entry.Description.text = unavailable ?? PerkShop.DescriptionOf(entry.Item);
+                    entry.Description.text = unavailable ?? (points < cost ? $"Need {cost - points} more point{(cost - points == 1 ? "" : "s")}" : PerkShop.DescriptionOf(entry.Item));
                     entry.Description.color = PerkChoiceWidget.Faded(entry.Description.color, alpha);
                 }
                 if (entry.Icon != null) entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);

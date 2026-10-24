@@ -36,8 +36,6 @@ namespace SpiderSurge
         public float CooldownProgress => !onCooldown ? 1f : cooldownDuration <= 0f ? 0f : Mathf.Clamp01(1f - (cooldownEndTime - Time.time) / cooldownDuration);
         private float activeEndTime;
         private float activeDuration;
-        private float abilityActiveFrom = -1f;
-        private float abilityActiveTo = -1f;
         public float CooldownRemaining => onCooldown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
         public float ActiveRemaining => isActive ? Mathf.Max(0f, activeEndTime - Time.time) : 0f;
         public float ActiveProgress => activeDuration > 0f ? Mathf.Clamp01(ActiveRemaining / activeDuration) : 1f;
@@ -139,11 +137,11 @@ namespace SpiderSurge
 
         public virtual float AbilityDuration => _cachedAbilityDuration;
 
-        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime;
+        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime * ChallengeController.CooldownMultiplier;
 
         public virtual float UltimateDuration => _cachedUltimateDuration;
 
-        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime;
+        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime * ChallengeController.CooldownMultiplier;
 
         protected virtual void Awake()
         {
@@ -409,6 +407,11 @@ namespace SpiderSurge
                 return;
             }
 
+            if (!ChallengeController.CanActivate(false, !fromNetwork))
+            {
+                return;
+            }
+
             if (onCooldown)
             {
                 PlayAbilityNotReadySound();
@@ -423,8 +426,6 @@ namespace SpiderSurge
             isActive = true;
             activeDuration = AbilityDuration;
             activeEndTime = Time.time + activeDuration;
-            abilityActiveFrom = Time.time;
-            abilityActiveTo = float.MaxValue;
             OnActivate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
@@ -453,16 +454,9 @@ namespace SpiderSurge
                     isUltimateActive = false;
                     OnDeactivateUltimate();
                 }
-                else
-                {
-                    abilityActiveTo = Time.time;
-                }
                 OnDeactivate();
             }
         }
-
-        // The ability itself, not its ultimate, was running at that game time
-        public bool AbilityActiveAt(float time) => time >= abilityActiveFrom && time <= abilityActiveTo;
 
         public virtual void ActivateUltimate()
         {
@@ -479,6 +473,11 @@ namespace SpiderSurge
             }
 
             if (!IsUltimateUnlocked())
+            {
+                return;
+            }
+
+            if (!ChallengeController.CanActivate(true, !fromNetwork))
             {
                 return;
             }
@@ -590,6 +589,13 @@ namespace SpiderSurge
                 cooldownDuration = remaining;
                 cooldownCoroutine = StartCoroutine(CooldownCoroutine());
             }
+        }
+
+        internal void RescaleChallengeCooldown(float factor)
+        {
+            if (!onCooldown) return;
+            cooldownEndTime = Time.time + CooldownRemaining * factor;
+            cooldownDuration *= factor;
         }
 
         public void ForceStartCooldown(bool wasUltimate = false)

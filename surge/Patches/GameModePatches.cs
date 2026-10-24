@@ -23,11 +23,10 @@ namespace SpiderSurge
             }
 
             StoragePersistenceManager.ClearAllStoredWeapons();
-            SurgeMeter.ResetRun();
-            PerkShop.ClearOffer();
+            ChaosWallet.ResetRun();
             PerkShopPanel.Clear();
             PerkConfirmButton.Clear();
-            MeterHint.Clear();
+            PerkHint.Clear();
         }
     }
 
@@ -47,11 +46,10 @@ namespace SpiderSurge
                 }
 
                 StoragePersistenceManager.ClearAllStoredWeapons();
-                SurgeMeter.ResetRun();
-                PerkShop.ClearOffer();
+                ChaosWallet.ResetRun();
                 PerkShopPanel.Clear();
                 PerkConfirmButton.Clear();
-                MeterHint.Clear();
+                PerkHint.Clear();
 
                 SurgeGameModeManager.SelectMode(false);
                 SurgeLobbyPlatform.EnsureCreated();

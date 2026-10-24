@@ -96,7 +96,7 @@ namespace SpiderSurge
             }
         }
 
-        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack; the last player to freeze it gets its kill charge
+        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
         public static bool Freeze(EnemyHealthSystem enemy, float duration, int playerId)
         {
             if (!Apply(enemy, duration, visualOnly: false)) return false;
@@ -306,12 +306,6 @@ namespace SpiderSurge
             RestoreTints();
             _tints.Clear();
             return true;
-        }
-
-        // EnemyHealthSystem.Explode sends this to every component on the host whenever an enemy dies
-        private void OnCharacterDied()
-        {
-            if (_held && !_visualOnly && _frozenBy >= 0) SurgeMeter.Add(MeterSource.FreezeTime, _frozenBy, Consts.Values.Meter.FreezeChargePerKill);
         }
 
         // The game recolors parts while they are frozen (a damaged roller strut turns orange); the new color becomes the one tinted and restored

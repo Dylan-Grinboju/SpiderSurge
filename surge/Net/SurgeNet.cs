@@ -71,7 +71,7 @@ namespace SpiderSurge
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
-            MeterNet.Initialize();
+            ChaosNet.Initialize();
         }
 
         public static void Shutdown()
@@ -89,7 +89,7 @@ namespace SpiderSurge
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
-            MeterNet.Shutdown();
+            ChaosNet.Shutdown();
         }
 
         public static void MarkDirty()

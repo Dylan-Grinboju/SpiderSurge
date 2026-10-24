@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace SpiderSurge
 {
-    // Shared handling for the objects Surge adds to the perk choice view: the shop panel, the confirm button and the meter hint
+    // Shared handling for the objects Surge adds to the perk choice view: the shop panel, the confirm button and the perk synergy hint
     public static class PerkChoiceWidget
     {
         private static readonly AccessTools.FieldRef<SurvivalModeHud, List<SurvivalModifierChoiceCard>> CardList = AccessTools.FieldRefAccess<SurvivalModeHud, List<SurvivalModifierChoiceCard>>("survivalModifierChoiceCards");
@@ -174,7 +174,7 @@ namespace SpiderSurge
 
         private void Apply()
         {
-            transform.localScale = _base * _factor * (_locked ? Consts.Values.Meter.LockedCardScale : 1f);
+            transform.localScale = _base * _factor * (_locked ? Consts.Values.Chaos.LockedCardScale : 1f);
             var button = GetComponent<UIButton>();
             if (button != null) button.UpdateStartScale();
         }
