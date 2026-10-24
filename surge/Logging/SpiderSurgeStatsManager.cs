@@ -58,7 +58,6 @@ namespace SpiderSurge.Logging
         private readonly Dictionary<int, int> _savesPerPlayer = new Dictionary<int, int>();
         private readonly List<PerkChoiceRecord> _perkChoices = new List<PerkChoiceRecord>();
         private readonly List<WaveRecord> _waves = new List<WaveRecord>();
-        private readonly Dictionary<int, int> _meterChargePerPlayer = new Dictionary<int, int>();
         private readonly List<MeterPurchaseRecord> _meterPurchases = new List<MeterPurchaseRecord>();
         private PerkChoiceRecord _pendingPerkChoice;
         private float _pendingPerkOfferedAt;
@@ -100,7 +99,6 @@ namespace SpiderSurge.Logging
             _abilityActivationsPerPlayer.Clear();
             _ultimateActivationsPerPlayer.Clear();
             _savesPerPlayer.Clear();
-            _meterChargePerPlayer.Clear();
             _meterPurchases.Clear();
             _perkChoices.Clear();
             _waves.Clear();
@@ -157,7 +155,7 @@ namespace SpiderSurge.Logging
                         AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(playerId, out int abilities) ? abilities : 0,
                         UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0,
                         Saves = _savesPerPlayer.TryGetValue(playerId, out int saves) ? saves : 0,
-                        MeterCharge = _meterChargePerPlayer.TryGetValue(playerId, out int meter) ? meter : 0
+                        MeterCharge = 0
                     };
 
                     if (statsTracked && StatsMod.PlayerTracker.Instance.TryGetPlayer(player, out var data))
@@ -273,15 +271,6 @@ namespace SpiderSurge.Logging
 
         public WaveRecord CurrentWaveRecord => _isTracking ? _currentWaveRecord : null;
 
-        public void LogMeterCharge(int playerId, int amount)
-        {
-            if (!_isTracking || amount <= 0) return;
-
-            _meterChargePerPlayer.TryGetValue(playerId, out int charge);
-            _meterChargePerPlayer[playerId] = charge + amount;
-            if (_currentWaveRecord != null) _currentWaveRecord.MeterCharge += amount;
-        }
-
         public void LogMeterPurchase(ShopItem item, string detail)
         {
             if (!_isTracking) return;
@@ -311,16 +300,13 @@ namespace SpiderSurge.Logging
         {
             var report = new MeterReport
             {
-                ChargePerPoint = SurgeMeter.ChargePerPoint,
-                TotalCharge = SurgeMeter.TotalCharge,
-                PointsEarned = SurgeMeter.PointsEarned,
-                PointsSpent = SurgeMeter.PointsSpent,
+                ChargePerPoint = 0,
+                TotalCharge = 0,
+                PointsEarned = ChaosWallet.PointsEarned,
+                PointsSpent = ChaosWallet.PointsSpent,
+                Events = new List<string>(ChaosWallet.Events),
                 Purchases = new List<MeterPurchaseRecord>(_meterPurchases)
             };
-            foreach (var entry in SurgeMeter.ChargeBySource)
-            {
-                if (entry.Value > 0) report.ChargeBySource[entry.Key.ToString()] = entry.Value;
-            }
             return report;
         }
 
@@ -401,7 +387,7 @@ namespace SpiderSurge.Logging
                 Kind = _surgeRun ? GetPerkChoiceKind(PerksManager.Instance) : PerkChoiceKinds.Perk,
                 Offered = offered,
                 LuckyOffered = offered.Where(key => lucky.Contains(key)).ToList(),
-                ShopOffer = SurgeMeter.Enabled ? PerkShop.Offer.Select(item => item.ToString()).ToList() : new List<string>()
+                ShopOffer = ChaosWallet.Enabled ? PerkShop.Offer.Select(item => item.ToString()).ToList() : new List<string>()
             };
             _pendingPerkOfferedAt = Time.realtimeSinceStartup;
             _pendingPerkSubmitted = false;

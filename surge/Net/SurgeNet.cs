@@ -71,7 +71,7 @@ namespace SpiderSurge
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
-            MeterNet.Initialize();
+            ChaosNet.Initialize();
         }
 
         public static void Shutdown()
@@ -89,7 +89,7 @@ namespace SpiderSurge
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
-            MeterNet.Shutdown();
+            ChaosNet.Shutdown();
         }
 
         public static void MarkDirty()
@@ -122,6 +122,8 @@ namespace SpiderSurge
         internal static void SendFreezeCooldown(int playerId, float remaining)
         {
             if (!Net.IsHost || !Net.HasRemotePlayers) return;
+            // Apply challenge rescaling before the client receives an absolute cooldown.
+            ChaosNet.Flush();
             Net.SendToAll(FreezeCooldownChannel, writer =>
             {
                 writer.Write(playerId);

@@ -139,11 +139,11 @@ namespace SpiderSurge
 
         public virtual float AbilityDuration => _cachedAbilityDuration;
 
-        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime;
+        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime * ChallengeController.CooldownMultiplier;
 
         public virtual float UltimateDuration => _cachedUltimateDuration;
 
-        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime;
+        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime * ChallengeController.CooldownMultiplier;
 
         protected virtual void Awake()
         {
@@ -397,6 +397,7 @@ namespace SpiderSurge
 
         public virtual void Activate()
         {
+            if (!ChallengeController.CanActivate(false, true)) return;
             UpdatePerkModifiers();
 
             if (!IsUnlocked() || !AcceptsInput)
@@ -466,6 +467,7 @@ namespace SpiderSurge
 
         public virtual void ActivateUltimate()
         {
+            if (!ChallengeController.CanActivate(true, true)) return;
             UpdatePerkModifiers();
 
             if (!IsUnlocked() || !AcceptsInput)
@@ -590,6 +592,13 @@ namespace SpiderSurge
                 cooldownDuration = remaining;
                 cooldownCoroutine = StartCoroutine(CooldownCoroutine());
             }
+        }
+
+        internal void RescaleChallengeCooldown(float factor)
+        {
+            if (!onCooldown) return;
+            cooldownEndTime = Time.time + CooldownRemaining * factor;
+            cooldownDuration *= factor;
         }
 
         public void ForceStartCooldown(bool wasUltimate = false)

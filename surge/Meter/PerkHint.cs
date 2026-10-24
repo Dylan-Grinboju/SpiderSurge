@@ -3,15 +3,15 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Logger = Silk.Logger;
-using M = SpiderSurge.Consts.Values.Meter;
+using M = SpiderSurge.Consts.Values.Chaos;
 using P = SpiderSurge.Consts.PerkNames;
 
 namespace SpiderSurge
 {
-    // A line under the focused or locked card explains its meter charge or perk synergy.
-    public class MeterHint : MonoBehaviour
+    // A line under the focused or locked card explains its perk synergy.
+    public class PerkHint : MonoBehaviour
     {
-        public const string ObjectName = "SurgeMeterHint";
+        public const string ObjectName = "ChaosWalletHint";
         private const float Width = 640f;
         private const float Height = 40f;
         private const float Gap = 10f;
@@ -24,7 +24,7 @@ namespace SpiderSurge
         private string _shownKey;
         private int _shownLevel = -1;
 
-        public static MeterHint Current { get; private set; }
+        public static PerkHint Current { get; private set; }
 
         public static void Clear()
         {
@@ -38,13 +38,13 @@ namespace SpiderSurge
             PerkChoiceWidget.Remove(hud, ObjectName);
             Current = null;
             var prefabCard = hud.perkCardPrefab != null ? hud.perkCardPrefab.GetComponent<SurvivalModifierChoiceCard>() : null;
-            if (!SurgeMeter.Enabled || prefabCard == null || prefabCard.perkDescriptionText == null) return;
+            if (!ChaosWallet.Enabled || prefabCard == null || prefabCard.perkDescriptionText == null) return;
 
             try
             {
                 GameObject textObject = Instantiate(prefabCard.perkDescriptionText.gameObject, hud.perkChoiceView.transform);
                 textObject.name = ObjectName;
-                var hint = textObject.AddComponent<MeterHint>();
+                var hint = textObject.AddComponent<PerkHint>();
                 hint._hud = hud;
                 hint._text = textObject.GetComponent<TMP_Text>();
                 SettingsPage.SetText(hint._text, "");
@@ -127,27 +127,7 @@ namespace SpiderSurge
         {
             string synergy = PerkSynergy.Describe(key, level);
             if (synergy != null) return $"<color={Consts.Formatting.ColorGold}>Synergy:</color> {synergy}";
-            string how = key != null ? HowItCharges(key) : null;
-            if (how == null || PerksManager.Instance == null) return "";
-            return $"<color={Consts.Formatting.ColorGold}>{PerksManager.Instance.GetDisplayName(key)}</color> charges the meter {how}.";
-        }
-
-        private static string HowItCharges(string key)
-        {
-            switch (key)
-            {
-                case P.PulseAbility: return "by launching enemies";
-                case P.AmmoAbility: return "by defeating enemies while it is active";
-                case P.ImmuneAbility: return "by blocking hits and defeating enemies while it is active";
-                case P.StorageAbility: return "by retrieving stored weapons";
-                case P.FreezeAbility: return "by freezing enemies and defeating them while frozen";
-                case P.PulseAbilityUltimate: return "by hitting enemies with the detonation";
-                case P.AmmoAbilityUltimate: return "by defeating enemies with the weapons it supplies";
-                case P.ImmuneAbilityUltimate: return "by reviving teammates and letting its Wasps defeat enemies";
-                case P.StorageAbilityUltimate: return "by swallowing enemies";
-                case P.FreezeAbilityUltimate: return "by turning enemies into Wasps";
-                default: return null;
-            }
+            return "";
         }
     }
 }

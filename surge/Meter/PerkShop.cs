@@ -18,7 +18,7 @@ namespace SpiderSurge
         Sacrifice = 4,
     }
 
-    // What the team can buy with meter points while a perk screen is open. Purchases run on the host only.
+    // What the team can buy with chaos points while a perk screen is open. Purchases run on the host only.
     public static class PerkShop
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
@@ -36,6 +36,37 @@ namespace SpiderSurge
         // The items on sale on the current perk screen: the host draws them when the screen opens and keeps them through rerolls
         public static ShopItem[] Offer { get; private set; } = new ShopItem[0];
         public static event Action OfferChanged;
+        public static int VisitId { get; private set; }
+        public static int PurchasedMask { get; private set; }
+        public static int BonusSlot { get; private set; } = -1;
+        public static bool BonusPaid { get; private set; }
+        private static int _visitWave = -1;
+        public static bool SoldOut(ShopItem item) => (PurchasedMask & (1 << (int)item)) != 0;
+
+        public static void BeginVisit(List<Modifier> upcoming)
+        {
+            if (!Net.IsAuthority || AbilitySelection.IsChoosing || RerollInProgress) return;
+            int wave = SurvivalMode.instance.CurrentWave;
+            if (_visitWave == wave) return;
+            ChallengeController.Settle();
+            _visitWave = wave;
+            VisitId++;
+            PurchasedMask = 0;
+            BonusPaid = false;
+            BonusSlot = ChaosRules.BonusSlot(UnityEngine.Random.value, upcoming.Count, UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count)));
+            RollOffer(upcoming);
+            ChaosWallet.Notify();
+        }
+
+        public static void ResolveMap(Modifier modifier, GameLevel level)
+        {
+            if (!Net.IsAuthority || BonusPaid) return;
+            BonusPaid = true;
+            var cards = PerkChoiceWidget.Cards(SurvivalModeHud.instance);
+            int index = cards.FindIndex(card => card.modifier == modifier && card.level == level);
+            if (index >= 0 && index == BonusSlot) ChaosWallet.GrantPoints(1, "Map bonus");
+            ChaosNet.MarkDirty();
+        }
 
         // Set while a reroll re-shows the cards, so the perk timer prefix doesn't start a second countdown
         public static bool RerollInProgress { get; private set; }
@@ -46,18 +77,28 @@ namespace SpiderSurge
             if (!Net.IsAuthority) return;
             var available = Items.Where(item => Unavailable(item, upcoming) == null).OrderBy(_ => UnityEngine.Random.value).ToList();
             var rest = Items.Where(item => !available.Contains(item)).OrderBy(_ => UnityEngine.Random.value);
-            SetOffer(available.Concat(rest).Take(Consts.Values.Meter.OfferSize).ToArray());
-            MeterNet.MarkDirty();
+            SetOffer(available.Concat(rest).Take(Consts.Values.Chaos.OfferSize).ToArray());
+            ChaosNet.MarkDirty();
         }
 
         public static void ClearOffer()
         {
+            VisitId++;
+            PurchasedMask = 0;
+            BonusSlot = -1;
+            BonusPaid = false;
+            _visitWave = -1;
             SetOffer(new ShopItem[0]);
         }
 
-        internal static void ApplyRemoteOffer(ShopItem[] offer)
+        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer)
         {
-            if (Net.IsRemoteClient) SetOffer(offer ?? new ShopItem[0]);
+            if (!Net.IsRemoteClient) return;
+            VisitId = visit;
+            PurchasedMask = purchased;
+            BonusSlot = bonus;
+            BonusPaid = paid;
+            SetOffer(offer ?? new ShopItem[0]);
         }
 
         private static void SetOffer(ShopItem[] offer)
@@ -73,16 +114,16 @@ namespace SpiderSurge
         {
             switch (item)
             {
-                case ShopItem.Reroll: return Consts.Values.Meter.RerollCost;
-                case ShopItem.Life: return Consts.Values.Meter.LifeCost;
-                case ShopItem.Perk: return Consts.Values.Meter.PerkCost;
+                case ShopItem.Reroll: return Consts.Values.Chaos.RerollCost;
+                case ShopItem.Life: return Consts.Values.Chaos.LifeCost;
+                case ShopItem.Perk: return Consts.Values.Chaos.PerkCost;
                 case ShopItem.Sacrifice: return 0;
-                default: return Consts.Values.Meter.MaxLivesCost;
+                default: return Consts.Values.Chaos.MaxLivesCost;
             }
         }
 
         // What the item costs, as the panel prints it: points, or the life the Blood Pact takes
-        public static string PriceOf(ShopItem item) => item == ShopItem.Sacrifice ? $"{Consts.Values.Meter.SacrificeLives} life" : CostOf(item).ToString();
+        public static string PriceOf(ShopItem item) => item == ShopItem.Sacrifice ? $"{Consts.Values.Chaos.SacrificeLives} life" : CostOf(item).ToString();
 
         public static string NameOf(ShopItem item)
         {
@@ -104,7 +145,7 @@ namespace SpiderSurge
                 case ShopItem.Life: return "+1 life, up to the max";
                 case ShopItem.Perk: return "A random perk you don't have";
                 case ShopItem.Sacrifice: return "Trade a life for a chaos point";
-                default: return "+1 max lives, no life with it";
+                default: return "+1 max lives and +1 life";
             }
         }
 
@@ -125,9 +166,10 @@ namespace SpiderSurge
         // The reason an item can't be bought right now, or null; the price is checked separately so the panel can show both
         private static string Unavailable(ShopItem item, List<Modifier> onCards)
         {
+            if (SoldOut(item)) return "Sold out";
             var mode = SurvivalMode.instance;
             if (item == ShopItem.Life && mode != null && mode.Lives >= mode.MaxLives) return "Lives are full";
-            if (item == ShopItem.Sacrifice && mode != null && mode.Lives < Consts.Values.Meter.SacrificeMinLives) return "Need a spare life";
+            if (item == ShopItem.Sacrifice && mode != null && mode.Lives < Consts.Values.Chaos.SacrificeMinLives) return "Need a spare life";
             if (item == ShopItem.Perk && Net.IsAuthority && PerkPool(onCards).Count == 0) return "No perk left to give";
             return null;
         }
@@ -148,28 +190,30 @@ namespace SpiderSurge
             }
         }
 
-        // Any machine: asks the host (or itself) to buy. The panel refreshes from the meter state that follows.
+        // Any machine: asks the host (or itself) to buy. The panel refreshes from the chaos state that follows.
         public static void Request(ShopItem item, int buyerId)
         {
-            if (!SurgeMeter.Enabled) return;
-            if (!IsOpen || !IsOffered(item) || !SurgeMeter.CanAfford(CostOf(item)) || Unavailable(item) != null)
+            if (!ChaosWallet.Enabled) return;
+            if (!IsOpen || !IsOffered(item) || !ChaosWallet.CanAfford(CostOf(item)) || Unavailable(item) != null)
             {
                 ShowRefused(item, null);
                 return;
             }
-            MeterNet.SendBuy(item, buyerId);
+            ChaosNet.SendBuy(item, buyerId);
         }
 
         // Host only: makes the purchase and returns null, or returns why it was refused
-        internal static string Buy(ShopItem item, int buyerId)
+        internal static string Buy(ShopItem item, int buyerId, int visit)
         {
-            if (!Net.IsAuthority || !SurgeMeter.Enabled || !IsOpen) return "The shop is closed";
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || !IsOpen) return "The shop is closed";
+            if (visit != VisitId) return "This shop visit has ended";
             if (!IsOffered(item)) return "Not on sale on this screen";
             int cost = CostOf(item);
-            if (!SurgeMeter.CanAfford(cost)) return "Not enough chaos points";
+            if (!ChaosWallet.CanAfford(cost)) return "Not enough chaos points";
             string unavailable = Unavailable(item);
             if (unavailable != null) return unavailable;
 
+            PurchasedMask |= 1 << (int)item;
             string detail;
             try
             {
@@ -184,17 +228,23 @@ namespace SpiderSurge
             }
             catch (Exception ex)
             {
+                PurchasedMask &= ~(1 << (int)item);
                 Logger.LogError($"[Surge shop] {item} failed: {ex}");
                 return "It didn't go through";
             }
-            if (detail == null) return "It didn't go through";
+            if (detail == null)
+            {
+                PurchasedMask &= ~(1 << (int)item);
+                return "It didn't go through";
+            }
 
-            SurgeMeter.TrySpend(cost);
+            ChaosWallet.TrySpend(cost);
+            ChaosWallet.Record($"Shop: {NameOf(item)} for {PriceOf(item)} ({detail})");
             Logger.LogInfo($"[Surge shop] {NameOf(item)} bought for {PriceOf(item)} by {Players.NameOf(buyerId)} ({detail})");
             Logging.SpiderSurgeStatsManager.Instance?.LogMeterPurchase(item, detail);
             if (item == ShopItem.MaxLives) SurgeAchievements.Unlock(SurgeAchievements.MaxCapacity, Players.ById(buyerId));
             ShowBought(item, buyerId, detail);
-            MeterNet.SendBought(item, buyerId, detail);
+            ChaosNet.SendBought(item, buyerId, detail);
             return null;
         }
 
@@ -283,6 +333,7 @@ namespace SpiderSurge
             var mode = SurvivalMode.instance;
             if (mode == null || mode._maxlives == null) return null;
             mode._maxlives.Value++;
+            Lives(mode).Value = Math.Min(mode.MaxLives, mode.Lives + 1);
             return $"{mode.Lives}/{mode.MaxLives}";
         }
 
@@ -291,10 +342,10 @@ namespace SpiderSurge
         {
             var mode = SurvivalMode.instance;
             var lives = mode != null ? Lives(mode) : null;
-            if (lives == null || lives.Value < Consts.Values.Meter.SacrificeMinLives) return null;
-            lives.Value -= Consts.Values.Meter.SacrificeLives;
-            SurgeMeter.GrantPoints(Consts.Values.Meter.SacrificePoints);
-            return $"{mode.Lives}/{mode.MaxLives}, {SurgeMeter.Points} chaos points";
+            if (lives == null || lives.Value < Consts.Values.Chaos.SacrificeMinLives) return null;
+            lives.Value -= Consts.Values.Chaos.SacrificeLives;
+            ChaosWallet.GrantPoints(Consts.Values.Chaos.SacrificePoints, "Blood Pact");
+            return $"{mode.Lives}/{mode.MaxLives}, {ChaosWallet.Points} chaos points";
         }
 
         // The perks on the cards stay out, since picking one after the shop gave it would raise it past its level

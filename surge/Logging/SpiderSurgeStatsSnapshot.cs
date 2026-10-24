@@ -26,6 +26,7 @@ namespace SpiderSurge.Logging
 
     public class MeterReport
     {
+        public List<string> Events { get; set; } = new List<string>();
         public int ChargePerPoint { get; set; }
         public int TotalCharge { get; set; }
         public int PointsEarned { get; set; }

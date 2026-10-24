@@ -141,7 +141,6 @@ namespace SpiderSurge
                 {
                     _caught.RemoveAt(i);
                     SwallowedTarget.BeginEnemy(enemy, _body, _casterController, Consts.Values.Storage.BlackHoleTakeTime);
-                    if (SwallowedTarget.IsSwallowed(enemy.gameObject)) SurgeMeter.Add(MeterSource.BlackHole, _ability.PlayerId, Consts.Values.Meter.BlackHoleCharge);
                 }
                 else if (distance <= _range)
                 {

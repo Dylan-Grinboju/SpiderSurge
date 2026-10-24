@@ -20,7 +20,7 @@ namespace SpiderSurge
                 page.Button("Start here: your first Surge run", () => page.Open(Page + ".start"));
                 page.Button("Abilities and ultimates", () => page.Open(Page + ".abilities"));
                 page.Button("Perks and synergies", () => page.Open(Page + ".perks"));
-                page.Button("Surge meter and shop", () => page.Open(Page + ".meter"));
+                page.Button("Chaos points and challenges", () => page.Open(Page + ".meter"));
                 page.Button("Enemies", () => page.Open(Page + ".enemies"));
                 page.Button("Controls and indicators", () => page.Open(Page + ".controls"));
                 page.Button("Progression and records", () => page.Open(Page + ".progression"));
@@ -33,9 +33,9 @@ namespace SpiderSurge
             {
                 page.Title("Your first Surge run");
                 page.Line(Section("1. Pick the mode", "In the lobby, stand on the Surge Survival platform above and left of Wave Survival. Bring the whole group onto it for the countdown, then choose a pain level. Wave Survival starts the original mode."));
-                page.Line(Section("2. Choose an ability", "Before wave 1, choose the group's shared ability. With unlimited perk time enabled, selecting a card locks it; move down to Confirm to start. Read the ability's effect and charge hint before confirming."));
-                page.Line(Section("3. Cast, then recharge", $"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Use it to survive and charge the team's Surge meter. Watch the ring beside your spider or the compact HUD: a full ready indicator means you can cast again. The ultimate shares that cooldown."));
-                page.Line(Section("4. Spend chaos points", "Effective ability use fills the team meter under the lives counter. A full bar earns a chaos point. At later perk choices, move right from the last card to visit the shop. Choose an item and then Buy; unspent points carry forward."));
+                page.Line(Section("2. Choose an ability", "Before wave 1, choose the group's shared ability. With unlimited perk time enabled, selecting a card locks it; move down to Confirm to start. Read the ability's effect before confirming."));
+                page.Line(Section("3. Cast, then recharge", $"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Use it to survive. Watch the ring beside your spider or the compact HUD: a full ready indicator means you can cast again. The ultimate shares that cooldown."));
+                page.Line(Section("4. Spend chaos points", "Choose marked maps and complete optional challenges to earn team chaos points. At later perk choices, move right from the last card to visit the shop. Choose an item and then Buy; unspent points carry forward."));
                 page.Line(Section("5. Build around your ability", "Choose cooldown, duration or synergy perks to strengthen your build. The ultimate is guaranteed as an option at wave 30 and can appear afterwards until unlocked. Wave 60 offers an ultimate or a switch to another ability with its ultimate."));
                 page.Line(Section("6. Find help and tune the game", "Pause and open Mods > SpiderSurge. Hover or select any setting for its explanation. How to play is always available here. Controls changes key bindings; Surge changes effects, sound and the ability indicator. Settings save automatically."));
                 return;
@@ -66,12 +66,14 @@ namespace SpiderSurge
             }
             if (section == Page + ".meter")
             {
-                page.Title("Surge meter and shop");
-                page.Line("Use your abilities effectively to earn <b>chaos points</b> for the team. The <b>Surge meter</b> under the lives counter shows your progress, which carries between waves. Spend points in the shop at later perk choices.");
-                page.Line("Kinetic Pulse launching enemies, kills while Bottomless Clip or Null Field runs, Null Field blocking hits, the Pocket Dimension giving back a stored weapon, and Freeze Time freezing enemies and frozen enemies dying all charge it. Ultimates charge it too: enemies hit by Thermal Detonation, kills with Care Package weapons, Neural Backup revives and its Wasps' kills, Black Hole and Rewind.");
-                page.Line("Keep using your abilities across waves. Freezing groups, launching enemies, blocking hits and retrieving stored weapons all help; work together to build the team's meter.");
-                page.Line("Every perk screen shows the chaos points and the meter beside the cards. Under the cards, a focused ability or ultimate explains its charge, and a focused synergy perk explains its bonus for the offered level.");
-                page.Line($"Spend chaos points in the <b>shop</b> beside the cards at every perk choice after the starting ability pick: press right from the last card. Each screen sells two of these five, drawn at random: <color={Gold}>1</color> Reroll the cards, <color={Gold}>2</color> an extra life, <color={Gold}>3</color> a random perk you don't have, <color={Gold}>5</color> +1 max lives, and the <b>Blood Pact</b>, a life for a chaos point. Pick an item, then press <b>Buy</b> under it. Unspent chaos points carry on.");
+                page.Title("Chaos points and challenges");
+                page.Line("Chaos points belong to the team. Spend them in the shop at map choices; unspent points carry forward. Ability use does not earn points.");
+                page.Line("Each map choice has a <b>75% chance</b> to mark one card with <b>+1 chaos point</b>. Choose that map to earn it. Rerolls keep the bonus on the same card slot.");
+                page.Line($"Each shop offers two items: <color={Gold}>1</color> Reroll, <color={Gold}>2</color> Extra Life, <color={Gold}>3</color> Mystery Perk, <color={Gold}>5</color> Bigger Heart (+1 maximum life and +1 life), or Blood Pact (one life for one point). Each item can be bought <b>once per visit by the team</b>. Rerolling does not restock it.");
+                page.Line("After choosing a map, accept or skip an optional challenge. It lasts until the next map choice, including retries. Rewards arrive before the next shop. Clients can indicate a preference; the host decides.");
+                foreach (ChallengeKind kind in new[] { ChallengeKind.LastHeart, ChallengeKind.DoubleCooldown, ChallengeKind.NoRegularAbilities, ChallengeKind.LifeWager, ChallengeKind.NoUltimate, ChallengeKind.Overrun })
+                    page.Line(Section(ChaosRules.Name(kind) + $" · +{ChaosRules.Reward(kind)}", ChaosRules.Description(kind)));
+                page.Line("Press right from the last perk card to enter the shop, select an item, then select Buy. A perk's synergy is explained below the cards.");
                 page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice works the same way.");
                 return;
             }

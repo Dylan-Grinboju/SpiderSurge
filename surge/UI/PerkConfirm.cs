@@ -28,7 +28,7 @@ namespace SpiderSurge
             Locked = card;
             PerkCardScale.Of(card).SetLocked(true);
             var background = card.GetComponent<Image>();
-            if (background != null) background.color = Consts.Values.Meter.LockedCardTint;
+            if (background != null) background.color = Consts.Values.Chaos.LockedCardTint;
             LockedChanged?.Invoke();
         }
 
@@ -124,7 +124,7 @@ namespace SpiderSurge
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
                 rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 1f);
-                rect.sizeDelta = new Vector2(Consts.Values.Meter.ConfirmWidth, Consts.Values.Meter.ConfirmHeight);
+                rect.sizeDelta = new Vector2(Consts.Values.Chaos.ConfirmWidth, Consts.Values.Chaos.ConfirmHeight);
                 confirm.Reposition();
 
                 if (confirm._label != null)
@@ -147,7 +147,7 @@ namespace SpiderSurge
                     confirm._button.onClick.AddListener(confirm.OnClick);
                     // The card prefab's disabled tint is black, which would hide the frame while nothing is locked
                     ColorBlock colors = confirm._button.colors;
-                    colors.disabledColor = Consts.Values.Meter.ConfirmDisabledTint;
+                    colors.disabledColor = Consts.Values.Chaos.ConfirmDisabledTint;
                     confirm._button.colors = colors;
                 }
                 confirm.LinkNavigation();
@@ -164,7 +164,7 @@ namespace SpiderSurge
         {
             if (_hud == null || _hud.perkCardsRoot == null) return;
             Vector2 below = PerkChoiceWidget.BelowCards(_hud);
-            transform.localPosition = new Vector3(below.x, below.y - Consts.Values.Meter.ConfirmGap, 0f);
+            transform.localPosition = new Vector3(below.x, below.y - Consts.Values.Chaos.ConfirmGap, 0f);
         }
 
         // The host's pick is final; a client's is a vote, so it can confirm another card the way a vanilla click moves the vote

@@ -435,7 +435,7 @@ namespace SpiderSurge.Common
             if (Parts.Surge.Running)
             {
                 Button("How to play", () => Open(SurgeGuide.Page));
-                Note("A guide to starting a run, abilities and ultimates, perk synergies, the Surge meter, enemies, controls and multiplayer.");
+                Note("A guide to starting a run, abilities and ultimates, perk synergies, chaos points, challenges, enemies, controls and multiplayer.");
             }
             if (Parts.Surge.Running || Parts.Stats.Running)
             {
@@ -480,10 +480,7 @@ namespace SpiderSurge.Common
                 {
                     Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
                 }
-                if (part == Parts.Stats && !part.Enabled)
-                {
-                    Warning("Surge uses Stats to tell who made each kill. Without it, kills stop charging the Surge meter for Bottomless Clip, Null Field and Care Package. To only hide the stats, keep Stats on and turn off Show the stats windows and Titles in the Stats settings.");
-                }
+
             }
         }
 

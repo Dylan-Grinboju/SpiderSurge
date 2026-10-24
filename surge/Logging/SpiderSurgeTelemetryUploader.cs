@@ -236,6 +236,7 @@ namespace SpiderSurge.Logging
                 "\"pointsEarned\":" + meter.PointsEarned + "," +
                 "\"pointsSpent\":" + meter.PointsSpent + "," +
                 "\"chargeBySource\":" + JsonCounts(meter.ChargeBySource) + "," +
+                "\"events\":" + JsonStringArray(meter.Events) + "," +
                 "\"purchases\":" + purchases +
                 "}";
         }

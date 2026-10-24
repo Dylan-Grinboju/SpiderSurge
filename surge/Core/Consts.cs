@@ -253,10 +253,9 @@ namespace SpiderSurge
                 public const float Level2Chance = 0.3f;
             }
 
-            // The shared Surge meter: charge comes from what abilities do, a full meter is one shop point
-            public static class Meter
+            // Shared shop prices and card layout.
+            public static class Chaos
             {
-                public const int PointsPerWave = 1;
                 public const int RerollCost = 1;
                 public const int LifeCost = 2;
                 public const int PerkCost = 3;
@@ -265,32 +264,13 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                // A productive wave can contribute at most half a point, so a large group hit cannot fill the meter in one wave
-                public const float ChargePerWave = 6f;
-                public const float WavesPerPoint = 2f;
-                public const int MinChargePerPoint = 1;
-                public const int PulseChargePerEnemy = 2;
-                public const int DetonationChargePerEnemy = 2;
-                public const int RewindChargePerEnemy = 1;
-                public const int BottomlessClipChargePerKill = 2;
-                public const int NullFieldChargePerHit = 5;
-                public const float NullFieldHitInterval = 0.5f;
-                public const int NullFieldChargedHitsPerCast = 3;
-                public const int NullFieldChargePerKill = 2;
-                public const int PocketDimensionChargePerSwap = 1;
-                public const int FreezeChargePerEnemy = 1;
-                public const int FreezeChargePerKill = 2;
-                public const int CarePackageChargePerKill = 1;
-                public const int NeuralBackupChargePerRevive = 3;
-                public const int NeuralBackupChargePerWaspKill = 1;
-                public const int BlackHoleCharge = 3;
                 public const float HudBlinkSeconds = 0.8f;
                 public const float PanelWidth = 240f;
                 public const float PanelGap = 16f;
                 public const float SideMargin = 27f;
                 public const float BottomMargin = 6f;
                 public const float MinCardFactor = 0.5f;
-                public const float MeterBlockHeight = 58f;
+                public const float WalletBlockHeight = 38f;
                 public const float MinEntryHeight = 56f;
                 public const float MaxEntryHeight = 96f;
                 public const float EntrySpacing = 5f;
