@@ -150,6 +150,8 @@ namespace SpiderSurge.Logging
 
             var perkChoiceJsons = perkChoices.Select(choice => new KeyValuePair<int, string>(choice.Wave, BuildPerkChoiceJson(choice))).ToList();
             var waveJsons = waves.Select(wave => new KeyValuePair<int, string>(wave.Wave, BuildWaveJson(wave))).ToList();
+            var eventJsons = (snapshot.Meter?.Events ?? new List<ChaosEventRecord>()).Select(entry => new KeyValuePair<int, string>(entry.Wave, BuildChaosEventJson(entry))).ToList();
+            bool eventsTruncated = false;
             // The relay takes player indexes 0-7; with more than 8 players (InfiniteFriends) the ids can be higher, so the kept players are numbered in order instead
             bool idsFit = playerStats.All(p => p.PlayerId >= 0 && p.PlayerId < Consts.Telemetry.MaxPlayerStats);
             string playerStatsJson = "[" + string.Join(",", playerStats.Select((p, i) => BuildPlayerJson(p, idsFit ? p.PlayerId : i))) + "]";
@@ -157,22 +159,23 @@ namespace SpiderSurge.Logging
             for (int i = 0; i < playerStats.Count; i++) playerIndexes[playerStats[i].PlayerId] = idsFit ? playerStats[i].PlayerId : i;
             string titlesJson = BuildTitlesJson(snapshot.Titles, playerIndexes);
 
-            // The relay rejects bodies over its size limit, so the oldest perk choices and waves are dropped until the report fits
+            // The relay rejects bodies over its size limit, so the oldest waves, perk choices and chaos events are dropped until the report fits; a wave goes first on a tie
+            var trimmable = new[] { waveJsons, perkChoiceJsons, eventJsons };
             while (true)
             {
-                string json = BuildEventJson(snapshot, globalPerks, playerStatsJson, titlesJson, perkChoiceJsons, waveJsons,
-                    globalPerksTruncated, playerStatsTruncated, perkChoicesTruncated, wavesTruncated);
+                string json = BuildEventJson(snapshot, globalPerks, playerStatsJson, titlesJson, perkChoiceJsons, waveJsons, eventJsons,
+                    globalPerksTruncated, playerStatsTruncated, perkChoicesTruncated, wavesTruncated, eventsTruncated);
                 int excess = Encoding.UTF8.GetByteCount(json) - Consts.Telemetry.MaxPayloadBytes;
-                if (excess <= 0 || (perkChoiceJsons.Count == 0 && waveJsons.Count == 0)) return json;
+                if (excess <= 0 || trimmable.All(records => records.Count == 0)) return json;
 
-                while (excess > 0 && (perkChoiceJsons.Count > 0 || waveJsons.Count > 0))
+                while (excess > 0 && trimmable.Any(records => records.Count > 0))
                 {
-                    bool dropPerkChoice = waveJsons.Count == 0 || (perkChoiceJsons.Count > 0 && perkChoiceJsons[0].Key < waveJsons[0].Key);
-                    var records = dropPerkChoice ? perkChoiceJsons : waveJsons;
-                    excess -= Encoding.UTF8.GetByteCount(records[0].Value) + 1;
-                    records.RemoveAt(0);
-                    if (dropPerkChoice) perkChoicesTruncated = true;
-                    else wavesTruncated = true;
+                    var oldest = trimmable.Where(records => records.Count > 0).OrderBy(records => records[0].Key).First();
+                    excess -= Encoding.UTF8.GetByteCount(oldest[0].Value) + 1;
+                    oldest.RemoveAt(0);
+                    if (oldest == perkChoiceJsons) perkChoicesTruncated = true;
+                    else if (oldest == waveJsons) wavesTruncated = true;
+                    else eventsTruncated = true;
                 }
             }
         }
@@ -184,10 +187,12 @@ namespace SpiderSurge.Logging
             string titlesJson,
             List<KeyValuePair<int, string>> perkChoiceJsons,
             List<KeyValuePair<int, string>> waveJsons,
+            List<KeyValuePair<int, string>> eventJsons,
             bool globalPerksTruncated,
             bool playerStatsTruncated,
             bool perkChoicesTruncated,
-            bool wavesTruncated)
+            bool wavesTruncated,
+            bool eventsTruncated)
         {
             string perkChoicesJson = "[" + string.Join(",", perkChoiceJsons.Select(entry => entry.Value)) + "]";
             string wavesJson = "[" + string.Join(",", waveJsons.Select(entry => entry.Value)) + "]";
@@ -216,13 +221,13 @@ namespace SpiderSurge.Logging
                 "\"globalPerks\":" + JsonStringArray(globalPerks) + "," +
                 "\"playerStats\":" + playerStatsJson + "," +
                 "\"titles\":" + titlesJson + "," +
-                "\"meter\":" + BuildMeterJson(snapshot.Meter) + "," +
+                "\"meter\":" + BuildMeterJson(snapshot.Meter, eventJsons, eventsTruncated) + "," +
                 "\"perkChoices\":" + perkChoicesJson + "," +
                 "\"waves\":" + wavesJson +
                 "}";
         }
 
-        private static string BuildMeterJson(MeterReport meter)
+        private static string BuildMeterJson(MeterReport meter, List<KeyValuePair<int, string>> eventJsons, bool eventsTruncated)
         {
             if (meter == null) return "null";
             string purchases = "[" + string.Join(",", (meter.Purchases ?? new List<MeterPurchaseRecord>()).Select(purchase => "{" +
@@ -236,8 +241,17 @@ namespace SpiderSurge.Logging
                 "\"pointsEarned\":" + meter.PointsEarned + "," +
                 "\"pointsSpent\":" + meter.PointsSpent + "," +
                 "\"chargeBySource\":" + JsonCounts(meter.ChargeBySource) + "," +
-                "\"events\":" + JsonStringArray(meter.Events) + "," +
+                "\"eventsTruncated\":" + JsonBool(eventsTruncated) + "," +
+                "\"events\":[" + string.Join(",", eventJsons.Select(entry => entry.Value)) + "]," +
                 "\"purchases\":" + purchases +
+                "}";
+        }
+
+        private static string BuildChaosEventJson(ChaosEventRecord entry)
+        {
+            return "{" +
+                "\"wave\":" + entry.Wave + "," +
+                "\"text\":\"" + EscapeJson(entry.Text) + "\"" +
                 "}";
         }
 

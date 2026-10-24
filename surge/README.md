@@ -66,7 +66,7 @@ The team shares a numerical chaos-point balance. Ability use never earns points.
 
 The shop offers two items per visit: Reroll (1 point), Extra Life (2), Mystery Perk (3), Bigger Heart (5; +1 maximum life and +1 current life), or Blood Pact (one life for one point, leaving at least one life). Each item can be bought once by the whole team per visit, including rerolls and Blood Pact. Sold-out items remain visible. Rebuilds, rerolls and reconnects do not restock them. Press right from the last perk card to enter the shop, select an item and then Buy. Any player can purchase.
 
-After choosing a map, the team sees one optional challenge with Accept and Skip. Remote players indicate a preference; the host decides. The game waits for that decision without a countdown. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
+After choosing a map, the new map loads and the team sees one optional challenge with Accept and Skip before its first wave. Remote players indicate a preference; the host decides. The game waits for that decision without a countdown, and the pause menu stays usable meanwhile. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
 
 | Challenge | Effect | Reward |
 |---|---|---:|
@@ -147,7 +147,7 @@ One report per finished Survival run, with or without Surge mode, sent by the ho
 - **The run:** whether it was a Surge run, mod version, length, player count, waves survived, pain level, how it ended (lives ran out, restart or quit), lives left and the most lives, the final perks with their levels, whether the perk choice timer is unlimited, and whether the run had abilities.
 - **Each perk choice:** the wave, the type of choice (ability, ultimate, ultimate swap or perk), the cards offered and which of them were lucky upgrades, the card picked and its new level, whether the timer ran out, and how long the choice took. A perk screen still open when the run ends is sent with no card picked.
 - **Each wave attempt:** the wave number, the map, whether it was won, lost or left, how long it took in game time, lives at its start, how many spiders died in it, how many abilities and ultimates were used in it, and how many times Null Field blocked a hit that would have killed a spider without a shield.
-- **Chaos economy**, in Surge runs: points earned and spent, point sources, challenge offers and outcomes, penalties, and purchases. Historical charge fields remain zero in new telemetry.
+- **Chaos economy**, in Surge runs: points earned and spent, point sources, challenge offers and outcomes, penalties, and purchases, plus a log of these events by wave. When a long run's report gets too big, the oldest waves, perk choices and events are left out first. Historical charge fields remain zero in new telemetry.
 - **Each player, by slot number:** ability and ultimate presses, how many of their deaths Null Field blocked. When the [Stats](../stats/README.md) part is on, also deaths (and lava deaths), kills, kills while their ability or ultimate was on, kills by enemy type, kills and shields broken by each weapon (Kinetic Pulse counts as a weapon), friendly kills, shots fired and hit, and time alive.
 
 - **Titles**, when the Stats part is on and the run had 2 or more players: every title earned at the end of the run, with the slot number of the player who earned it and whether it was one of the cards on the end screen, whether titles were shown at all, how many titles the run newly unlocked in the [title collection](../stats/README.md#title-collection), how many are unlocked on this PC in total, and how many titles exist. The collection itself, with its dates, is never sent.
@@ -187,7 +187,6 @@ Surge registers the following titles through the Stats title system. Titles requ
 |---|---|
 | Enhanced | Most ability activations |
 | Ultimate Form | Most ultimate activations |
-
 | Powered Up | Most ultimate and most ability activations |
 | Maximum Power | Most ultimate and fewest ability activations |
 | Simple is Better | Most ability and fewest ultimate activations |

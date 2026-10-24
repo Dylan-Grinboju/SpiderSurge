@@ -24,7 +24,6 @@ namespace SpiderSurge
 
             StoragePersistenceManager.ClearAllStoredWeapons();
             ChaosWallet.ResetRun();
-            PerkShop.ClearOffer();
             PerkShopPanel.Clear();
             PerkConfirmButton.Clear();
             PerkHint.Clear();
@@ -48,7 +47,6 @@ namespace SpiderSurge
 
                 StoragePersistenceManager.ClearAllStoredWeapons();
                 ChaosWallet.ResetRun();
-                PerkShop.ClearOffer();
                 PerkShopPanel.Clear();
                 PerkConfirmButton.Clear();
                 PerkHint.Clear();

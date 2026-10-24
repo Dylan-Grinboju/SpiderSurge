@@ -55,5 +55,9 @@ namespace SpiderSurge
         }
 
         public static int BonusSlot(double chance, int count, int selectedSlot) => chance < .75 && count > 0 ? Math.Max(0, Math.Min(count - 1, selectedSlot)) : -1;
+
+        // "1 chaos point", "+2 chaos points", "-1 chaos point"
+        public static string Points(int amount, bool signed = false) =>
+            $"{(signed && amount > 0 ? "+" : "")}{amount} chaos point{(Math.Abs(amount) == 1 ? "" : "s")}";
     }
 }

@@ -486,7 +486,6 @@ namespace SpiderSurge
                         ClipVfx.Drop(spawner);
                         SurgeNet.SendFx(SurgeFx.CareDrop, PlayerId, spawner.transform.position, 0f, false);
 
-
                         spawnedCount++;
                     }
                     catch (System.Exception ex)

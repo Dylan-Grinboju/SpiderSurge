@@ -13,6 +13,7 @@ namespace SpiderSurge
         private const string BuyChannel = "surge.chaos.buy";
         private const string BoughtChannel = "surge.chaos.bought";
         private const string RefusedChannel = "surge.chaos.refused";
+        private const string ToastChannel = "surge.chaos.toast";
 
         private static bool _initialized;
         private static bool _dirty;
@@ -27,6 +28,7 @@ namespace SpiderSurge
             Net.Register(BuyChannel, OnBuy);
             Net.Register(BoughtChannel, OnBought);
             Net.Register(RefusedChannel, OnRefused);
+            Net.Register(ToastChannel, OnToast);
             Net.PeerReady += OnPeerReady;
             Net.LeftHost += OnLeftHost;
         }
@@ -41,6 +43,7 @@ namespace SpiderSurge
             Net.Unregister(BuyChannel);
             Net.Unregister(BoughtChannel);
             Net.Unregister(RefusedChannel);
+            Net.Unregister(ToastChannel);
             Net.PeerReady -= OnPeerReady;
             Net.LeftHost -= OnLeftHost;
         }
@@ -79,6 +82,17 @@ namespace SpiderSurge
                 writer.Write(buyerId);
                 writer.Write(detail ?? string.Empty);
             });
+        }
+
+        // Host only: shows a challenge result on every machine
+        public static void Announce(string text)
+        {
+            if (Net.IsAuthority) Net.SendToAll(ToastChannel, writer => writer.Write(text), includeLocal: true);
+        }
+
+        private static void OnToast(ulong sender, BinaryReader reader)
+        {
+            if (sender == Net.ServerId) Toast.Show(reader.ReadString(), Hud.Pink);
         }
 
         private static void WriteState(BinaryWriter writer)
@@ -166,7 +180,7 @@ namespace SpiderSurge
             var item = (ShopItem)reader.ReadByte();
             int buyerId = reader.ReadInt32();
             int visit = reader.ReadInt32();
-            if (sender != Net.ServerId && (buyerId < 0 || !Players.OwnedBy(buyerId, sender)))
+            if (sender != Net.ServerId && buyerId >= 0 && !Players.OwnedBy(buyerId, sender))
             {
                 Logger.LogWarning($"SpiderSurge: client {sender} tried to buy from the shop as P{buyerId + 1}, who is not theirs");
                 return;

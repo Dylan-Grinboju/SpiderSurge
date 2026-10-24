@@ -495,7 +495,7 @@ namespace SpiderSurge
                 }
                 if (entry.Description != null)
                 {
-                    entry.Description.text = unavailable ?? (points < cost ? $"Need {cost - points} more points" : PerkShop.DescriptionOf(entry.Item));
+                    entry.Description.text = unavailable ?? (points < cost ? $"Need {cost - points} more point{(cost - points == 1 ? "" : "s")}" : PerkShop.DescriptionOf(entry.Item));
                     entry.Description.color = PerkChoiceWidget.Faded(entry.Description.color, alpha);
                 }
                 if (entry.Icon != null) entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);

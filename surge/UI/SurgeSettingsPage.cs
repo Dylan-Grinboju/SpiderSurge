@@ -17,7 +17,7 @@ namespace SpiderSurge
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
             page.Button("How to play", () => page.Open(SurgeGuide.Page));
-            page.Note("Start with a guided first run, then explore abilities, synergies, enemies, the Surge meter and multiplayer.");
+            page.Note("Start with a guided first run, then explore abilities, synergies, enemies, chaos points and challenges, and multiplayer.");
 
             page.Spacer();
             page.Header("Play");

@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Logger = Silk.Logger;
 using M = SpiderSurge.Consts.Values.Chaos;
-using P = SpiderSurge.Consts.PerkNames;
 
 namespace SpiderSurge
 {
@@ -69,7 +68,7 @@ namespace SpiderSurge
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"[Surge meter] could not build the perk screen hint: {ex}");
+                Logger.LogError($"[Chaos] could not build the perk screen hint: {ex}");
             }
         }
 

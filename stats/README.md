@@ -92,7 +92,7 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.tracking.saveHistory`: If true, results are saved in Match history. Default: `true`. It does not control text reports or telemetry.
 
-To stop tracking altogether, turn off the Stats part (`parts.stats`). Surge uses Stats to tell who made each kill, so with Stats off, kills stop charging the [Surge meter](../surge/README.md#surge-meter) for Bottomless Clip, Null Field and Care Package. To only hide the stats, keep the part on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`.
+To stop tracking altogether, turn off the Stats part (`parts.stats`). To only hide the stats, keep the part on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`.
 
 ### Titles:
 

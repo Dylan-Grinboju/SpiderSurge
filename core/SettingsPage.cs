@@ -480,7 +480,6 @@ namespace SpiderSurge.Common
                 {
                     Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
                 }
-
             }
         }
 

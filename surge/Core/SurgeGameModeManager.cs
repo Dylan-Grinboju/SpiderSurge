@@ -77,8 +77,8 @@ namespace SpiderSurge
         private void LateUpdate()
         {
             SurgeNet.Flush();
-            ChallengeController.Tick();
             ChaosNet.Flush();
+            ChallengeController.Tick();
             ChaosHud.Tick();
         }
     }

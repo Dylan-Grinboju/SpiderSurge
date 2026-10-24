@@ -157,7 +157,7 @@ namespace SpiderSurge.Logging
                 var meter = stats.Meter;
                 sb.AppendLine("CHAOS POINTS:");
                 sb.AppendLine($"  Earned: {meter.PointsEarned}, spent: {meter.PointsSpent}");
-                foreach (string entry in meter.Events) sb.AppendLine("  " + entry);
+                foreach (var entry in meter.Events) sb.AppendLine($"  Wave {entry.Wave}: {entry.Text}");
                 if (meter.Purchases.Count > 0)
                 {
                     foreach (var purchase in meter.Purchases)

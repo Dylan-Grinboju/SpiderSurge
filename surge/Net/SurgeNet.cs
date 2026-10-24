@@ -122,8 +122,6 @@ namespace SpiderSurge
         internal static void SendFreezeCooldown(int playerId, float remaining)
         {
             if (!Net.IsHost || !Net.HasRemotePlayers) return;
-            // Apply challenge rescaling before the client receives an absolute cooldown.
-            ChaosNet.Flush();
             Net.SendToAll(FreezeCooldownChannel, writer =>
             {
                 writer.Write(playerId);

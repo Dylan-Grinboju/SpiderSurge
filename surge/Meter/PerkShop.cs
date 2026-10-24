@@ -94,11 +94,14 @@ namespace SpiderSurge
         internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer)
         {
             if (!Net.IsRemoteClient) return;
+            // The cards can show before this state arrives, so the bonus label follows the state too
+            bool relabel = visit != VisitId || bonus != BonusSlot;
             VisitId = visit;
             PurchasedMask = purchased;
             BonusSlot = bonus;
             BonusPaid = paid;
             SetOffer(offer ?? new ShopItem[0]);
+            if (relabel) MapBonusLabels.Refresh();
         }
 
         private static void SetOffer(ShopItem[] offer)
@@ -239,7 +242,6 @@ namespace SpiderSurge
             }
 
             ChaosWallet.TrySpend(cost);
-            ChaosWallet.Record($"Shop: {NameOf(item)} for {PriceOf(item)} ({detail})");
             Logger.LogInfo($"[Surge shop] {NameOf(item)} bought for {PriceOf(item)} by {Players.NameOf(buyerId)} ({detail})");
             Logging.SpiderSurgeStatsManager.Instance?.LogMeterPurchase(item, detail);
             if (item == ShopItem.MaxLives) SurgeAchievements.Unlock(SurgeAchievements.MaxCapacity, Players.ById(buyerId));

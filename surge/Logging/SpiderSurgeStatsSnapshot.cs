@@ -26,13 +26,19 @@ namespace SpiderSurge.Logging
 
     public class MeterReport
     {
-        public List<string> Events { get; set; } = new List<string>();
+        public List<ChaosEventRecord> Events { get; set; } = new List<ChaosEventRecord>();
         public int ChargePerPoint { get; set; }
         public int TotalCharge { get; set; }
         public int PointsEarned { get; set; }
         public int PointsSpent { get; set; }
         public Dictionary<string, int> ChargeBySource { get; set; } = new Dictionary<string, int>();
         public List<MeterPurchaseRecord> Purchases { get; set; } = new List<MeterPurchaseRecord>();
+    }
+
+    public class ChaosEventRecord
+    {
+        public int Wave { get; set; }
+        public string Text { get; set; }
     }
 
     public class MeterPurchaseRecord

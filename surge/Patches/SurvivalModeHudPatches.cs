@@ -43,6 +43,7 @@ namespace SpiderSurge
                 PerkShopPanel.Build(__instance);
                 PerkHint.Build(__instance);
             }
+            MapBonusLabels.Refresh();
 
             // Access perkChoiceView using reflection since it might be private
             var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);

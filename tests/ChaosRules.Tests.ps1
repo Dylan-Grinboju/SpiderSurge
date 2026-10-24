@@ -37,4 +37,9 @@ $rewards = @{ None = 0; LastHeart = 2; DoubleCooldown = 1; NoRegularAbilities = 
 foreach ($kind in $rewards.Keys) {
     Assert-Equal ([SpiderSurge.ChaosRules]::Reward([SpiderSurge.ChallengeKind]$kind)) $rewards[$kind] "$kind reward"
 }
+
+Assert-Equal ([SpiderSurge.ChaosRules]::Points(1, $false)) '1 chaos point' 'Singular points'
+Assert-Equal ([SpiderSurge.ChaosRules]::Points(2, $true)) '+2 chaos points' 'Signed plural points'
+Assert-Equal ([SpiderSurge.ChaosRules]::Points(-1, $true)) '-1 chaos point' 'Signed loss'
+Assert-Equal ([SpiderSurge.ChaosRules]::Points(0, $true)) '0 chaos points' 'Zero is plural and unsigned'
 Write-Output "PASS: $checks chaos rule checks"

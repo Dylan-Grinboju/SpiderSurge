@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace SpiderSurge
 {
@@ -70,6 +69,5 @@ namespace SpiderSurge
                 ModConfig.ForgetColors();
             }
         }
-
     }
 }

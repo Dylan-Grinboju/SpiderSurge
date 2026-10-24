@@ -304,7 +304,7 @@ namespace SpiderSurge.Logging
                 TotalCharge = 0,
                 PointsEarned = ChaosWallet.PointsEarned,
                 PointsSpent = ChaosWallet.PointsSpent,
-                Events = new List<string>(ChaosWallet.Events),
+                Events = new List<ChaosEventRecord>(ChaosWallet.Events),
                 Purchases = new List<MeterPurchaseRecord>(_meterPurchases)
             };
             return report;

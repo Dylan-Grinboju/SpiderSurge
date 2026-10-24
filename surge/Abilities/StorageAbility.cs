@@ -255,7 +255,6 @@ namespace SpiderSurge
 
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
-
             }
 
             if (SoundManager.Instance != null && !IsRemote)

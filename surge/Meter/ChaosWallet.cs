@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using SpiderSurge.Common;
+using SpiderSurge.Logging;
 
 namespace SpiderSurge
 {
@@ -9,9 +10,8 @@ namespace SpiderSurge
         public static int Points { get; private set; }
         public static int PointsEarned { get; private set; }
         public static int PointsSpent { get; private set; }
-        public static readonly List<string> Events = new List<string>();
+        public static readonly List<ChaosEventRecord> Events = new List<ChaosEventRecord>();
         private static bool _synced;
-        public static bool Known => Net.IsAuthority || _synced;
         public static bool Enabled => SurgeGameModeManager.IsSurgeRunActive && SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive();
         public static event Action Changed;
         public static event Action PointEarned;
@@ -33,7 +33,7 @@ namespace SpiderSurge
             if (!Net.IsAuthority || amount <= 0) return;
             Points += amount;
             PointsEarned += amount;
-            Record($"{source}: +{amount} points; balance {Points}");
+            Record($"{source}: {ChaosRules.Points(amount, signed: true)}; balance {Points}");
             Notify();
             Raise(PointEarned);
         }
@@ -47,18 +47,20 @@ namespace SpiderSurge
             return true;
         }
 
-        public static void Penalize(string source)
+        // Returns the points taken: one, or none from an empty wallet
+        public static int Penalize(string source)
         {
-            if (!Net.IsAuthority) return;
+            if (!Net.IsAuthority) return 0;
             int lost = Math.Min(1, Points);
             Points -= lost;
-            Record($"{source}: -{lost} points; balance {Points}");
+            Record($"{source}: {ChaosRules.Points(-lost, signed: true)}; balance {Points}");
             Notify();
+            return lost;
         }
 
         public static void Record(string text)
         {
-            Events.Add($"Wave {SurvivalMode.instance?.CurrentWave ?? 0}: {text}");
+            Events.Add(new ChaosEventRecord { Wave = SurvivalMode.instance?.CurrentWave ?? 0, Text = text });
             Silk.Logger.LogInfo("[Chaos] " + text);
         }
 

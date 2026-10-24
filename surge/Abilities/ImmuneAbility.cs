@@ -125,7 +125,6 @@ namespace SpiderSurge
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
                 if (bubble != null) bubble.Hit();
-
             }
         }
 
