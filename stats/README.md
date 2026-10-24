@@ -92,7 +92,7 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.tracking.saveHistory`: If true, results are saved in Match history. Default: `true`. It does not control text reports or telemetry.
 
-To stop tracking altogether, turn off the Stats part (`parts.stats`). To only hide the stats, keep the part on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`.
+Stats tracking always runs because Surge depends on it. Turn off **Show stats and titles** (`stats.display.showStatsWindow`) to hide all Stats windows and title cards without stopping tracking or title collection. Older disabled Stats settings become hidden Stats on upgrade; older disabled Teams settings keep team versus off.
 
 ### Titles:
 

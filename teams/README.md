@@ -20,9 +20,9 @@ The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split
 
 ## Turning it on
 
-Teams is off after installing SpiderSurge. Open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
+Teams always loads with SpiderSurge. Turn on **Team versus** from the versus setup page in the lobby.
 
-Team versus is on as soon as the part runs. You can turn team versus off between matches from the versus setup page, without restarting.
+Team versus starts off on new installs. Switch it on or off between matches from the versus setup page, without restarting.
 
 ## How to Play
 
@@ -80,7 +80,7 @@ Open the normal **Versus Battle** setup page. Team versus, team count and friend
 - The team list, which shows each player under their team. The host can move a player to another team with the arrows next to their name, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
-Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** > **Enable or disable parts** and restart the game if the controls are missing.
+Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. Teams and its controls are always available.
 
 ![Team settings on the normal versus setup page](../docs/images/teams-settings.png)
 
@@ -94,7 +94,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 <summary>Explanation of the fields</summary>
 
 ### Teams:
-`teams.enabled`: Toggles team versus. If false, versus plays exactly like the base game. Default: `true`.
+`teams.enabled`: Toggles team versus. If false, versus plays exactly like the base game. Default: `false`.
 
 `teams.count`: How many teams to split the players into, from 2 to 32. New players join the smallest team, so with at least as many teams as players everyone starts on their own team. Default: `2`.
 

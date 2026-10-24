@@ -27,7 +27,7 @@ namespace SpiderTeams
 
         public static class Defaults
         {
-            public const bool TeamsEnabled = true;
+            public const bool TeamsEnabled = false;
             public const int TeamCount = 2;
             public const string FriendlyFire = "push";
             public const bool RecolorSpiders = true;
