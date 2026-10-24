@@ -27,6 +27,13 @@ namespace SpiderSurge
         public override string UltimatePerkDescription => "Turns back time on nearby enemies, turning them into wasps. Shielded enemies keep their shield.";
 
         private static readonly Dictionary<string, GameObject> EnemyPrefabs = new Dictionary<string, GameObject>();
+        private static readonly RaycastHit2D[] WallHit = new RaycastHit2D[1];
+        private static readonly ContactFilter2D Walls = new ContactFilter2D
+        {
+            useLayerMask = true,
+            layerMask = LayerMask.GetMask("World", "DynamicWorld", "Honeycomb", "dummyPlatform"),
+            useTriggers = false
+        };
 
         private bool _frozeAny;
         private bool _refundDirty;
@@ -112,6 +119,8 @@ namespace SpiderSurge
             float duration = AbilityDuration;
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
+                Vector2 position = enemy.rb2D != null ? enemy.rb2D.position : (Vector2)enemy.transform.position;
+                if (!HasLineOfSight(origin, position)) continue;
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
@@ -119,6 +128,8 @@ namespace SpiderSurge
             }
             FrozenShot.FreezeAround(origin, range, duration);
         }
+
+        public static bool HasLineOfSight(Vector2 origin, Vector2 target) => Physics2D.Linecast(origin, target, Walls, WallHit) == 0;
 
         // Frozen enemies play the thaw sound as they thaw, so a cast that froze nothing ends like any other ability
         protected override void PlayAbilityEndedSound(bool wasUltimate)

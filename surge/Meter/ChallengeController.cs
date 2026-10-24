@@ -28,8 +28,7 @@ namespace SpiderSurge
         public static string Outcome { get; private set; } = "";
         public static int AcceptVotes { get; private set; }
         public static int SkipVotes { get; private set; }
-        // Set by a genuine map choice; the offer opens on the new map before its first wave
-        private static bool _armed;
+        private static Action _loadChosenMap;
         private static float _lastBlocked;
         private static bool _wasPending;
         private static bool _panelFailed;
@@ -37,22 +36,17 @@ namespace SpiderSurge
         public static string Status => Active == ChallengeKind.None ? "" :
             $"{ChaosRules.Name(Active)} · {(WagerFailed ? "Reward lost" : $"{ChaosRules.Points(ChaosRules.Reward(Active), signed: true)} on completion")}";
 
-        public static void Arm()
+        // Keep the selected perk, but wait for the challenge decision before loading its map.
+        public static void LoadChosenMap(LevelController controller, GameLevel level, float delay, string nameOverride, string authorName)
         {
-            if (Net.IsAuthority) _armed = true;
-        }
-
-        // Host only, from the StartWave prefix: holds the wave while the offer is open, the way the starting ability pick holds wave 1
-        public static bool BeforeWave()
-        {
-            if (Pending) return false;
-            if (!_armed) return true;
-            // Pausing during the loading screen would stop it, since its fade-out waits on game time
-            if (LevelController.IsLoading) return false;
-            _armed = false;
-            if (!ChaosWallet.Enabled || SurvivalMode.instance == null) return true;
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing)
+            {
+                controller.LoadLevelWithTransition(level, delay, nameOverride, authorName);
+                return;
+            }
+            _loadChosenMap = () => controller.LoadLevelWithTransition(level, delay, nameOverride, authorName);
             Begin();
-            return !Pending;
+            ChaosNet.Flush();
         }
 
         private static void Begin()
@@ -105,6 +99,9 @@ namespace SpiderSurge
             Tick();
             // Clients rescale their running cooldowns from this state, so it goes out before play resumes
             ChaosNet.Flush();
+            var load = _loadChosenMap;
+            _loadChosenMap = null;
+            load?.Invoke();
         }
 
         public static void PeerLeft(ulong peer)
@@ -177,7 +174,7 @@ namespace SpiderSurge
 
         public static void Reset()
         {
-            _armed = false;
+            _loadChosenMap = null;
             Pending = false;
             Offered = ChallengeKind.None;
             SetActive(ChallengeKind.None);
@@ -208,6 +205,7 @@ namespace SpiderSurge
         {
             if (Pending)
             {
+                if (!_wasPending) SurvivalModeHud.instance?.ClosePerkChoiseView();
                 GameController.instance?.DisableInputs();
                 if (Net.IsAuthority) TimeScaleController.instance?.Pause();
                 // The pause menu stays usable, so a player can still leave while the host decides
@@ -247,14 +245,31 @@ namespace SpiderSurge
         {
             if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing || !____waitingForPerk.Value) return;
             PerkShop.ResolveMap(modifier, level);
-            ChallengeController.Arm();
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var load = AccessTools.Method(typeof(LevelController), nameof(LevelController.LoadLevelWithTransition));
+            var offer = AccessTools.Method(typeof(ChallengeController), nameof(ChallengeController.LoadChosenMap));
+            bool replaced = false;
+            foreach (var instruction in instructions)
+            {
+                if (instruction.Calls(load))
+                {
+                    instruction.opcode = OpCodes.Call;
+                    instruction.operand = offer;
+                    replaced = true;
+                }
+                yield return instruction;
+            }
+            if (!replaced) throw new InvalidOperationException("Could not locate the selected map load for the challenge offer");
         }
     }
 
     [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
     internal static class ChallengeWaveGatePatch
     {
-        static bool Prefix() => ChallengeController.BeforeWave();
+        static bool Prefix() => !ChallengeController.Pending;
     }
 
     // The game only pauses while it takes input, which the offer turns off. The offer has no countdown, so every machine can still open the pause menu, for instance to leave
