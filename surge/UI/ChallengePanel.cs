@@ -10,13 +10,10 @@ namespace SpiderSurge
     public sealed class ChallengePanel : MonoBehaviour
     {
         private static ChallengePanel _current;
-        private TMP_Text _votes;
         private Button _accept;
         private Button _skip;
         private Canvas _canvas;
         private GraphicRaycaster _raycaster;
-        private int _shownAccepts = -1;
-        private int _shownSkips = -1;
 
         public static bool IsShown => _current != null;
 
@@ -41,20 +38,16 @@ namespace SpiderSurge
             var canvas = root.GetComponent<Canvas>();
             canvas.overrideSorting = true;
             canvas.sortingOrder = 210;
-            root.GetComponent<Image>().color = new Color(0, 0, 0, .96f);
+            root.GetComponent<Image>().color = Color.black;
             _current = root.AddComponent<ChallengePanel>();
             _current._canvas = canvas;
             _current._raycaster = root.GetComponent<GraphicRaycaster>();
             float width = Mathf.Min(700f, ((RectTransform)hud.perkChoiceView.transform).rect.width - 48f);
-            _current.Text(template.perkNameText, "Title", "OPTIONAL CHALLENGE", new Vector2(0, 190), new Vector2(width, 45), 29);
-            _current.Text(template.perkNameText, "Challenge", ChaosRules.Name(ChallengeController.Offered), new Vector2(0, 130), new Vector2(width, 40), 27).color = Hud.Pink;
-            _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(ChallengeController.Offered), new Vector2(0, 45), new Vector2(width - 40, 110), 20);
-            _current.Text(template.perkDescriptionText, "Duration", "Until the next map choice · retries count", new Vector2(0, -30), new Vector2(width, 30), 16);
-            _current.Text(template.perkNameText, "Reward", $"Complete for {ChaosRules.Points(ChaosRules.Reward(ChallengeController.Offered), signed: true)} for the team", new Vector2(0, -72), new Vector2(width, 40), 21);
-            _current._votes = _current.Text(template.perkDescriptionText, "Votes", "", new Vector2(0, -115), new Vector2(width, 36), 14);
+            _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(ChallengeController.Offered), new Vector2(0, 70), new Vector2(width - 40, 90), 27);
+            _current.Text(template.perkNameText, "Reward", $"Complete for {ChaosRules.Points(ChaosRules.Reward(ChallengeController.Offered), signed: true)}", Vector2.zero, new Vector2(width, 40), 21);
             float buttonWidth = Mathf.Min(250f, (width - 30f) / 2f);
-            _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -175), buttonWidth, true);
-            _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -175), buttonWidth, false);
+            _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -80), buttonWidth, true);
+            _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -80), buttonWidth, false);
             var nav = new Navigation { mode = Navigation.Mode.Explicit, selectOnRight = _current._skip };
             _current._accept.navigation = nav;
             nav.selectOnRight = null;
@@ -71,6 +64,11 @@ namespace SpiderSurge
             _canvas.enabled = visible;
             _raycaster.enabled = visible;
             _accept.interactable = _skip.interactable = visible;
+            if (!visible)
+            {
+                _accept.GetComponent<ChallengeHoldButton>().Cancel();
+                _skip.GetComponent<ChallengeHoldButton>().Cancel();
+            }
             var events = EventSystem.current;
             if (!visible && events != null && events.currentSelectedGameObject != null && events.currentSelectedGameObject.transform.IsChildOf(transform)) events.SetSelectedGameObject(null);
         }
@@ -119,19 +117,16 @@ namespace SpiderSurge
             rect.sizeDelta = new Vector2(width, 48);
             var button = obj.GetComponent<Button>();
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => ChaosNet.SendChallenge(accept));
+            button.onClick.AddListener(() =>
+            {
+                if (Net.IsRemoteClient) ChaosNet.SendChallenge(accept);
+            });
+            obj.AddComponent<ChallengeHoldButton>().Initialize(button, text, title, accept);
             return button;
         }
 
         private void Refresh()
         {
-            if (_votes != null && (_shownAccepts != ChallengeController.AcceptVotes || _shownSkips != ChallengeController.SkipVotes))
-            {
-                _shownAccepts = ChallengeController.AcceptVotes;
-                _shownSkips = ChallengeController.SkipVotes;
-                _votes.text = (Net.IsRemoteClient ? "Your choice is a preference; the host decides. " : "The host decides. ") +
-                    $"Accept: {_shownAccepts} · Skip: {_shownSkips}";
-            }
             if (EventSystem.current != null && _skip != null)
             {
                 var selected = EventSystem.current.currentSelectedGameObject;

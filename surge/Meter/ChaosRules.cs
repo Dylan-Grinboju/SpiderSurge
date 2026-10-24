@@ -28,12 +28,12 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.LastHeart: return "Play with 1 team life. Borrowed lives return at the next map choice. Losing your last life ends the run.";
-                case ChallengeKind.DoubleCooldown: return "Regular ability and ultimate cooldowns are doubled.";
-                case ChallengeKind.NoRegularAbilities: return "Regular abilities are disabled. Your ultimate still works.";
-                case ChallengeKind.LifeWager: return "Lose a team life: lose 1 chaos point and forfeit the reward. The penalty happens once and cannot take you below zero.";
-                case ChallengeKind.NoUltimate: return "Ultimates are disabled. Regular abilities still work.";
-                case ChallengeKind.Overrun: return "Face 50% more enemy budget each wave, on top of Surge difficulty.";
+                case ChallengeKind.LastHeart: return "Survive with 1 team life.";
+                case ChallengeKind.DoubleCooldown: return "Double all ability cooldowns.";
+                case ChallengeKind.NoRegularAbilities: return "Survive without regular abilities.";
+                case ChallengeKind.LifeWager: return "Lose no team lives. Failure costs 1 chaos point.";
+                case ChallengeKind.NoUltimate: return "Survive without ultimates.";
+                case ChallengeKind.Overrun: return "Face 50% more enemies.";
                 default: return "";
             }
         }

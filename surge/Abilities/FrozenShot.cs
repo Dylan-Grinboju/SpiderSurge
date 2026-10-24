@@ -63,6 +63,7 @@ namespace SpiderSurge
         {
             if (shot == null || body == null || !shot.gameObject.activeInHierarchy) return;
             if (Vector2.Distance(origin, body.position) > range) return;
+            if (!FreezeAbility.HasLineOfSight(origin, body.position)) return;
 
             FrozenShot frozen = Apply(shot.gameObject, body, shot as SawDisc, until);
             SurgeNet.SendEnemyFx(EnemyFx.ShotFrozen, shot.GetComponent<NetworkObject>(), frozen.TimeLeft);
@@ -220,6 +221,7 @@ namespace SpiderSurge
             foreach (ParticleSystem particles in FindObjectsOfType<ParticleSystem>())
             {
                 if (Vector2.Distance(origin, particles.transform.position) > range) continue;
+                if (!FreezeAbility.HasLineOfSight(origin, particles.transform.position)) continue;
                 Transform root = particles.transform.root;
                 if (!root.name.EndsWith("(Clone)") || root.name == spawnWarning) continue;
                 if (particles.GetComponentInParent<PlayerController>() != null || particles.GetComponentInParent<SpiderHealthSystem>() != null || particles.GetComponentInParent<Weapon>() != null) continue;
