@@ -104,7 +104,9 @@ These appear only in Surge runs.
 | Guide | **`** (backtick) | |
 
 - Once a spider has an ability, its ability button no longer does what it did in the game, so by default **L1 stops jumping**. Jump with A, or move the ability to another button.
-- **Change the ability button:** during a Surge run, hold **Start** or **Select** and double-tap L1, L2, R1, R2, A, B, X, Y, L3 or R3. Hold Start or Select for 3 seconds to go back to L1. Each player picks their own, and the choice lasts until the game closes.
+- **Change the ability button:** open **Mods → SpiderSurge → Controls**, then press one button or two together. Each player can also hold **Select** and press and release a button or combination twice. Hold Select alone for 3 seconds to restore the shared ability binding. The personal choice lasts until you leave the game.
+- The base game's control-remapping screen also accepts two-button combinations, including **L3 + R3**, and saves them.
+- Stats and Teams always load. **Show stats and titles** hides all Stats windows and title cards while tracking continues for Surge. Choose **Team versus** from the versus setup page in the lobby; new installs start with free-for-all.
 - **The guide** opens by itself the first time you launch the game. It explains the abilities, the controls, the ability indicator and the synergies. Press the backtick key to close it or open it again; it has no close button.
 - **The ability indicator** is a dot above each spider: green when the ability is ready, blue while it's active and red while it recharges.
 

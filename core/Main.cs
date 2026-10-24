@@ -25,6 +25,7 @@ namespace SpiderSurge
                 return;
             }
             Instance = this;
+            InputChord.Initialize();
 
             Settings.Define(Parts.Defaults);
             Settings.Define(ModUpdater.Defaults);

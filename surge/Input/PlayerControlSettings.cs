@@ -32,6 +32,7 @@ namespace SpiderSurge
         // Track button presses for double-tap detection
         private readonly Dictionary<int, string> lastButtonPressed = new Dictionary<int, string>();
         private readonly Dictionary<int, float> lastButtonPressTime = new Dictionary<int, float>();
+        private readonly Dictionary<int, string> pendingBindings = new Dictionary<int, string>();
 
         // Visual feedback tracking
         private readonly Dictionary<int, string> feedbackMessages = new Dictionary<int, string>();
@@ -124,6 +125,9 @@ namespace SpiderSurge
             if (nowHeld == wasHeld) return;
 
             menuButtonHeld[playerIndex] = nowHeld;
+            lastButtonPressed.Remove(playerIndex);
+            lastButtonPressTime.Remove(playerIndex);
+            pendingBindings.Remove(playerIndex);
             if (nowHeld)
             {
                 menuButtonHoldStartTime[playerIndex] = Time.unscaledTime;
@@ -165,13 +169,12 @@ namespace SpiderSurge
 
             if (heldButtonControls.Add(control))
             {
-                OnButtonPressed(context, buttonPath);
+                menuButtonHoldStartTime.Remove(GetPlayerIndexFromDevice(control.device));
             }
         }
 
-        private void OnButtonPressed(InputAction.CallbackContext context, string buttonPath)
+        private void RecordBinding(int playerIndex, string buttonPath)
         {
-            int playerIndex = GetPlayerIndexFromDevice(context.control.device);
             if (playerIndex < 0) return;
 
             // Only process if menu button is held
@@ -203,6 +206,23 @@ namespace SpiderSurge
 
         private void Update()
         {
+            foreach (var pad in Gamepad.all)
+            {
+                int playerIndex = GetPlayerIndexFromDevice(pad);
+                if (playerIndex < 0 || !IsMenuHeldOn(pad)) continue;
+                var pressed = Controls.ControllerButtons.Where(button => button.button(pad).isPressed).Select(button => button.path).ToArray();
+                if (pressed.Length > 0 && pressed.Length <= 2)
+                {
+                    string binding = string.Join(Controls.ComboSeparator.ToString(), pressed);
+                    if (!pendingBindings.TryGetValue(playerIndex, out string pending) || binding.Length > pending.Length)
+                        pendingBindings[playerIndex] = binding;
+                }
+                else if (pressed.Length == 0 && pendingBindings.TryGetValue(playerIndex, out string pending))
+                {
+                    pendingBindings.Remove(playerIndex);
+                    RecordBinding(playerIndex, pending);
+                }
+            }
             if (menuButtonHoldStartTime.Count == 0) return;
 
             // Check for 3-second hold to reset
@@ -226,6 +246,7 @@ namespace SpiderSurge
         {
             if (playerAbilityButtons.TryGetValue(playerIndex, out string button))
             {
+                if (MatchesUltimateChord(button)) return DefaultGamepadButton;
                 return button;
             }
             return DefaultGamepadButton;
@@ -233,6 +254,11 @@ namespace SpiderSurge
 
         public void SetPlayerAbilityButton(int playerIndex, string buttonPath)
         {
+            if (MatchesUltimateChord(buttonPath))
+            {
+                ShowFeedback(playerIndex, "This combination is the ultimate. Change it in Controls first.");
+                return;
+            }
             playerAbilityButtons[playerIndex] = buttonPath;
 
             string buttonName = GetButtonDisplayName(buttonPath);
@@ -240,6 +266,13 @@ namespace SpiderSurge
 
             // Notify abilities to re-register with new button
             NotifyAbilitiesOfButtonChange(playerIndex);
+        }
+
+        private static bool MatchesUltimateChord(string binding)
+        {
+            if (!InputChord.Split(binding, out string first, out string second)) return false;
+            return Controls.Parse(Controls.Get(Controls.UltimateController)).Any(combo => combo.Length == 2 &&
+                combo.Contains(first, System.StringComparer.OrdinalIgnoreCase) && combo.Contains(second, System.StringComparer.OrdinalIgnoreCase));
         }
 
         public void ResetPlayerAbilityButton(int playerIndex)
@@ -278,6 +311,7 @@ namespace SpiderSurge
             Instance.menuButtonHoldStartTime.Remove(playerIndex);
             Instance.lastButtonPressed.Remove(playerIndex);
             Instance.lastButtonPressTime.Remove(playerIndex);
+            Instance.pendingBindings.Remove(playerIndex);
             Instance.feedbackMessages.Remove(playerIndex);
             Instance.feedbackEndTimes.Remove(playerIndex);
         }
@@ -312,7 +346,7 @@ namespace SpiderSurge
             return -1;
         }
 
-        private static string GetButtonDisplayName(string buttonPath) => Controls.PathLabel(buttonPath);
+        private static string GetButtonDisplayName(string buttonPath) => Controls.Label(buttonPath);
 
         private void OnSettingsChanged(string key)
         {

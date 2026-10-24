@@ -14,7 +14,6 @@ namespace SpiderSurge.Common
         private const string OldStatsId = "Stats_Mod";
         private const string OldTeamsId = "SpiderTeams";
         private const string BackupSuffix = ".old";
-        private static readonly string[] PartKeys = { "fixes", "stats", "teams" };
         private static readonly string[] PixelPositionKeys = { "display.position.x", "display.position.y" };
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
@@ -83,7 +82,8 @@ namespace SpiderSurge.Common
                 Dictionary<string, object> stats = Parts.Stats.BlockedBy == null ? Read(statsPath) : null;
                 Dictionary<string, object> teams = Parts.Teams.BlockedBy == null ? Read(teamsPath) : null;
                 bool pixelPosition = current != null && PixelPositionKeys.Any(key => Find(current, "stats." + key) != null);
-                if (!legacySurge && stats == null && teams == null && !pixelPosition)
+                bool retiredParts = Parts.All.Any(part => !part.CanDisable && Find(current, part.SettingKey) != null);
+                if (!legacySurge && stats == null && teams == null && !pixelPosition && !retiredParts)
                 {
                     return;
                 }
@@ -114,13 +114,13 @@ namespace SpiderSurge.Common
                 {
                     values["parts.fixes"] = true;
                 }
-                if (stats != null || !upgraded)
+                if (IsFalse(Find(stats, "tracking.enabled")) || IsFalse(Find(current, "parts.stats")))
                 {
-                    values["parts.stats"] = stats != null && !IsFalse(Find(stats, "tracking.enabled"));
+                    values["stats.display.showStatsWindow"] = false;
                 }
-                if (teams != null || !upgraded)
+                if (IsFalse(Find(current, "parts.teams")))
                 {
-                    values["parts.teams"] = teams != null;
+                    values["teams.enabled"] = false;
                 }
                 bool updates = !IsFalse(Find(stats, "updater.checkForUpdates")) && !IsFalse(Find(teams, "updater.checkForUpdates"));
                 if (!upgraded || !updates)
@@ -133,6 +133,7 @@ namespace SpiderSurge.Common
                 {
                     Settings.SetPath(tree, pair.Key, pair.Value);
                 }
+                foreach (Part part in Parts.All.Where(part => !part.CanDisable)) Remove(tree, part.SettingKey);
                 if (surge != null)
                 {
                     foreach (string key in SurgeKeys.Keys)
@@ -169,7 +170,7 @@ namespace SpiderSurge.Common
 
                 if (sources.Count > 0)
                 {
-                    string on = string.Join(", ", PartKeys.Where(part => Settings.TryParseBool(Find(tree, "parts." + part) ?? "", out bool enabled) && enabled));
+                    string on = string.Join(", ", Parts.All.Where(part => !part.CanDisable || (Settings.TryParseBool(Find(tree, part.SettingKey) ?? "", out bool enabled) && enabled)).Select(part => part.Key));
                     Logger.LogInfo($"Moved {moved} settings from {string.Join(", ", sources)} into {Path.GetFileName(path)}; parts on: {on}. The old files are kept with {BackupSuffix} added");
                 }
                 if (legacySurge && surge == null)

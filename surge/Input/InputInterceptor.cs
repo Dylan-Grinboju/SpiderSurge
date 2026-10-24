@@ -242,7 +242,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (!context.ReadValueAsButton())
+            if (context.canceled || !context.ReadValueAsButton())
             {
                 heldControls.Remove(control);
                 return;
@@ -296,7 +296,8 @@ namespace SpiderSurge
                 DisposeCustomAction(key);
 
                 var allActions = playerInput.actions;
-                if (allActions != null)
+                bool chord = InputChord.Split(bindingPath, out string primary, out string secondary);
+                if (allActions != null && !chord)
                 {
                     if (!restoredBindings.ContainsKey(bindingPath))
                     {
@@ -311,6 +312,7 @@ namespace SpiderSurge
                             var binding = bindings[i];
                             string effectivePath = binding.effectivePath ?? "";
                             string path = binding.path ?? "";
+                            if (InputChord.Modifier(binding.effectiveInteractions) != 0) continue;
 
                             if (string.Equals(effectivePath, bindingPath, System.StringComparison.OrdinalIgnoreCase) || string.Equals(path, bindingPath, System.StringComparison.OrdinalIgnoreCase))
                             {
@@ -331,7 +333,15 @@ namespace SpiderSurge
                 }
 
                 // A Button action bound to every pad ignores one pad's press while another pad holds the same button.
-                var customAction = new InputAction(
+                InputAction customAction;
+                if (chord)
+                {
+                    var map = new InputActionMap("SurgeChord");
+                    map.devices = playerInput.devices.ToArray();
+                    customAction = map.AddAction("AbilityChord", InputActionType.Button);
+                    customAction.AddBinding(primary).WithInteraction(InputChord.Interactions(InputChord.Code(secondary)));
+                }
+                else customAction = new InputAction(
                     name: actionName == "CustomAbility" ? $"CustomAbility{bindingPath.Replace("/", "").Replace("<", "").Replace(">", "")}" : $"Custom{actionName}",
                     type: InputActionType.PassThrough,
                     binding: bindingPath

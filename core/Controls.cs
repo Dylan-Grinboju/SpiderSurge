@@ -63,7 +63,7 @@ namespace SpiderSurge.Common
         private const string GamepadDevice = "<Gamepad>/";
 
         public static readonly Control AbilityKeyboard = new Control("controls.ability.keyboard", "Ability", ControlDevice.Keyboard, "<Keyboard>/q", ControlExtras.None, Parts.Surge);
-        public static readonly Control AbilityController = new Control("controls.ability.controller", "Ability", ControlDevice.Controller, "<Gamepad>/leftShoulder", ControlExtras.None, Parts.Surge);
+        public static readonly Control AbilityController = new Control("controls.ability.controller", "Ability", ControlDevice.Controller, "<Gamepad>/leftShoulder", ControlExtras.Combo, Parts.Surge);
         public static readonly Control UltimateKeyboard = new Control("controls.ultimate.keyboard", "Ultimate", ControlDevice.Keyboard, "<Keyboard>/c", ControlExtras.Alternatives, Parts.Surge);
         public static readonly Control UltimateController = new Control("controls.ultimate.controller", "Ultimate", ControlDevice.Controller, "<Gamepad>/leftStickPress+<Gamepad>/rightStickPress", ControlExtras.Dpad | ControlExtras.Combo | ControlExtras.Alternatives, Parts.Surge);
         public static readonly Control SmallWindow = new Control("controls.stats.smallWindow", "Small window", ControlDevice.Keyboard, "<Keyboard>/f1", ControlExtras.Alternatives, Parts.Stats);

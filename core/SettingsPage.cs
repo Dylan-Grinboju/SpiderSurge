@@ -447,8 +447,8 @@ namespace SpiderSurge.Common
                 Button("Controls", () => Open(ControlsPage.Page));
                 Note("Change keyboard and controller bindings. You can also set a personal ability button for each controller.");
             }
-            Button("Enable or disable parts", () => Open("parts"));
-            Note("Choose which optional parts of the mod run. Changes take effect after restarting the game.");
+            Button("Mod parts", () => Open("parts"));
+            Note("Surge, Stats and Teams always load. Game fixes can be turned on or off after restarting.");
             Button("Match history", () => Open("history"));
             Note("Review saved Survival and Versus results, including players, maps, perks, titles and weapon accuracy.");
             Button("General", () => Open("general"));
@@ -460,6 +460,7 @@ namespace SpiderSurge.Common
         private void AddParts()
         {
             Title("Mod parts");
+            Note("Hide Stats from its settings page; choose team versus from the versus setup page in the lobby.");
             Note("Turning a part on or off takes effect after restarting the game.");
             foreach (Part part in MenuOrder)
             {

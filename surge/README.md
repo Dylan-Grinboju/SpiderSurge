@@ -31,7 +31,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together. Change them in **Mods** > **SpiderSurge** > **Controls**, where the controller ultimate can also be another pair of buttons, one button or the whole D-pad.
-    - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
+    - **Per-Player Remapping**: While holding **Select**, press and release a button or two-button combination twice to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game. Hold Select alone for 3 seconds to restore the shared ability binding.
     - **Reset**: Hold **Select** for 3 seconds to go back to the controller ability button of the **Controls** page (L1 by default).
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
