@@ -56,10 +56,6 @@ namespace SpiderSurge
         private InputAction comboFirstAction;
         private InputAction comboSecondAction;
         private InputAction ultimateButtonAction;
-        private InputAction ultimatePressAction;
-        private readonly HashSet<InputControl> heldUltimateControls = new HashSet<InputControl>();
-        private bool ultimateBound;
-        private static int boundUltimates;
         private bool comboFirstPressed = false;
         private bool comboSecondPressed = false;
         private float lastComboFirstPressTime = 0f;
@@ -79,12 +75,8 @@ namespace SpiderSurge
         {
             get
             {
-                string keyboard = Controls.Get(Controls.AbilityKeyboard);
-                string gamepad = playerInput != null ? PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex) : PlayerControlSettings.DefaultGamepadButton;
-                var buttons = new List<string>(2);
-                if (keyboard != Controls.None) buttons.Add(keyboard);
-                if (gamepad != Controls.None) buttons.Add(gamepad);
-                return buttons.ToArray();
+                string gamepad = playerInput != null ? PlayerControlSettings.GetPlayerAbilityButton(playerInput.playerIndex) : Controls.AbilityController;
+                return new[] { Controls.AbilityKeyboard, gamepad };
             }
         }
 
@@ -204,39 +196,18 @@ namespace SpiderSurge
             }
         }
 
-        // Every change to the ultimate controls rebinds them at once, so a bound ultimate always uses the current binding
-        public static bool UltimateBound => boundUltimates > 0;
-
         // The gamepad actions are pass-through: a Button action bound to every pad ignores one pad's press while another pad holds the same button.
         private void SetupUltimateInputs()
         {
             try
             {
-                string controller = Controls.Get(Controls.UltimateController);
-                string[] combo = Controls.Combo(controller);
-                if (combo != null)
-                {
-                    comboFirstAction = CreatePassThrough("ComboFirst", OnComboFirstChanged, combo[0]);
-                    comboSecondAction = CreatePassThrough("ComboSecond", OnComboSecondChanged, combo[1]);
-                }
-                else if (controller != Controls.None)
-                {
-                    ultimatePressAction = CreatePassThrough("Press", OnUltimatePressChanged, Controls.PressPaths(controller).ToArray());
-                }
-                ultimateBound = true;
-                boundUltimates++;
+                string[] combo = Controls.Combo(Controls.UltimateController);
+                comboFirstAction = CreatePassThrough("ComboFirst", OnComboFirstChanged, combo[0]);
+                comboSecondAction = CreatePassThrough("ComboSecond", OnComboSecondChanged, combo[1]);
 
-                string keyboard = Controls.Get(Controls.UltimateKeyboard);
-                if (keyboard != Controls.None)
-                {
-                    ultimateButtonAction = new InputAction(name: $"{GetType().Name}_UltimateButton", type: InputActionType.Button);
-                    foreach (string path in Controls.PressPaths(keyboard))
-                    {
-                        ultimateButtonAction.AddBinding(path);
-                    }
-                    ultimateButtonAction.performed += OnUltimateButtonPressed;
-                    ultimateButtonAction.Enable();
-                }
+                ultimateButtonAction = new InputAction(name: $"{GetType().Name}_UltimateButton", type: InputActionType.Button, binding: Controls.UltimateKeyboard);
+                ultimateButtonAction.performed += OnUltimateButtonPressed;
+                ultimateButtonAction.Enable();
             }
             catch (System.Exception ex)
             {
@@ -259,14 +230,8 @@ namespace SpiderSurge
 
         private void TearDownUltimateInputs()
         {
-            if (ultimateBound)
-            {
-                boundUltimates--;
-                ultimateBound = false;
-            }
             DisposeAction(ref comboFirstAction, OnComboFirstChanged);
             DisposeAction(ref comboSecondAction, OnComboSecondChanged);
-            DisposeAction(ref ultimatePressAction, OnUltimatePressChanged);
             if (ultimateButtonAction != null)
             {
                 ultimateButtonAction.performed -= OnUltimateButtonPressed;
@@ -274,7 +239,6 @@ namespace SpiderSurge
                 ultimateButtonAction.Dispose();
                 ultimateButtonAction = null;
             }
-            heldUltimateControls.Clear();
             comboFirstPressed = false;
             comboSecondPressed = false;
         }
@@ -287,39 +251,6 @@ namespace SpiderSurge
             action.Disable();
             action.Dispose();
             action = null;
-        }
-
-        public void RefreshControls()
-        {
-            if (inputInterceptor != null && _cachedActivationButtons != null)
-            {
-                RefreshInputBindings();
-            }
-            if (HasUltimate && playerInput != null && ultimateBound)
-            {
-                TearDownUltimateInputs();
-                SetupUltimateInputs();
-            }
-        }
-
-        // Fires on the first bound control pressed, so the whole D-pad works like one button
-        private void OnUltimatePressChanged(InputAction.CallbackContext context)
-        {
-            if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
-            bool wasHeld = heldUltimateControls.Count > 0;
-            if (context.ReadValueAsButton())
-            {
-                heldUltimateControls.Add(context.control);
-            }
-            else
-            {
-                heldUltimateControls.Remove(context.control);
-            }
-
-            if (!wasHeld && heldUltimateControls.Count > 0 && !Controls.Ignored(context.control.device))
-            {
-                ActivateUltimate();
-            }
         }
 
         private void OnComboFirstChanged(InputAction.CallbackContext context)

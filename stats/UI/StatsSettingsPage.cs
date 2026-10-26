@@ -48,9 +48,7 @@ namespace StatsMod
             page.Header("Windows");
             page.Toggle("Show stats and titles", Key("display.showStatsWindow"));
             page.Note("Hiding Stats prevents its windows and title cards from appearing. Tracking stays on for Surge and run results.");
-            page.Note($"Small window: {Controls.Display(Controls.SmallWindow)}. Big window: {Controls.Display(Controls.BigWindow)}. Titles: {Controls.Display(Controls.TitlesWindow)}. Switch windows on a controller: {Controls.Display(ModConfig.SwitchWindowsBinding)}.");
-            page.Button("Change these keys", () => page.Open(ControlsPage.Page));
-            page.Note("Choose keys for the three stats windows and controller buttons for switching windows and scoreboard presets.");
+            page.Note($"Small window: {Controls.Display(Controls.SmallWindow)}. Big window: {Controls.Display(Controls.BigWindow)}. Titles: {Controls.Display(Controls.TitlesWindow)}. On a controller, the D-pad switches windows and D-pad left / right change the big window's page, except while a menu is open.");
             page.Toggle("Small window background", Key("display.smallUIShowBackground"));
             page.Note("Adds a background behind the small stats window to make its text easier to read over the arena.");
             page.Toggle("Scale with the screen size", ModConfig.AutoScaleKey);

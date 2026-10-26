@@ -1,4 +1,7 @@
 using Doozy.Engine.UI;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace SpiderSurge.Common
 {
@@ -14,6 +17,19 @@ namespace SpiderSurge.Common
                 if (GameController.instance != null && GameController.instance.gamePaused) return true;
                 UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
                 return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);
+            }
+        }
+
+        // The D-pad moves through a menu while one is open or a menu button has controller focus, in the main menu and lobby screens too
+        public static bool Navigating
+        {
+            get
+            {
+                if (Open) return true;
+                GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+                if (selected == null || !selected.activeInHierarchy) return false;
+                Selectable selectable = selected.GetComponent<Selectable>();
+                return selectable != null && selectable.IsInteractable();
             }
         }
 

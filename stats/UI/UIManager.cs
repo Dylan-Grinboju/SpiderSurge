@@ -222,17 +222,17 @@ namespace StatsMod
             if (keyboard == null) return;
 
             if (bigUI != null && bigUI.HandlePresetInput(keyboard)) return;
-            if (smallWindowKey.WasPressed(Controls.Get(Controls.SmallWindow), keyboard))
+            if (smallWindowKey.WasPressed(Controls.SmallWindow, keyboard))
             {
                 HandleSmallWindowKey();
             }
 
-            if (bigWindowKey.WasPressed(Controls.Get(Controls.BigWindow), keyboard))
+            if (bigWindowKey.WasPressed(Controls.BigWindow, keyboard))
             {
                 HandleBigWindowKey();
             }
 
-            if (titlesKey.WasPressed(Controls.Get(Controls.TitlesWindow), keyboard))
+            if (titlesKey.WasPressed(Controls.TitlesWindow, keyboard))
             {
                 HandleTitlesKey();
             }
@@ -240,10 +240,10 @@ namespace StatsMod
 
         private void HandleGamepadInput()
         {
-            if (Gamepad.all.Count == 0 || GameMenus.Open) return;
+            if (Gamepad.all.Count == 0 || GameMenus.Navigating) return;
 
             if (bigUI != null && bigUI.HandlePresetPads()) return;
-            if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding))
+            if (switchButton.WasPressed(Controls.SwitchWindows))
             {
                 CycleUIState();
             }
