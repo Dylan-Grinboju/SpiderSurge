@@ -95,8 +95,7 @@ namespace SpiderSurge
             {
                 page.Title("Controls and indicators");
                 page.Line($"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}\nUltimate: {Controls.Display(Controls.UltimateKeyboard)} / {Controls.Display(Controls.UltimateController)}");
-                page.Button("Change controls", () => page.Open(ControlsPage.Page));
-                page.Line("To remap only your controller's ability, hold Select and double-tap the desired button. Hold Select for 3 seconds to reset it. Personal overrides last until you leave.");
+                page.Line($"To move your controller's ability to another button, hold Select and double-tap that button. Hold Select for 3 seconds to go back to {Controls.Display(Controls.AbilityController)}. Your choice lasts until you leave.");
                 page.Line($"The ring drains as a timed ability or ultimate runs out, then fills clockwise as cooldown expires. <color={Hex(ModConfig.IndicatorAvailableColor)}>Ready</color>, <color={Hex(ModConfig.IndicatorActiveColor)}>active</color>, and <color={Hex(ModConfig.IndicatorCooldownColor)}>cooling down</color> use your chosen colors. The ready ring is complete. Active effects without a duration also keep a complete ring.");
                 page.Line("Pocket Dimension shows the stored weapon beside the ring. No weapon means an empty slot. With Only show when ready enabled, the preview stays visible during cooldown only with the rings; the compact HUD hides the whole row until the ability is ready.");
                 page.Line("Use compact ability HUD replaces the rings with a fixed panel at the bottom right. Each player has a named row: active time drains with a seconds countdown, cooldown progress fills with a seconds countdown, and Ready means the ability can be used. The same cooldown is shared with the ultimate. Both timers use game time and stop while paused.");

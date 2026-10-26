@@ -30,9 +30,9 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Achievements**: 13 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
-    - **Ability**: **Q** or **L1**. **Ultimate**: **C**, or **L3 + R3** together. Change them in **Mods** > **SpiderSurge** > **Controls**, where the controller ultimate can also be another pair of buttons, one button or the whole D-pad.
+    - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
     - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
-    - **Reset**: Hold **Select** for 3 seconds to go back to the controller ability button of the **Controls** page (L1 by default).
+    - **Reset**: Hold **Select** for 3 seconds to go back to L2.
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: With the [Teams](../teams/README.md) part on, everyone can get the same Surge ability in versus.
 
@@ -83,7 +83,7 @@ The HUD shows the active challenge and reward status. Map bonuses, completed cha
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Indicator controls are on the Surge page. Changes apply right away, except **Play without abilities**, which applies from the next run. The ability and ultimate keys are on the **Controls** page. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Indicator controls are on the Surge page. Changes apply right away, except **Play without abilities**, which applies from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
 
 ### Using the Yaml file:
 
@@ -95,7 +95,7 @@ Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.ya
 ### Gameplay:
 The lobby platform selects the mode for each run. Older `surge.surgeMode` and `parts.surge` settings are ignored.
 
-The ability and ultimate keys are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `surge.dpadUltimate: true` becomes `controls.ultimate.controller: <Gamepad>/dpad` on the first launch.
+The ability and ultimate keys are fixed, so they are not in the file. An older `surge.dpadUltimate` is ignored.
 
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The host's setting applies online. Default: `true`.
 

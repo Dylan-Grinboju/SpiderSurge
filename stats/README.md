@@ -14,9 +14,8 @@ Stats always loads with SpiderSurge, because Surge depends on its tracking. To h
   - Press **F1** to toggle the small stats display window. You can click and drag this window to reposition it
   - Press **F2** for the large stats overlay
   - Press **F3** to view player titles after a Survival run
-  - Press **D-pad** on a controller to switch between the small window and Off during a match; in the lobby it also offers the big window and Survival titles
+  - Press **D-pad** on a controller to switch between the small window and Off during a match; in the lobby it also offers the big window and Survival titles. The D-pad leaves the windows alone while a menu is open or a menu button is selected
   - While the big window is open, **Page Up / Page Down**, **D-pad left / right**, its arrows or the mouse wheel move through pages and scoreboard presets
-  - Change these keys in **Mods** > **SpiderSurge** > **Controls**. A button that also casts Surge's ultimate on its own casts the ultimate and doesn't switch the windows
 - **Log File**: All the stats are saved to a local txt file when the game ends 
 - **Match history**: Browse saved Survival and Versus results in the Mods menu, with player statistics, accuracy, maps, perks and titles. Recording history is separate from text reports and telemetry
 - **Configurable**: Every setting can be changed from the Mods menu or the Yaml file
@@ -33,7 +32,7 @@ Each spider's kills and deaths, next to its color. A dead spider's row fades unt
 ### Big window (F2)
 The run time, enemies killed and a table with a portrait for each spider. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. In versus it shows the match time instead.
 
-The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page shows up to six columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it. Change the keys and buttons in **Controls**; a shared ultimate binding takes priority.
+The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page shows up to six columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
 
 <img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
 
@@ -103,9 +102,9 @@ Stats tracking always runs because Surge depends on it. Turn off **Show stats an
 The title collection isn't a setting, so it isn't in this file; see [Title collection](#title-collection).
 
 ### Input:
-The window keys and the controller switch are in the `controls` section, which **Mods** > **SpiderSurge** > **Controls** sets. An older `stats.input.cycleInput` moves to `controls.stats.switchWindows` on the first launch: `joystick` becomes either stick press, `both` the D-pad or either stick press, and `none` turns it off.
+The window keys and the controller switch are fixed, so they are not in the file. An older `stats.input.cycleInput` is ignored.
 
-`controls.stats.previousPresetKeyboard` and `controls.stats.nextPresetKeyboard` default to `<Keyboard>/pageUp` and `<Keyboard>/pageDown`. Their controller counterparts, `controls.stats.previousPresetController` and `controls.stats.nextPresetController`, default to `<Gamepad>/dpad/left` and `<Gamepad>/dpad/right`. They work while the big window is open. During an active match, the controller window switch cycles only the small window and Off; in the lobby, it also offers the big window and Survival titles.
+Page Up / Page Down and D-pad left / right move through the big window's pages and presets while it is open. During an active match, the controller window switch cycles only the small window and Off; in the lobby, it also offers the big window and Survival titles.
 
 </details>
 

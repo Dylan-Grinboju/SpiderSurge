@@ -83,7 +83,7 @@ namespace SpiderTeams
                             Logger.LogDebug($"SpiderTeams: game binding {action.name} = {path}");
                             if (action.name != ShowNamesAction && (Uses(_gamepadPath, path) || Uses(_keyboardPath, path)))
                             {
-                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button in Mods > SpiderSurge > Controls if they clash");
+                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button, which a rebind in the game's controls menu put there");
                             }
                         }
                     }

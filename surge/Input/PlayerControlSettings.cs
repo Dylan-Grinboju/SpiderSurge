@@ -13,13 +13,11 @@ namespace SpiderSurge
     ///
     /// Controls:
     /// - Hold Menu button + Double-tap any button = Set that button as ability activation
-    /// - Hold Menu button for 3 seconds = Reset to the controller ability button of the Controls page
+    /// - Hold Menu button for 3 seconds = Reset to the default controller ability button (L2)
     /// </summary>
     public class PlayerControlSettings : MonoBehaviour
     {
         public static PlayerControlSettings Instance { get; private set; }
-
-        public static string DefaultGamepadButton => Controls.Get(Controls.AbilityController);
 
         // Per-player button mapping (playerIndex -> button path)
         private static readonly Dictionary<int, string> playerAbilityButtons = new Dictionary<int, string>();
@@ -58,7 +56,6 @@ namespace SpiderSurge
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 SetupInputActions();
-                Settings.Changed += OnSettingsChanged;
             }
             else
             {
@@ -228,7 +225,7 @@ namespace SpiderSurge
             {
                 return button;
             }
-            return DefaultGamepadButton;
+            return Controls.AbilityController;
         }
 
         public void SetPlayerAbilityButton(int playerIndex, string buttonPath)
@@ -247,7 +244,7 @@ namespace SpiderSurge
             if (playerAbilityButtons.ContainsKey(playerIndex))
             {
                 playerAbilityButtons.Remove(playerIndex);
-                ShowFeedback(playerIndex, $"Ability button reset to {Controls.Label(DefaultGamepadButton)}");
+                ShowFeedback(playerIndex, $"Ability button reset to {Controls.Label(Controls.AbilityController)}");
 
                 // Notify abilities to re-register with default button
                 NotifyAbilitiesOfButtonChange(playerIndex);
@@ -314,20 +311,6 @@ namespace SpiderSurge
 
         private static string GetButtonDisplayName(string buttonPath) => Controls.PathLabel(buttonPath);
 
-        private void OnSettingsChanged(string key)
-        {
-            if (!Controls.Affects(key, Controls.AbilityKeyboard, Controls.AbilityController, Controls.UltimateKeyboard, Controls.UltimateController)) return;
-
-            foreach (var input in PlayerInput.all)
-            {
-                if (input == null) continue;
-                foreach (var ability in input.GetComponentsInChildren<BaseAbility>())
-                {
-                    ability.RefreshControls();
-                }
-            }
-        }
-
         // One row per player, scaled to the screen height and wrapped into centred columns when they run off the bottom
         private void OnGUI()
         {
@@ -390,7 +373,6 @@ namespace SpiderSurge
         private void OnDestroy()
         {
             if (Instance != this) return;
-            Settings.Changed -= OnSettingsChanged;
             // Clean up input actions
             menuButtonAction?.Disable();
             menuButtonAction?.Dispose();
