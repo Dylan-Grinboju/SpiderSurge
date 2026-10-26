@@ -2,7 +2,7 @@
 
 The Stats part of [SpiderSurge](../README.md): statistics tracking that monitors player performance and game events. It used to be a separate mod, SpiderStats.
 
-Stats is on after installing SpiderSurge. You can turn it off from the pause menu, under **Mods** > **SpiderSurge**.
+Stats always loads with SpiderSurge, because Surge depends on its tracking. To hide its windows and title cards, turn off **Show stats and titles** on its settings page.
 
 
 ## Features
@@ -53,7 +53,7 @@ The collection is saved on your PC in the game's own save folder, so updating or
 
 Open **Mods** > **SpiderSurge** > **Match history**, then choose Survival or Versus. Each record shows the outcome, duration and players, plus the wave and pain level for Survival. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. Open a match for player statistics, enemy and weapon kills, shooting accuracy, maps, perks and earned titles, including which titles appeared on the end screen and which were new that run.
 
-**Save match history** needs Stats enabled. Existing records remain available with Stats off, and saving history is independent of text reports and telemetry. All recorded matches are kept on this PC, with 20 matches per list page, in the `SpiderSurge\History` folder beside `progress.dat`. History starts with this update; older text reports are available through **About SpiderSurge** > **Support** > **Open logs**. **Refresh history** rereads the files. **Clear match history** removes history after confirmation and keeps achievements, the title collection and highscores.
+Saving history is independent of text reports and telemetry. All recorded matches are kept on this PC, with 20 matches per list page, in the `SpiderSurge\History` folder beside `progress.dat`. History starts with this update; older text reports are available through **About SpiderSurge** > **Support** > **Open logs**. **Refresh history** rereads the files. **Clear match history** removes history after confirmation and keeps achievements, the title collection and highscores.
 
 ## How to configure Stats
 
@@ -92,7 +92,7 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.tracking.saveHistory`: If true, results are saved in Match history. Default: `true`. It does not control text reports or telemetry.
 
-To stop tracking altogether, turn off the Stats part (`parts.stats`). To only hide the stats, keep the part on and turn off `stats.display.showStatsWindow` and `stats.titles.enabled`.
+Stats tracking always runs because Surge depends on it. Turn off **Show stats and titles** (`stats.display.showStatsWindow`) to hide all Stats windows and title cards without stopping tracking or title collection. Older disabled Stats settings become hidden Stats on upgrade; older disabled Teams settings keep team versus off.
 
 ### Titles:
 

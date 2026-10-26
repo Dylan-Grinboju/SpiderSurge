@@ -10,13 +10,13 @@
 
 <img width="2559" height="1439" alt="Choosing a Surge ability" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
 
-SpiderSurge is made of four parts. Surge is played from its own lobby platform; the other parts can be turned on or off from the game's Mods menu.
+SpiderSurge is made of four parts. Surge, Stats and Teams always load; Game fixes can be turned on or off from the game's Mods menu.
 
 | Part | What it does | On after installing |
 |---|---|---|
 | [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival and Versus, with live stats windows and fun titles after Survival runs | Yes |
 | [Surge](surge/README.md) | A separate Surge Survival platform above and left of Wave Survival: new abilities, ultimates, perks and custom enemies | Yes |
-| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
+| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | Yes, with team versus off until you turn it on from the versus setup page |
 | [Game fixes](#game-fixes) | Fixes bugs in the base game | Yes |
 
 Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
@@ -37,7 +37,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 <img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
 
-Achievements and the title collection have All, Locked, Unlocked and Recently earned views. NEW marks an unseen unlock; select it or use **Mark all seen** to clear the marker. **Match history** keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles. Saved history remains available when Stats is off.
+Achievements and the title collection have All, Locked, Unlocked and Recently earned views. NEW marks an unseen unlock; select it or use **Mark all seen** to clear the marker. **Match history** keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles.
 
 ### Surge
 
@@ -82,14 +82,14 @@ The big window's arrows and mouse wheel also move through its pages and presets.
 2. Download the `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or build it from the source.
 3. Place the `SpiderSurge.dll` into your Silk `mods` folder.
 4. Launch the game.
-5. Play Surge from its platform above and left of Wave Survival in the lobby. To turn on Teams, open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
+5. Play Surge from its platform above and left of Wave Survival in the lobby. To play team versus, turn on **Team versus** on the versus setup page in the lobby.
 
 ## Updating from SpiderStats or SpiderTeams
 
 1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
 2. Launch the game.
 
-On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
+On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. If you had turned Stats tracking off, the Stats windows and title cards start hidden; tracking itself always runs because Surge needs it. Team versus stays on if you had SpiderTeams installed.
 
 If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older standalone `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge that include the merged parts, only the first one runs. A popup lists the files to delete.
 
@@ -99,7 +99,7 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
-- **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
+- **Mod parts**: the switch for Game fixes, which takes effect after restarting the game. Surge, Stats and Teams always load; hide Stats from its settings page and choose team versus from the versus setup page.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
 - **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
 - **Controls**: every key and button the mod uses, on one page.
@@ -113,7 +113,7 @@ Stats > **Scoreboard presets** lets you hide fixed presets and customize Default
 
 All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
 
-`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
+`parts.fixes`: Turns Game fixes on or off. Takes effect after restarting the game. Surge, Stats and Teams always load; older `parts.surge`, `parts.stats`, `parts.teams` and `surge.surgeMode` values are ignored, and `parts.stats` or `parts.teams` set to `false` become hidden Stats or team versus off on the first launch.
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
