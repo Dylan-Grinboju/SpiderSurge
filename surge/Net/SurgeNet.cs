@@ -39,6 +39,7 @@ namespace SpiderSurge
         ShotFrozen = 6,
         ChargeCalmed = 7,
         HatchCancelled = 8,
+        CocoonPulse = 9,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -469,6 +470,9 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.HatchCancelled:
                     SpawnerBrain.ShowHatchCancelled(target);
+                    break;
+                case EnemyFx.CocoonPulse:
+                    target.GetComponent<CocoonShieldPulse>()?.ShowPulse();
                     break;
                 case EnemyFx.LaserPhase:
                     target.GetComponentInChildren<LaserRing>(true)?.Sync(value);

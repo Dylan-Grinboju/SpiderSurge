@@ -102,6 +102,7 @@ namespace SpiderSurge.Enemies
                 ShieldedWaspCocoonPrefab = CreateShieldedEnemy(WaspCocoonPrefab, shieldedWasp, "ShieldedWaspCocoon");
                 ShieldedWaspCocoonPrefab.GetComponent<EnemyHealthSystem>().serializationEnemyName = SerializationEnemyName.ShieldedWasp;
                 ShieldedWaspCocoonPrefab.GetComponent<SpawnerBrain>().Initialize(wasp, shieldedWasp, Consts.Values.Enemies.CocoonSpawnInterval, Consts.Values.Enemies.CocoonMaxWasps);
+                ShieldedWaspCocoonPrefab.AddComponent<CocoonShieldPulse>();
             }
         }
 
