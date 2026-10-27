@@ -12,10 +12,10 @@ namespace SpiderSurge
         private static bool _failed;
         private TMP_Text _points;
         private TMP_Text _challenge;
-        private float _flashUntil;
+        private float _pulseRemaining;
         private int _shownPoints = -1;
         private string _shownStatus;
-        private bool _shownFlash;
+        private bool _wasPulsing;
 
         // Called once per frame from SurgeGameModeManager.LateUpdate
         public static void Tick()
@@ -31,6 +31,7 @@ namespace SpiderSurge
             }
             _instance.gameObject.SetActive(show);
             if (show) _instance.Redraw();
+            else _instance.ResetFeedback();
         }
 
         private static void Create(SurvivalModeHud hud)
@@ -65,18 +66,32 @@ namespace SpiderSurge
                 _shownPoints = ChaosWallet.Points;
                 _points.text = $"Team chaos points: {_shownPoints}";
             }
-            bool flash = Time.unscaledTime < _flashUntil;
-            if (flash != _shownFlash)
-            {
-                _shownFlash = flash;
-                _points.color = flash ? Hud.Warm : Color.white;
-            }
+            AnimatePoints();
             string status = ChallengeController.Status;
             if (status != _shownStatus)
             {
                 _shownStatus = status;
                 _challenge.text = status;
             }
+        }
+
+        private void AnimatePoints()
+        {
+            if (_pulseRemaining <= 0f && !_wasPulsing) return;
+            float pulse = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(_pulseRemaining / Consts.Values.Chaos.HudGainSeconds));
+            _points.rectTransform.localScale = Vector3.one * Mathf.Lerp(1f, Consts.Values.Chaos.HudGainScale, pulse);
+            _points.color = Color.Lerp(Color.white, Hud.Warm, pulse);
+            _wasPulsing = _pulseRemaining > 0f;
+            if (_points.isActiveAndEnabled && SurvivalModeHud.instance.survivalHud.IsVisible)
+                _pulseRemaining = Mathf.Max(0f, _pulseRemaining - Time.unscaledDeltaTime);
+        }
+
+        private void ResetFeedback()
+        {
+            _pulseRemaining = 0f;
+            _wasPulsing = false;
+            _points.rectTransform.localScale = Vector3.one;
+            _points.color = Color.white;
         }
 
         private TMP_Text Label(TMP_Text template, string name, float y, float size)
@@ -98,12 +113,25 @@ namespace SpiderSurge
             return text;
         }
 
-        private void OnEnable() => ChaosWallet.PointEarned += Earned;
-        private void OnDisable() => ChaosWallet.PointEarned -= Earned;
-        private void OnDestroy() { if (_instance == this) _instance = null; }
+        private void Awake()
+        {
+            ChaosWallet.PointEarned += Earned;
+            ChaosWallet.Changed += WalletChanged;
+        }
+        private void OnDestroy()
+        {
+            ChaosWallet.PointEarned -= Earned;
+            ChaosWallet.Changed -= WalletChanged;
+            if (_instance == this) _instance = null;
+        }
+        private void WalletChanged()
+        {
+            if (_points != null && ChaosWallet.PointsEarned == 0) ResetFeedback();
+        }
         private void Earned()
         {
-            _flashUntil = Time.unscaledTime + Consts.Values.Chaos.HudBlinkSeconds;
+            if (!ChaosWallet.Enabled) return;
+            _pulseRemaining = Consts.Values.Chaos.HudGainSeconds;
             SoundManager.Instance?.PlaySound(Consts.SoundNames.LuckyUpgrade, Consts.SoundVolumes.LuckyUpgrade * Consts.SoundVolumes.MasterVolume);
         }
     }

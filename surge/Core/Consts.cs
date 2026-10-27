@@ -265,7 +265,8 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                public const float HudBlinkSeconds = 0.8f;
+                public const float HudGainSeconds = 0.8f;
+                public const float HudGainScale = 1.15f;
                 public const float PanelWidth = 240f;
                 public const float PanelGap = 16f;
                 public const float SideMargin = 27f;

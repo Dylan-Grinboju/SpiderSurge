@@ -98,7 +98,6 @@ namespace SpiderSurge
             if (reward > 0)
             {
                 ChaosWallet.GrantPoints(reward, ChaosRules.Name(completed));
-                ChaosNet.Announce($"{ChaosRules.Name(completed)}: {ChaosRules.Points(reward, signed: true)}");
             }
             WagerFailed = false;
             ChaosWallet.Notify();

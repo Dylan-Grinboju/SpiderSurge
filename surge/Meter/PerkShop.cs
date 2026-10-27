@@ -391,6 +391,7 @@ namespace SpiderSurge
         // A popup on this machine only; the host sends every client the same purchase
         public static void ShowBought(ShopItem item, int buyerId, string detail)
         {
+            if (item == ShopItem.Sacrifice) return;
             if (item == ShopItem.Perk) PerkChoiceHud.RefreshPerks();
             string who = buyerId >= 0 ? Players.NameOf(buyerId) : "The team";
             string what;
@@ -399,7 +400,6 @@ namespace SpiderSurge
                 case ShopItem.Reroll: what = "rerolled the perks"; break;
                 case ShopItem.Life: what = "bought an extra life"; break;
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
-                case ShopItem.Sacrifice: what = "traded a life for a chaos point"; break;
                 default: what = "raised the max lives"; break;
             }
             Toast.Show($"{who} {what}", Hud.Pink);
