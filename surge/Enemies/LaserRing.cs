@@ -21,12 +21,13 @@ namespace SpiderSurge.Enemies
         [SerializeField] private AudioSource killSound;
         [SerializeField] private float chargeSoundStart;
 
-        private static readonly Collider2D[] hits = new Collider2D[32];
+        private static Collider2D[] hits = new Collider2D[32];
         private readonly HashSet<Rigidbody2D> hitThisPulse = new HashSet<Rigidbody2D>();
         private Vector3[] points;
         private Phase phase;
         private float startTime;
         private int playerMask;
+        private int damageMask;
         private bool synced;
         private bool held;
         private bool remoteHold;
@@ -80,6 +81,7 @@ namespace SpiderSurge.Enemies
             held = false;
             remoteHold = false;
             playerMask = LayerMask.GetMask("Player");
+            damageMask = playerMask | LayerMask.GetMask("Item", "Weapon");
             if (points == null) points = new Vector3[Consts.Values.LaserRing.Segments];
             if (line != null) line.enabled = false;
         }
@@ -144,7 +146,7 @@ namespace SpiderSurge.Enemies
 
             if (phase == Phase.Active && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
-                DamagePlayers();
+                DamageTargets();
             }
         }
 
@@ -206,13 +208,17 @@ namespace SpiderSurge.Enemies
             if (beamEndSound != null) beamEndSound.Play();
         }
 
-        // Hits every spider whose body touches the ring's band, the way the Laser Cannon's beam hits every tick
-        private void DamagePlayers()
+        // Hits spiders and grenades touching the active band through the Laser Cannon's damage path.
+        private void DamageTargets()
         {
             Vector2 center = health.rb2D.position;
             float radius = Consts.Values.LaserRing.Radius;
             float halfWidth = Consts.Values.LaserRing.Width / 2f;
-            int count = Physics2D.OverlapCircleNonAlloc(center, radius + halfWidth, hits, playerMask);
+            int count;
+            while ((count = Physics2D.OverlapCircleNonAlloc(center, radius + halfWidth, hits, damageMask)) == hits.Length)
+            {
+                System.Array.Resize(ref hits, hits.Length * 2);
+            }
             for (int i = 0; i < count; i++)
             {
                 Collider2D hit = hits[i];
@@ -222,7 +228,7 @@ namespace SpiderSurge.Enemies
                 if (offset.magnitude + bodyRadius < radius - halfWidth) continue;
 
                 IDamageable damageable = hit.GetComponent<IDamageable>() ?? hit.attachedRigidbody?.GetComponent<IDamageable>();
-                if (damageable == null) continue;
+                if (damageable == null || (damageable is not Grenade && (playerMask & (1 << hit.gameObject.layer)) == 0)) continue;
 
                 Vector2 direction = offset.sqrMagnitude > 0.0001f ? offset.normalized : Vector2.up;
                 damageable.Damage(direction * Consts.Values.LaserRing.Power, hit.ClosestPoint(center), stun: true);
