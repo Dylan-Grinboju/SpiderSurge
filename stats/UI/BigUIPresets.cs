@@ -12,6 +12,8 @@ namespace StatsMod
         private static readonly HashSet<string> CombatColumns = new HashSet<string> { "Kills", "Deaths", "Max Kill Streak", "Enemy Shields", "Friendly Kills", "Shields Lost" };
         private static readonly HashSet<string> MovementColumns = new HashSet<string> { "Web Swings", "Web Swing Time", "Airborne Time", "Airborne Kills", "Lava Deaths", "Astral Returns" };
         private readonly List<Column> presetColumns = new List<Column>();
+        private readonly List<int> pageStarts = new List<int> { 0 };
+        private float pageColumnWidth = float.PositiveInfinity;
         private readonly ControlPoller previousKey = new ControlPoller();
         private readonly ControlPoller nextKey = new ControlPoller();
         private readonly AnyPadPoller previousPad = new AnyPadPoller();
@@ -32,17 +34,30 @@ namespace StatsMod
                     : column.Group == PresetKeys[preset];
                 if (selected) presetColumns.Add(column);
             }
-            presetPage = Mathf.Clamp(presetPage, 0, Mathf.Max(0, (presetColumns.Count - 1) / 6));
+            pageStarts.Clear();
+            pageStarts.Add(0);
+            float width = 0f;
+            for (int i = 0; i < presetColumns.Count; i++)
+            {
+                float columnWidth = headerMeasureStyle == null ? presetColumns[i].Width : WidthOf(presetColumns[i]);
+                if (width > 0f && width + columnWidth > pageColumnWidth)
+                {
+                    pageStarts.Add(i);
+                    width = 0f;
+                }
+                width += columnWidth;
+            }
+            presetPage = Mathf.Clamp(presetPage, 0, pageStarts.Count - 1);
         }
 
         public void Navigate(int direction)
         {
             SelectColumns();
-            int pages = Mathf.Max(1, (presetColumns.Count + 5) / 6);
+            int pages = pageStarts.Count;
             if (presetPage + direction >= 0 && presetPage + direction < pages) { presetPage += direction; return; }
             do { preset = (preset + direction + PresetKeys.Length) % PresetKeys.Length; } while (!PresetEnabled(preset));
             SelectColumns();
-            presetPage = direction > 0 ? 0 : Mathf.Max(0, (presetColumns.Count - 1) / 6);
+            presetPage = direction > 0 ? 0 : pageStarts.Count - 1;
         }
 
         public bool HandlePresetInput(Keyboard keyboard)
@@ -78,7 +93,7 @@ namespace StatsMod
             nextRect = new Rect(content.xMax - 36f * scale, previousRect.y, 36f * scale, previousRect.height);
             Hud.Label(previousRect, "<", nameStyle, Hud.Pink);
             Hud.Label(nextRect, ">", nameStyle, Hud.Pink);
-            int pages = Mathf.Max(1, (presetColumns.Count + 5) / 6);
+            int pages = pageStarts.Count;
             Hud.Label(new Rect(previousRect.xMax + 8f * scale, previousRect.y, content.width - 88f * scale, previousRect.height),
                 PresetNames[preset] + (pages > 1 ? $"  {presetPage + 1}/{pages}" : ""), nameStyle, Hud.Text);
         }

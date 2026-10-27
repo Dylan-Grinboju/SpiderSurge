@@ -233,28 +233,31 @@ namespace StatsMod
 
         private void Draw(GameStatsSnapshot statsSnapshot)
         {
-            SelectColumns();
-            visibleColumns.Clear();
-            nameColumnWidth = NameColumnWidth(statsSnapshot);
-            float columnsWidth = nameColumnWidth;
-            for (int i = presetPage * 6; i < Mathf.Min(presetColumns.Count, (presetPage + 1) * 6); i++)
-            {
-                Column column = presetColumns[i];
-                visibleColumns.Add(column);
-                columnsWidth += WidthOf(column);
-            }
-
             bool showTiles = ModConfig.ShowPlayTime || ModConfig.ShowEnemyDeaths;
             bool showTable = ModConfig.ShowPlayers;
             int playerCount = statsSnapshot.ActivePlayers?.Count ?? 0;
 
-            float baseWidth = Mathf.Max(BASE_MIN_WIDTH, showTable ? columnsWidth : 0f) + BASE_PADDING * 2;
             float baseHeight = BASE_PADDING * 2 + BASE_TITLE_HEIGHT + 36f;
             if (showTable)
             {
                 baseHeight += BASE_SECTION_SPACING + BASE_COLUMN_HEADER_HEIGHT + BASE_HEADER_LINE_HEIGHT + Mathf.Max(playerCount, 1) * BASE_PLAYER_ROW_HEIGHT;
             }
 
+            nameColumnWidth = NameColumnWidth(statsSnapshot);
+            float targetScale = Mathf.Min(UIManager.UIScaleFactor, Screen.height * BASE_MAX_HEIGHT_PERCENT / baseHeight);
+            pageColumnWidth = Mathf.Max(1f, Screen.width * BASE_MAX_WIDTH_PERCENT / targetScale - nameColumnWidth - BASE_PADDING * 2);
+            SelectColumns();
+            visibleColumns.Clear();
+            float columnsWidth = nameColumnWidth;
+            int pageEnd = presetPage + 1 < pageStarts.Count ? pageStarts[presetPage + 1] : presetColumns.Count;
+            for (int i = pageStarts[presetPage]; i < pageEnd; i++)
+            {
+                Column column = presetColumns[i];
+                visibleColumns.Add(column);
+                columnsWidth += WidthOf(column);
+            }
+
+            float baseWidth = Mathf.Max(BASE_MIN_WIDTH, showTable ? columnsWidth : 0f) + BASE_PADDING * 2;
             float scale = Hud.FitScale(UIManager.UIScaleFactor, baseWidth, baseHeight, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
             ApplyScale(scale);
 
