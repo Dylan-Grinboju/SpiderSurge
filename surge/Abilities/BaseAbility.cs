@@ -338,7 +338,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (!ChallengeController.CanActivate(false, !fromNetwork))
+            if (!ChallengeController.CanActivate(false))
             {
                 return;
             }
@@ -408,7 +408,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (!ChallengeController.CanActivate(true, !fromNetwork))
+            if (!ChallengeController.CanActivate(true))
             {
                 return;
             }

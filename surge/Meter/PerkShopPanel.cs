@@ -37,7 +37,6 @@ namespace SpiderSurge
         private readonly List<Entry> _entries = new List<Entry>();
         private TMP_Text _header;
         private SurvivalModeHud _hud;
-        private bool _infoOnly;
         private Vector2 _viewSize;
         private Entry _selected;
         private Button _buy;
@@ -54,7 +53,7 @@ namespace SpiderSurge
 
             Remove(hud);
             var prefabCard = hud.perkCardPrefab != null ? hud.perkCardPrefab.GetComponent<SurvivalModifierChoiceCard>() : null;
-            if (!ChaosWallet.Enabled || prefabCard == null || prefabCard.perkNameText == null || prefabCard.perkDescriptionText == null)
+            if (!ChaosWallet.Enabled || AbilitySelection.StartingChoiceOpen || prefabCard == null || prefabCard.perkNameText == null || prefabCard.perkDescriptionText == null)
             {
                 RestoreCards(hud);
                 PerkConfirmButton.Current?.Reposition();
@@ -76,23 +75,15 @@ namespace SpiderSurge
                 var panel = panelObject.AddComponent<PerkShopPanel>();
                 panel._hud = hud;
                 panel._viewSize = ((RectTransform)hud.perkChoiceView.transform).rect.size;
-                panel._infoOnly = AbilitySelection.StartingChoiceOpen;
-                int count = panel._infoOnly ? 0 : PerkShop.Offer.Length;
-                float minimum = M.WalletBlockHeight + count * (M.MinEntryHeight + M.EntrySpacing) + (panel._infoOnly ? 0f : M.BuyHeight);
+                int count = PerkShop.Offer.Length;
+                float minimum = M.WalletBlockHeight + count * (M.MinEntryHeight + M.EntrySpacing) + M.BuyHeight;
                 float height = Mathf.Max(column.y, minimum);
                 rect.sizeDelta = new Vector2(M.PanelWidth, height);
 
                 panel.BuildWallet(prefabCard);
-                if (panel._infoOnly)
-                {
-                    panel.BuildInfo(prefabCard, height);
-                }
-                else
-                {
-                    float entryHeight = count > 0 ? Mathf.Clamp((height - M.WalletBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
-                    panel.Populate(entryHeight);
-                    panel.LinkNavigation();
-                }
+                float entryHeight = count > 0 ? Mathf.Clamp((height - M.WalletBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
+                panel.Populate(entryHeight);
+                panel.LinkNavigation();
                 panel.Refresh();
                 if (panel.isActiveAndEnabled) panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
@@ -207,7 +198,7 @@ namespace SpiderSurge
             rect.sizeDelta = new Vector2(-2f * inset, height);
         }
 
-        // The team's points and progress toward the next point
+        // The team's points above the shop items
         private void BuildWallet(SurvivalModifierChoiceCard prefabCard)
         {
             _header = CloneText(prefabCard.perkNameText, "Points");
@@ -216,19 +207,6 @@ namespace SpiderSurge
             _header.alignment = TextAlignmentOptions.Center;
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
-
-        }
-
-        private void BuildInfo(SurvivalModifierChoiceCard prefabCard, float height)
-        {
-            var info = CloneText(prefabCard.perkDescriptionText, "About");
-            PlaceTop(info.rectTransform, M.WalletBlockHeight, height - M.WalletBlockHeight, 8f);
-            info.fontSize = 13f;
-            info.alignment = TextAlignmentOptions.Top;
-            info.enableWordWrapping = true;
-            info.overflowMode = TextOverflowModes.Overflow;
-            info.color = Color.white;
-            info.text = "Choose marked maps and complete optional challenges to earn <b>chaos points</b>.\n\nSpend them at later perk choices. Each shop item can be bought once per visit.";
         }
 
         private void Populate(float entryHeight)
@@ -468,7 +446,7 @@ namespace SpiderSurge
         // A client gets the cards and the host's offer in separate messages, so the panel is redrawn when the offer arrives later
         private void Rebuild()
         {
-            if (this == null || _hud == null || _infoOnly) return;
+            if (this == null || _hud == null) return;
             if (!_entries.Select(entry => entry.Item).SequenceEqual(PerkShop.Offer)) Build(_hud);
         }
 

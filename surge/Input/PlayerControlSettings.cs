@@ -12,8 +12,8 @@ namespace SpiderSurge
     /// Allows each player to customize which button activates their ability.
     ///
     /// Controls:
-    /// - Hold Menu button + Double-tap any button = Set that button as ability activation
-    /// - Hold Menu button for 3 seconds = Reset to the default controller ability button (L2)
+    /// - Hold Select + Double-tap any button = Set that button as ability activation
+    /// - Hold Select for 3 seconds = Reset to the default controller ability button (L2)
     /// </summary>
     public class PlayerControlSettings : MonoBehaviour
     {
@@ -22,9 +22,9 @@ namespace SpiderSurge
         // Per-player button mapping (playerIndex -> button path)
         private static readonly Dictionary<int, string> playerAbilityButtons = new Dictionary<int, string>();
 
-        // Track menu button hold state per player
-        private readonly Dictionary<int, float> menuButtonHoldStartTime = new Dictionary<int, float>();
-        private readonly Dictionary<int, bool> menuButtonHeld = new Dictionary<int, bool>();
+        // Track Select hold state per player
+        private readonly Dictionary<int, float> selectHoldStartTime = new Dictionary<int, float>();
+        private readonly Dictionary<int, bool> selectHeld = new Dictionary<int, bool>();
         private readonly List<int> playersToReset = new List<int>();
 
         // Track button presses for double-tap detection
@@ -44,9 +44,9 @@ namespace SpiderSurge
         private static readonly string[] SupportedButtons = Controls.ControllerButtons.Select(button => button.path).ToArray();
 
         // Input actions for detection
-        private InputAction menuButtonAction;
+        private InputAction selectButtonAction;
         private readonly Dictionary<string, InputAction> buttonActions = new Dictionary<string, InputAction>();
-        private readonly HashSet<InputControl> heldMenuControls = new HashSet<InputControl>();
+        private readonly HashSet<InputControl> heldSelectControls = new HashSet<InputControl>();
         private readonly HashSet<InputControl> heldButtonControls = new HashSet<InputControl>();
 
         private void Awake()
@@ -69,16 +69,16 @@ namespace SpiderSurge
             Logger.LogInfo("[PlayerControlSettings] Setting up input actions...");
 
             // Select only, since Start also opens the pause menu
-            menuButtonAction = new InputAction(
-                name: "MenuButton",
+            selectButtonAction = new InputAction(
+                name: "SelectButton",
                 type: InputActionType.PassThrough
             );
-            menuButtonAction.AddBinding("<Gamepad>/select");
-            menuButtonAction.performed += OnMenuButtonChanged;
-            menuButtonAction.canceled += OnMenuButtonChanged;
-            menuButtonAction.Enable();
+            selectButtonAction.AddBinding("<Gamepad>/select");
+            selectButtonAction.performed += OnSelectChanged;
+            selectButtonAction.canceled += OnSelectChanged;
+            selectButtonAction.Enable();
 
-            Logger.LogInfo("[PlayerControlSettings] Menu button action enabled");
+            Logger.LogInfo("[PlayerControlSettings] Select action enabled");
 
             // Create actions for all supported buttons
             foreach (var buttonPath in SupportedButtons)
@@ -97,8 +97,8 @@ namespace SpiderSurge
 
         }
 
-        // A player holds the menu button while Select is down on their pad.
-        private void OnMenuButtonChanged(InputAction.CallbackContext context)
+        // A player holds Select while it is down on their pad.
+        private void OnSelectChanged(InputAction.CallbackContext context)
         {
             InputControl control = context.control;
             if (control == null) return;
@@ -109,37 +109,37 @@ namespace SpiderSurge
 
             if (pressed)
             {
-                heldMenuControls.Add(control);
+                heldSelectControls.Add(control);
             }
             else
             {
-                heldMenuControls.Remove(control);
+                heldSelectControls.Remove(control);
             }
 
-            bool wasHeld = menuButtonHeld.TryGetValue(playerIndex, out bool held) && held;
-            bool nowHeld = IsMenuHeldOn(control.device);
+            bool wasHeld = selectHeld.TryGetValue(playerIndex, out bool held) && held;
+            bool nowHeld = IsSelectHeldOn(control.device);
             if (nowHeld == wasHeld) return;
 
-            menuButtonHeld[playerIndex] = nowHeld;
+            selectHeld[playerIndex] = nowHeld;
             if (nowHeld)
             {
-                menuButtonHoldStartTime[playerIndex] = Time.unscaledTime;
+                selectHoldStartTime[playerIndex] = Time.unscaledTime;
             }
             else
             {
-                menuButtonHoldStartTime.Remove(playerIndex);
+                selectHoldStartTime.Remove(playerIndex);
             }
         }
 
         // While a pad holds Select, its button presses belong to the remap gesture, not to abilities
-        public static bool IsMenuHeld(InputDevice device)
+        public static bool IsSelectHeld(InputDevice device)
         {
-            return Instance != null && device != null && Instance.IsMenuHeldOn(device);
+            return Instance != null && device != null && Instance.IsSelectHeldOn(device);
         }
 
-        private bool IsMenuHeldOn(InputDevice device)
+        private bool IsSelectHeldOn(InputDevice device)
         {
-            foreach (var control in heldMenuControls)
+            foreach (var control in heldSelectControls)
             {
                 if (control.device == device)
                 {
@@ -171,8 +171,8 @@ namespace SpiderSurge
             int playerIndex = GetPlayerIndexFromDevice(context.control.device);
             if (playerIndex < 0) return;
 
-            // Only process if menu button is held
-            if (!menuButtonHeld.TryGetValue(playerIndex, out bool held) || !held)
+            // Only process while Select is held
+            if (!selectHeld.TryGetValue(playerIndex, out bool held) || !held)
             {
                 return;
             }
@@ -200,13 +200,13 @@ namespace SpiderSurge
 
         private void Update()
         {
-            if (menuButtonHoldStartTime.Count == 0) return;
+            if (selectHoldStartTime.Count == 0) return;
 
             // Check for 3-second hold to reset
             playersToReset.Clear();
-            foreach (var kvp in menuButtonHoldStartTime)
+            foreach (var kvp in selectHoldStartTime)
             {
-                if (menuButtonHeld.TryGetValue(kvp.Key, out bool held) && held && Time.unscaledTime - kvp.Value >= ResetHoldDuration)
+                if (selectHeld.TryGetValue(kvp.Key, out bool held) && held && Time.unscaledTime - kvp.Value >= ResetHoldDuration)
                 {
                     playersToReset.Add(kvp.Key);
                 }
@@ -215,7 +215,7 @@ namespace SpiderSurge
             foreach (int playerIndex in playersToReset)
             {
                 ResetPlayerAbilityButton(playerIndex);
-                menuButtonHoldStartTime[playerIndex] = float.MaxValue; // Prevent repeated resets
+                selectHoldStartTime[playerIndex] = float.MaxValue; // Prevent repeated resets
             }
         }
 
@@ -271,8 +271,8 @@ namespace SpiderSurge
             playerAbilityButtons.Remove(playerIndex);
             if (Instance == null) return;
 
-            Instance.menuButtonHeld.Remove(playerIndex);
-            Instance.menuButtonHoldStartTime.Remove(playerIndex);
+            Instance.selectHeld.Remove(playerIndex);
+            Instance.selectHoldStartTime.Remove(playerIndex);
             Instance.lastButtonPressed.Remove(playerIndex);
             Instance.lastButtonPressTime.Remove(playerIndex);
             Instance.feedbackMessages.Remove(playerIndex);
@@ -374,8 +374,8 @@ namespace SpiderSurge
         {
             if (Instance != this) return;
             // Clean up input actions
-            menuButtonAction?.Disable();
-            menuButtonAction?.Dispose();
+            selectButtonAction?.Disable();
+            selectButtonAction?.Dispose();
 
             foreach (var action in buttonActions.Values)
             {

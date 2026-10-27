@@ -42,7 +42,7 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 <img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
 
 ### Title collection
-Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Achievements** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed while the Surge part is on. **Reset the title collection** at the bottom of the page locks every title again.
+Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Achievements** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
 
 Use **Show** to cycle through All, Locked, Unlocked and Recently earned. NEW marks an unseen unlock; select an unlocked title or use **Mark all seen** to clear the marker. The end screen and saved match history still remember which titles were new that run.
 
@@ -150,7 +150,7 @@ Lists a title in the title collection, so players see it and how to earn it whil
 - **Unlocking** — a title unlocks in the collection when it shows on the end screen, so a title that is earned but loses its spot to higher-priority titles doesn't unlock that run.
 - **Titles are Survival-only** — native and external titles are skipped for Versus matches, with or without teams.
 - **Thread safety**: All API methods are synchronized internally. Safe to call from any thread.
-- **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part is off, registered stats and titles are never shown.
+- **Graceful degradation**: If SpiderSurge is not installed, calling mods should handle the case where the API type is not found. If the Stats part can't start (for example, because an old copy of the Stats mod is still in the Mods folder), registered stats and titles are never shown.
 
 ## Notes and disclaimers
 - Stats reset when starting a new game. After the game ends, you can return to the lobby and the overlay will show the last game's stats.

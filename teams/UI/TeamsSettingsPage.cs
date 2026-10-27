@@ -94,7 +94,7 @@ namespace SpiderTeams
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Enable or disable parts shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Mod parts shows why.");
                 return;
             }
 

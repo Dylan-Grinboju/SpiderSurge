@@ -24,7 +24,6 @@ namespace SpiderSurge
             _initialized = true;
             Net.Register(StateChannel, OnState);
             Net.Register(ChallengeChannel, OnChallenge);
-            Net.PeerLeft += ChallengeController.PeerLeft;
             Net.Register(BuyChannel, OnBuy);
             Net.Register(BoughtChannel, OnBought);
             Net.Register(RefusedChannel, OnRefused);
@@ -39,7 +38,6 @@ namespace SpiderSurge
             _initialized = false;
             Net.Unregister(StateChannel);
             Net.Unregister(ChallengeChannel);
-            Net.PeerLeft -= ChallengeController.PeerLeft;
             Net.Unregister(BuyChannel);
             Net.Unregister(BoughtChannel);
             Net.Unregister(RefusedChannel);
@@ -110,10 +108,6 @@ namespace SpiderSurge
             writer.Write((byte)ChallengeController.Active);
             writer.Write(ChallengeController.Pending);
             writer.Write(ChallengeController.WagerFailed);
-            writer.Write(ChallengeController.HeldLives);
-            writer.Write(ChallengeController.AcceptVotes);
-            writer.Write(ChallengeController.SkipVotes);
-            writer.Write(ChallengeController.Outcome);
         }
 
         public static void SendChallenge(bool accept)
@@ -159,13 +153,9 @@ namespace SpiderSurge
                 var active = (ChallengeKind)reader.ReadByte();
                 bool pending = reader.ReadBoolean();
                 bool failed = reader.ReadBoolean();
-                int held = reader.ReadInt32();
-                int accepts = reader.ReadInt32();
-                int skips = reader.ReadInt32();
-                string outcome = reader.ReadString();
                 PerkShop.ApplyRemoteOffer(visit, purchased, bonus, paid, offer);
                 ChaosWallet.ApplyRemote(points, earned, spent);
-                ChallengeController.ApplyRemote(offered, active, pending, failed, held, accepts, skips, outcome);
+                ChallengeController.ApplyRemote(offered, active, pending, failed);
             }
             catch (Exception ex)
             {

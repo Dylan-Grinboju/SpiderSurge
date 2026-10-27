@@ -239,12 +239,14 @@ namespace SpiderSurge
             };
         }
 
+        // Reduced visual effects keeps a quarter of the shake and the colour fringe
         private static void ApplyCameraEffects(bool deadly, float radius)
         {
             try
             {
-                CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
-                float shakeStrength = deadly ? (radius / 2f) : (radius / 4f);
+                float scale = ModConfig.ReducedEffects ? Consts.Values.Pulse.ReducedCameraEffectScale : 1f;
+                CameraEffects.instance?.DoChromaticAberration(0.5f * scale, 0.02f);
+                float shakeStrength = (deadly ? (radius / 2f) : (radius / 4f)) * scale;
                 CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Pulse.CameraShakeDuration);
             }
             catch (System.Exception ex)
@@ -324,7 +326,6 @@ namespace SpiderSurge
             }
 
             LaunchEnemies(p, deadly);
-            ApplyPulseToRailShotsWithoutColliders(p);
         }
 
         // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
@@ -386,51 +387,6 @@ namespace SpiderSurge
             }
 
             return false;
-        }
-
-        private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
-        {
-            IReadOnlyList<RailShot> railShots = RailShotTracker.All;
-            if (railShots.Count == 0)
-            {
-                return;
-            }
-
-            for (int i = 0; i < railShots.Count; i++)
-            {
-                RailShot railShot = railShots[i];
-                if (railShot == null || !railShot.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                Rigidbody2D rb = railShot.GetComponent<Rigidbody2D>();
-                if (rb == null)
-                {
-                    continue;
-                }
-
-                if (rb.attachedColliderCount > 0)
-                {
-                    continue;
-                }
-
-                Vector2 railShotPosition = rb.position;
-                float distance = Vector2.Distance((Vector2)p.Position, railShotPosition);
-                if (distance > p.KnockBackRadius)
-                {
-                    continue;
-                }
-
-                Vector2 direction = (railShotPosition - (Vector2)p.Position).normalized;
-                if (direction.sqrMagnitude < 0.0001f)
-                {
-                    direction = Vector2.up;
-                }
-
-                rb.velocity = Vector2.zero;
-                rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
-            }
         }
 
         // ─── Explosion Reflection (for stats mod kill tracking) ─────────────────────

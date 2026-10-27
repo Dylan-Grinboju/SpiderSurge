@@ -13,23 +13,13 @@ namespace SpiderSurge
 {
     public static class ChallengeController
     {
-        public const string OutcomeAccepted = "Accepted";
-        public const string OutcomeSkipped = "Skipped";
-        public const string OutcomeCompleted = "Completed";
-        public const string OutcomeFailed = "Failed";
-
         private static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<int>> Lives = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<int>>("_lives");
-        private static readonly Dictionary<ulong, bool> Votes = new Dictionary<ulong, bool>();
         public static ChallengeKind Offered { get; private set; }
         public static ChallengeKind Active { get; private set; }
         public static bool Pending { get; private set; }
         public static bool WagerFailed { get; private set; }
-        public static int HeldLives { get; private set; }
-        public static string Outcome { get; private set; } = "";
-        public static int AcceptVotes { get; private set; }
-        public static int SkipVotes { get; private set; }
+        private static int _heldLives;
         private static Action _loadChosenMap;
-        private static float _lastBlocked;
         private static bool _wasPending;
         private static bool _panelFailed;
         public static float CooldownMultiplier => Active == ChallengeKind.DoubleCooldown ? 2f : 1f;
@@ -57,9 +47,6 @@ namespace SpiderSurge
             var eligible = ChaosRules.Eligible(SurvivalMode.instance.Lives, abilities, ultimate);
             Offered = eligible[UnityEngine.Random.Range(0, eligible.Count)];
             Pending = true;
-            Outcome = "";
-            Votes.Clear();
-            AcceptVotes = SkipVotes = 0;
             ChaosWallet.Record($"Challenge offered: {ChaosRules.Name(Offered)}");
             ChaosNet.MarkDirty();
             Tick();
@@ -71,49 +58,29 @@ namespace SpiderSurge
             }
         }
 
+        // Only the host decides; clients wait on the panel
         public static void Decide(ulong sender, int visit, bool accept)
         {
-            if (!Net.IsAuthority || !Pending || visit != PerkShop.VisitId) return;
-            if (sender != Net.ServerId)
-            {
-                Votes[sender] = accept;
-                UpdateVotes();
-                return;
-            }
+            if (!Net.IsAuthority || sender != Net.ServerId || !Pending || visit != PerkShop.VisitId) return;
             if (accept)
             {
                 SetActive(Offered);
                 WagerFailed = false;
-                if (Active == ChallengeKind.LastHeart)
+                if (Active == ChallengeKind.PoisonedHeart)
                 {
-                    HeldLives = Math.Max(0, SurvivalMode.instance.Lives - 1);
+                    _heldLives = Math.Max(0, SurvivalMode.instance.Lives - 1);
                     Lives(SurvivalMode.instance).Value = 1;
                 }
             }
-            Outcome = accept ? OutcomeAccepted : OutcomeSkipped;
-            ChaosWallet.Record($"Challenge {Outcome.ToLowerInvariant()}: {ChaosRules.Name(Offered)}");
+            ChaosWallet.Record($"Challenge {(accept ? "accepted" : "skipped")}: {ChaosRules.Name(Offered)}");
             Pending = false;
-            Votes.Clear();
-            AcceptVotes = SkipVotes = 0;
             ChaosNet.MarkDirty();
             Tick();
-            // Clients rescale their running cooldowns from this state, so it goes out before play resumes
+            // Clients rescale their running cooldowns from this state, so it goes out before the map loads
             ChaosNet.Flush();
             var load = _loadChosenMap;
             _loadChosenMap = null;
             load?.Invoke();
-        }
-
-        public static void PeerLeft(ulong peer)
-        {
-            if (Votes.Remove(peer)) UpdateVotes();
-        }
-
-        private static void UpdateVotes()
-        {
-            AcceptVotes = Votes.Values.Count(value => value);
-            SkipVotes = Votes.Count - AcceptVotes;
-            ChaosNet.MarkDirty();
         }
 
         public static void Settle()
@@ -121,15 +88,18 @@ namespace SpiderSurge
             if (!Net.IsAuthority || Active == ChallengeKind.None) return;
             var completed = Active;
             int reward = WagerFailed ? 0 : ChaosRules.Reward(completed);
-            int returned = HeldLives;
-            HeldLives = 0;
+            int returned = _heldLives;
+            _heldLives = 0;
             SetActive(ChallengeKind.None);
             if (returned > 0 && SurvivalMode.instance != null && SurvivalMode.instance.Lives > 0)
                 Lives(SurvivalMode.instance).Value = Math.Min(SurvivalMode.instance.MaxLives, SurvivalMode.instance.Lives + returned);
-            Outcome = reward > 0 ? OutcomeCompleted : OutcomeFailed;
-            ChaosWallet.Record($"Challenge {Outcome.ToLowerInvariant()}: {ChaosRules.Name(completed)}; returned {returned} lives");
-            if (reward > 0) ChaosWallet.GrantPoints(reward, ChaosRules.Name(completed));
-            ChaosNet.Announce($"{ChaosRules.Name(completed)}: {(reward > 0 ? ChaosRules.Points(reward, signed: true) : "no reward")}");
+            ChaosWallet.Record($"Challenge {(reward > 0 ? "completed" : "failed")}: {ChaosRules.Name(completed)}; returned {returned} lives");
+            // A failed Life Wager was announced when the life was lost
+            if (reward > 0)
+            {
+                ChaosWallet.GrantPoints(reward, ChaosRules.Name(completed));
+                ChaosNet.Announce($"{ChaosRules.Name(completed)}: {ChaosRules.Points(reward, signed: true)}");
+            }
             WagerFailed = false;
             ChaosWallet.Notify();
         }
@@ -150,19 +120,13 @@ namespace SpiderSurge
             }
         }
 
-        // Called after the press passed the ability's own checks; feedback is only for presses made on this machine
-        public static bool CanActivate(bool ultimate, bool feedback)
+        // Called after the press passed the ability's own checks
+        public static bool CanActivate(bool ultimate)
         {
-            bool blocked = Pending || (ultimate ? Active == ChallengeKind.NoUltimate : Active == ChallengeKind.NoRegularAbilities);
-            if (blocked && feedback && !Pending && Time.unscaledTime - _lastBlocked > 1f)
-            {
-                _lastBlocked = Time.unscaledTime;
-                Toast.Show($"{(ultimate ? "Ultimates" : "Regular abilities")} disabled until the next map choice", Hud.Pink);
-            }
-            return !blocked;
+            return !Pending && (ultimate ? Active != ChallengeKind.NoUltimate : Active != ChallengeKind.NoRegularAbilities);
         }
 
-        // Accepting Double Cooldown also doubles cooldowns already running, like Null Field's after the map change. Its end needs no rescale:
+        // Accepting Double Cooldown also doubles cooldowns still running from the old map; the new map's spiders start with the doubled multiplier. Its end needs no rescale:
         // it ends at a wave's completion, and the next wave's start and the new map's spiders reset every cooldown before anyone can cast again
         private static void SetActive(ChallengeKind kind)
         {
@@ -178,25 +142,18 @@ namespace SpiderSurge
             Pending = false;
             Offered = ChallengeKind.None;
             SetActive(ChallengeKind.None);
-            HeldLives = 0;
+            _heldLives = 0;
             WagerFailed = false;
-            Votes.Clear();
-            AcceptVotes = SkipVotes = 0;
-            Outcome = "";
             Tick();
             ChaosNet.MarkDirty();
         }
 
-        internal static void ApplyRemote(ChallengeKind offered, ChallengeKind active, bool pending, bool failed, int held, int accepts, int skips, string outcome)
+        internal static void ApplyRemote(ChallengeKind offered, ChallengeKind active, bool pending, bool failed)
         {
             Offered = offered;
             SetActive(active);
             Pending = pending;
             WagerFailed = failed;
-            HeldLives = held;
-            AcceptVotes = accepts;
-            SkipVotes = skips;
-            Outcome = outcome;
             Tick();
         }
 

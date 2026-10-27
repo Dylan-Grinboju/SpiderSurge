@@ -22,7 +22,7 @@ namespace SpiderSurge
             page.Spacer();
             page.Header("Play");
             page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
-            page.Note("Removes the perk-choice countdown. Select a card to lock it, then move down to Confirm when everyone is ready. The starting ability choice works the same way.");
+            page.Note("Removes the perk-choice countdown. Select a card to lock it, then move down to Confirm when everyone is ready. The starting ability choice always works this way, with or without this setting.");
             page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
             page.Note("Surge Survival runs have no abilities, no ultimates and no ability perks: the first perk choice is a normal one, and waves 30 and 60 bring no ultimate choice. Luck still appears. Applies from the next run.");
             page.Paragraph($"<size=95%><color={SettingsPage.Gray}>Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)}. Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. To move your controller's ability, hold Select and double-tap another button.</color></size>");
@@ -30,7 +30,7 @@ namespace SpiderSurge
             page.Spacer();
             page.Header("Effects");
             page.Toggle("Reduced visual effects", ModConfig.ReducedEffectsKey);
-            page.Note("Softens decorative flashes and particles. Danger rings and warnings stay visible.");
+            page.Note("Softens decorative flashes, particles and Kinetic Pulse's screen shake. Danger rings and warnings stay visible.");
 
             page.Spacer();
             page.Header("Sound");

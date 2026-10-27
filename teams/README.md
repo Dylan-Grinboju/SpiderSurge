@@ -15,7 +15,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split
 - **Team Visuals**: Recolor spiders in their team's color, show a team marker above each spider, both, or neither.
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
 - **Team Win Screen**: The win screen and the lobby summary show each team's score and members.
-- **Surge Abilities**: With the [Surge](../surge/README.md) part on, give every spider the same Surge ability in versus, with its ultimate and perks if you like.
+- **Surge Abilities**: Give every spider the same [Surge](../surge/README.md) ability in versus, with its ultimate and perks if you like.
 - **In-Game Settings**: Every setting can be changed from the versus setup page, including moving players between teams.
 
 ## Turning it on

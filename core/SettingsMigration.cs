@@ -40,8 +40,6 @@ namespace SpiderSurge.Common
             { "visuals.recolorSpiders", "teams.recolorSpiders" },
             { "visuals.showMarker", "teams.showMarker" },
             { "spawns.groupTeammates", "teams.groupTeammates" },
-            { "input.cycleTeamGamepad", "teams.buttonGamepad" },
-            { "input.cycleTeamKeyboard", "teams.buttonKeyboard" },
             { "surge.enabled", "teams.surge.enabled" },
             { "surge.ability", "teams.surge.ability" },
             { "surge.ultimate", "teams.surge.ultimate" },
