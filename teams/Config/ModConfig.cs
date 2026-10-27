@@ -33,8 +33,6 @@ namespace SpiderTeams
         public static bool RecolorSpiders { get; private set; } = Consts.Defaults.RecolorSpiders;
         public static bool ShowMarker { get; private set; } = Consts.Defaults.ShowMarker;
         public static bool GroupTeammates { get; private set; } = Consts.Defaults.GroupTeammates;
-        public static string CycleTeamGamepad => Controls.TeamController;
-        public static string CycleTeamKeyboard => Controls.TeamKeyboard;
         public static bool SurgeEnabled { get; private set; } = Consts.Defaults.SurgeEnabled;
         public static SurgeAbility SurgeAbility { get; private set; } = DefaultSurgeAbility;
         public static bool SurgeUltimate { get; private set; } = Consts.Defaults.SurgeUltimate;

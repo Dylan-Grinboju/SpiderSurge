@@ -5,7 +5,7 @@ namespace SpiderSurge
 {
     public enum ChallengeKind : byte
     {
-        None, LastHeart, DoubleCooldown, NoRegularAbilities, LifeWager, NoUltimate, Overrun
+        None, PoisonedHeart, DoubleCooldown, NoRegularAbilities, LifeWager, NoUltimate, Overrun
     }
 
     public static class ChaosRules
@@ -14,7 +14,7 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.LastHeart: return "Last Heart";
+                case ChallengeKind.PoisonedHeart: return "Poisoned Heart";
                 case ChallengeKind.DoubleCooldown: return "Double Cooldown";
                 case ChallengeKind.NoRegularAbilities: return "No Regular Abilities";
                 case ChallengeKind.LifeWager: return "Life Wager";
@@ -28,7 +28,7 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.LastHeart: return "Survive with 1 team life.";
+                case ChallengeKind.PoisonedHeart: return "Survive with 1 team life. The other lives come back when the challenge ends.";
                 case ChallengeKind.DoubleCooldown: return "Double all ability cooldowns.";
                 case ChallengeKind.NoRegularAbilities: return "Survive without regular abilities.";
                 case ChallengeKind.LifeWager: return "Lose no team lives. Failure costs 1 chaos point.";
@@ -39,12 +39,12 @@ namespace SpiderSurge
         }
 
         public static int Reward(ChallengeKind kind) => kind == ChallengeKind.None ? 0 :
-            kind == ChallengeKind.LastHeart || kind == ChallengeKind.NoRegularAbilities || kind == ChallengeKind.Overrun ? 2 : 1;
+            kind == ChallengeKind.PoisonedHeart || kind == ChallengeKind.NoRegularAbilities || kind == ChallengeKind.Overrun ? 2 : 1;
 
         public static List<ChallengeKind> Eligible(int lives, bool abilities, bool ultimate)
         {
             var result = new List<ChallengeKind> { ChallengeKind.LifeWager, ChallengeKind.Overrun };
-            if (lives >= 2) result.Add(ChallengeKind.LastHeart);
+            if (lives >= 2) result.Add(ChallengeKind.PoisonedHeart);
             if (abilities)
             {
                 result.Add(ChallengeKind.DoubleCooldown);

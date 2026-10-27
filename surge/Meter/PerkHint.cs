@@ -7,10 +7,10 @@ using M = SpiderSurge.Consts.Values.Chaos;
 
 namespace SpiderSurge
 {
-    // A line under the focused or locked card explains its perk synergy.
+    // A line under the focused or locked card explains its perk synergy, or warns about the ability's downside
     public class PerkHint : MonoBehaviour
     {
-        public const string ObjectName = "ChaosWalletHint";
+        public const string ObjectName = "SurgePerkHint";
         private const float Width = 640f;
         private const float Height = 40f;
         private const float Gap = 10f;
@@ -124,9 +124,13 @@ namespace SpiderSurge
 
         private static string Compose(string key, int level)
         {
+            if (key == Consts.PerkNames.AmmoAbility)
+                return HasEfficiency() ? "" : $"<color={Consts.Formatting.ColorGold}>Note:</color> Without Efficiency, most weapons disintegrate when Bottomless Clip ends or you drop them.";
             string synergy = PerkSynergy.Describe(key, level);
             if (synergy != null) return $"<color={Consts.Formatting.ColorGold}>Synergy:</color> {synergy}";
             return "";
         }
+
+        private static bool HasEfficiency() => ModifierManager.instance != null && ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency) > 0;
     }
 }

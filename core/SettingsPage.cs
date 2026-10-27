@@ -436,7 +436,7 @@ namespace SpiderSurge.Common
                 Note("Browse achievements and the title collection, see unlock requirements, and check what you earned recently.");
             }
             Button("Mod parts", () => Open("parts"));
-            Note("Surge, Stats and Teams always load. Game fixes can be turned on or off after restarting.");
+            Note("Surge, Stats and Teams always load. Game fixes can be turned on or off; the change takes effect after restarting.");
             Button("Match history", () => Open("history"));
             Note("Review saved Survival and Versus results, including players, maps, perks, titles and weapon accuracy.");
             Button("General", () => Open("general"));
@@ -449,7 +449,7 @@ namespace SpiderSurge.Common
         {
             Title("Mod parts");
             Note("Hide Stats from its settings page; choose team versus from the versus setup page in the lobby.");
-            Note("Turning a part on or off takes effect after restarting the game.");
+            Note("Turning Game fixes on or off takes effect after restarting the game.");
             foreach (Part part in MenuOrder)
             {
                 Spacer();

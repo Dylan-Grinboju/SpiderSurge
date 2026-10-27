@@ -183,6 +183,7 @@ namespace SpiderSurge
                 public const float UltimateBaseDeathRadius = 100f;
                 public const float UltimateDeathRadiusIncreasePerLevel = 30f;
                 public const float CameraShakeDuration = 5f;
+                public const float ReducedCameraEffectScale = 0.25f;
 
                 // Visuals
                 public static readonly UnityEngine.Color RingColor = new UnityEngine.Color(0f, 0.7f, 1f, 0.8f); // Light blue
@@ -270,7 +271,7 @@ namespace SpiderSurge
                 public const float SideMargin = 27f;
                 public const float BottomMargin = 6f;
                 public const float MinCardFactor = 0.5f;
-                public const float WalletBlockHeight = 38f;
+                public const float WalletBlockHeight = 29f;
                 public const float MinEntryHeight = 56f;
                 public const float MaxEntryHeight = 96f;
                 public const float EntrySpacing = 5f;
@@ -498,7 +499,7 @@ namespace SpiderSurge
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
-                [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Knockback deals lethal damage</color>",
+                [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Kills nearby enemies; the wider pulse knocks the rest back</color>",
                 [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">For 3 seconds, pull the enemies and spiders around you toward you; whatever reaches you goes into the pocket dimension</color>",
                 [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn back time on nearby enemies, turning them into wasps. Shields stay</color>"
             };
@@ -529,12 +530,13 @@ namespace SpiderSurge
 
             // Custom descriptions for Duration perk based on active ability
             private const string DURATION_DESC_WITH_PULSE = "Increases knockback ability area of effect";
-            private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases ultimate pulse area of effect";
+            private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases Thermal Detonation's knockback area";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases Black Hole range";
             private const string DURATION_DESC_WITH_FREEZE = "Freezes enemies for longer and farther away";
             private const string DURATION_UPGRADE_DESC_WITH_FREEZE = "Increases rewind range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
+            private static readonly string DURATION_UPGRADE_DESC_WITH_IMMUNE = $"Neural Backup casts {Values.Immune.UltimateDurationIncreasePerLevel:0.#} seconds faster";
 
             public static string GetDisplayName(string name, PerksManager perksManager = null)
             {
@@ -594,6 +596,10 @@ namespace SpiderSurge
                 if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
                 {
                     return DURATION_UPGRADE_DESC_WITH_AMMO;
+                }
+                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ImmuneAbility) > 0)
+                {
+                    return DURATION_UPGRADE_DESC_WITH_IMMUNE;
                 }
                 return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
             }

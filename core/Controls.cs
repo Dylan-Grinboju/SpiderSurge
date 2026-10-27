@@ -117,7 +117,7 @@ namespace SpiderSurge.Common
         }
 
         // While a pad holds Select for the ability remap, no mod button reacts to it
-        public static bool Ignored(InputDevice device) => SpiderSurge.PlayerControlSettings.IsMenuHeld(device);
+        public static bool Ignored(InputDevice device) => SpiderSurge.PlayerControlSettings.IsSelectHeld(device);
 
         public static string Display(string binding) => $"<noparse>{Label(binding)}</noparse>";
 

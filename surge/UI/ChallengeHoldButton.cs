@@ -24,7 +24,7 @@ namespace SpiderSurge
             _button = button;
             _accept = accept;
             _canvas = GetComponentInParent<Canvas>();
-            if (Net.IsAuthority) SettingsPage.SetText(label, $"Hold {title} · 2s");
+            SettingsPage.SetText(label, $"Hold {title} · 2s");
             var bar = new GameObject("Hold progress", typeof(RectTransform), typeof(Image));
             _progress = (RectTransform)bar.transform;
             _progress.SetParent(transform, false);

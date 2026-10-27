@@ -45,14 +45,22 @@ namespace SpiderSurge
             float width = Mathf.Min(700f, ((RectTransform)hud.perkChoiceView.transform).rect.width - 48f);
             _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(ChallengeController.Offered), new Vector2(0, 70), new Vector2(width - 40, 90), 27);
             _current.Text(template.perkNameText, "Reward", $"Complete for {ChaosRules.Points(ChaosRules.Reward(ChallengeController.Offered), signed: true)}", Vector2.zero, new Vector2(width, 40), 21);
-            float buttonWidth = Mathf.Min(250f, (width - 30f) / 2f);
-            _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -80), buttonWidth, true);
-            _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -80), buttonWidth, false);
-            var nav = new Navigation { mode = Navigation.Mode.Explicit, selectOnRight = _current._skip };
-            _current._accept.navigation = nav;
-            nav.selectOnRight = null;
-            nav.selectOnLeft = _current._accept;
-            _current._skip.navigation = nav;
+            // Only the host answers, so a client only sees that it is waiting
+            if (Net.IsRemoteClient)
+            {
+                _current.Text(template.perkNameText, "Waiting", "Waiting for the host to accept or skip", new Vector2(0, -80), new Vector2(width, 40), 19);
+            }
+            else
+            {
+                float buttonWidth = Mathf.Min(250f, (width - 30f) / 2f);
+                _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -80), buttonWidth, true);
+                _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -80), buttonWidth, false);
+                var nav = new Navigation { mode = Navigation.Mode.Explicit, selectOnRight = _current._skip };
+                _current._accept.navigation = nav;
+                nav.selectOnRight = null;
+                nav.selectOnLeft = _current._accept;
+                _current._skip.navigation = nav;
+            }
             _current.SetVisible(visible);
             if (visible) _current.Refresh();
         }
@@ -63,6 +71,7 @@ namespace SpiderSurge
             if (_canvas.enabled == visible) return;
             _canvas.enabled = visible;
             _raycaster.enabled = visible;
+            if (_accept == null || _skip == null) return;
             _accept.interactable = _skip.interactable = visible;
             if (!visible)
             {
@@ -95,6 +104,7 @@ namespace SpiderSurge
             return text;
         }
 
+        // Host only: the hold on the button sends the answer
         private Button Button(SurvivalModeHud hud, string title, Vector2 position, float width, bool accept)
         {
             var obj = Instantiate(hud.perkCardPrefab, transform);
@@ -117,10 +127,6 @@ namespace SpiderSurge
             rect.sizeDelta = new Vector2(width, 48);
             var button = obj.GetComponent<Button>();
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() =>
-            {
-                if (Net.IsRemoteClient) ChaosNet.SendChallenge(accept);
-            });
             obj.AddComponent<ChallengeHoldButton>().Initialize(button, text, title, accept);
             return button;
         }

@@ -46,7 +46,6 @@ namespace SpiderSurge.Integration
         private const string ReqMostPulseAbility = "SurgeMostPulseAbility";
         private const string ReqMostImmuneUlt = "SurgeMostImmuneUlt";
         private const string ReqMostPulseUlt = "SurgeMostPulseUlt";
-        private const string ReqMostMeter = "SurgeMostMeter";
 
         private static string GetActiveAbilityType()
         {
