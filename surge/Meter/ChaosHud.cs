@@ -1,7 +1,6 @@
 using SpiderSurge.Common;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -39,16 +38,16 @@ namespace SpiderSurge
             GameObject root = null;
             try
             {
-                root = new GameObject("ChaosHud", typeof(RectTransform), typeof(LayoutElement));
-                root.GetComponent<LayoutElement>().ignoreLayout = true;
+                root = new GameObject("ChaosHud", typeof(RectTransform));
                 var rect = (RectTransform)root.transform;
                 rect.SetParent(hud.survivalHud.transform, false);
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
-                rect.anchoredPosition = new Vector2(35, -62);
-                rect.sizeDelta = new Vector2(470, 60);
+                rect.sizeDelta = new Vector2(470, 54);
                 var chaos = root.AddComponent<ChaosHud>();
-                chaos._points = chaos.Label(hud.livesCounter, "Points", 0, 17);
-                chaos._challenge = chaos.Label(hud.livesCounter, "Challenge", -25, 14);
+                chaos._points = chaos.Label(hud.livesCounter, "Points", 0, 15);
+                chaos._points.alignment = TextAlignmentOptions.Left;
+                chaos._points.rectTransform.sizeDelta = new Vector2(470, 50);
+                chaos._challenge = chaos.Label(hud.livesCounter, "Challenge", -54, 14);
                 _instance = chaos;
             }
             catch (System.Exception ex)
@@ -64,7 +63,7 @@ namespace SpiderSurge
             if (ChaosWallet.Points != _shownPoints)
             {
                 _shownPoints = ChaosWallet.Points;
-                _points.text = $"Team chaos points: {_shownPoints}";
+                _points.text = $"chaos point: {_shownPoints}";
             }
             AnimatePoints();
             string status = ChallengeController.Status;
