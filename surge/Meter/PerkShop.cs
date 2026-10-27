@@ -38,6 +38,17 @@ namespace SpiderSurge
         public static event Action OfferChanged;
         public static int VisitId { get; private set; }
         public static int PurchasedMask { get; private set; }
+        public static string PurchasedPerkKey { get; private set; } = "";
+        public static Modifier PurchasedPerk
+        {
+            get
+            {
+                var manager = ModifierManager.instance;
+                if (!SoldOut(ShopItem.Perk) || string.IsNullOrEmpty(PurchasedPerkKey) || manager == null) return null;
+                int id = manager.GetModId(PurchasedPerkKey);
+                return id >= 0 ? manager.GetModById(id) : null;
+            }
+        }
         public static int BonusSlot { get; private set; } = -1;
         public static bool BonusPaid { get; private set; }
         private static int _visitWave = -1;
@@ -52,6 +63,7 @@ namespace SpiderSurge
             _visitWave = wave;
             VisitId++;
             PurchasedMask = 0;
+            PurchasedPerkKey = "";
             BonusPaid = false;
             BonusSlot = ChaosRules.BonusSlot(UnityEngine.Random.value, upcoming.Count, UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count)));
             RollOffer(upcoming);
@@ -85,19 +97,21 @@ namespace SpiderSurge
         {
             VisitId++;
             PurchasedMask = 0;
+            PurchasedPerkKey = "";
             BonusSlot = -1;
             BonusPaid = false;
             _visitWave = -1;
             SetOffer(new ShopItem[0]);
         }
 
-        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer)
+        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer, string purchasedPerk)
         {
             if (!Net.IsRemoteClient) return;
             // The cards can show before this state arrives, so the bonus label follows the state too
             bool relabel = visit != VisitId || bonus != BonusSlot;
             VisitId = visit;
             PurchasedMask = purchased;
+            PurchasedPerkKey = purchasedPerk ?? "";
             BonusSlot = bonus;
             BonusPaid = paid;
             SetOffer(offer ?? new ShopItem[0]);
@@ -327,6 +341,7 @@ namespace SpiderSurge
             }
             string title = string.IsNullOrEmpty(perk.data.title) ? perk.data.key : perk.data.title;
             StatsMod.GameSessionManager.Instance?.RecordPerk(title + " (shop)");
+            PurchasedPerkKey = perk.data.key;
             return perk.data.key;
         }
 

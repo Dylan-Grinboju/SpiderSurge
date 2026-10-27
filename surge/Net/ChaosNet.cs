@@ -100,6 +100,7 @@ namespace SpiderSurge
             writer.Write(ChaosWallet.PointsSpent);
             writer.Write(PerkShop.VisitId);
             writer.Write(PerkShop.PurchasedMask);
+            writer.Write(PerkShop.PurchasedPerkKey);
             writer.Write(PerkShop.BonusSlot);
             writer.Write(PerkShop.BonusPaid);
             writer.Write((byte)PerkShop.Offer.Length);
@@ -145,6 +146,7 @@ namespace SpiderSurge
                 int spent = reader.ReadInt32();
                 int visit = reader.ReadInt32();
                 int purchased = reader.ReadInt32();
+                string purchasedPerk = reader.ReadString();
                 int bonus = reader.ReadInt32();
                 bool paid = reader.ReadBoolean();
                 var offer = new ShopItem[reader.ReadByte()];
@@ -153,7 +155,7 @@ namespace SpiderSurge
                 var active = (ChallengeKind)reader.ReadByte();
                 bool pending = reader.ReadBoolean();
                 bool failed = reader.ReadBoolean();
-                PerkShop.ApplyRemoteOffer(visit, purchased, bonus, paid, offer);
+                PerkShop.ApplyRemoteOffer(visit, purchased, bonus, paid, offer, purchasedPerk);
                 ChaosWallet.ApplyRemote(points, earned, spent);
                 ChallengeController.ApplyRemote(offered, active, pending, failed);
             }

@@ -74,6 +74,7 @@ namespace SpiderSurge
                 foreach (ChallengeKind kind in new[] { ChallengeKind.PoisonedHeart, ChallengeKind.DoubleCooldown, ChallengeKind.NoRegularAbilities, ChallengeKind.LifeWager, ChallengeKind.NoUltimate, ChallengeKind.Overrun })
                     page.Line(Section(ChaosRules.Name(kind) + $" · +{ChaosRules.Reward(kind)}", ChaosRules.Description(kind)));
                 page.Line("Press right from the last perk card to enter the shop, select an item, then select Buy. A perk's synergy is explained below the cards.");
+                page.Line("After buying Mystery Perk, its shop slot reveals the perk's icon, name and description for the rest of that visit.");
                 page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice always works this way.");
                 page.Line("Use Menu, Escape, or the controller's Menu button during a perk choice to open settings or leave. Resume returns to the current choice. Press up from a card to reach Menu with a controller.");
                 return;
