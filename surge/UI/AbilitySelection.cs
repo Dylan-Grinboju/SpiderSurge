@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using Unity.Netcode;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace SpiderSurge
@@ -15,10 +17,13 @@ namespace SpiderSurge
         private static readonly MethodInfo ShowCards = AccessTools.Method(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc");
         private static readonly MethodInfo SubmitCard = AccessTools.Method(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc");
         private static readonly MethodInfo FailWave = AccessTools.Method(typeof(SurvivalMode), "FailWave");
+        private static readonly MethodInfo ReEnableInputs = AccessTools.Method(typeof(LevelController), "ReEnableInputs");
 
         private static bool pending;
         private static float closeUntil = -1f;
         private static NetworkSceneManager _scenes;
+        private static Coroutine _loading;
+        private static LevelController _loadingController;
         public static bool IsChoosing { get; private set; }
 
         // Only the host runs the starting choice; a client knows it is on screen from the synced first-selection flag
@@ -34,6 +39,9 @@ namespace SpiderSurge
 
         public static void Reset(bool instant = true)
         {
+            if (_loading != null && _loadingController != null) _loadingController.StopCoroutine(_loading);
+            _loading = null;
+            _loadingController = null;
             if (IsChoosing)
             {
                 var hud = SurvivalModeHud.instance;
@@ -45,6 +53,49 @@ namespace SpiderSurge
             Listen(false);
             pending = false;
             IsChoosing = false;
+        }
+
+        // Keep the loading cover until the ability cards are ready, without depending on the host's paused game clock.
+        public static bool HoldLoading(LevelController controller)
+        {
+            if (!SurgeGameModeManager.IsSurgeRunActive || SurgeGameModeManager.AbilitiesDisabled
+                || !(Net.IsAuthority ? pending : StartingChoiceOpen)) return false;
+            string scene = SceneManager.GetActiveScene().name;
+            if (scene == controller.lobby.name || scene == controller.waitingRoom.name) return false;
+            if (_loading != null) return true;
+            controller.CancelInvoke("ReEnableInputs");
+            _loadingController = controller;
+            _loading = controller.StartCoroutine(FinishLoading(controller, SceneManager.GetActiveScene().handle));
+            return true;
+        }
+
+        private static IEnumerator FinishLoading(LevelController controller, int scene)
+        {
+            try
+            {
+                yield return new WaitForSecondsRealtime(1f);
+                while (Net.IsRemoteClient && StartingChoiceOpen && !StartingCardsReady())
+                {
+                    if (controller == null || SceneManager.GetActiveScene().handle != scene) yield break;
+                    yield return null;
+                }
+                if (controller == null || SceneManager.GetActiveScene().handle != scene) yield break;
+                ReEnableInputs.Invoke(controller, null);
+                if (Net.IsAuthority) BeforeWave();
+                if (StartingChoiceOpen) GameController.instance?.DisableInputs();
+            }
+            finally
+            {
+                _loading = null;
+                _loadingController = null;
+            }
+        }
+
+        private static bool StartingCardsReady()
+        {
+            var hud = SurvivalModeHud.instance;
+            return hud != null && hud.perkChoiceView != null && hud.perkChoiceView.IsVisible
+                && PerkChoiceWidget.Cards(hud).Any(card => card.modifier?.data != null && PerksManager.Instance.IsAbilityPerk(card.modifier.data.key));
         }
 
         // Hold the first wave on its loaded map until the shared ability has been chosen.
@@ -146,6 +197,12 @@ namespace SpiderSurge
             PerksManager.Instance.RefreshAbilityRegistrations();
             SurgeNet.SendStateNow();
         }
+    }
+
+    [HarmonyPatch(typeof(LevelController), nameof(LevelController.HideLoadingScene))]
+    internal static class StartingAbilityLoadingPatch
+    {
+        static bool Prefix(LevelController __instance) => !AbilitySelection.HoldLoading(__instance);
     }
 
     [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
