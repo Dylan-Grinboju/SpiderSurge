@@ -288,7 +288,7 @@ namespace SpiderSurge
 
             public static class Enemies
             {
-                public const float SpeedMultiplier = 1.2f;
+                public const float SpeedMultiplier = 1.1f;
                 public const float SpawnCountMultiplier = 2.1f;
                 public const int WavesPerCapacityIncrease = 8;
                 public const float SpawnInterval = 2.5f;
