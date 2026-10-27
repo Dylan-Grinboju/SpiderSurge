@@ -28,7 +28,7 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.PoisonedHeart: return "Survive with 1 team life. The other lives come back when the challenge ends.";
+                case ChallengeKind.PoisonedHeart: return "Survive with 1 life. The other lives come back when the challenge ends.";
                 case ChallengeKind.DoubleCooldown: return "Double all ability cooldowns.";
                 case ChallengeKind.NoRegularAbilities: return "Survive without abilities. Ultimates remain usable.";
                 case ChallengeKind.LifeWager: return "Lose no team lives. Failure costs 1 chaos point.";
