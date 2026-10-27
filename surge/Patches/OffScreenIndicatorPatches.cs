@@ -1,11 +1,10 @@
 using HarmonyLib;
-using SpiderSurge.Enemies;
 using UnityEngine;
 
 namespace SpiderSurge
 {
     [HarmonyPatch(typeof(OffScreenIndicator), "Update")]
-    internal static class OffScreenIndicator_LaserShield_Patch
+    internal static class OffScreenIndicator_Shield_Patch
     {
         private static readonly AccessTools.FieldRef<OffScreenIndicator, EnemyHealthSystem> Health = AccessTools.FieldRefAccess<OffScreenIndicator, EnemyHealthSystem>("hs");
         private static readonly AccessTools.FieldRef<OffScreenIndicator, SpriteRenderer> Indicator = AccessTools.FieldRefAccess<OffScreenIndicator, SpriteRenderer>("_indicatorSprite");
@@ -18,8 +17,8 @@ namespace SpiderSurge
             SpriteRenderer indicator = Indicator(__instance);
             if (enemy == null || indicator == null) return;
             GameObject shield = enemy.shield;
-            Color color = shield != null && shield.activeInHierarchy && shield.GetComponent<LaserRing>() != null
-                ? Consts.Values.LaserRing.Color : OriginalColor(__instance);
+            Color color = shield != null && shield.activeInHierarchy
+                ? Consts.Values.Colors.ShieldedEnemyIndicatorColor : OriginalColor(__instance);
             if (indicator.color != color) indicator.color = color;
         }
     }

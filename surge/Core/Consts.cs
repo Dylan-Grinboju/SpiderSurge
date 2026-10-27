@@ -368,6 +368,7 @@ namespace SpiderSurge
 
             public static class Colors
             {
+                public static readonly UnityEngine.Color ShieldedEnemyIndicatorColor = new UnityEngine.Color(0.7f, 0.25f, 1f, 1f);
                 public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.1f, 0.85f, 1f, 1f);
                 public static readonly UnityEngine.Color MissileWhispLightColor = new UnityEngine.Color(1f, 0.8f, 0f, 1f);
             }
