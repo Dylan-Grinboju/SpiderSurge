@@ -97,7 +97,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 
 The ability and ultimate keys are fixed, so they are not in the file. An older `surge.dpadUltimate` is ignored.
 
-`surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The starting ability choice always locks first and uses Confirm. The host's setting applies online. Default: `true`.
+`surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The starting ability choice always locks first and uses Confirm. A card keeps the controller focus while the mouse passes over a disabled Confirm or Buy button, or when a menu or click clears the selection. The host's setting applies online. Default: `true`.
 
 `surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck and the chaos economy remain available; ability challenges are excluded. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
 

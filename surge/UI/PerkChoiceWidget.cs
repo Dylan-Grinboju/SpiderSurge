@@ -142,6 +142,11 @@ namespace SpiderSurge
         }
     }
 
+    // Marks the Confirm and Buy buttons: disabled, they mean nothing to do, so the focus must not rest on them the way it may on a shop entry a pad walks through
+    public sealed class PerkActionButton : MonoBehaviour
+    {
+    }
+
     // A perk card's scale built from its vanilla scale, the shop layout's factor and the lock highlight, so repeated layouts never compound and Doozy's punches return to it
     public class PerkCardScale : MonoBehaviour
     {
