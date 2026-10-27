@@ -457,7 +457,7 @@ namespace SpiderSurge
             int points = ChaosWallet.Points;
             if (_header != null)
             {
-                _header.text = $"Team chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
+                _header.text = $"chaos point: <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)

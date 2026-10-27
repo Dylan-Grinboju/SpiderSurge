@@ -67,7 +67,7 @@ namespace SpiderSurge
             if (section == Page + ".chaos")
             {
                 page.Title("Chaos points and challenges");
-                page.Line("Chaos points belong to the team. Spend them in the shop at map choices; unspent points carry forward. Ability use does not earn points.");
+                page.Line("Chaos points belong to the team. The counter in the top HUD briefly grows and glows gold when points are earned. Spend them in the shop at map choices; unspent points carry forward. Ability use does not earn points.");
                 page.Line("Each map choice has a <b>75% chance</b> to mark one card with <b>+1 chaos point</b>. Choose that map to earn it. Rerolls keep the bonus on the same card slot.");
                 page.Line($"Each shop offers two items: <color={Gold}>1</color> Reroll, <color={Gold}>2</color> Extra Life, <color={Gold}>3</color> Mystery Perk, <color={Gold}>5</color> Bigger Heart (+1 maximum life and +1 life), or Blood Pact (one life for one point). Each item can be bought <b>once per visit by the team</b>. Rerolling does not restock it.");
                 page.Line("After choosing a map, accept or skip an optional challenge. It lasts until the next map choice, including retries. Rewards arrive before the next shop. The host accepts or skips for the team.");
