@@ -298,6 +298,7 @@ namespace SpiderSurge
         {
             GameObject buyObject = Instantiate(_hud.perkCardPrefab, transform);
             buyObject.name = "Shop Buy";
+            buyObject.AddComponent<PerkActionButton>();
             var card = buyObject.GetComponent<SurvivalModifierChoiceCard>();
             _buy = buyObject.GetComponent<Button>();
             _buyBackground = buyObject.GetComponent<Image>();
