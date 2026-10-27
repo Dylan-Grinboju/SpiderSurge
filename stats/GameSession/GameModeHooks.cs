@@ -52,14 +52,22 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SurvivalMode), "CompleteWave")]
+    // Patched on the coroutine body, not its stub: the game's call to the tiny stub is inlined, so a prefix there never runs in play.
+    // The first MoveNext respawns the dead and clears _waveInProgress, so the clutch is checked while the flag is still set
+    [HarmonyPatch]
     public class SurvivalModeCompleteWavePatch
     {
-        static void Prefix(SurvivalMode __instance)
+        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
+
+        static System.Reflection.MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "CompleteWave"));
+
+        static void Prefix()
         {
             try
             {
-                SpiderSurge.Common.MatchHistory.MarkSurvivalCompletion(__instance);
+                SurvivalMode instance = SurvivalMode.instance;
+                if (instance == null || !WaveInProgress(instance)) return;
+                SpiderSurge.Common.MatchHistory.MarkSurvivalCompletion(instance);
                 GameSessionManager.Instance.CheckWaveClutch();
             }
             catch (Exception ex)

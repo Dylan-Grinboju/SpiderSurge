@@ -108,6 +108,11 @@ namespace SpiderSurge.Common
                 {
                     values["teams.enabled"] = false;
                 }
+                // SpiderTeams defaulted to on and only wrote keys the player changed, so a file without the key means team versus was on
+                else if (teams != null && Find(teams, "teams.enabled") == null)
+                {
+                    values["teams.enabled"] = true;
+                }
                 bool updates = !IsFalse(Find(stats, "updater.checkForUpdates")) && !IsFalse(Find(teams, "updater.checkForUpdates"));
                 if (!upgraded || !updates)
                 {
