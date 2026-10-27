@@ -84,6 +84,7 @@ namespace SpiderSurge
                 float entryHeight = count > 0 ? Mathf.Clamp((height - M.WalletBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
                 panel.Populate(entryHeight);
                 panel.LinkNavigation();
+                PerkChoiceMenu.LinkNavigation(hud);
                 panel.Refresh();
                 if (panel.isActiveAndEnabled) panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();

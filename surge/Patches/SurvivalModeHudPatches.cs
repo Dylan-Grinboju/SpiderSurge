@@ -24,6 +24,7 @@ namespace SpiderSurge
         // The host runs this twice per show (Netcode runs its own copy of the RPC inside the send) and every machine runs it for a resend aimed at a joining player, so the widgets are only built for new cards
         internal static void Apply(SurvivalModeHud __instance, bool rebuild)
         {
+            PerkChoiceMenu.Attach(__instance);
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             PerkChoiceHud.Attach(__instance);
             if (PerksManager.Instance == null) return;
@@ -42,6 +43,7 @@ namespace SpiderSurge
                 PerkConfirmButton.Build(__instance);
                 PerkShopPanel.Build(__instance);
                 PerkHint.Build(__instance);
+                PerkChoiceMenu.LinkNavigation(__instance);
             }
             MapBonusLabels.Refresh();
 
