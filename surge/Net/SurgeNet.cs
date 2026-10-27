@@ -40,6 +40,7 @@ namespace SpiderSurge
         ChargeCalmed = 7,
         HatchCancelled = 8,
         CocoonPulse = 9,
+        SpiderFrozen = 10,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -188,7 +189,19 @@ namespace SpiderSurge
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
 
-            // Players join a run already going, so they also get the enemies Freeze Time is holding right now; the Black Hole's holds aren't shown as frozen
+            // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.
+            foreach (FrozenSpider frozen in UnityEngine.Object.FindObjectsOfType<FrozenSpider>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = frozen.TimeLeft;
+                if (target == null || !target.IsSpawned || left <= 0f) continue;
+                Net.SendTo(clientId, EnemyChannel, writer =>
+                {
+                    writer.Write((byte)EnemyFx.SpiderFrozen);
+                    writer.Write(target.NetworkObjectId);
+                    writer.Write(left);
+                });
+            }
             foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
             {
                 NetworkObject target = frozen.GetComponent<NetworkObject>();
@@ -456,6 +469,9 @@ namespace SpiderSurge
             }
             switch (fx)
             {
+                case EnemyFx.SpiderFrozen:
+                    FrozenSpider.ShowFrozen(target, value);
+                    break;
                 case EnemyFx.Frozen:
                     FrozenEnemy.ShowFrozen(target.GetComponent<EnemyHealthSystem>(), value);
                     break;
