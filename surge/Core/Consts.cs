@@ -298,6 +298,11 @@ namespace SpiderSurge
                 public const float CocoonSpawnInterval = 7f;
                 public const float CocoonFirstHatchDelay = 1f;
                 public const int CocoonMaxWasps = 3;
+                public const float CocoonPulseInterval = 2f;
+                public const float CocoonPulseRadius = 40f;
+                public const float CocoonPulseForce = 120f;
+                public const float CocoonPulseSpeed = 100f;
+                public static readonly UnityEngine.Color CocoonPulseColor = new UnityEngine.Color(0.7f, 0.25f, 1f, 0.8f);
             }
 
             public static class LaserRing
