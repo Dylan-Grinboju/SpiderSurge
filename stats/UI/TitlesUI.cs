@@ -33,6 +33,7 @@ namespace StatsMod
         public float BORDER_SIZE = 4f;
         public float SQUARE_TO_NAME_SPACING = 10f;
         public float TITLE_TO_DESCRIPTION_SPACING = 10f;
+        public float BADGE_TO_TITLE_SPACING = 8f;
 
         public float REVEAL_SECONDS = 0.4f;
         public float REVEAL_RISE = 28f;
@@ -74,6 +75,7 @@ namespace StatsMod
         private sealed class CardLayout
         {
             public string Name;
+            public float BadgeHeight;
             public float TitleHeight;
             public float DescriptionHeight;
             public float FooterHeight;
@@ -402,6 +404,13 @@ namespace StatsMod
             float innerWidth = (CARD_WIDTH - CARD_PADDING * 2f) * scale;
             float chipSize = (PORTRAIT_SIZE + BORDER_SIZE * 2f) * scale;
             float maxNameWidth = innerWidth - chipSize - SQUARE_TO_NAME_SPACING * scale;
+            float badgeHeight = 0f;
+            for (int index = 0; index < count; index++)
+            {
+                if (!_cachedTitles[index].IsNew) continue;
+                badgeHeight = captionStyle.CalcHeight(new GUIContent("NEW"), innerWidth);
+                break;
+            }
             while (cardLayouts.Count < count)
             {
                 cardLayouts.Add(new CardLayout());
@@ -413,11 +422,13 @@ namespace StatsMod
                 CardLayout layout = cardLayouts[index];
                 string playerName = title.PlayerName ?? "";
                 layout.Name = (title.TitleName ?? "").ToUpperInvariant();
+                layout.BadgeHeight = badgeHeight;
                 layout.TitleHeight = cardTitleStyle.CalcHeight(new GUIContent(layout.Name), innerWidth);
                 layout.DescriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(title.Description ?? ""), innerWidth);
                 layout.FooterHeight = Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale, cardPlayerNameStyle.CalcHeight(new GUIContent(playerName), maxNameWidth));
                 layout.NameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), maxNameWidth);
                 height = Mathf.Max(height, layout.TitleHeight + layout.DescriptionHeight + layout.FooterHeight
+                    + (badgeHeight > 0f ? badgeHeight + BADGE_TO_TITLE_SPACING * scale : 0f)
                     + (CARD_BAND_HEIGHT + CARD_PADDING * 3f + TITLE_TO_DESCRIPTION_SPACING) * scale);
             }
             return height;
@@ -456,11 +467,16 @@ namespace StatsMod
             Hud.Fill(card, Hud.Card);
             Hud.Fill(new Rect(card.x, card.y, card.width, CARD_BAND_HEIGHT * scale), playerColor);
 
-            if (title.IsNew)
-                Hud.Label(new Rect(card.x + 8f * scale, card.y + 3f * scale, card.width - 16f * scale, 20f * scale), "NEW", cardDescriptionStyle, Hud.Good);
             float padding = CARD_PADDING * scale;
             float innerWidth = card.width - padding * 2;
             float y = card.y + CARD_BAND_HEIGHT * scale + padding;
+
+            if (layout.BadgeHeight > 0f)
+            {
+                if (title.IsNew)
+                    Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.BadgeHeight), "NEW", captionStyle, Hud.Good);
+                y += layout.BadgeHeight + BADGE_TO_TITLE_SPACING * scale;
+            }
 
             Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.TitleHeight), layout.Name, cardTitleStyle, Hud.Text);
             y += layout.TitleHeight + TITLE_TO_DESCRIPTION_SPACING * scale;
