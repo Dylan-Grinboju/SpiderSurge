@@ -370,7 +370,7 @@ namespace SpiderSurge
         {
             var ghosts = ReviveAchievements.Ghosts();
             bool revived = OverrideRevive != null && OverrideRevive(this, out revivedPlayer) ? revivedPlayer != null : ReviveAnyDead(out revivedPlayer);
-            if (revived) ReviveAchievements.Revived(this, revivedPlayer, ghosts);
+            if (revived && revivedPlayer != null) ReviveAchievements.Revived(this, revivedPlayer, ghosts);
             return revived;
         }
 
