@@ -12,7 +12,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix()
         {
-            SurgeGameModeManager.EndRun(false);
+            SurgeGameModeManager.EndRun(RunEnd.Stopped);
         }
     }
 
@@ -24,7 +24,7 @@ namespace SpiderSurge
         {
             if (scene.name == "Lobby")
             {
-                SurgeGameModeManager.EndRun(true);
+                SurgeGameModeManager.EndRun(RunEnd.Lobby);
                 SurgeLobbyPlatform.EnsureCreated();
             }
         }

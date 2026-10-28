@@ -258,11 +258,7 @@ namespace SpiderSurge
             }
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
-            SurgeGameModeManager.Instance?.ResetRun();
-            SurgeGameModeManager.SelectMode(false);
-            PerksManager.Instance?.ResetPerks();
-            ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Clear();
-            StoragePersistenceManager.ClearAllStoredWeapons();
+            SurgeGameModeManager.EndRun(RunEnd.LeftHost);
         }
 
         private static void WriteState(BinaryWriter writer)

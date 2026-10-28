@@ -190,19 +190,7 @@ namespace SpiderSurge
                     Logger.LogInfo($"=====================================");
                 }
 
-                if (SurgeGameModeManager.Instance != null)
-                {
-                    SurgeGameModeManager.Instance.ResetRun();
-                }
-                ChaosWallet.ResetRun();
-                SurgeSpawnPressure.Reset();
-
-                if (PerksManager.Instance != null)
-                {
-                    PerksManager.Instance.ResetPerks();
-                }
-
-                StoragePersistenceManager.ClearAllStoredWeapons();
+                SurgeGameModeManager.EndRun(RunEnd.Starting);
 
                 if (ShouldApplySurge(survivalConfig))
                 {

@@ -2,6 +2,15 @@ using UnityEngine;
 
 namespace SpiderSurge
 {
+    internal enum RunEnd
+    {
+        Stopped,
+        Lobby,
+        Starting,
+        LeftHost,
+        Versus,
+    }
+
     public class SurgeGameModeManager : MonoBehaviour
     {
         public const string DisplayName = "SURGE SURVIVAL";
@@ -72,26 +81,36 @@ namespace SpiderSurge
             RunUsedSurge = false;
         }
 
-        // Survival stopping and the lobby loading both end the run; the lobby also turns the mode off
-        internal static void EndRun(bool deselectMode)
+        // Every way a run ends or a new one begins resets the run here. Stopping and the lobby keep RunUsedSurge and reset
+        // perks only after an active run; a new run and leaving a host start clean; versus switches its forced run off.
+        internal static void EndRun(RunEnd reason)
         {
-            if (IsSurgeRunActive)
-            {
-                Instance.SetActive(false);
+            bool wasActive = IsSurgeRunActive;
+            bool clean = reason == RunEnd.Starting || reason == RunEnd.LeftHost;
+            if (reason == RunEnd.Versus) Instance?.ForceActive(false);
+            else if (clean) Instance?.ResetRun();
+            else if (wasActive) Instance.SetActive(false);
 
-                if (PerksManager.Instance != null)
-                {
-                    PerksManager.Instance.ResetPerks();
-                }
+            var perks = PerksManager.Instance;
+            if (perks != null && (wasActive || clean || reason == RunEnd.Versus))
+            {
+                perks.ResetPerks();
+                if (reason == RunEnd.Versus) perks.IsFirstNormalPerkSelection = false;
             }
+            ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Clear();
+            if (reason == RunEnd.Starting) SurgeSpawnPressure.Reset();
 
             StoragePersistenceManager.ClearAllStoredWeapons();
-            ChaosWallet.ResetRun();
-            PerkShopPanel.Clear();
-            PerkConfirmButton.Clear();
-            PerkHint.Clear();
+            AbilityAchievementTracker.ClearWave();
+            if (reason != RunEnd.Versus) ChaosWallet.ResetRun();
+            if (reason == RunEnd.Stopped || reason == RunEnd.Lobby)
+            {
+                PerkShopPanel.Clear();
+                PerkConfirmButton.Clear();
+                PerkHint.Clear();
+            }
 
-            if (deselectMode)
+            if (reason == RunEnd.Lobby || reason == RunEnd.LeftHost)
             {
                 SelectMode(false);
             }

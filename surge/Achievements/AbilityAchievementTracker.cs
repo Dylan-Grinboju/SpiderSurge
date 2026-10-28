@@ -183,13 +183,6 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(StoragePersistenceManager), nameof(StoragePersistenceManager.ClearAllStoredWeapons))]
-    internal static class AbilityAchievementRunResetPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix() => AbilityAchievementTracker.ClearWave();
-    }
-
     // Scope the actual damaging source so shields, unrelated deaths and chained explosions cannot count as a blade or stinger kill.
     [HarmonyPatch]
     internal static class AbilityAchievementAttackPatch

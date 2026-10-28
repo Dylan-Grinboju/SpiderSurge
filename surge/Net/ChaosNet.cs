@@ -39,7 +39,6 @@ namespace SpiderSurge
             foreach (var (channel, handler) in ClientChannels) Net.RegisterFromClients(channel, handler, offline: true);
             Net.Register(ToastChannel, OnToast);
             Net.PeerReady += OnPeerReady;
-            Net.LeftHost += OnLeftHost;
         }
 
         public static void Shutdown()
@@ -50,7 +49,6 @@ namespace SpiderSurge
             foreach (var (channel, _) in ClientChannels) Net.Unregister(channel);
             Net.Unregister(ToastChannel);
             Net.PeerReady -= OnPeerReady;
-            Net.LeftHost -= OnLeftHost;
         }
 
         public static void MarkDirty()
@@ -134,11 +132,6 @@ namespace SpiderSurge
         private static void OnPeerReady(ulong clientId)
         {
             Net.SendTo(clientId, StateChannel, WriteState);
-        }
-
-        private static void OnLeftHost()
-        {
-            ChaosWallet.ResetRun();
         }
 
         private static void OnState(BinaryReader reader)

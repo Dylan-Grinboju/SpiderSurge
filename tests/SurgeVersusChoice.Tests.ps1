@@ -8,7 +8,9 @@ namespace SpiderSurge.Common {
     }
 }
 namespace SpiderSurge {
+    internal enum RunEnd { Versus }
     public class SurgeGameModeManager {
+        internal static void EndRun(RunEnd reason) { }
         public static SurgeGameModeManager Instance = new SurgeGameModeManager();
         public bool Active;
         public void ForceActive(bool active) { Active = active; }
