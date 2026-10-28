@@ -115,7 +115,7 @@ Page Up / Page Down and D-pad left / right move through the big window's pages a
 
 ## Cross-Mod Integration API
 
-Stats exposes a public API that other mods can call at runtime to inject custom stats and titles into the end-of-game screen and log files. The Surge part calls it directly. Other mods are separate DLLs, so they use **reflection**: discover `StatsMod.StatsModApi` in the loaded `SpiderSurge` assembly and invoke its static methods.
+Stats exposes a public API that other mods can call at runtime to inject custom stats and titles into the end-of-game screen and log files. The Surge part doesn't use it: Stats asks Surge for its titles when a run ends. Other mods are separate DLLs, so they use **reflection**: discover `StatsMod.StatsModApi` in the loaded `SpiderSurge` assembly and invoke its static methods.
 
 #### `RegisterCustomStats(List<string> lines)`
 

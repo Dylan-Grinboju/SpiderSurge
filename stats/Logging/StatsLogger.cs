@@ -242,7 +242,7 @@ namespace StatsMod
                 sb.AppendLine("");
             }
 
-            var externalStats = StatsModApi.GetExternalStats();
+            var externalStats = statsSnapshot.GameMode == GameMode.Survival ? RunReportSources.ReportLines() : null;
             if (externalStats != null && externalStats.Count > 0)
             {
                 sb.AppendLine("EXTERNAL MOD STATISTICS:");

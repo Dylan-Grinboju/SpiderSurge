@@ -3,40 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using SpiderSurge.Common;
 using StatsMod;
-using Logger = Silk.Logger;
 
 namespace SpiderSurge.Integration
 {
-    public static class StatsModBridge
+    // Surge's lines and titles for the Stats report of a finished Surge run
+    public sealed class SurgeReportSource : IRunReportSource
     {
-        private static bool StatsRunning => Parts.Stats.Running;
-
-        public static void SendSurgeStats(Logging.SpiderSurgeStatsSnapshot snapshot)
-        {
-            if (!StatsRunning || snapshot == null) return;
-
-            try
-            {
-                var lines = new List<string>
-                {
-                    "  SpiderSurge Mod Data:"
-                };
-
-                foreach (var ps in snapshot.PlayerStats)
-                {
-                    string playerName = $"Player {ps.PlayerId + 1}";
-                    lines.Add($"  {playerName}:");
-                    lines.Add($"    Ability Activations: {ps.AbilityActivationCount}");
-                    lines.Add($"    Ultimate Activations: {ps.UltimateActivationCount}");
-                }
-
-                StatsModApi.RegisterCustomStats(lines);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"StatsModBridge: Error sending surge stats: {ex.Message}");
-            }
-        }
+        public static readonly SurgeReportSource Instance = new SurgeReportSource();
 
         private const string ReqMostAbility = "SurgeMostAbility";
         private const string ReqLeastAbility = "SurgeLeastAbility";
@@ -55,16 +28,6 @@ namespace SpiderSurge.Integration
             ("Storage", Consts.PerkNames.StorageAbility, Consts.PerkNames.StorageAbilityUltimate),
             ("Freeze", Consts.PerkNames.FreezeAbility, Consts.PerkNames.FreezeAbilityUltimate),
         };
-
-        private static string GetActiveType(bool ultimate)
-        {
-            if (PerksManager.Instance == null) return null;
-            foreach (var (type, ability, ultimatePerk) in AbilityPerks)
-            {
-                if (PerksManager.Instance.GetPerkLevel(ultimate ? ultimatePerk : ability) > 0) return type;
-            }
-            return null;
-        }
 
         private class LeaderInfo
         {
@@ -95,44 +58,66 @@ namespace SpiderSurge.Integration
         };
 
         // Lists Surge's titles in the Stats title collection, so they show before anyone earns them
-        public static void DescribeSurgeTitles()
+        public IEnumerable<TitleDefinition> DescribedTitles => SurgeTitles.Select(title =>
         {
-            foreach (var title in SurgeTitles)
+            string where = title.Type == null ? "Surge mode" : $"Surge mode with the {title.Type} {(title.Ultimate ? "ultimate" : "ability")}";
+            var requirements = title.Leaders.Select(l => l.Leader).ToList();
+            if (title.StatsReq != null) requirements.Add(TitleCatalog.Label(title.StatsReq));
+            return new TitleDefinition(title.Name, $"{where}: {string.Join(" + ", requirements)}");
+        });
+
+        public IEnumerable<string> ReportLines()
+        {
+            var snapshot = FinishedSurgeRun();
+            if (snapshot == null) yield break;
+            yield return "  SpiderSurge Mod Data:";
+            foreach (var ps in snapshot.PlayerStats)
             {
-                string where = title.Type == null ? "Surge mode" : $"Surge mode with the {title.Type} {(title.Ultimate ? "ultimate" : "ability")}";
-                var requirements = title.Leaders.Select(l => l.Leader).ToList();
-                if (title.StatsReq != null) requirements.Add(TitleCatalog.Label(title.StatsReq));
-                StatsModApi.DescribeTitle(title.Name, $"{where}: {string.Join(" + ", requirements)}");
+                yield return $"  Player {ps.PlayerId + 1}:";
+                yield return $"    Ability Activations: {ps.AbilityActivationCount}";
+                yield return $"    Ultimate Activations: {ps.UltimateActivationCount}";
             }
         }
 
-        public static void SendSurgeTitles(Logging.SpiderSurgeStatsSnapshot snapshot)
+        public IEnumerable<TitleEntry> Titles()
         {
-            if (!StatsRunning || snapshot == null) return;
-            if (snapshot.PlayerStats.Count < 2) return;
+            var snapshot = FinishedSurgeRun();
+            if (snapshot == null || snapshot.PlayerStats.Count < 2) return Array.Empty<TitleEntry>();
 
-            try
+            var leaders = new Dictionary<string, LeaderInfo>
             {
-                var leaders = new Dictionary<string, LeaderInfo>
-                {
-                    [MostAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true, "Ability Activations"),
-                    [LeastAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false, "Ability Activations"),
-                    [MostUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations"),
-                    [LeastUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations"),
-                };
-                string abilityType = GetActiveType(ultimate: false);
-                string ultType = GetActiveType(ultimate: true);
+                [MostAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true, "Ability Activations"),
+                [LeastAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false, "Ability Activations"),
+                [MostUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations"),
+                [LeastUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations"),
+            };
+            string abilityType = GetActiveType(ultimate: false);
+            string ultType = GetActiveType(ultimate: true);
 
-                foreach (var title in SurgeTitles)
-                {
-                    if (title.Type != null && title.Type != (title.Ultimate ? ultType : abilityType)) continue;
-                    TryRegisterTitle(title.Name, title.Bonus, title.Leaders.Select(l => (leaders[l.Leader], l.Req)).ToArray(), title.StatsReq);
-                }
-            }
-            catch (Exception ex)
+            var titles = new List<TitleEntry>();
+            foreach (var title in SurgeTitles)
             {
-                Logger.LogError($"StatsModBridge: Error sending surge titles: {ex.Message}");
+                if (title.Type != null && title.Type != (title.Ultimate ? ultType : abilityType)) continue;
+                titles.Add(TitleFor(title.Name, title.Bonus, title.Leaders.Select(l => (leaders[l.Leader], l.Req)).ToArray(), title.StatsReq));
             }
+            return titles;
+        }
+
+        // Stats asks while the run stops, before or after Surge's own stop hook, so the snapshot is finished on demand
+        private static Logging.SpiderSurgeStatsSnapshot FinishedSurgeRun()
+        {
+            var snapshot = Logging.SpiderSurgeStatsManager.Instance.Finish();
+            return snapshot != null && snapshot.SurgeMode ? snapshot : null;
+        }
+
+        private static string GetActiveType(bool ultimate)
+        {
+            if (PerksManager.Instance == null) return null;
+            foreach (var (type, ability, ultimatePerk) in AbilityPerks)
+            {
+                if (PerksManager.Instance.GetPerkLevel(ultimate ? ultimatePerk : ability) > 0) return type;
+            }
+            return null;
         }
 
         private static LeaderInfo GetLeader(Logging.SpiderSurgeStatsSnapshot snapshot,
@@ -157,33 +142,14 @@ namespace SpiderSurge.Integration
         }
 
         // The title goes to a player only if they lead every Surge stat it needs; Stats checks its own requirement
-        private static void TryRegisterTitle(string titleName, int bonusPriority, (LeaderInfo Leader, string Req)[] leaders, string statsReq)
+        private static TitleEntry TitleFor(string titleName, int bonusPriority, (LeaderInfo Leader, string Req)[] leaders, string statsReq)
         {
             PlayerController primaryPlayer = leaders[0].Leader.Player;
-            if (primaryPlayer == null || leaders.Any(l => l.Leader.Player == null || !l.Leader.HasStat || l.Leader.Player != primaryPlayer)) return;
+            if (primaryPlayer == null || leaders.Any(l => l.Leader.Player == null || !l.Leader.HasStat || l.Leader.Player != primaryPlayer)) return null;
 
             var reqNames = leaders.Select(l => l.Req).ToList();
             if (statsReq != null) reqNames.Add(statsReq);
-
-            try
-            {
-                bool success = StatsModApi.RegisterCustomTitle(
-                    titleName,
-                    string.Join("\n", leaders.Select(l => l.Leader.Description)),
-                    reqNames.ToArray(),
-                    primaryPlayer,
-                    true,
-                    bonusPriority);
-
-                if (!success)
-                {
-                    Logger.LogWarning($"StatsModBridge: Failed to register title '{titleName}'.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"StatsModBridge: Error invoking RegisterCustomTitle for '{titleName}': {ex.Message}");
-            }
+            return RunReportSources.TitleFor(primaryPlayer, titleName, string.Join("\n", leaders.Select(l => l.Leader.Description)), reqNames, bonusPriority);
         }
     }
 }

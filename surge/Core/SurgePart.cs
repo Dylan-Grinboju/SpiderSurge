@@ -35,13 +35,14 @@ namespace SpiderSurge
             PlayerControlSettings.Initialize();
 
             SurgeLobbyPlatform.EnsureCreated();
-            Integration.StatsModBridge.DescribeSurgeTitles();
+            StatsMod.RunReportSources.Register(Integration.SurgeReportSource.Instance);
             Settings.Changed += OnSettingsChanged;
         }
 
         protected internal override void OnStop()
         {
             Settings.Changed -= OnSettingsChanged;
+            StatsMod.RunReportSources.Unregister(Integration.SurgeReportSource.Instance);
             SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);

@@ -34,7 +34,6 @@ namespace StatsMod
     [HarmonyPatch(typeof(SurvivalMode), "StopGameMode")]
     public class SurvivalModeStopPatch
     {
-        [HarmonyAfter("com.SpiderSurge.surge")]
         static void Prefix(SurvivalMode __instance)
         {
             try

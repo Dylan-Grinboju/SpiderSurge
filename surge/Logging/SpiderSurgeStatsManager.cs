@@ -112,6 +112,13 @@ namespace SpiderSurge.Logging
             Logger.LogInfo("SpiderSurge stats tracking started.");
         }
 
+        // The finished run's snapshot, stopping the run first if it is still tracked
+        public SpiderSurgeStatsSnapshot Finish()
+        {
+            StopTrackingAndLog();
+            return LastFinished;
+        }
+
         public void StopTrackingAndLog()
         {
             if (!_isTracking) return;
@@ -204,12 +211,7 @@ namespace SpiderSurge.Logging
 
             // A plain Survival run is only reported to telemetry; the local report and Surge's stats and titles stay with Surge runs
             LastFinished = snapshot;
-            if (_surgeRun)
-            {
-                if (ModConfig.EnableStatsLogging) SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
-                Integration.StatsModBridge.SendSurgeStats(snapshot);
-                Integration.StatsModBridge.SendSurgeTitles(snapshot);
-            }
+            if (_surgeRun && ModConfig.EnableStatsLogging) SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
 
             if (ModConfig.TelemetryEnabled && ShouldUploadTelemetryFromThisClient())
             {
@@ -230,7 +232,7 @@ namespace SpiderSurge.Logging
             }
         }
 
-        // Stats works out the titles after this part's StopGameMode prefix, which registers Surge's titles first, so the report goes out once the run has fully stopped
+        // Stats works out the titles in its StopGameMode prefix, so the report goes out once the run has fully stopped
         public void SendPendingTelemetry()
         {
             var snapshot = _pendingTelemetry;

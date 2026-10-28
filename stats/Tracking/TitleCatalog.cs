@@ -192,13 +192,13 @@ public static class TitleCatalog
         new TitleDefinition(AverageJoe, "Earn no other title in a run"),
     };
 
-    // Native titles first, then the ones other parts and mods described through StatsModApi
+    // Native titles first, then the ones other parts describe
     public static List<TitleDefinition> All
     {
         get
         {
             var all = Native.ToList();
-            foreach (var described in StatsModApi.GetDescribedTitles())
+            foreach (var described in RunReportSources.DescribedTitles)
             {
                 if (!all.Any(title => title.Name == described.Name)) all.Add(described);
             }

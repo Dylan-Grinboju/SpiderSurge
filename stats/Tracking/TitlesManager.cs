@@ -580,14 +580,10 @@ public class TitlesManager
         }
     }
 
-    /// <summary>
-    /// Processes titles registered by external mods, validating their native requirements against the stats mod's conditions
-    /// </summary>
+    // Titles from other parts, kept only when the leader also meets their native requirements
     private void AddExternalTitles(List<TitleEntry> titles, Dictionary<string, StatCondition> conditions)
     {
-        var externalTitles = StatsModApi.GetExternalTitles();
-        if (externalTitles == null || externalTitles.Count == 0) return;
-
+        var externalTitles = RunReportSources.Titles();
         foreach (var extTitle in externalTitles)
         {
             var (player, descriptions, valid) = ValidateExternalRequirements(extTitle, conditions);
@@ -634,7 +630,7 @@ public class TitlesManager
         // 2. All of the title's requirements were custom (so it skipped every loop iteration above).
         if (resolvedPlayer == null)
         {
-            Logger.LogWarning($"ValidateExternalRequirements: Failed to resolve player for title '{title.TitleName}'. If a title uses entirely custom requirements, you must explicitly provide the 'leader' parameter when registering it through StatsModApi.");
+            Logger.LogWarning($"ValidateExternalRequirements: Failed to resolve player for title '{title.TitleName}'. A title with only custom requirements needs a leader.");
             return (null, null, false);
         }
 
