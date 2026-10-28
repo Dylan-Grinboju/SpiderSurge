@@ -48,7 +48,7 @@ public class SurvivalModeHud {
 public static class LevelController { public static bool IsLoading; }
 namespace Unity.Netcode { public class NetworkObject { public bool IsSpawned = true; } }
 namespace UnityEngine {
-    public class MonoBehaviour { }
+    public class MonoBehaviour { public bool enabled = true; }
     public class Transform { public Vector3 position = new Vector3(.5f, .5f, 1f); }
     public struct Vector3 {
         public float x, y, z;
@@ -105,10 +105,12 @@ $awake = $hints.GetType().GetMethod('Awake', $flags)
 $update = $hints.GetType().GetMethod('Update', $flags)
 $current = $hints.GetType().GetField('current', $flags)
 [void]$awake.Invoke($hints, @())
+Assert-Equal $hints.enabled $false 'Idle hints do not run an empty OnGUI every frame'
 $firstEnemy = [EnemyHealthSystem]::new()
 $survivor = [EnemyHealthSystem]::new()
 [SpiderSurge.Common.GameMenus]::Open = $true
 Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $firstEnemy)) $false 'Queuing does not mark a hint shown'
+Assert-Equal $hints.enabled $true 'A new encounter wakes the hint component'
 Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $survivor)) $false 'Other enemies keep retrying while the hint waits'
 $firstEnemy.Dead = $true
 [SpiderSurge.Common.GameMenus]::Open = $false
@@ -122,9 +124,11 @@ Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $
 Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $survivor)) $true 'Only the completed display suppresses later attempts'
 [void]$update.Invoke($hints, @())
 Assert-Equal ($null -eq $current.GetValue($hints)) $true 'Repeated attempts did not duplicate the hint'
+Assert-Equal $hints.enabled $false 'The component sleeps after its last hint completes'
 [void][SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $survivor)
 [void]$update.Invoke($hints, @())
 [SpiderSurge.EncounterHints]::ResetRun()
+Assert-Equal $hints.enabled $false 'A run reset sleeps the hint component'
 Assert-Equal ($null -eq $current.GetValue($hints)) $true 'A synchronous restart immediately clears the visible hint'
 Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $survivor)) $false 'Restart does not save an unfinished hint as seen'
 [void]$update.Invoke($hints, @())

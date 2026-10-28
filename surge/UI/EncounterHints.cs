@@ -30,7 +30,11 @@ namespace SpiderSurge
             return key.Length > 0;
         }
 
-        private void Awake() => instance = this;
+        private void Awake()
+        {
+            instance = this;
+            enabled = false;
+        }
         private void OnDestroy() { if (instance == this) instance = null; }
 
         public static bool Encounter(string key, string text, EnemyHealthSystem enemy)
@@ -44,6 +48,7 @@ namespace SpiderSurge
             Vector3 point = camera.WorldToViewportPoint(enemy.transform.position);
             if (point.z < 0f || point.x < 0f || point.x > 1f || point.y < 0f || point.y > 1f) return false;
             if (instance.queued.Add(key)) instance.waiting.Enqueue(new Hint { Key = key, Text = text, Enemy = enemy });
+            instance.enabled = true;
             return false;
         }
 
@@ -57,6 +62,7 @@ namespace SpiderSurge
             instance.remaining = 0f;
             instance.waiting.Clear();
             instance.queued.Clear();
+            instance.enabled = false;
         }
 
         private void Update()
@@ -70,6 +76,11 @@ namespace SpiderSurge
             {
                 queued.Remove(current.Key);
                 current = null;
+            }
+            if (current == null && waiting.Count == 0)
+            {
+                enabled = false;
+                return;
             }
             if (!Visible) return;
             if (current == null && waiting.Count > 0)
@@ -89,6 +100,7 @@ namespace SpiderSurge
             {
                 Seen.Add(current.Key, true);
                 current = null;
+                enabled = waiting.Count > 0;
             }
         }
 
