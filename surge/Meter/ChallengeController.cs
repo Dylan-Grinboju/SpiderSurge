@@ -27,7 +27,7 @@ namespace SpiderSurge
         private static bool _panelFailed;
         public static float CooldownMultiplier => Active == ChallengeKind.DoubleCooldown ? 2f : 1f;
         public static string Status => Active == ChallengeKind.None ? "" :
-            $"{ChaosRules.Name(Active)} Â· {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
+            $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
 
         // Keep the selected perk, but wait for the challenge decision before loading its map.
         public static void LoadChosenMap(LevelController controller, GameLevel level, float delay, string nameOverride, string authorName)

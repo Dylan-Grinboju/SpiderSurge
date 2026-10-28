@@ -49,7 +49,7 @@ namespace SpiderSurge
                 chaos._points.rectTransform.pivot = new Vector2(0, 0.5f);
                 chaos._points.rectTransform.sizeDelta = new Vector2(430 - sectionInset, 28);
                 chaos._points.rectTransform.anchoredPosition = new Vector2(sectionInset + 28, -25);
-                ChaosIcon.Add(root.transform, new Vector2(sectionInset + 12, -25), 19, Hud.Warm, new Vector2(0, 1));
+                ChaosIcon.Add(root.transform, new Vector2(sectionInset + 12, -25), 14, Hud.Warm, new Vector2(0, 1));
                 chaos._challenge = chaos.Label(hud.livesCounter, "Challenge", -32, 12);
                 chaos._challenge.rectTransform.anchoredPosition = new Vector2(sectionInset, -32);
                 chaos._challenge.rectTransform.sizeDelta = new Vector2(470 - sectionInset, 25);
