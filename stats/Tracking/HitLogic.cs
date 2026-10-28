@@ -41,21 +41,25 @@ namespace StatsMod
             public float Time;
         }
 
-        // The attack running now. In an attack patch's __state, the attack it interrupted
-        public struct AttackScope
+        internal sealed class Attack
         {
-            internal bool Saved;
-            internal object Source;
-            internal Func<object, PlayerController> FindPlayer;
-            internal Func<object, Weapon> FindWeapon;
+            internal string Name;
+            internal string Weapon;
+            internal Func<Component, PlayerController> Owner;
+            internal Func<Component, Weapon> WeaponOf;
+        }
+
+        // One of Stats' attacks on the core attack stack
+        internal struct AttackSlot
+        {
+            internal Func<Component, PlayerController> FindPlayer;
+            internal Func<Component, Weapon> FindWeapon;
             internal bool PlayerFound;
             internal PlayerController Player;
             internal bool WeaponFound;
             internal Weapon WeaponObject;
             internal string Weapon;
             internal PlayerController EnclosingPlayer;
-
-            internal bool Active => FindPlayer != null;
         }
 
         private static readonly Dictionary<int, HitRecord> lastEnemyHits = new Dictionary<int, HitRecord>();
@@ -71,7 +75,7 @@ namespace StatsMod
         private static readonly Dictionary<PlayerController, PlayerTracker.KillCredit> deathCredits = new Dictionary<PlayerController, PlayerTracker.KillCredit>();
         private static float lastPruneTime = 0f;
 
-        private static AttackScope current;
+        internal static readonly AttackView<AttackSlot> Attacks = new AttackView<AttackSlot>(OpenAttack);
 
         private static readonly Dictionary<SerializationEnemyName, string> enemyDisplayNames = new Dictionary<SerializationEnemyName, string>
         {
@@ -97,45 +101,55 @@ namespace StatsMod
         // or knocks back counts as hit by its player, since a knockback can push the target into lava.
         // Explosions nobody owns, weapons no player holds and enemy saws run as attacks without a player.
         // The player is looked up only once the attack hits something.
-        public static AttackScope BeginAttack(object source, Func<object, PlayerController> findPlayer, Func<object, Weapon> findWeapon, string weaponName)
+        private static bool OpenAttack(ref AttackSlot slot, Component source, object info)
         {
-            PlayerController enclosing = CurrentAttacker;
-            AttackScope previous = current;
-            previous.Saved = true;
-            current = new AttackScope { Source = source, FindPlayer = findPlayer, FindWeapon = findWeapon, Weapon = weaponName, EnclosingPlayer = enclosing };
-            return previous;
-        }
-
-        public static void EndAttack(AttackScope previous)
-        {
-            if (previous.Saved) current = previous;
+            Attack attack = (Attack)info;
+            try
+            {
+                PlayerController enclosing = CurrentAttacker;
+                slot = new AttackSlot { FindPlayer = attack.Owner, FindWeapon = attack.WeaponOf, Weapon = attack.Weapon, EnclosingPlayer = enclosing };
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error tracking {attack.Name} hit: {ex.Message}");
+                return false;
+            }
         }
 
         public static PlayerController CurrentAttacker
         {
             get
             {
-                if (current.Active && !current.PlayerFound)
+                int top = Attacks.Top;
+                if (top < 0) return null;
+                ref AttackSlot slot = ref Attacks.Slot(top);
+                if (!slot.PlayerFound)
                 {
-                    current.PlayerFound = true;
-                    current.Player = current.FindPlayer(current.Source);
+                    slot.PlayerFound = true;
+                    slot.Player = slot.FindPlayer(Attacks.Source);
                 }
-                return current.Player;
+                return slot.Player;
             }
         }
 
-        public static PlayerController EnclosingAttacker => current.EnclosingPlayer;
+        public static PlayerController EnclosingAttacker => Attacks.Active ? Attacks.Slot(Attacks.Top).EnclosingPlayer : null;
+
+        private static string CurrentWeaponName => Attacks.Active ? Attacks.Slot(Attacks.Top).Weapon : null;
 
         private static Weapon CurrentWeapon
         {
             get
             {
-                if (current.Active && !current.WeaponFound)
+                int top = Attacks.Top;
+                if (top < 0) return null;
+                ref AttackSlot slot = ref Attacks.Slot(top);
+                if (!slot.WeaponFound)
                 {
-                    current.WeaponFound = true;
-                    current.WeaponObject = current.FindWeapon?.Invoke(current.Source);
+                    slot.WeaponFound = true;
+                    slot.WeaponObject = slot.FindWeapon?.Invoke(Attacks.Source);
                 }
-                return current.WeaponObject;
+                return slot.WeaponObject;
             }
         }
 
@@ -149,7 +163,6 @@ namespace StatsMod
             rollerFuses.Clear();
             foreach (var owners in ownerMaps) owners.Clear();
             deathCredits.Clear();
-            current = default;
             lastPruneTime = Time.time;
         }
 
@@ -159,14 +172,14 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
-            AccuracyTracker.EnemyHit(current.Source);
+            AccuracyTracker.EnemyHit(Attacks.Source);
 
             PlayerController attacker = CurrentAttacker;
             if (attacker != null)
             {
-                StoreHit(lastEnemyHits, enemy.GetInstanceID(), attacker, current.Weapon, CurrentWeapon);
+                StoreHit(lastEnemyHits, enemy.GetInstanceID(), attacker, CurrentWeaponName, CurrentWeapon);
             }
-            else if (current.Active || damage)
+            else if (Attacks.Active || damage)
             {
                 lastEnemyHits.Remove(enemy.GetInstanceID());
             }
@@ -212,12 +225,12 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             PlayerController victim = Players.Of(spider.rootObject);
-            if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(current.Source, victim);
+            if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(Attacks.Source, victim);
             int id = spider.GetInstanceID();
             PlayerController attacker = CurrentAttacker;
             if (attacker == null)
             {
-                if (damage || (current.Active && stun)) lastPlayerHits.Remove(id);
+                if (damage || (Attacks.Active && stun)) lastPlayerHits.Remove(id);
                 return;
             }
 
@@ -225,7 +238,7 @@ namespace StatsMod
 
             if (victim != attacker)
             {
-                StoreHit(lastPlayerHits, id, attacker, current.Weapon, null);
+                StoreHit(lastPlayerHits, id, attacker, CurrentWeaponName, null);
             }
             else if (damage || stun)
             {

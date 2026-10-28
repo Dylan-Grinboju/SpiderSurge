@@ -19,10 +19,6 @@ namespace SpiderSurge
         public const int ThermalTeammateKills = 3;
         public const float BlastSurvivalMargin = 0.25f;
 
-        public static Explosion CurrentExplosion;
-        // Whether CurrentExplosion is a Big Grenade blast, unknown until a spider it damages asks, so its name is read at most once per knockback
-        public static bool? CurrentIsBigGrenade;
-
         private static readonly Dictionary<(int caster, int revived), int> Revives = new Dictionary<(int, int), int>();
         private static readonly HashSet<ParticleBlade> FullyUpgradedBlades = new HashSet<ParticleBlade>();
 
@@ -146,25 +142,6 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(Explosion), "KnockBack")]
-    public static class Explosion_KnockBack_Achievement_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(Explosion __instance, out (Explosion, bool?) __state)
-        {
-            __state = (AchievementTracker.CurrentExplosion, AchievementTracker.CurrentIsBigGrenade);
-            AchievementTracker.CurrentExplosion = __instance;
-            AchievementTracker.CurrentIsBigGrenade = null;
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer((Explosion, bool?) __state)
-        {
-            AchievementTracker.CurrentExplosion = __state.Item1;
-            AchievementTracker.CurrentIsBigGrenade = __state.Item2;
-        }
-    }
-
     // An explosion only calls Damage on a spider inside its death radius, so this is a Big Grenade blast that would have killed
     public static class NullFieldBlastAchievement
     {
@@ -173,8 +150,7 @@ namespace SpiderSurge
 
         internal static void OnDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
-            Explosion explosion = AchievementTracker.CurrentExplosion;
-            if (explosion == null || !(AchievementTracker.CurrentIsBigGrenade ??= explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal))) return;
+            if (!SurgeAttacks.IsBigGrenadeBlast(out Explosion explosion)) return;
 
             AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider, explosion));
         }

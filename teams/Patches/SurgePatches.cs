@@ -6,26 +6,6 @@ using UnityEngine;
 
 namespace SpiderTeams
 {
-    // The pulse knocks back and, as an ultimate, kills; its caster becomes the attacker so the friendly fire rule applies.
-    [HarmonyPatch(typeof(PulseAbility), "ApplyPulsePhysics")]
-    public static class PulseAbility_ApplyPulsePhysics_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(Component __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, ability => Players.IdOf(ability));
-            FriendlyFireGate.PulseDepth++;
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            FriendlyFireGate.PulseDepth--;
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
     // The Black Hole swallows a teammate only when friendly fire does damage. Its pull is a push toward the caster,
     // so it pulls a teammate unless friendly fire is ignored.
     internal static class BlackHoleTeammates

@@ -36,6 +36,7 @@ namespace SpiderTeams
             GameEvents.RoundStarting += VersusMode_StartRound_Patch.OnRoundStarting;
             SurgeHooks.Install();
             FriendlyFireHits.Hook(true);
+            TeamAttacks.Register();
         }
 
         protected internal override void OnStop()
@@ -66,10 +67,10 @@ namespace SpiderTeams
             GameEvents.RoundStarting -= VersusMode_StartRound_Patch.OnRoundStarting;
             SurgeHooks.Remove();
             FriendlyFireHits.Hook(false);
+            TeamAttacks.Unregister();
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();
-            DamageContext.Clear();
             SpawnScope.Clear();
             Announcements.Clear();
             MatchSnapshot.Clear();

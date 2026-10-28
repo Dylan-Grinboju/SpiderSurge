@@ -27,7 +27,7 @@ namespace SpiderSurge
         [HarmonyPriority(Priority.First)]
         private static bool Prefix(Weapon __instance)
         {
-            SpiderHealthSystem caster = PulseExplosionScopePatch.ProtectedSpider;
+            SpiderHealthSystem caster = SurgeAttacks.ProtectedSpider;
             return caster == null || !__instance.equipped || __instance.owner == null || __instance.owner.healthSystem != caster;
         }
     }

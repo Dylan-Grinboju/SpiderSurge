@@ -14,7 +14,6 @@ namespace SpiderTeams
             {
                 OwnerRegistry.Clear();
                 ExplosionOwners.Clear();
-                DamageContext.Clear();
                 SpawnScope.Clear();
 
                 if (scene.name != "Lobby")

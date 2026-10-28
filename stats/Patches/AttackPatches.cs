@@ -28,20 +28,10 @@ namespace StatsMod
         }
     }
 
-    // Runs each attack inside HitLogic.BeginAttack/EndAttack; the receivers below record its hits
-    [HarmonyPatch]
-    class AttackScopePatch
+    // Runs each attack in Stats' view of the core attack scope; the receivers below record its hits
+    internal static class AttackTargets
     {
-        private struct Attack
-        {
-            public string Weapon;
-            public Func<object, PlayerController> Owner;
-            public Func<object, Weapon> WeaponOf;
-        }
-
-        private static readonly Dictionary<MethodBase, Attack> attacks = new Dictionary<MethodBase, Attack>();
-
-        static AttackScopePatch()
+        public static void Register()
         {
             Add<DamageOnParticle>("OnParticleCollision", "Shotgun", particles => HitLogic.WeaponPlayer(particles.ignoreWeapon), particles => particles.ignoreWeapon);
             Add<RailShot>("ProcessHit", "RailShot", RailShotOwner, RailShotWeapon);
@@ -60,37 +50,20 @@ namespace StatsMod
             Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", HitLogic.PulseWeapon, SpiderSurge.PulseAbility.CasterOf);
         }
 
-        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null)
+        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null) where T : Component
         {
             MethodInfo target = PatchTargets.Find(typeof(T), method);
             if (target != null)
             {
-                attacks[target] = new Attack
+                HitLogic.Attacks.Register(target, new HitLogic.Attack
                 {
+                    Name = $"{target.DeclaringType?.Name}.{target.Name}",
                     Weapon = weapon,
                     Owner = instance => owner((T)instance),
-                    WeaponOf = weaponOf != null ? instance => weaponOf((T)instance) : (Func<object, Weapon>)null,
-                };
+                    WeaponOf = weaponOf != null ? instance => weaponOf((T)instance) : (Func<Component, Weapon>)null,
+                });
             }
         }
-
-        static IEnumerable<MethodBase> TargetMethods() => attacks.Keys.ToList();
-
-        static void Prefix(object __instance, MethodBase __originalMethod, out HitLogic.AttackScope __state)
-        {
-            __state = default;
-            try
-            {
-                Attack attack = attacks[__originalMethod];
-                __state = HitLogic.BeginAttack(__instance, attack.Owner, attack.WeaponOf, attack.Weapon);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error tracking {__originalMethod.DeclaringType?.Name}.{__originalMethod.Name} hit: {ex.Message}");
-            }
-        }
-
-        static void Finalizer(HitLogic.AttackScope __state) => HitLogic.EndAttack(__state);
 
         private static PlayerController RailShotOwner(RailShot shot)
         {

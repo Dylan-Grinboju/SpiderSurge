@@ -9,7 +9,7 @@ namespace SpiderSurge
         // Pulse never knocks back its own caster
         internal static bool AllowImpact(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
-            return PulseExplosionScopePatch.ProtectedSpider != spider;
+            return SurgeAttacks.ProtectedSpider != spider;
         }
 
         // Only a hit that lands counts, so one Teams friendly fire cancelled doesn't

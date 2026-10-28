@@ -67,38 +67,13 @@ namespace SpiderTeams
             {
                 if (TeamManager.HostTeamMode)
                 {
-                    ExplosionOwners.Record(hitPoint, RailShot_ProcessHit_Patch.Owner(__instance));
+                    ExplosionOwners.Record(hitPoint, RailShotOwner.Of(__instance));
                 }
             }
             catch (Exception ex)
             {
                 PatchScopes.Report("rail impact tracking", ex);
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(Explosion), "KnockBack")]
-    public static class Explosion_KnockBack_Patch
-    {
-        // An explosion set off inside another attack, like the Pulse ultimate's, belongs to that attacker.
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(Explosion __instance, out int __state)
-        {
-            __state = DamageContext.Blast;
-            PatchScopes.EnterAttack(__instance, explosion =>
-            {
-                int owner = ExplosionOwners.Resolve(explosion);
-                return owner != OwnerRegistry.Unknown ? owner : DamageContext.Current;
-            });
-            DamageContext.Blast = __instance.GetInstanceID();
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(int __state)
-        {
-            PatchScopes.ExitAttack(true);
-            DamageContext.Blast = __state;
         }
     }
 }

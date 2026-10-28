@@ -164,6 +164,7 @@ namespace SpiderSurge
 
             if (IsAuthority)
             {
+                deadlyPulse = deadly;
                 ApplyPulsePhysics(pulseParams, deadly);
             }
         }
@@ -214,6 +215,10 @@ namespace SpiderSurge
         }
 
         internal static PlayerController CasterOf(PulseAbility ability) => ability.playerController;
+
+        private bool deadlyPulse;
+
+        internal static bool IsDeadly(PulseAbility ability) => ability.deadlyPulse;
 
         private readonly HashSet<int> impactAccents = new HashSet<int>();
 
@@ -516,23 +521,4 @@ namespace SpiderSurge
         internal SpiderHealthSystem Health;
     }
 
-    [HarmonyPatch(typeof(Explosion), "KnockBack")]
-    internal static class PulseExplosionScopePatch
-    {
-        internal static SpiderHealthSystem ProtectedSpider;
-
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        private static void Prefix(Explosion __instance, out SpiderHealthSystem __state)
-        {
-            __state = ProtectedSpider;
-            ProtectedSpider = __instance.GetComponent<PulseExplosionCaster>()?.Health;
-        }
-
-        [HarmonyFinalizer]
-        private static void Finalizer(SpiderHealthSystem __state)
-        {
-            ProtectedSpider = __state;
-        }
-    }
 }

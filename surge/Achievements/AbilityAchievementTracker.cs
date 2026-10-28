@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using SpiderSurge.Enemies;
@@ -52,9 +51,6 @@ namespace SpiderSurge
 
     internal static class AbilityAchievementTracker
     {
-        internal static Component Attack;
-        internal static EnemyHealthSystem LastWasp;
-        internal static PlayerController ThermalCaster;
         private static PlayerController pendingOverkill;
         private static int pendingWave;
 
@@ -108,7 +104,8 @@ namespace SpiderSurge
         {
             if (enemy.needToKillToCompleteLevel) ClearWave();
             EnemyAchievementOrigin origin = enemy.GetComponent<EnemyAchievementOrigin>();
-            if (Attack is ForceField field && FrozenEnemy.IsFrozen(enemy) && origin != null)
+            Component attack = SurgeAttacks.Source;
+            if (attack is ForceField field && FrozenEnemy.IsFrozen(enemy) && origin != null)
             {
                 ParticleBlade blade = field.GetComponentInParent<ParticleBlade>();
                 PlayerController player = blade != null ? StatsMod.HitLogic.WeaponPlayer(blade) : null;
@@ -118,22 +115,23 @@ namespace SpiderSurge
                         SurgeAchievements.Unlock(SurgeAchievements.ColdCuts, player);
                 }
             }
-            if (Attack is FriendlyWaspStinger friendly && origin != null && origin.Hatchling)
+            if (attack is FriendlyWaspStinger friendly && origin != null && origin.Hatchling)
             {
                 var summoned = friendly.enemyHealthSystem != null ? friendly.enemyHealthSystem.GetComponent<EnemyAchievementOrigin>() : null;
                 if (summoned != null && summoned.Summoner != null)
                     SurgeAchievements.Unlock(SurgeAchievements.WeBroughtOurOwn, summoned.Summoner);
             }
-            if (Attack is Explosion explosion)
+            if (attack is Explosion explosion)
             {
                 var missile = explosion.GetComponent<MissileAchievementOrigin>();
                 if (missile != null && missile.Shooter == enemy && missile.ReturnedBy != null)
                     SurgeAchievements.Unlock(SurgeAchievements.ReturnToSender, missile.ReturnedBy);
             }
-            if (LastWasp == enemy && ThermalCaster != null &&
-                (Attack is PulseAbility || (Attack is Explosion blast && blast.GetComponent<PulseExplosionCaster>() != null)))
+            PlayerController thermalCaster = SurgeAttacks.ThermalCaster;
+            if (SurgeAttacks.LastWasp == enemy && thermalCaster != null &&
+                (attack is PulseAbility || (attack is Explosion blast && blast.GetComponent<PulseExplosionCaster>() != null)))
             {
-                pendingOverkill = ThermalCaster;
+                pendingOverkill = thermalCaster;
                 pendingWave = SurvivalMode.instance.CurrentWave;
             }
         }
@@ -159,7 +157,7 @@ namespace SpiderSurge
             if (missile == null) return;
             var blast = explosion.gameObject.AddComponent<MissileAchievementOrigin>();
             blast.Shooter = missile.Shooter;
-            blast.ReturnedBy = Attack == null && StatsMod.HitLogic.CurrentAttacker == null ? missile.ReturnedBy : null;
+            blast.ReturnedBy = SurgeAttacks.Source == null && StatsMod.HitLogic.CurrentAttacker == null ? missile.ReturnedBy : null;
         }
     }
 
@@ -171,37 +169,6 @@ namespace SpiderSurge
         {
             if (Net.IsAuthority && __instance.needToKillToCompleteLevel) AbilityAchievementTracker.ClearWave();
         }
-    }
-
-    // Scope the actual damaging source so shields, unrelated deaths and chained explosions cannot count as a blade or stinger kill.
-    [HarmonyPatch]
-    internal static class AbilityAchievementAttackPatch
-    {
-        private static IEnumerable<MethodBase> TargetMethods()
-        {
-            yield return AccessTools.Method(typeof(ForceField), "Damage");
-            yield return AccessTools.Method(typeof(WaspStinger), "OnCollisionEnter2D");
-            yield return AccessTools.Method(typeof(FriendlyWaspStinger), "OnCollisionEnter2D");
-            yield return AccessTools.Method(typeof(RollerStrut), "OnCollisionEnter2D");
-            yield return AccessTools.Method(typeof(MeleeHazard), "OnCollisionEnter2D");
-            yield return AccessTools.Method(typeof(SawDisc), "TryDamage");
-            yield return AccessTools.Method(typeof(RailShot), "ProcessHit");
-            yield return AccessTools.Method(typeof(DeathCloud), "OnTriggerStay2D");
-            yield return AccessTools.Method(typeof(WhispBrain), "ProcessCollision");
-            yield return AccessTools.Method(typeof(Explosion), "KnockBack");
-            yield return AccessTools.Method(typeof(SpiderHealthSystem), "AfterlifeExplosion");
-            yield return AccessTools.Method(typeof(PulseAbility), "ApplyPulsePhysics");
-        }
-
-        [HarmonyPrefix]
-        private static void Prefix(Component __instance, out Component __state)
-        {
-            __state = AbilityAchievementTracker.Attack;
-            AbilityAchievementTracker.Attack = __instance;
-        }
-
-        [HarmonyFinalizer]
-        private static void Finalizer(Component __state) => AbilityAchievementTracker.Attack = __state;
     }
 
     [HarmonyPatch(typeof(EnemyHealthSystem), nameof(EnemyHealthSystem.Explode))]
@@ -222,7 +189,7 @@ namespace SpiderSurge
         private static void Prefix(SpiderHealthSystem __instance, out bool __state)
         {
             __state = Net.IsAuthority && FrozenEnemy.AnyFrozen && !AchievementTracker.Gone(__instance) &&
-                FrozenEnemy.IsFrozen(AbilityAchievementTracker.EnemyOf(AbilityAchievementTracker.Attack));
+                FrozenEnemy.IsFrozen(AbilityAchievementTracker.EnemyOf(SurgeAttacks.Source));
         }
 
         [HarmonyPostfix]
@@ -230,25 +197,6 @@ namespace SpiderSurge
         {
             if (__state && AchievementTracker.Gone(__instance))
                 AchievementTracker.Run("Still Sharp", static spider => SurgeAchievements.Unlock(SurgeAchievements.StillSharp, Players.Of(spider)), __instance);
-        }
-    }
-
-    [HarmonyPatch(typeof(PulseAbility), "ApplyPulsePhysics")]
-    internal static class ThermalOverkillAchievementPatch
-    {
-        [HarmonyPrefix]
-        private static void Prefix(PulseAbility __instance, bool deadly, out (EnemyHealthSystem, PlayerController) __state)
-        {
-            __state = (AbilityAchievementTracker.LastWasp, AbilityAchievementTracker.ThermalCaster);
-            AbilityAchievementTracker.LastWasp = deadly ? AbilityAchievementTracker.LastPlainWasp() : null;
-            AbilityAchievementTracker.ThermalCaster = deadly ? PulseAbility.CasterOf(__instance) : null;
-        }
-
-        [HarmonyFinalizer]
-        private static void Finalizer((EnemyHealthSystem, PlayerController) __state)
-        {
-            AbilityAchievementTracker.LastWasp = __state.Item1;
-            AbilityAchievementTracker.ThermalCaster = __state.Item2;
         }
     }
 

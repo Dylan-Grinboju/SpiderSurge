@@ -14,21 +14,6 @@ namespace SpiderTeams
     {
         private static readonly HashSet<string> _reported = new HashSet<string>();
 
-        // Only the host's team match reads the attacker, so the owner lookup runs only while the host has team mode on
-        public static bool EnterAttack<T>(T source, Func<T, int> resolve)
-        {
-            DamageContext.Push(TeamManager.HostTeamMode ? Resolve(source, resolve) : OwnerRegistry.Unknown);
-            return true;
-        }
-
-        public static void ExitAttack(bool entered)
-        {
-            if (entered)
-            {
-                DamageContext.Pop();
-            }
-        }
-
         public static bool EnterSpawn<T>(T source, Func<T, int> resolve)
         {
             SpawnScope.Push(Resolve(source, resolve));
@@ -66,7 +51,7 @@ namespace SpiderTeams
             }
         }
 
-        private static int Resolve<T>(T source, Func<T, int> resolve)
+        public static int Resolve<T>(T source, Func<T, int> resolve, string label = null)
         {
             try
             {
@@ -74,9 +59,79 @@ namespace SpiderTeams
             }
             catch (Exception ex)
             {
-                Report("owner lookup for " + typeof(T).Name, ex);
+                Report("owner lookup for " + (label ?? typeof(T).Name), ex);
                 return OwnerRegistry.Unknown;
             }
+        }
+    }
+
+    // Damage() has no attacker argument, so each damage source is a Teams entry on the core attack scope holding its attacker
+    internal static class TeamAttacks
+    {
+        private sealed class Resolver
+        {
+            public string Label;
+            public Func<Component, int> Owner;
+        }
+
+        internal static readonly AttackView<int> View = new AttackView<int>(Open);
+
+        public static void Register()
+        {
+            Add<ForceField>("ForceField_Damage_Patch", field => OwnerRegistry.OfWeapon(field.GetComponentInParent<Weapon>()),
+                AccessTools.Method(typeof(ForceField), "Damage", new[] { typeof(Collision2D) }));
+            Add<DamageOnParticle>("DamageOnParticle_OnParticleCollision_Patch", particles => OwnerRegistry.OfWeapon(particles.ignoreWeapon),
+                AccessTools.Method(typeof(DamageOnParticle), "OnParticleCollision", new[] { typeof(GameObject) }));
+            Add<Weapon>("WeaponAttack_Patch", weapon => OwnerRegistry.OfWeapon(weapon),
+                AccessTools.Method(typeof(DeathRay), "Fire", Type.EmptyTypes),
+                AccessTools.Method(typeof(DeathCube), "Fire", new[] { typeof(Vector3), typeof(LineRenderer) }),
+                AccessTools.Method(typeof(LaserCube), "Beam", new[] { typeof(Vector3), typeof(LineRenderer) }),
+                AccessTools.Method(typeof(LaserCannon), "DamageHit", new[] { typeof(RaycastHit2D), typeof(IDamageable) }),
+                AccessTools.Method(typeof(KhepriStaff), "Zap", new[] { typeof(GameObject) }),
+                AccessTools.Method(typeof(Snowballs), "ExplodeClientRpc", new[] { typeof(Vector3) }));
+            Add<RailShot>("RailShot_ProcessHit_Patch", RailShotOwner.Of,
+                AccessTools.Method(typeof(RailShot), "ProcessHit", new[] { typeof(RaycastHit2D), typeof(Vector2) }));
+            Add<SawDisc>("SawDisc_TryDamage_Patch", disc => OwnerRegistry.Get(disc.gameObject),
+                AccessTools.Method(typeof(SawDisc), "TryDamage", new[] { typeof(Collision2D) }));
+            Add<EnergyBall>("EnergyBall_OnCollisionEnter2D_Patch", EnergyBallOwner,
+                AccessTools.Method(typeof(EnergyBall), nameof(EnergyBall.OnCollisionEnter2D), new[] { typeof(Collision2D) }));
+            Add<SpiderHealthSystem>("SpiderHealthSystem_AfterlifeExplosion_Patch", health => Players.IdOf(health),
+                AccessTools.Method(typeof(SpiderHealthSystem), "AfterlifeExplosion"));
+            // An explosion set off inside another attack, like the Pulse ultimate's, belongs to that attacker.
+            Add<Explosion>("Explosion_KnockBack_Patch", explosion =>
+                {
+                    int owner = ExplosionOwners.Resolve(explosion);
+                    return owner != OwnerRegistry.Unknown ? owner : DamageContext.Current;
+                },
+                AccessTools.Method(typeof(Explosion), "KnockBack"));
+            // The pulse knocks back and, as an ultimate, kills; its caster becomes the attacker so the friendly fire rule applies.
+            Add<Component>("PulseAbility_ApplyPulsePhysics_Patch", ability => Players.IdOf(ability),
+                AccessTools.Method(typeof(SpiderSurge.PulseAbility), "ApplyPulsePhysics"));
+        }
+
+        public static void Unregister() => View.Unregister();
+
+        // Only the host's team match reads the attacker, so the owner lookup runs only while the host has team mode on
+        private static bool Open(ref int slot, Component source, object info)
+        {
+            Resolver resolver = (Resolver)info;
+            slot = TeamManager.HostTeamMode ? PatchScopes.Resolve(source, resolver.Owner, resolver.Label) : OwnerRegistry.Unknown;
+            return true;
+        }
+
+        private static void Add<T>(string patch, Func<T, int> owner, params MethodInfo[] methods) where T : Component
+        {
+            var resolver = new Resolver { Label = typeof(T).Name, Owner = source => owner((T)source) };
+            foreach (MethodBase method in PatchScopes.Existing(patch, methods))
+            {
+                View.Register(method, resolver);
+            }
+        }
+
+        private static int EnergyBallOwner(EnergyBall ball)
+        {
+            int owner = OwnerRegistry.Get(ball.gameObject);
+            return owner != OwnerRegistry.Unknown ? owner : OwnerRegistry.Resolve(ball.owner);
         }
     }
 
@@ -116,87 +171,10 @@ namespace SpiderTeams
         }
     }
 
-    [HarmonyPatch(typeof(ForceField), "Damage", new[] { typeof(Collision2D) })]
-    public static class ForceField_Damage_Patch
+    internal static class RailShotOwner
     {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(ForceField __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, field => OwnerRegistry.OfWeapon(field.GetComponentInParent<Weapon>()));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
-    [HarmonyPatch(typeof(DamageOnParticle), "OnParticleCollision", new[] { typeof(GameObject) })]
-    public static class DamageOnParticle_OnParticleCollision_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(DamageOnParticle __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, particles => OwnerRegistry.OfWeapon(particles.ignoreWeapon));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
-    [HarmonyPatch]
-    public static class WeaponAttack_Patch
-    {
-        [HarmonyTargetMethods]
-        public static IEnumerable<MethodBase> TargetMethods()
-        {
-            return PatchScopes.Existing("WeaponAttack_Patch",
-                AccessTools.Method(typeof(DeathRay), "Fire", Type.EmptyTypes),
-                AccessTools.Method(typeof(DeathCube), "Fire", new[] { typeof(Vector3), typeof(LineRenderer) }),
-                AccessTools.Method(typeof(LaserCube), "Beam", new[] { typeof(Vector3), typeof(LineRenderer) }),
-                AccessTools.Method(typeof(LaserCannon), "DamageHit", new[] { typeof(RaycastHit2D), typeof(IDamageable) }),
-                AccessTools.Method(typeof(KhepriStaff), "Zap", new[] { typeof(GameObject) }),
-                AccessTools.Method(typeof(Snowballs), "ExplodeClientRpc", new[] { typeof(Vector3) }));
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(Weapon __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, weapon => OwnerRegistry.OfWeapon(weapon));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
-    [HarmonyPatch(typeof(RailShot), "ProcessHit", new[] { typeof(RaycastHit2D), typeof(Vector2) })]
-    public static class RailShot_ProcessHit_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(RailShot __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, source => Owner(source));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-
         // The ignore list holds the shooter, or the force field that reflected the shot.
-        internal static int Owner(RailShot shot)
+        internal static int Of(RailShot shot)
         {
             List<GameObject> ignore = shot.ignore;
             if (ignore != null)
@@ -211,63 +189,6 @@ namespace SpiderTeams
                 }
             }
             return OwnerRegistry.Get(shot.gameObject);
-        }
-    }
-
-    [HarmonyPatch(typeof(SawDisc), "TryDamage", new[] { typeof(Collision2D) })]
-    public static class SawDisc_TryDamage_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(SawDisc __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, disc => OwnerRegistry.Get(disc.gameObject));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
-    [HarmonyPatch(typeof(EnergyBall), nameof(EnergyBall.OnCollisionEnter2D), new[] { typeof(Collision2D) })]
-    public static class EnergyBall_OnCollisionEnter2D_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(EnergyBall __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, source => Owner(source));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
-        }
-
-        private static int Owner(EnergyBall ball)
-        {
-            int owner = OwnerRegistry.Get(ball.gameObject);
-            return owner != OwnerRegistry.Unknown ? owner : OwnerRegistry.Resolve(ball.owner);
-        }
-    }
-
-    [HarmonyPatch(typeof(SpiderHealthSystem), "AfterlifeExplosion")]
-    public static class SpiderHealthSystem_AfterlifeExplosion_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(SpiderHealthSystem __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, health => Players.IdOf(health));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitAttack(__state);
         }
     }
 

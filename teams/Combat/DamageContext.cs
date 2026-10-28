@@ -1,34 +1,26 @@
 using System.Collections.Generic;
+using SpiderSurge.Common;
 
 namespace SpiderTeams
 {
-    // Damage() has no attacker argument, so each damage source pushes its attacker for the duration of its call.
+    // The attacker of the innermost Teams entry on the core attack scope
     internal static class DamageContext
     {
-        private static readonly List<int> _attackers = new List<int>(8);
+        private static AttackView<int> View => TeamAttacks.View;
 
-        public static int Current => _attackers.Count > 0 ? _attackers[_attackers.Count - 1] : OwnerRegistry.Unknown;
+        public static int Current => View.Active ? View.Slot(View.Top) : OwnerRegistry.Unknown;
 
-        public static int Blast { get; set; }
-
-        public static void Push(int playerId)
+        // The innermost explosion's instance id, 0 outside one
+        public static int Blast
         {
-            _attackers.Add(playerId);
-        }
-
-        public static void Pop()
-        {
-            if (_attackers.Count > 0)
+            get
             {
-                _attackers.RemoveAt(_attackers.Count - 1);
+                int index = View.Innermost<Explosion>();
+                return index >= 0 ? View.SourceAt(index).GetInstanceID() : 0;
             }
         }
 
-        public static void Clear()
-        {
-            _attackers.Clear();
-            Blast = 0;
-        }
+        public static bool InPulse => View.Innermost<SpiderSurge.PulseAbility>() >= 0;
     }
 
     // Owner for network objects spawned while a weapon fires.

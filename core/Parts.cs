@@ -113,6 +113,7 @@ namespace SpiderSurge.Common
             {
                 Start(part, types);
             }
+            AttackScope.Patch(_core);
         }
 
         public static void StopAll()
