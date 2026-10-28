@@ -20,11 +20,11 @@ Assert-Equal ([SpiderSurge.ChaosRules]::BonusSlot(0, 0, 0)) -1 'Empty choices ha
 
 $cases = @(
     @{ Lives = 1; Abilities = $false; Ultimate = $false; Expected = 'LifeWager,Overrun' },
-    @{ Lives = 2; Abilities = $false; Ultimate = $false; Expected = 'LastHeart,LifeWager,Overrun' },
+    @{ Lives = 2; Abilities = $false; Ultimate = $false; Expected = 'LifeWager,Overrun,PoisonedHeart' },
     @{ Lives = 1; Abilities = $true; Ultimate = $false; Expected = 'DoubleCooldown,LifeWager,NoRegularAbilities,Overrun' },
-    @{ Lives = 2; Abilities = $true; Ultimate = $false; Expected = 'DoubleCooldown,LastHeart,LifeWager,NoRegularAbilities,Overrun' },
-    @{ Lives = 2; Abilities = $true; Ultimate = $true; Expected = 'DoubleCooldown,LastHeart,LifeWager,NoRegularAbilities,NoUltimate,Overrun' },
-    @{ Lives = 2; Abilities = $false; Ultimate = $true; Expected = 'LastHeart,LifeWager,Overrun' }
+    @{ Lives = 2; Abilities = $true; Ultimate = $false; Expected = 'DoubleCooldown,LifeWager,NoRegularAbilities,Overrun,PoisonedHeart' },
+    @{ Lives = 2; Abilities = $true; Ultimate = $true; Expected = 'DoubleCooldown,LifeWager,NoRegularAbilities,NoUltimate,Overrun,PoisonedHeart' },
+    @{ Lives = 2; Abilities = $false; Ultimate = $true; Expected = 'LifeWager,Overrun,PoisonedHeart' }
 )
 foreach ($case in $cases) {
     $eligible = [SpiderSurge.ChaosRules]::Eligible($case.Lives, $case.Abilities, $case.Ultimate)
@@ -33,7 +33,7 @@ foreach ($case in $cases) {
     Assert-Equal (@($names | Select-Object -Unique).Count) $names.Count 'Uniform draw has no duplicate candidates'
 }
 
-$rewards = @{ None = 0; LastHeart = 2; DoubleCooldown = 1; NoRegularAbilities = 2; LifeWager = 1; NoUltimate = 1; Overrun = 2 }
+$rewards = @{ None = 0; PoisonedHeart = 2; DoubleCooldown = 1; NoRegularAbilities = 2; LifeWager = 1; NoUltimate = 1; Overrun = 2 }
 foreach ($kind in $rewards.Keys) {
     Assert-Equal ([SpiderSurge.ChaosRules]::Reward([SpiderSurge.ChallengeKind]$kind)) $rewards[$kind] "$kind reward"
 }

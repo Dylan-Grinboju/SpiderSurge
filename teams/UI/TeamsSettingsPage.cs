@@ -94,7 +94,7 @@ namespace SpiderTeams
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Enable or disable parts shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Mod parts shows why.");
                 return;
             }
 
@@ -129,7 +129,7 @@ namespace SpiderTeams
             page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
             page.Note(Consts.Surge.LongTermDescription);
 
-            page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Select and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. Change them in Mods > SpiderSurge > Controls. Changes apply from the next round.");
+            page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Select and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}.");
             page.Note("Online, every player runs the same SpiderSurge version; the host turns away anyone else.");
         }
 
@@ -204,25 +204,7 @@ namespace SpiderTeams
 
         private static string KeyboardLabel() => Controls.Display(Controls.TeamKeyboard);
 
-        private static string PickHint()
-        {
-            const string change = " Change the team buttons in Mods > SpiderSurge > Controls.";
-            bool gamepad = ModConfig.CycleTeamGamepad != Controls.None;
-            bool keyboard = ModConfig.CycleTeamKeyboard != Controls.None;
-            if (gamepad && keyboard)
-            {
-                return $"In the lobby, press {GamepadLabel()} (controller) or {KeyboardLabel()} (keyboard) to switch team." + change;
-            }
-            if (gamepad)
-            {
-                return $"In the lobby, press {GamepadLabel()} on a controller to switch team." + change;
-            }
-            if (keyboard)
-            {
-                return $"In the lobby, press {KeyboardLabel()} on the keyboard to switch team." + change;
-            }
-            return "The team buttons are off; the host can move players in the list below." + change;
-        }
+        private static string PickHint() => $"In the lobby, press {GamepadLabel()} (controller) or {KeyboardLabel()} (keyboard) to switch team.";
 
         private static string Plural(int count, string noun)
         {

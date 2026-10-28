@@ -31,7 +31,6 @@ namespace SpiderSurge
             Settings.Define(ModConfig.Defaults);
             Settings.Define(StatsMod.ModConfig.Defaults);
             Settings.Define(SpiderTeams.ModConfig.Defaults);
-            Settings.Define(Controls.Defaults);
 
             OldMods.Check();
             Settings.Load();

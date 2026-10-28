@@ -29,6 +29,14 @@ namespace StatsMod
                 _scalingInitialized = false;
                 StyleVersion++;
             }
+            if (Settings.Affects(key, ModConfig.Prefix + "display.showStatsWindow") && !ModConfig.ShowStatsWindow && Instance != null)
+            {
+                Instance.HideSmallUI();
+                Instance.HideBigUI();
+                Instance.HideTitlesUI();
+                Instance.currentUIState = UIState.Off;
+                Instance.restartTitlesPause = false;
+            }
         }
 
         #region Singleton
@@ -39,7 +47,7 @@ namespace StatsMod
             {
                 var session = GameSessionManager.Instance;
                 GameMode mode = session.CurrentGameMode != GameMode.None ? session.CurrentGameMode : session.LastGameMode;
-                return ModConfig.TitlesEnabled && mode != GameMode.Versus;
+                return ModConfig.ShowStatsWindow && ModConfig.TitlesEnabled && mode != GameMode.Versus;
             }
         }
         internal static bool TitlesBlockedByMenu
@@ -202,6 +210,7 @@ namespace StatsMod
         #region Input Handling
         private void Update()
         {
+            if (!ModConfig.ShowStatsWindow) return;
             if (HudController.instance == null || !HudController.instance.paused) restartTitlesPause = false;
             HandleKeyboardInput();
             HandleGamepadInput();
@@ -213,17 +222,17 @@ namespace StatsMod
             if (keyboard == null) return;
 
             if (bigUI != null && bigUI.HandlePresetInput(keyboard)) return;
-            if (smallWindowKey.WasPressed(Controls.Get(Controls.SmallWindow), keyboard))
+            if (smallWindowKey.WasPressed(Controls.SmallWindow, keyboard))
             {
                 HandleSmallWindowKey();
             }
 
-            if (bigWindowKey.WasPressed(Controls.Get(Controls.BigWindow), keyboard))
+            if (bigWindowKey.WasPressed(Controls.BigWindow, keyboard))
             {
                 HandleBigWindowKey();
             }
 
-            if (titlesKey.WasPressed(Controls.Get(Controls.TitlesWindow), keyboard))
+            if (titlesKey.WasPressed(Controls.TitlesWindow, keyboard))
             {
                 HandleTitlesKey();
             }
@@ -231,10 +240,10 @@ namespace StatsMod
 
         private void HandleGamepadInput()
         {
-            if (Gamepad.all.Count == 0 || GameMenus.Open) return;
+            if (Gamepad.all.Count == 0 || GameMenus.Navigating) return;
 
             if (bigUI != null && bigUI.HandlePresetPads()) return;
-            if (switchButton.WasPressed(ModConfig.SwitchWindowsBinding))
+            if (switchButton.WasPressed(Controls.SwitchWindows))
             {
                 CycleUIState();
             }
@@ -463,6 +472,7 @@ namespace StatsMod
         #region Public Interface for External Classes
         public static void AutoPullHUD()
         {
+            if (!ModConfig.ShowStatsWindow) return;
             if (Instance == null) return;
 
 

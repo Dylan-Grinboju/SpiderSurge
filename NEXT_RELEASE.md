@@ -10,18 +10,20 @@
 
 <img width="2559" height="1439" alt="Choosing a Surge ability" src="https://github.com/user-attachments/assets/74943e59-c808-42a0-84f2-6da99aca94d3" />
 
-SpiderSurge is made of four parts. Surge is played from its own lobby platform; the other parts can be turned on or off from the game's Mods menu.
+SpiderSurge is made of four parts. Surge, Stats and Teams always load; Game fixes can be turned on or off from the game's Mods menu.
 
 | Part | What it does | On after installing |
 |---|---|---|
 | [Stats](stats/README.md) | Tracks kills, deaths, streaks and more in Survival and Versus, with live stats windows and fun titles after Survival runs | Yes |
 | [Surge](surge/README.md) | A separate Surge Survival platform above and left of Wave Survival: new abilities, ultimates, perks and custom enemies | Yes |
-| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | No |
+| [Teams](teams/README.md) | Team versus: pick teams in the lobby, friendly fire rules, team colors and spawns, and Surge abilities in versus | Yes, with team versus off until you turn it on from the versus setup page |
 | [Game fixes](#game-fixes) | Fixes bugs in the base game | Yes |
 
 Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are now only released as parts of SpiderSurge.
 
 ## A look around
+
+Surge has 11 new ability achievements, bringing the collection to 24. They reward interactions with Freeze Time, Rewind, Kinetic Pulse, Pocket Dimension, Black Hole, Thermal Detonation and Neural Backup, including frozen-enemy hazards, reflected missiles and Cocoon hatchlings. See the [achievement list](surge/README.md#achievements) for the unlock conditions.
 
 ### Stats
 
@@ -37,11 +39,11 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 <img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
 
-Achievements and the title collection have All, Locked, Unlocked and Recently earned views. NEW marks an unseen unlock; select it or use **Mark all seen** to clear the marker. **Match history** keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles. Saved history remains available when Stats is off.
+Achievements and the title collection have All, Locked, Unlocked and Recently earned views. NEW marks an unseen unlock; select it or use **Mark all seen** to clear the marker. **Match history** keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles.
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Chaos points now come from marked map choices (a 75% chance of one bonus card), optional map-long challenges, and Blood Pact. Ability use earns no points and the chaos bar is removed. The shop still offers two random items per visit; every item can be purchased once by the team, including Reroll and Blood Pact. Bigger Heart grants +1 maximum life and +1 current life. After selecting a map, accept or skip one optional challenge before play resumes: Last Heart, Double Cooldown, No Regular Abilities, Life Wager, No Ultimate, or Overrun. Rewards and temporary restrictions settle at the next map choice. Clients indicate their preference and the host decides. Perk-synergy hints remain beneath the cards. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The in-game guide explains all of it. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated reference topics. The guide no longer opens automatically or uses the backtick key.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Chaos points now come from marked map choices (a 75% chance of one bonus card), optional map-long challenges, and Blood Pact. Ability use earns no points and the chaos bar is removed. The shop still offers two random items per visit; every item can be purchased once by the team, including Reroll and Blood Pact. Bigger Heart grants +1 maximum life and +1 current life. After selecting a map, accept or skip one optional challenge before play resumes: Poisoned Heart, Double Cooldown, No Regular Abilities, Life Wager, No Ultimate, or Overrun. Rewards and temporary restrictions settle at the next map choice. The host accepts or skips for the team; clients see that the host is deciding. Perk-synergy hints remain beneath the cards. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The starting ability choice always works this way. The in-game guide explains all of it. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated reference topics. The guide no longer opens automatically or uses the backtick key.
 
 <img width="1600" alt="Your first Surge run, explained in How to play" src="docs/images/guide-first-run.png" />
 
@@ -53,7 +55,7 @@ Split the lobby into teams and fight until one team is left standing. Spiders ta
 
 ### Settings in the game
 
-Open **Mods** > **SpiderSurge** from the pause menu to turn parts on or off and configure Stats and Surge. Settings use the game's normal menu, with compact rows and a side panel that explains the hovered or controller-selected setting. Use the right stick or mouse wheel to scroll long explanations. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
+Open **Mods** > **SpiderSurge** from the pause menu to configure Stats and Surge and turn Game fixes on or off. Settings use the game's normal menu, with compact rows and a side panel that explains the hovered or controller-selected setting. Use the right stick or mouse wheel to scroll long explanations. Navigate with the stick or D-pad, press A/Cross to select, and use left/right to adjust sliders. B/Circle, Start, Escape and the Back button return one page at a time, restoring your selection and scroll position.
 
 <img width="1280" alt="Compact settings with contextual explanations" src="docs/images/settings-context-help.png" />
 
@@ -63,18 +65,18 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 
 | What | Keyboard | Controller |
 |---|---|---|
-| Small stats window | **F1** | D-pad (small window or Off during a match; more windows in the lobby) |
+| Small stats window | **F1** | D-pad, except while a menu is open (small window or Off during a match; more windows in the lobby) |
 | Big stats window | **F2** | |
 | Titles | **F3** (also skips the reveal) | |
 | Previous / next scoreboard page or preset | **Page Up / Page Down** | **D-pad left / right**, while the big window is open |
-| Surge ability | **Q** | **L1**, or your own button: hold **Select** and double-tap it |
+| Surge ability | **Q** | **L2**, or your own button: hold **Select** and double-tap it |
 | Surge ultimate | **C** | **L3 + R3** together |
 | How to play | Pause menu > **Mods** > **SpiderSurge** > **How to play** | Same menu |
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
-Change any of them in **Mods** > **SpiderSurge** > **Controls**: select a row, then press the new key or button. The controller ultimate and the stats switch can also be two buttons pressed together or the whole D-pad. A row that shares a button with another one shows a warning, and a button that casts Surge's ultimate on its own doesn't also switch the stats windows.
+These are fixed, picked to stay out of the way of the game's own controls. Only the controller ability button can be changed: hold **Select** and double-tap another button (A, B, X, Y, L1, R1, L2, R2, L3 or R3) to make it yours, or hold Select for 3 seconds to go back to L2. Each player picks their own, and the choice lasts until they leave the game. The ability button stops doing what it did in the game, so L2 no longer jumps; jump with A or L1.
 
-The big window's arrows and mouse wheel also move through its pages and presets. An ultimate binding takes priority over a shared scoreboard navigation binding. In the lobby, the controller window button cycles Off, the small window, the big window and Survival titles; during a match, it offers only the small window and Off.
+The big window's arrows and mouse wheel also move through its pages and presets. In the lobby, the controller window button cycles Off, the small window, the big window and Survival titles; during a match, it offers only the small window and Off.
 
 ## Installation
 
@@ -82,14 +84,14 @@ The big window's arrows and mouse wheel also move through its pages and presets.
 2. Download the `SpiderSurge.dll` from the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases) or build it from the source.
 3. Place the `SpiderSurge.dll` into your Silk `mods` folder.
 4. Launch the game.
-5. Play Surge from its platform above and left of Wave Survival in the lobby. To turn on Teams, open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
+5. Play Surge from its platform above and left of Wave Survival in the lobby. To play team versus, turn on **Team versus** on the versus setup page in the lobby.
 
 ## Updating from SpiderStats or SpiderTeams
 
 1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
 2. Launch the game.
 
-On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. Every part you had installed stays on, except Stats if you had turned its tracking off.
+On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `Stats_Mod.yaml` and `SpiderTeams.yaml` into the new `SpiderSurge.yaml`, and renames the old files to `.yaml.old`. If you had turned Stats tracking off, the Stats windows and title cards start hidden; tracking itself always runs because Surge needs it. Team versus stays on if you had SpiderTeams installed.
 
 If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older standalone `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge that include the merged parts, only the first one runs. A popup lists the files to delete.
 
@@ -99,10 +101,9 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
-- **Enable or disable parts**: a switch for each optional part. Turning a part on or off takes effect after restarting the game. Surge is always available from its lobby platform.
+- **Mod parts**: the switch for Game fixes, which takes effect after restarting the game. Surge, Stats and Teams always load; hide Stats from its settings page and choose team versus from the versus setup page.
 - Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
 - **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
-- **Controls**: every key and button the mod uses, on one page.
 - **Match history**: browse recorded Survival and Versus matches, refresh the list or clear it after confirmation. **Save match history** controls recording separately from text reports and telemetry.
 - **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
 - **About SpiderSurge**: version, credits and **Support**, with buttons to open the logs, config and save folders, copy diagnostic information, or open the bug report form. Diagnostic information contains versions and mod-part status; these actions do not upload logs or saves.
@@ -113,27 +114,17 @@ Stats > **Scoreboard presets** lets you hide fixed presets and customize Default
 
 All the settings are in one file: `...\Silk\Config\Mods\SpiderSurge.yaml`. It has a section for each part (`stats`, `surge` and `teams`), plus:
 
-`parts.stats`, `parts.teams`, `parts.fixes`: Turns each optional part on or off. Takes effect after restarting the game. Surge is always available through its lobby platform; older `parts.surge` and `surge.surgeMode` values are ignored.
+`parts.fixes`: Turns Game fixes on or off. Takes effect after restarting the game. Surge, Stats and Teams always load; older `parts.surge`, `parts.stats`, `parts.teams` and `surge.surgeMode` values are ignored, and `parts.stats` or `parts.teams` set to `false` become hidden Stats or team versus off on the first launch.
 
 `general.checkForUpdates`: If true, the mod checks for a new version when the game starts. Default: `true`.
 
-`controls`: The keys and buttons of the **Controls** page, as Unity Input System paths such as `<Keyboard>/f1` or `<Gamepad>/buttonNorth`. `none` turns one off and `a|b` lets either one work. A controller control takes A, B, X, Y, L1, R1, L2, R2, L3 and R3, and a keyboard control any key but Escape; Start, Select and Escape stay with the pause menu and the ability remap. The controller ultimate and the stats switch also take `<Gamepad>/dpad` (any D-pad direction) and `a+b` (two buttons together). A value a control can't take is ignored, with a warning in the log, and the default is used. Older `surge.dpadUltimate`, `stats.input.cycleInput`, `teams.buttonGamepad` and `teams.buttonKeyboard` values move here on the first launch.
-
-| Key | Default |
-|---|---|
-| `controls.ability.keyboard`, `controls.ability.controller` | `<Keyboard>/q`, `<Gamepad>/leftShoulder` |
-| `controls.ultimate.keyboard`, `controls.ultimate.controller` | `<Keyboard>/c`, `<Gamepad>/leftStickPress+<Gamepad>/rightStickPress` |
-| `controls.stats.smallWindow`, `controls.stats.bigWindow`, `controls.stats.titlesWindow` | `<Keyboard>/f1`, `<Keyboard>/f2`, `<Keyboard>/f3` |
-| `controls.stats.switchWindows` | `<Gamepad>/dpad` |
-| `controls.stats.previousPresetKeyboard`, `controls.stats.nextPresetKeyboard` | `<Keyboard>/pageUp`, `<Keyboard>/pageDown` |
-| `controls.stats.previousPresetController`, `controls.stats.nextPresetController` | `<Gamepad>/dpad/left`, `<Gamepad>/dpad/right` |
-| `controls.teams.keyboard`, `controls.teams.controller` | `<Keyboard>/t`, `<Gamepad>/buttonNorth` |
+The keys and buttons are not settings. Older `surge.dpadUltimate`, `stats.input.cycleInput`, `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
 
 Each part's page explains its own section. Edit the file while the game is closed, or use **Reload the settings file** afterwards. If a value is invalid, the mod uses the default instead and writes a warning to the Silk log. If the file itself can't be read, for example after a wrong indent, **Reload the settings file** keeps your current settings and shows the error; at launch, the mod starts with the defaults and keeps a copy of your file as `SpiderSurge.yaml.broken`. You can reset everything by deleting the file; it will be recreated with default values on the next launch.
 
 ## Saved progress
 
-Surge achievements, the Stats title collection and Surge Survival highscores are saved together in one file on your PC, in the game's own save folder, so updating or reinstalling the mod or the game keeps them: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\progress.dat` for Steam (`...\SPIDERHECK\SpiderSurge\progress.dat` for the Xbox app). Each part has its own section, so turning a part off keeps its progress, and each reset button clears only its own progress.
+Surge achievements, the Stats title collection and Surge Survival highscores are saved together in one file on your PC, in the game's own save folder, so updating or reinstalling the mod or the game keeps them: `%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp\SpiderSurge\progress.dat` for Steam (`...\SPIDERHECK\SpiderSurge\progress.dat` for the Xbox app). Each part has its own section, and each reset button clears only its own progress.
 
 Each save writes a new file and swaps it in, keeping the previous one as `progress.dat.bak`, so a crash mid-save loses nothing. The file carries a checksum: if it is damaged or edited by hand, the mod loads the backup instead and keeps the bad file as `progress.dat.broken`. While another program (OneDrive or an antivirus, say) holds the file open, achievements, titles and highscores earned meanwhile are kept and saved once it can be read, without lowering a highscore or showing an achievement you already have again.
 
@@ -153,6 +144,9 @@ Every player needs the same SpiderSurge version, and the lobby must use P2P. The
 - Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
 - Pain-level colour unlocks no longer throw an error on every lobby load, and every earned colour unlocks instead of only the first.
 - Starting the game no longer throws the custom-maps warning error twice.
+- When a survival perk choice times out, every offered card can be selected, including the last one.
+- Shotguns use their full set of firing and pellet-hit sounds instead of always skipping the last sound.
+- Returning to the lobby is no longer blocked by a hidden connecting screen; an active connection screen still blocks it.
 
 ## Building and releasing
 

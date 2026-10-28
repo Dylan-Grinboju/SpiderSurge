@@ -5,11 +5,10 @@ using UnityEngine;
 namespace SpiderSurge
 {
     [HarmonyPatch(typeof(OffScreenIndicator), "Update")]
-    internal static class OffScreenIndicator_LaserShield_Patch
+    internal static class OffScreenIndicator_EnemyColor_Patch
     {
         private static readonly AccessTools.FieldRef<OffScreenIndicator, EnemyHealthSystem> Health = AccessTools.FieldRefAccess<OffScreenIndicator, EnemyHealthSystem>("hs");
         private static readonly AccessTools.FieldRef<OffScreenIndicator, SpriteRenderer> Indicator = AccessTools.FieldRefAccess<OffScreenIndicator, SpriteRenderer>("_indicatorSprite");
-        private static readonly AccessTools.FieldRef<OffScreenIndicator, Color> OriginalColor = AccessTools.FieldRefAccess<OffScreenIndicator, Color>("color");
 
         [HarmonyPostfix]
         private static void Postfix(OffScreenIndicator __instance)
@@ -18,8 +17,10 @@ namespace SpiderSurge
             SpriteRenderer indicator = Indicator(__instance);
             if (enemy == null || indicator == null) return;
             GameObject shield = enemy.shield;
-            Color color = shield != null && shield.activeInHierarchy && shield.GetComponent<LaserRing>() != null
-                ? Consts.Values.LaserRing.Color : OriginalColor(__instance);
+            Color color = Color.yellow;
+            if (enemy.GetComponent<ExplodingRoller>() != null) color = Color.red;
+            else if (shield != null && shield.activeInHierarchy)
+                color = shield.GetComponent<LaserRing>() != null ? Color.red : Consts.Values.Colors.ShieldedEnemyIndicatorColor;
             if (indicator.color != color) indicator.color = color;
         }
     }

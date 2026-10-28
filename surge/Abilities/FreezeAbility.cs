@@ -27,6 +27,13 @@ namespace SpiderSurge
         public override string UltimatePerkDescription => "Turns back time on nearby enemies, turning them into wasps. Shielded enemies keep their shield.";
 
         private static readonly Dictionary<string, GameObject> EnemyPrefabs = new Dictionary<string, GameObject>();
+        private static readonly RaycastHit2D[] WallHit = new RaycastHit2D[1];
+        private static readonly ContactFilter2D Walls = new ContactFilter2D
+        {
+            useLayerMask = true,
+            layerMask = LayerMask.GetMask("World", "DynamicWorld", "Honeycomb", "dummyPlatform"),
+            useTriggers = false
+        };
 
         private bool _frozeAny;
         private bool _refundDirty;
@@ -85,7 +92,7 @@ namespace SpiderSurge
             }
         }
 
-        // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when enemies thaw
+        // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when targets thaw.
         protected override void OnActivate()
         {
             if (!IsRemote)
@@ -110,15 +117,24 @@ namespace SpiderSurge
             if (!IsAuthority) return;
 
             float duration = AbilityDuration;
+            var achievementCast = new FreezeAchievementCast(PlayerId, Time.time + duration);
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
+                Vector2 position = enemy.rb2D != null ? enemy.rb2D.position : (Vector2)enemy.transform.position;
+                if (!HasLineOfSight(origin, position)) continue;
+                var laser = enemy.GetComponentInChildren<Enemies.LaserRing>();
+                bool firing = !FrozenEnemy.IsHeld(enemy) && laser != null && laser.IsFiring;
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
+                    AchievementTracker.Run("Freeze Time", () => AbilityAchievementTracker.FreezeEnemy(enemy, achievementCast, firing));
                 }
             }
+            if (FrozenSpider.FreezeAround(origin, range, duration, PlayerId)) _frozeAny = true;
             FrozenShot.FreezeAround(origin, range, duration);
         }
+
+        public static bool HasLineOfSight(Vector2 origin, Vector2 target) => Physics2D.Linecast(origin, target, Walls, WallHit) == 0;
 
         // Frozen enemies play the thaw sound as they thaw, so a cast that froze nothing ends like any other ability
         protected override void PlayAbilityEndedSound(bool wasUltimate)
@@ -224,7 +240,7 @@ namespace SpiderSurge
             return name == wasp.name || (shieldedWasp != null && name == shieldedWasp.name);
         }
 
-        private static void RewindEnemy(EnemyHealthSystem enemy, GameObject wasp, GameObject shieldedWasp)
+        private void RewindEnemy(EnemyHealthSystem enemy, GameObject wasp, GameObject shieldedWasp)
         {
             bool shielded = enemy.shield != null && enemy.shield.activeInHierarchy;
             GameObject prefab = shielded && shieldedWasp != null ? shieldedWasp : wasp;
@@ -247,6 +263,8 @@ namespace SpiderSurge
             {
                 if (shielded && prefab == wasp && health.shield != null) health.shield.SetActive(true);
                 if (frozenFor > 0f) FrozenEnemy.Freeze(health, frozenFor, frozenBy);
+                if (enemy.GetComponent<Enemies.SpawnerBrain>() != null)
+                    AchievementTracker.Run("Factory Reset", () => SurgeAchievements.Unlock(SurgeAchievements.FactoryReset, Players.ById(PlayerId)));
             }
 
             Destroy(enemy.gameObject);

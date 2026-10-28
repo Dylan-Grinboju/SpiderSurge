@@ -33,8 +33,6 @@ namespace SpiderTeams
         public static bool RecolorSpiders { get; private set; } = Consts.Defaults.RecolorSpiders;
         public static bool ShowMarker { get; private set; } = Consts.Defaults.ShowMarker;
         public static bool GroupTeammates { get; private set; } = Consts.Defaults.GroupTeammates;
-        public static string CycleTeamGamepad => Controls.Get(Controls.TeamController);
-        public static string CycleTeamKeyboard => Controls.Get(Controls.TeamKeyboard);
         public static bool SurgeEnabled { get; private set; } = Consts.Defaults.SurgeEnabled;
         public static SurgeAbility SurgeAbility { get; private set; } = DefaultSurgeAbility;
         public static bool SurgeUltimate { get; private set; } = Consts.Defaults.SurgeUltimate;
@@ -68,7 +66,7 @@ namespace SpiderTeams
             {
                 _warned.Clear();
             }
-            if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal) || Controls.Affects(key, Controls.TeamKeyboard, Controls.TeamController))
+            if (key == null || key == "teams" || key.StartsWith("teams.", StringComparison.Ordinal))
             {
                 Refresh();
             }

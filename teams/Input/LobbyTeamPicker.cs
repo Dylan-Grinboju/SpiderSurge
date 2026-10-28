@@ -9,7 +9,7 @@ using Logger = Silk.Logger;
 
 namespace SpiderTeams
 {
-    // Global actions on the configured buttons; the pressing device tells which local player picked.
+    // Global actions on the fixed team buttons; the pressing device tells which local player picked.
     public class LobbyTeamPicker : MonoBehaviour
     {
         private const string ShowNamesAction = "ShowNames";
@@ -18,22 +18,18 @@ namespace SpiderTeams
 
         private InputAction _gamepadAction;
         private InputAction _keyboardAction;
-        private string _gamepadPath;
-        private string _keyboardPath;
         private bool _active;
         private bool _checkedBindings;
 
         private void OnEnable()
         {
             _current = this;
-            ModConfig.Changed += Rebuild;
-            Rebuild();
+            BuildActions();
         }
 
         private void OnDisable()
         {
             if (_current == this) _current = null;
-            ModConfig.Changed -= Rebuild;
             DisposeActions();
         }
 
@@ -81,9 +77,9 @@ namespace SpiderTeams
                             }
 
                             Logger.LogDebug($"SpiderTeams: game binding {action.name} = {path}");
-                            if (action.name != ShowNamesAction && (Uses(_gamepadPath, path) || Uses(_keyboardPath, path)))
+                            if (action.name != ShowNamesAction && (Uses(Controls.TeamController, path) || Uses(Controls.TeamKeyboard, path)))
                             {
-                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button; pick another team button in Mods > SpiderSurge > Controls if they clash");
+                                Logger.LogWarning($"SpiderTeams: {path} is also the game's '{action.name}' button, which a rebind in the game's controls menu put there");
                             }
                         }
                     }
@@ -108,7 +104,7 @@ namespace SpiderTeams
 
             foreach (InputDevice device in input.devices)
             {
-                if (IsPressed(device, picker._gamepadPath) || IsPressed(device, picker._keyboardPath))
+                if (IsPressed(device, Controls.TeamController) || IsPressed(device, Controls.TeamKeyboard))
                 {
                     return true;
                 }
@@ -140,30 +136,17 @@ namespace SpiderTeams
             return false;
         }
 
-        private void Rebuild()
+        private void BuildActions()
         {
-            if (_gamepadPath == ModConfig.CycleTeamGamepad && _keyboardPath == ModConfig.CycleTeamKeyboard)
-            {
-                return;
-            }
-
             DisposeActions();
-            _gamepadPath = ModConfig.CycleTeamGamepad;
-            _keyboardPath = ModConfig.CycleTeamKeyboard;
-            _gamepadAction = CreateAction("SpiderTeamsCycleGamepad", _gamepadPath);
-            _keyboardAction = CreateAction("SpiderTeamsCycleKeyboard", _keyboardPath);
-            _active = false;
+            _gamepadAction = CreateAction("SpiderTeamsCycleGamepad", Controls.TeamController);
+            _keyboardAction = CreateAction("SpiderTeamsCycleKeyboard", Controls.TeamKeyboard);
             _checkedBindings = false;
         }
 
         // Pass-through skips the conflict resolution that drops a second pad's press while another pad holds the button.
         private InputAction CreateAction(string name, string binding)
         {
-            if (string.IsNullOrEmpty(binding) || binding == Controls.None)
-            {
-                return null;
-            }
-
             try
             {
                 var action = new InputAction(name, InputActionType.PassThrough);
@@ -187,8 +170,6 @@ namespace SpiderTeams
             DisposeAction(_keyboardAction);
             _gamepadAction = null;
             _keyboardAction = null;
-            _gamepadPath = null;
-            _keyboardPath = null;
             _active = false;
             _held.Clear();
         }

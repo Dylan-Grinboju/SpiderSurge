@@ -10,19 +10,19 @@ The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split
 - **Team Versus**: A versus round ends when one team is left standing. Every member of the winning team scores, alive or dead, and the first team to reach the winning score takes the match.
 - **Any Number of Teams**: Play with 2 to 32 teams. With as many teams as players, everyone is on their own team, which plays exactly like normal free-for-all.
 - **More Than 4 Players**: Works with [InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends) for up to 32 players.
-- **Pick Teams in the Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team; change these buttons in **Mods** > **SpiderSurge** > **Controls**. New players join the smallest team automatically.
+- **Pick Teams in the Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team. New players join the smallest team automatically.
 - **Configurable Friendly Fire**: Teammates' hits can push you (the default), do nothing, or work as normal.
 - **Team Visuals**: Recolor spiders in their team's color, show a team marker above each spider, both, or neither.
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
 - **Team Win Screen**: The win screen and the lobby summary show each team's score and members.
-- **Surge Abilities**: With the [Surge](../surge/README.md) part on, give every spider the same Surge ability in versus, with its ultimate and perks if you like.
+- **Surge Abilities**: Give every spider the same [Surge](../surge/README.md) ability in versus, with its ultimate and perks if you like.
 - **In-Game Settings**: Every setting can be changed from the versus setup page, including moving players between teams.
 
 ## Turning it on
 
-Teams is off after installing SpiderSurge. Open the pause menu, pick **Mods** > **SpiderSurge** > **Enable or disable parts**, check **Teams**, and restart the game.
+Teams always loads with SpiderSurge. Turn on **Team versus** from the versus setup page in the lobby.
 
-Team versus is on as soon as the part runs. You can turn team versus off between matches from the versus setup page, without restarting.
+Team versus starts off on new installs. Switch it on or off between matches from the versus setup page, without restarting.
 
 ## How to Play
 
@@ -52,7 +52,7 @@ Team versus is on as soon as the part runs. You can turn team versus off between
 Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **Give everyone an ability** under **Surge abilities in versus** on the versus setup page; it is off by default. It works in normal free-for-all versus too, not only with teams.
 
 - Everyone gets the same ability. Pick one, or **Random** for a new one every round, never the same one twice in a row. The ability is announced at the start of the match, and every round in Random mode.
-- Use the ability with **Q** or **L1**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge; **Mods** > **SpiderSurge** > **Controls** changes them. To move your own ability to another button, hold **Select** and double-tap that button.
+- Use the ability with **Q** or **L2**, and the ultimate with **C** or **L3 + R3** together, the same as in Surge. To move your own ability to another button, hold **Select** and double-tap that button.
 - Each round starts fresh, so stored weapons don't carry over.
 - Changes on the versus setup page apply from the next round.
 
@@ -80,7 +80,7 @@ Open the normal **Versus Battle** setup page. Team versus, team count and friend
 - The team list, which shows each player under their team. The host can move a player to another team with the arrows next to their name, shuffle everyone, or balance the team sizes.
 - **Reset Teams settings to defaults**.
 
-Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. The Surge settings only show while the Surge part runs. Enable the Teams part under **Mods** > **SpiderSurge** > **Enable or disable parts** and restart the game if the controls are missing.
+Changes apply right away and are saved to the Yaml file. The page only opens from the lobby, so the settings stay the same for the whole match. Only the host can open it. Teams and its controls are always available.
 
 ![Team settings on the normal versus setup page](../docs/images/teams-settings.png)
 
@@ -94,7 +94,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 <summary>Explanation of the fields</summary>
 
 ### Teams:
-`teams.enabled`: Toggles team versus. If false, versus plays exactly like the base game. Default: `true`.
+`teams.enabled`: Toggles team versus. If false, versus plays exactly like the base game. Default: `false`.
 
 `teams.count`: How many teams to split the players into, from 2 to 32. New players join the smallest team, so with at least as many teams as players everyone starts on their own team. Default: `2`.
 
@@ -112,7 +112,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
 
 ### Input:
-The team buttons are `controls.teams.controller` (default `<Gamepad>/buttonNorth`, Y / Triangle) and `controls.teams.keyboard` (default `<Keyboard>/t`), which **Mods** > **SpiderSurge** > **Controls** sets. In the lobby, a team button that is also the game's show-names button (Y or Tab) only switches team. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values move there on the first launch; Select / Back can't be a team button any more, so it goes back to Y.
+The team buttons are fixed: Y / Triangle on a controller and T on the keyboard. In the lobby they only switch team, even though Y and Tab are also the game's show-names buttons. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).

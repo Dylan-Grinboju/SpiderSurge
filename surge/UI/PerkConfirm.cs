@@ -109,6 +109,7 @@ namespace SpiderSurge
                 buttonObject.name = ObjectName;
                 var card = buttonObject.GetComponent<SurvivalModifierChoiceCard>();
                 var confirm = buttonObject.AddComponent<PerkConfirmButton>();
+                buttonObject.AddComponent<PerkActionButton>();
                 confirm._hud = hud;
                 confirm._button = buttonObject.GetComponent<Button>();
                 confirm._background = buttonObject.GetComponent<Image>();

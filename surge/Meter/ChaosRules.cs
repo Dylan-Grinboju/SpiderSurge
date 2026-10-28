@@ -5,7 +5,7 @@ namespace SpiderSurge
 {
     public enum ChallengeKind : byte
     {
-        None, LastHeart, DoubleCooldown, NoRegularAbilities, LifeWager, NoUltimate, Overrun
+        None, PoisonedHeart, DoubleCooldown, NoRegularAbilities, LifeWager, NoUltimate, Overrun
     }
 
     public static class ChaosRules
@@ -14,9 +14,9 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.LastHeart: return "Last Heart";
+                case ChallengeKind.PoisonedHeart: return "Poisoned Heart";
                 case ChallengeKind.DoubleCooldown: return "Double Cooldown";
-                case ChallengeKind.NoRegularAbilities: return "No Regular Abilities";
+                case ChallengeKind.NoRegularAbilities: return "No Abilities";
                 case ChallengeKind.LifeWager: return "Life Wager";
                 case ChallengeKind.NoUltimate: return "No Ultimate";
                 case ChallengeKind.Overrun: return "Overrun";
@@ -28,23 +28,23 @@ namespace SpiderSurge
         {
             switch (kind)
             {
-                case ChallengeKind.LastHeart: return "Play with 1 team life. Borrowed lives return at the next map choice. Losing your last life ends the run.";
-                case ChallengeKind.DoubleCooldown: return "Regular ability and ultimate cooldowns are doubled.";
-                case ChallengeKind.NoRegularAbilities: return "Regular abilities are disabled. Your ultimate still works.";
-                case ChallengeKind.LifeWager: return "Lose a team life: lose 1 chaos point and forfeit the reward. The penalty happens once and cannot take you below zero.";
-                case ChallengeKind.NoUltimate: return "Ultimates are disabled. Regular abilities still work.";
-                case ChallengeKind.Overrun: return "Face 50% more enemy budget each wave, on top of Surge difficulty.";
+                case ChallengeKind.PoisonedHeart: return "Survive with 1 life. The other lives come back when the challenge ends.";
+                case ChallengeKind.DoubleCooldown: return "Double all ability cooldowns.";
+                case ChallengeKind.NoRegularAbilities: return "Survive without abilities. Ultimates remain usable.";
+                case ChallengeKind.LifeWager: return "Lose no team lives. Failure costs 1 chaos point.";
+                case ChallengeKind.NoUltimate: return "Survive without ultimates.";
+                case ChallengeKind.Overrun: return "Face 50% more enemies.";
                 default: return "";
             }
         }
 
         public static int Reward(ChallengeKind kind) => kind == ChallengeKind.None ? 0 :
-            kind == ChallengeKind.LastHeart || kind == ChallengeKind.NoRegularAbilities || kind == ChallengeKind.Overrun ? 2 : 1;
+            kind == ChallengeKind.PoisonedHeart || kind == ChallengeKind.NoRegularAbilities || kind == ChallengeKind.Overrun ? 2 : 1;
 
         public static List<ChallengeKind> Eligible(int lives, bool abilities, bool ultimate)
         {
             var result = new List<ChallengeKind> { ChallengeKind.LifeWager, ChallengeKind.Overrun };
-            if (lives >= 2) result.Add(ChallengeKind.LastHeart);
+            if (lives >= 2) result.Add(ChallengeKind.PoisonedHeart);
             if (abilities)
             {
                 result.Add(ChallengeKind.DoubleCooldown);

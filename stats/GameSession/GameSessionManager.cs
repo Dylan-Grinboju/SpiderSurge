@@ -174,7 +174,7 @@ namespace StatsMod
             TitlesManager.Instance.SetRunOutcome(shouldShowTitles, newlyUnlocked);
             MatchHistory.Complete(statsSnapshot, restartRequested);
 
-            if (shouldShowTitles && restartRequested)
+            if (shouldShowTitles && ModConfig.ShowStatsWindow && restartRequested)
             {
                 UIManager.AutoShowTitles(animate: false);
                 pauseAfterRestartOnNextSessionStart = true;
@@ -404,7 +404,7 @@ namespace StatsMod
                                     TitlesManager.Instance.HasGameEndedTitles &&
                                     TitlesManager.Instance.TitleCount > 0;
 
-            if (shouldShowTitles && remoteRestartRequested)
+            if (shouldShowTitles && ModConfig.ShowStatsWindow && remoteRestartRequested)
             {
                 UIManager.AutoShowTitles(animate: false);
                 pauseAfterRestartOnNextSessionStart = true;

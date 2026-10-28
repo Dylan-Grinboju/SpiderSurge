@@ -162,13 +162,6 @@ namespace StatsMod
         public static bool TitlesEnabled => Bool("titles.enabled");
         public static float TitlesRevealDelaySeconds => Mathf.Clamp(Settings.GetFloat(Prefix + "titles.revealDelaySeconds"), 0f, MaxRevealDelay);
 
-        // A button that casts Surge's ultimate on its own doesn't also switch the windows
-        public static string SwitchWindowsBinding => SurgeUltimateTaken
-            ? Controls.Without(Controls.Get(Controls.SwitchWindows), Controls.Get(Controls.UltimateController))
-            : Controls.Get(Controls.SwitchWindows);
-
-        internal static bool SurgeUltimateTaken => Parts.Surge.Running && (SpiderSurge.BaseAbility.UltimateBound || !SpiderSurge.SurgeGameModeManager.AbilitiesDisabled);
-
         // The small window is dragged with the mouse, so its position is saved once it stops moving, as a percentage of the screen so a new resolution keeps it in place
         public static void SetDisplayPosition(Vector2 position)
         {

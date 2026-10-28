@@ -70,6 +70,7 @@ namespace SpiderSurge
             public SerializationWeaponName Name;
             public float Ammo;
             public List<Weapon.WeaponType> Types;
+            public StoredWeaponJourney Journey;
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
@@ -220,7 +221,8 @@ namespace SpiderSurge
                 WeaponRef = val,
                 Name = val.serializationWeaponName,
                 Ammo = val.ammo,
-                Types = val.type != null ? new List<Weapon.WeaponType>(val.type) : new List<Weapon.WeaponType>()
+                Types = val.type != null ? new List<Weapon.WeaponType>(val.type) : new List<Weapon.WeaponType>(),
+                Journey = StoredWeaponAchievement.Of(val)
             };
         }
 
@@ -389,7 +391,8 @@ namespace SpiderSurge
                 dataList.Add(new StoragePersistenceManager.SavedWeaponData
                 {
                     WeaponName = weaponData.Name,
-                    Ammo = weaponData.Ammo
+                    Ammo = weaponData.Ammo,
+                    Journey = weaponData.Journey
                 });
             }
         }
@@ -505,6 +508,7 @@ namespace SpiderSurge
                     {
                         newWeapon.ammo = data.Ammo;
                         KeepRestoredAmmo(newWeapon, data.Ammo);
+                        AchievementTracker.Run("Family Heirloom", () => StoredWeaponAchievement.Restore(newWeapon, data.Journey, playerId));
                     }
 
                     newWeaponObj.transform.SetParent(transform);
@@ -516,7 +520,8 @@ namespace SpiderSurge
                         WeaponRef = newWeapon,
                         Name = newWeapon.serializationWeaponName,
                         Ammo = newWeapon.ammo,
-                        Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>()
+                        Types = newWeapon.type != null ? new List<Weapon.WeaponType>(newWeapon.type) : new List<Weapon.WeaponType>(),
+                        Journey = StoredWeaponAchievement.Of(newWeapon)
                     };
                 }
                 else

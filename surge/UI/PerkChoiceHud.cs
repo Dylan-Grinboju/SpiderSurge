@@ -1,5 +1,7 @@
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace SpiderSurge
 {
@@ -10,6 +12,7 @@ namespace SpiderSurge
         private Layer _lives;
         private Layer _perks;
         private bool _refreshPerks;
+        private GameObject _focus;
 
         private sealed class Layer
         {
@@ -75,12 +78,14 @@ namespace SpiderSurge
                 _indicator.UpdateActiveMods();
             }
 
-            bool choosing = SurgeGameModeManager.IsSurgeRunActive && (_hud.perkChoiceView.IsVisible || _hud.perkChoiceView.IsShowing);
+            bool choosing = SurgeGameModeManager.IsSurgeRunActive && (HudController.instance == null || !HudController.instance.paused)
+                && (_hud.perkChoiceView.IsVisible || _hud.perkChoiceView.IsShowing);
             if (!choosing)
             {
                 Restore();
                 return;
             }
+            KeepFocus();
 
             Canvas choice = _hud.perkChoiceView.GetComponent<Canvas>();
             if (choice == null) return;
@@ -91,6 +96,40 @@ namespace SpiderSurge
                 _perks = new Layer(_indicator.gameObject);
             _lives?.Raise(above);
             _perks?.Raise(above);
+        }
+
+        // Doozy selects any button the mouse passes over, the disabled Confirm and Buy included, and the pause menu or a click on the background leaves nothing selected; either way a pad has no card to move from, so the last usable control keeps the focus
+        private void KeepFocus()
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null || PerkChoiceWidget.ChoiceMade || _hud.perkChoiceView.IsHiding) return;
+            Transform view = _hud.perkChoiceView.transform;
+            GameObject selected = eventSystem.currentSelectedGameObject;
+            if (selected != null && selected.activeInHierarchy)
+            {
+                if (!selected.transform.IsChildOf(view)) return;
+                Selectable selectable = selected.GetComponent<Selectable>();
+                if (selectable == null || selectable.IsInteractable())
+                {
+                    _focus = selected;
+                    return;
+                }
+                if (selected.GetComponent<PerkActionButton>() == null) return;
+            }
+            GameObject locked = PerkConfirm.Locked != null && PerkConfirm.Locked.cardButton != null ? PerkConfirm.Locked.cardButton.gameObject : null;
+            Selectable first = PerkChoiceWidget.FirstCard(_hud);
+            GameObject target = Usable(_focus, view) ? _focus
+                : Usable(locked, view) ? locked
+                : Usable(_hud.perkChoiceView.SelectedButton, view) ? _hud.perkChoiceView.SelectedButton
+                : first != null ? first.gameObject : null;
+            if (target != null && target != selected) eventSystem.SetSelectedGameObject(target);
+        }
+
+        private static bool Usable(GameObject target, Transform view)
+        {
+            if (target == null || !target.activeInHierarchy || !target.transform.IsChildOf(view)) return false;
+            Selectable selectable = target.GetComponent<Selectable>();
+            return selectable != null && selectable.IsInteractable();
         }
 
         private void OnDisable() => Restore();

@@ -239,12 +239,14 @@ namespace SpiderSurge
             };
         }
 
+        // Reduced visual effects keeps a quarter of the shake and the colour fringe
         private static void ApplyCameraEffects(bool deadly, float radius)
         {
             try
             {
-                CameraEffects.instance?.DoChromaticAberration(0.5f, 0.02f);
-                float shakeStrength = deadly ? (radius / 2f) : (radius / 4f);
+                float scale = ModConfig.ReducedEffects ? Consts.Values.Pulse.ReducedCameraEffectScale : 1f;
+                CameraEffects.instance?.DoChromaticAberration(0.5f * scale, 0.02f);
+                float shakeStrength = (deadly ? (radius / 2f) : (radius / 4f)) * scale;
                 CameraEffects.instance?.DoScreenShake(shakeStrength, Consts.Values.Pulse.CameraShakeDuration);
             }
             catch (System.Exception ex)
@@ -329,11 +331,15 @@ namespace SpiderSurge
                         SurgeVfx.Safely(() => AccentVfx.Impact(closestPoint, direction, deadly));
                         if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
                     }
+                    if (!deadly && rb != null)
+                    {
+                        var missile = rb.GetComponent<MissileAchievementOrigin>();
+                        if (missile != null && rb.velocity.sqrMagnitude > 0f) missile.ReturnedBy = playerController;
+                    }
                 }
             }
 
             LaunchEnemies(p, deadly);
-            ApplyPulseToRailShotsWithoutColliders(p);
         }
 
         // Taken before any hit lands, so an enemy whose shield this pulse breaks still counts as hit rather than immune
@@ -356,14 +362,24 @@ namespace SpiderSurge
 
         private void LaunchEnemies(PulseParams p, bool deadly)
         {
+            int launched = 0;
             foreach (EnemyHealthSystem enemy in _enemiesToLaunch)
             {
                 if (enemy != null && !enemy.dead)
                 {
                     PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
+                    if (enemy.needToKillToCompleteLevel)
+                    {
+                        launched++;
+                        var origin = EnemyAchievementOrigin.Of(enemy);
+                        origin.PulsePlayer = playerController;
+                        origin.RegularPulse = !deadly;
+                    }
                 }
             }
             _enemiesToLaunch.Clear();
+            if (!deadly && launched >= 5)
+                AchievementTracker.Run("Personal Space", () => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, playerController));
         }
 
         // The activating player must never be affected by their own pulse.
@@ -395,51 +411,6 @@ namespace SpiderSurge
             }
 
             return false;
-        }
-
-        private void ApplyPulseToRailShotsWithoutColliders(PulseParams p)
-        {
-            IReadOnlyList<RailShot> railShots = RailShotTracker.All;
-            if (railShots.Count == 0)
-            {
-                return;
-            }
-
-            for (int i = 0; i < railShots.Count; i++)
-            {
-                RailShot railShot = railShots[i];
-                if (railShot == null || !railShot.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                Rigidbody2D rb = railShot.GetComponent<Rigidbody2D>();
-                if (rb == null)
-                {
-                    continue;
-                }
-
-                if (rb.attachedColliderCount > 0)
-                {
-                    continue;
-                }
-
-                Vector2 railShotPosition = rb.position;
-                float distance = Vector2.Distance((Vector2)p.Position, railShotPosition);
-                if (distance > p.KnockBackRadius)
-                {
-                    continue;
-                }
-
-                Vector2 direction = (railShotPosition - (Vector2)p.Position).normalized;
-                if (direction.sqrMagnitude < 0.0001f)
-                {
-                    direction = Vector2.up;
-                }
-
-                rb.velocity = Vector2.zero;
-                rb.AddForce(direction * p.KnockBackStrength, ForceMode2D.Impulse);
-            }
         }
 
         // ─── Explosion Reflection (for stats mod kill tracking) ─────────────────────

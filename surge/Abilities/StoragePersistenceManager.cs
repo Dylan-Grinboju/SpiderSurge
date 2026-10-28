@@ -8,6 +8,7 @@ namespace SpiderSurge
         {
             public SerializationWeaponName WeaponName;
             public float Ammo;
+            internal StoredWeaponJourney Journey;
         }
 
         private static readonly Dictionary<int, List<SavedWeaponData>> _storedWeapons = new Dictionary<int, List<SavedWeaponData>>();

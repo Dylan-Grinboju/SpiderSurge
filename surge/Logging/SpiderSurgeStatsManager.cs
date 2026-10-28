@@ -188,6 +188,20 @@ namespace SpiderSurge.Logging
                 }
             }
 
+            // A pad that left before the end still counts its ability and ultimate uses
+            foreach (int playerId in _abilityActivationsPerPlayer.Keys.Union(_ultimateActivationsPerPlayer.Keys).Union(_savesPerPlayer.Keys))
+            {
+                if (snapshot.PlayerStats.Exists(stats => stats.PlayerId == playerId)) continue;
+                snapshot.PlayerStats.Add(new PlayerStats
+                {
+                    PlayerId = playerId,
+                    AbilityActivationCount = _abilityActivationsPerPlayer.TryGetValue(playerId, out int abilities) ? abilities : 0,
+                    UltimateActivationCount = _ultimateActivationsPerPlayer.TryGetValue(playerId, out int ultimates) ? ultimates : 0,
+                    Saves = _savesPerPlayer.TryGetValue(playerId, out int saves) ? saves : 0,
+                    MeterCharge = 0
+                });
+            }
+
             // A plain Survival run is only reported to telemetry; the local report and Surge's stats and titles stay with Surge runs
             LastFinished = snapshot;
             if (_surgeRun)

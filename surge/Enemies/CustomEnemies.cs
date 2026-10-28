@@ -66,7 +66,7 @@ namespace SpiderSurge.Enemies
                 MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp");
                 SetupMissileAppearance(MissileWhispPrefab, turret);
                 SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
-                SetupOffScreenIndicator(MissileWhispPrefab, Consts.Values.Colors.MissileWhispColor);
+                SetupOffScreenIndicator(MissileWhispPrefab, Color.yellow);
             }
 
             // Create Shielded Variant if source is provided
@@ -102,6 +102,7 @@ namespace SpiderSurge.Enemies
                 ShieldedWaspCocoonPrefab = CreateShieldedEnemy(WaspCocoonPrefab, shieldedWasp, "ShieldedWaspCocoon");
                 ShieldedWaspCocoonPrefab.GetComponent<EnemyHealthSystem>().serializationEnemyName = SerializationEnemyName.ShieldedWasp;
                 ShieldedWaspCocoonPrefab.GetComponent<SpawnerBrain>().Initialize(wasp, shieldedWasp, Consts.Values.Enemies.CocoonSpawnInterval, Consts.Values.Enemies.CocoonMaxWasps);
+                ShieldedWaspCocoonPrefab.AddComponent<CocoonShieldPulse>();
             }
         }
 
@@ -300,12 +301,12 @@ namespace SpiderSurge.Enemies
                 }
             }
 
-            // The body leans blue, and the eye and thrusters glow yellow like the game's whisps instead of the turret's magenta
+            // The body keeps the original dark red tint, with yellow lights and separately colored shield bubbles.
             Transform eye = enemyObj.transform.Find("CoreBase/Eye");
             foreach (var renderer in enemyObj.GetComponentsInChildren<SpriteRenderer>(true))
             {
                 bool light = renderer.transform == eye || renderer.transform.IsChildOf(thrusters.transform);
-                Color color = light ? Consts.Values.Colors.MissileWhispLightColor : Color.Lerp(renderer.color, Consts.Values.Colors.MissileWhispColor, 0.7f);
+                Color color = light ? Consts.Values.Colors.MissileWhispLightColor : Consts.Values.Colors.MissileWhispColor;
                 color.a = renderer.color.a;
                 renderer.color = color;
             }

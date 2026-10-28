@@ -12,7 +12,8 @@ namespace SpiderTeams
         public override string Title => "Teams";
         public override string Description => "Team versus: pick teams in the lobby, friendly fire rules, team colors, and Surge abilities in versus.";
         public override string Namespace => "SpiderTeams";
-        public override bool OnByDefault => false;
+        public override bool OnByDefault => true;
+        public override bool CanDisable => false;
         // The host's match rules apply online, so a client shows them read-only; markers and buttons stay each player's own
         public override IEnumerable<string> SharedSettings => new[]
         {

@@ -58,7 +58,6 @@ namespace SpiderSurge.Common
         private string _confirmationCancelLabel;
         private readonly List<Selectable> _controls = new List<Selectable>();
         private readonly List<GameObject> _created = new List<GameObject>();
-        private readonly Dictionary<int, Control> _bindingRows = new Dictionary<int, Control>();
         private readonly Stack<(string page, int selection, float scroll)> _history = new Stack<(string, int, float)>();
         private readonly HashSet<string> _revealed = new HashSet<string>();
         private bool _subscribed;
@@ -88,7 +87,7 @@ namespace SpiderSurge.Common
 
         internal static bool ScrollingHelp(Selectable control)
         {
-            if (!IsOpen || !_open._contextHelp || ControlCapture.Busy || !control.transform.IsChildOf(_open._content)) return false;
+            if (!IsOpen || !_open._contextHelp || !control.transform.IsChildOf(_open._content)) return false;
             foreach (var pad in Gamepad.all)
             {
                 if (Mathf.Abs(pad.rightStick.ReadValue().y) > 0.2f && pad.leftStick.ReadValue().sqrMagnitude < 0.04f && pad.dpad.ReadValue().sqrMagnitude < 0.04f) return true;
@@ -223,7 +222,6 @@ namespace SpiderSurge.Common
                 if (created != null) StopClickAnimations(created);
             }
             _created.Clear();
-            _bindingRows.Clear();
             _controls.Clear();
             _lastSelected = null;
             _help?.Destroy();
@@ -255,7 +253,6 @@ namespace SpiderSurge.Common
             {
                 _open = null;
             }
-            ControlCapture.Cancel();
         }
 
         public void Open(string page)
@@ -282,7 +279,7 @@ namespace SpiderSurge.Common
         // Every back input ends here; one key can reach several of them in the same frame, so only the first counts
         public static bool HandleBack()
         {
-            if (ControlCapture.Busy || _backFrame == Time.frameCount) return true;
+            if (_backFrame == Time.frameCount) return true;
             if (_open == null || _open._menu == null || !_open._view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null)
                 return false;
             _open.Back();
@@ -292,7 +289,6 @@ namespace SpiderSurge.Common
         // The clicked button is still handling its click, so the page changes on the next frame
         private void Show(string page, int selection, float scroll)
         {
-            if (ControlCapture.Current != null) ControlCapture.Cancel();
             _revealed.Clear();
             Current = page;
             if (_pending != null)
@@ -349,7 +345,6 @@ namespace SpiderSurge.Common
         {
             try
             {
-                _bindingRows.TryGetValue(selectIndex, out Control selectedBinding);
                 DestroyCreated();
                 if (_menu == null || _menu.objectParent == null)
                 {
@@ -358,12 +353,11 @@ namespace SpiderSurge.Common
 
                 _pageHelp = "Changes are saved automatically. Hover over a setting or select it with a controller to read more.";
                 _lastHelp = null;
-                _contextHelp = Current == MainPage || Current == "general" || Current == "parts" || Current == ControlsPage.Page
+                _contextHelp = Current == MainPage || Current == "general" || Current == "parts"
                     || Current == "surge" || Current == "surge.indicator" || Current == "teams"
                     || Current == "stats" || Current == "stats.presets" || Current.StartsWith("stats.columns", StringComparison.Ordinal);
                 _help.SetVisible(_contextHelp);
                 AddContent();
-                selectIndex = RowOf(selectedBinding, selectIndex);
                 ConfigureNavigation();
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
                 Select(selectIndex);
@@ -396,7 +390,6 @@ namespace SpiderSurge.Common
             if (Current == "support") { SupportPage.Build(this); return; }
             if (Current == "history" || Current.StartsWith("history.", StringComparison.Ordinal)) { MatchHistoryPage.Build(this); return; }
             if (Current == AchievementsHub) { AddAchievements(); return; }
-            if (Current == ControlsPage.Page) { ControlsPage.Build(this); return; }
             if (Current == "confirm")
             {
                 Title("Confirm " + _confirmationActionLabel.ToLowerInvariant());
@@ -442,13 +435,8 @@ namespace SpiderSurge.Common
                 Button("Achievements", () => Open(AchievementsHub));
                 Note("Browse achievements and the title collection, see unlock requirements, and check what you earned recently.");
             }
-            if (Parts.Surge.Running || Parts.Stats.Running || Parts.Teams.Running)
-            {
-                Button("Controls", () => Open(ControlsPage.Page));
-                Note("Change keyboard and controller bindings. You can also set a personal ability button for each controller.");
-            }
-            Button("Enable or disable parts", () => Open("parts"));
-            Note("Choose which optional parts of the mod run. Changes take effect after restarting the game.");
+            Button("Mod parts", () => Open("parts"));
+            Note("Surge, Stats and Teams always load. Game fixes can be turned on or off; the change takes effect after restarting.");
             Button("Match history", () => Open("history"));
             Note("Review saved Survival and Versus results, including players, maps, perks, titles and weapon accuracy.");
             Button("General", () => Open("general"));
@@ -460,7 +448,8 @@ namespace SpiderSurge.Common
         private void AddParts()
         {
             Title("Mod parts");
-            Note("Turning a part on or off takes effect after restarting the game.");
+            Note("Hide Stats from its settings page; choose team versus from the versus setup page in the lobby.");
+            Note("Turning Game fixes on or off takes effect after restarting the game.");
             foreach (Part part in MenuOrder)
             {
                 Spacer();
@@ -719,15 +708,6 @@ namespace SpiderSurge.Common
             Register(button);
         }
 
-        public void Binding(Control control)
-        {
-            Button(ControlsPage.RowLabel(control), () => ControlCapture.Toggle(control));
-            Note("Select to change this binding, then press the new key or button. Start or Escape cancels. Select turns a controller binding off; Backspace turns a keyboard binding off.");
-            _bindingRows[_created.Count - 1] = control;
-            string clash = ControlsPage.ClashWarning(control);
-            if (clash != null) Warning(clash);
-        }
-
         public void ConfirmButton(string label, Action onConfirm, string confirmLabel = "Reset", string cancelLabel = "Keep current settings")
         {
             Button(label, () =>
@@ -880,8 +860,7 @@ namespace SpiderSurge.Common
         {
             if (_menu == null) return;
             _help?.RefreshLayout();
-            ControlCapture.Tick();
-            if (!_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null || ControlCapture.Busy) return;
+            if (!_view.IsVisible || UIPopupManager.CurrentVisibleQueuePopup != null) return;
             foreach (var pad in Gamepad.all)
             {
                 if (_contextHelp) _help?.Scroll(pad.rightStick.ReadValue().y);
@@ -969,7 +948,6 @@ namespace SpiderSurge.Common
                 }
             }
             _created.Clear();
-            _bindingRows.Clear();
             _controls.Clear();
             _lastSelected = null;
         }
@@ -985,17 +963,6 @@ namespace SpiderSurge.Common
                 }
                 DOTween.Kill(rect);
             }
-        }
-
-        // A clash warning can appear or go above a control row, so the row is found again by its control
-        private int RowOf(Control control, int fallback)
-        {
-            if (control == null) return fallback;
-            foreach (var row in _bindingRows)
-            {
-                if (row.Value == control) return row.Key;
-            }
-            return fallback;
         }
 
         private int SelectedIndex()

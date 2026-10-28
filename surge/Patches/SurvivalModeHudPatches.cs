@@ -24,6 +24,7 @@ namespace SpiderSurge
         // The host runs this twice per show (Netcode runs its own copy of the RPC inside the send) and every machine runs it for a resend aimed at a joining player, so the widgets are only built for new cards
         internal static void Apply(SurvivalModeHud __instance, bool rebuild)
         {
+            PerkChoiceMenu.Attach(__instance);
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             PerkChoiceHud.Attach(__instance);
             if (PerksManager.Instance == null) return;
@@ -42,6 +43,7 @@ namespace SpiderSurge
                 PerkConfirmButton.Build(__instance);
                 PerkShopPanel.Build(__instance);
                 PerkHint.Build(__instance);
+                PerkChoiceMenu.LinkNavigation(__instance);
             }
             MapBonusLabels.Refresh();
 
@@ -171,6 +173,28 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalModeHud), "ActivateChoiseViewTimer")]
     public class SurvivalModeHud_ActivateChoiseViewTimer_Patch
     {
+        [HarmonyPostfix]
+        public static void Postfix(ref IEnumerator __result) => __result = PauseWithMenu(__result);
+
+        // Preserve the real-time countdown while a player uses the pause menu.
+        private static IEnumerator PauseWithMenu(IEnumerator timer)
+        {
+            while (timer.MoveNext())
+            {
+                if (timer.Current is WaitForSecondsRealtime wait)
+                {
+                    float remaining = wait.waitTime;
+                    while (remaining > 0f)
+                    {
+                        yield return null;
+                        if (HudController.instance == null || !HudController.instance.paused) remaining -= Time.unscaledDeltaTime;
+                    }
+                }
+                else yield return timer.Current;
+                while (HudController.instance != null && HudController.instance.paused) yield return null;
+            }
+        }
+
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
