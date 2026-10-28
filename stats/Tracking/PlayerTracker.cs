@@ -353,7 +353,7 @@ namespace StatsMod
 
                 // A client mirrors the host's counts, so it records nothing itself
                 if (!Net.IsAuthority) return;
-                if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+                if (TryRecord(playerInput, out PlayerData data))
                 {
                     data.Deaths++;
                     DeathCountChanged?.Invoke(1);
@@ -501,7 +501,11 @@ namespace StatsMod
 
         private bool HasLivingTeammate(PlayerController player)
         {
-            return activePlayers.Any(p => p.Value.IsAlive && PlayerRelations.AreTeammates(player, p.Key));
+            foreach (var entry in activePlayers)
+            {
+                if (entry.Value.IsAlive && PlayerRelations.AreTeammates(player, entry.Key)) return true;
+            }
+            return false;
         }
 
         public KillCredit IncrementPlayerKill(PlayerController player)
@@ -691,7 +695,7 @@ namespace StatsMod
         public void StartAliveTimer(PlayerController playerInput)
         {
             if (!Net.IsAuthority) return;
-            if (playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+            if (TryRecord(playerInput, out PlayerData data))
             {
                 if (data.CurrentAliveStartTime.HasValue)
                 {
