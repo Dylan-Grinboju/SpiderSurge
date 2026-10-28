@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine;
 using SpiderSurge.Enemies;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -144,8 +145,6 @@ namespace SpiderSurge
         [HarmonyPatch(typeof(SurvivalMode), "set_CurrentWave")]
         public class SurvivalMode_set_CurrentWave_Patch
         {
-            private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
-
             [HarmonyPostfix]
             public static void Postfix(int value)
             {
@@ -183,7 +182,7 @@ namespace SpiderSurge
             // StartGame sets wave 1 before Surge turns on, so it logs that wave itself
             internal static void LogWaveStart(int value)
             {
-                var config = ActiveConfig(SurvivalMode.instance);
+                var config = GameFields.ActiveConfig(SurvivalMode.instance);
                 if (config == null) return;
 
                 float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;

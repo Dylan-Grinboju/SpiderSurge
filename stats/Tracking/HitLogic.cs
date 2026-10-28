@@ -532,7 +532,7 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             // Lava and falling out of the map mark the spider as dying before it dies, a damage kill happens on the hit
-            float? window = ReflectionCache.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
+            float? window = GameFields.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
             if (!TryTakeHit(lastPlayerHits, spider.GetInstanceID(), window, out HitRecord hit, out _)) return;
 
             PlayerController victim = Players.Of(spider.rootObject);

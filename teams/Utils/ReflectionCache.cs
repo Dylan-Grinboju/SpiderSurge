@@ -6,6 +6,7 @@ using I2.Loc;
 using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace SpiderTeams
 {
@@ -36,10 +37,6 @@ namespace SpiderTeams
         public static readonly FieldInfo PlayerActiveCharacter = AccessTools.Field(typeof(PlayerController), "_activePlayerCharacter");
         #endregion
 
-        #region SpiderHealthSystem
-        public static readonly FieldInfo SpiderImmuneTill = AccessTools.Field(typeof(SpiderHealthSystem), "_immuneTill");
-        #endregion
-
         #region Win screens
         public static readonly FieldInfo TimerWinnerView = AccessTools.Field(typeof(VersusRestartTimer), "winnerview");
         public static readonly FieldInfo TimerWinPrompt = AccessTools.Field(typeof(VersusRestartTimer), "_winPromptString");
@@ -50,7 +47,6 @@ namespace SpiderTeams
         private static readonly AccessTools.FieldRef<bool> _roundInProgress = StaticRef<bool>(VersusRoundInProgress);
         private static readonly AccessTools.FieldRef<bool> _roundEnding = StaticRef<bool>(VersusRoundEnding);
         private static readonly AccessTools.FieldRef<VersusMode, bool> _waitingRoom = InstanceRef<VersusMode, bool>(VersusWaitingRoom);
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> _immuneTill = InstanceRef<SpiderHealthSystem, float>(SpiderImmuneTill);
 
         public static bool RoundRulesAvailable =>
             _roundInProgress != null && _roundEnding != null && _waitingRoom != null &&
@@ -78,7 +74,7 @@ namespace SpiderTeams
 
         public static float ImmuneTill(SpiderHealthSystem health)
         {
-            return health != null && _immuneTill != null ? _immuneTill(health) : 0f;
+            return health != null && GameFields.SpiderImmuneTill != null ? GameFields.SpiderImmuneTill(health) : 0f;
         }
 
         // On the host a ClientRpc body runs twice: once to send (stage 0) and once nested to execute.
@@ -163,7 +159,6 @@ namespace SpiderTeams
                 { "VersusMode.SetAchievementClientRpc", VersusSetAchievement },
                 { "LobbyController._spawnPoints", LobbySpawnPoints },
                 { "PlayerController._activePlayerCharacter", PlayerActiveCharacter },
-                { "SpiderHealthSystem._immuneTill", _immuneTill },
                 { "VersusRestartTimer.winnerview", TimerWinnerView },
                 { "VersusRestartTimer._winPromptString", TimerWinPrompt },
             };

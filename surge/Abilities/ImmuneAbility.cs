@@ -32,8 +32,6 @@ namespace SpiderSurge
 
         public override bool HasUltimate => true;
 
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-        private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
 
         private bool hadBarrierOnSessionStart = false;
@@ -59,17 +57,6 @@ namespace SpiderSurge
         protected override void Awake()
         {
             base.Awake();
-
-            if (immuneTimeField == null)
-            {
-                immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (immuneTimeField == null)
-                {
-                    Logger.LogError("ImmuneAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
-                }
-            }
 
             if (_breakShieldMethod == null)
             {
@@ -325,9 +312,9 @@ namespace SpiderSurge
             {
                 try
                 {
-                    if (immuneTimeField != null)
+                    if (GameFields.SpiderImmuneTill != null)
                     {
-                        immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
+                        GameFields.SpiderImmuneTill(spiderHealthSystem) = float.MaxValue;
                     }
                 }
                 catch (System.Exception ex)
@@ -339,10 +326,10 @@ namespace SpiderSurge
             {
                 try
                 {
-                    if (immuneTimeField != null)
+                    if (GameFields.SpiderImmuneTill != null)
                     {
                         // Reset immunity to current time (expired)
-                        immuneTimeField.SetValue(spiderHealthSystem, Time.time);
+                        GameFields.SpiderImmuneTill(spiderHealthSystem) = Time.time;
                     }
                 }
                 catch (System.Exception ex)
@@ -433,7 +420,7 @@ namespace SpiderSurge
         public static bool IsGhost(PlayerController player)
         {
             SpiderHealthSystem health = player != null ? player.spiderHealthSystem : null;
-            return health != null && health.astralDead && !health.dead && !SpiderDying(health) && !SwallowedTarget.IsSwallowed(health.rootObject);
+            return health != null && health.astralDead && !health.dead && !GameFields.SpiderDying(health) && !SwallowedTarget.IsSwallowed(health.rootObject);
         }
 
         private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)

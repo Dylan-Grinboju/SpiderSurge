@@ -37,9 +37,6 @@ namespace SpiderSurge.Common
     [HarmonyPatch(typeof(NetworkSpawnManager), "UpdateObservedNetworkObjects")]
     public static class NetworkSpawnManager_UpdateObservedNetworkObjects_Patch
     {
-        // Observers is internal and Mono enforces that at run time, so it is reached through reflection
-        private static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = AccessTools.FieldRefAccess<NetworkObject, HashSet<ulong>>("Observers");
-
         [HarmonyPostfix]
         public static void Postfix(NetworkSpawnManager __instance, ulong clientId)
         {
@@ -49,7 +46,7 @@ namespace SpiderSurge.Common
                 {
                     if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility(clientId))
                     {
-                        Observers(networkObject).Remove(clientId);
+                        GameFields.Observers(networkObject).Remove(clientId);
                     }
                 }
             }
@@ -67,7 +64,6 @@ namespace SpiderSurge.Common
         private static readonly Type SceneEventDataType = AccessTools.TypeByName("Unity.Netcode.SceneEventData");
         private static readonly AccessTools.FieldRef<object, ulong> TargetClientId = AccessTools.FieldRefAccess<ulong>(SceneEventDataType, "TargetClientId");
         private static readonly AccessTools.FieldRef<object, List<NetworkObject>> ObjectsToSync = AccessTools.FieldRefAccess<List<NetworkObject>>(SceneEventDataType, "m_NetworkObjectsSync");
-        private static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = AccessTools.FieldRefAccess<NetworkObject, HashSet<ulong>>("Observers");
 
         [HarmonyTargetMethod]
         public static MethodBase TargetMethod()
@@ -81,7 +77,7 @@ namespace SpiderSurge.Common
             try
             {
                 ulong target = TargetClientId(__instance);
-                ObjectsToSync(__instance)?.RemoveAll(networkObject => networkObject != null && !Observers(networkObject).Contains(target));
+                ObjectsToSync(__instance)?.RemoveAll(networkObject => networkObject != null && !GameFields.Observers(networkObject).Contains(target));
             }
             catch (Exception ex)
             {

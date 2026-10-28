@@ -13,7 +13,6 @@ namespace SpiderSurge
 {
     public static class ChallengeController
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<int>> Lives = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<int>>("_lives");
         public static ChallengeKind Offered { get; private set; }
         public static ChallengeKind Active { get; private set; }
         public static bool Pending { get; private set; }
@@ -92,7 +91,7 @@ namespace SpiderSurge
                 if (Active == ChallengeKind.PoisonedHeart)
                 {
                     _heldLives = Math.Max(0, SurvivalMode.instance.Lives - 1);
-                    Lives(SurvivalMode.instance).Value = 1;
+                    GameFields.Lives(SurvivalMode.instance).Value = 1;
                 }
             }
             ChaosWallet.Record($"Challenge {(accept ? "accepted" : "skipped")}: {ChaosRules.Name(Offered)}");
@@ -115,7 +114,7 @@ namespace SpiderSurge
             _heldLives = 0;
             SetActive(ChallengeKind.None);
             if (returned > 0 && SurvivalMode.instance != null && SurvivalMode.instance.Lives > 0)
-                Lives(SurvivalMode.instance).Value = Math.Min(SurvivalMode.instance.MaxLives, SurvivalMode.instance.Lives + returned);
+                GameFields.Lives(SurvivalMode.instance).Value = Math.Min(SurvivalMode.instance.MaxLives, SurvivalMode.instance.Lives + returned);
             ChaosWallet.Record($"Challenge {(reward > 0 ? "completed" : "failed")}: {ChaosRules.Name(completed)}; returned {returned} lives");
             // A failed Life Wager was announced when the life was lost
             if (reward > 0)

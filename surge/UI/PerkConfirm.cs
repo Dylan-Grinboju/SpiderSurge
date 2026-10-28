@@ -11,7 +11,6 @@ namespace SpiderSurge
     // With unlimited choosing time a card click only locks the card; the Confirm button under the cards submits it through the game's own path
     public static class PerkConfirm
     {
-        private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, int> CardIndex = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, int>("cardIndex");
         private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, bool> Picked = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, bool>("_picked");
 
         public static SurvivalModifierChoiceCard Locked { get; private set; }
@@ -55,7 +54,7 @@ namespace SpiderSurge
             var hud = SurvivalModeHud.instance;
             if (card == null || card.modifier == null || hud == null) return;
             Picked(card) = true;
-            hud.PerkChoiceSubmit(card.modifier, card.level, CardIndex(card));
+            hud.PerkChoiceSubmit(card.modifier, card.level, GameFields.CardIndex(card));
         }
     }
 

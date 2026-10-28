@@ -10,15 +10,6 @@ using Logger = Silk.Logger;
 namespace StatsMod
 {
     // Cache reflection field info for performance
-    internal static class ReflectionCache
-    {
-        public static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
-            AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
-
-        public static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying =
-            AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-    }
-
     // Local and remote players alike enter the lobby's list once their PlayerController has spawned
     [HarmonyPatch(typeof(LobbyController), nameof(LobbyController.AddPlayer))]
     public class LobbyAddPlayerPatch

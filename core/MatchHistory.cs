@@ -101,7 +101,7 @@ namespace SpiderSurge.Common
         public static void MarkSurgeVersus() => surgeVersus = true;
         public static void MarkSurvivalCompletion(SurvivalMode mode)
         {
-            var config = HarmonyLib.AccessTools.Field(typeof(SurvivalMode), "_config").GetValue(mode) as SurvivalConfig;
+            var config = GameFields.ActiveConfig(mode);
             if (config != null && config.totalWaves > 0 && mode.CurrentWave == config.totalWaves) completedSurvival = true;
         }
         public static void PlayerLeaving(PlayerController player, PlayerTracker.PlayerData data)

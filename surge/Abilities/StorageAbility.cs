@@ -422,8 +422,7 @@ namespace SpiderSurge
 
             if (SurvivalMode.instance != null)
             {
-                // Use ReflectionHelper to get private fields safely
-                var survivalWeapons = ReflectionHelper.GetPrivateField<List<SpawnableWeapon>>(SurvivalMode.instance, "_weapons");
+                var survivalWeapons = GameFields.SurvivalWeapons?.Invoke(SurvivalMode.instance);
                 if (survivalWeapons != null)
                 {
                     AddWeaponsToMap(survivalWeapons);

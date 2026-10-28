@@ -3,20 +3,11 @@ using System.Reflection;
 using UnityEngine;
 using Logger = Silk.Logger;
 using HarmonyLib;
+using SpiderSurge.Common;
 
 
 namespace StatsMod
 {
-    // All AccessTools calls are done once at static initialization to avoid per-call overhead.
-    internal static class EnemyReflectionCache
-    {
-        // EnemyHealthSystem fields
-        public static readonly AccessTools.FieldRef<EnemyHealthSystem, bool> EnemyExploding =
-            AccessTools.FieldRefAccess<EnemyHealthSystem, bool>("_exploding");
-        public static readonly AccessTools.FieldRef<EnemyHealthSystem, float> EnemyImmuneTime =
-            AccessTools.FieldRefAccess<EnemyHealthSystem, float>("_immuneTime");
-    }
-
     // Every enemy death ends here: direct damage, lava (Disintegrate), roller struts, stuck in walls.
     // Explode can be called more than once, the same checks as the original keep only the call that kills.
     [HarmonyPatch(typeof(EnemyHealthSystem), "Explode")]
@@ -26,7 +17,7 @@ namespace StatsMod
         {
             try
             {
-                if (EnemyReflectionCache.EnemyExploding(__instance) || __instance.ignoreIndirectDamage) return;
+                if (GameFields.EnemyExploding(__instance) || __instance.ignoreIndirectDamage) return;
                 HitLogic.OnEnemyDeath(__instance);
             }
             catch (System.Exception ex)

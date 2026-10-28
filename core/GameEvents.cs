@@ -10,9 +10,6 @@ namespace SpiderSurge.Common
     // Parts subscribe in OnStart, so every handler runs in Parts.All order, the order the parts' own patches used to run in.
     public static class GameEvents
     {
-        internal static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-        internal static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<bool>> WaitingForPerk = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<bool>>("_waitingForPerk");
-
         // StartGame was called with a config while no run is active
         public static event Action<SurvivalMode> RunStarting;
         // StartGame started a run, with the config the run really uses
@@ -64,11 +61,11 @@ namespace SpiderSurge.Common
         [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
         private static class StartWavePatch
         {
-            static void Prefix(SurvivalMode __instance, out bool __state) => __state = WaveInProgress(__instance);
+            static void Prefix(SurvivalMode __instance, out bool __state) => __state = GameFields.WaveInProgress(__instance);
 
             static void Postfix(SurvivalMode __instance, bool __state)
             {
-                if (!__state && WaveInProgress(__instance)) Raise(WaveStarted, __instance, nameof(WaveStarted));
+                if (!__state && GameFields.WaveInProgress(__instance)) Raise(WaveStarted, __instance, nameof(WaveStarted));
             }
         }
 
@@ -82,7 +79,7 @@ namespace SpiderSurge.Common
             static void Prefix()
             {
                 SurvivalMode survival = SurvivalMode.instance;
-                if (survival != null && WaveInProgress(survival)) Raise(WaveCompleted, survival, nameof(WaveCompleted));
+                if (survival != null && GameFields.WaveInProgress(survival)) Raise(WaveCompleted, survival, nameof(WaveCompleted));
             }
         }
 
@@ -100,7 +97,7 @@ namespace SpiderSurge.Common
             static void Prefix(SurvivalMode __instance, Modifier modifier, GameLevel level, out bool __state)
             {
                 Raise(PerkApplying, modifier, nameof(PerkApplying));
-                var waiting = WaitingForPerk(__instance);
+                var waiting = GameFields.WaitingForPerk(__instance);
                 __state = waiting != null && waiting.Value;
                 if (__state) Raise(PerkChoosing, modifier, level, nameof(PerkChoosing));
             }

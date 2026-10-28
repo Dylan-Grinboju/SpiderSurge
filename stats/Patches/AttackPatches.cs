@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace StatsMod
 {
@@ -140,7 +141,7 @@ namespace StatsMod
         {
             try
             {
-                if (__instance.IsDead() || Time.time < EnemyReflectionCache.EnemyImmuneTime(__instance)) return;
+                if (__instance.IsDead() || Time.time < GameFields.EnemyImmuneTime(__instance)) return;
                 HitLogic.OnEnemyHit(__instance, damage: false);
             }
             catch (Exception ex)
@@ -158,7 +159,7 @@ namespace StatsMod
             try
             {
                 if (__instance.IsDead() || __instance.ignoreDirectDamage ||
-                    Time.time < EnemyReflectionCache.EnemyImmuneTime(__instance)) return;
+                    Time.time < GameFields.EnemyImmuneTime(__instance)) return;
                 HitLogic.OnEnemyHit(__instance, damage: true);
             }
             catch (Exception ex)
@@ -196,7 +197,7 @@ namespace StatsMod
             try
             {
                 // Surge immunity and Teams friendly fire can cancel the hit
-                if (!__runOriginal || Time.time < ReflectionCache.SpiderImmuneTill(__instance)) return;
+                if (!__runOriginal || Time.time < GameFields.SpiderImmuneTill(__instance)) return;
                 HitLogic.OnPlayerHit(__instance, damage: true, stun);
             }
             catch (Exception ex)
@@ -282,7 +283,7 @@ namespace StatsMod
             try
             {
                 EnemyHealthSystem health = __instance.healthSystem;
-                if (____exploded || health == null || health.IsDead() || EnemyReflectionCache.EnemyExploding(health)) return;
+                if (____exploded || health == null || health.IsDead() || GameFields.EnemyExploding(health)) return;
                 HitLogic.OnRollerFuseEnded(health);
             }
             catch (Exception ex)

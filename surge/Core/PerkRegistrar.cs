@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -49,8 +50,8 @@ namespace SpiderSurge
                         PerksManager.Instance.GetMaxLevel(name)
                     )).ToArray();
 
-                var modifiersList = ReflectionHelper.GetPrivateField<List<Modifier>>(manager, "_modifiers") ?? new List<Modifier>();
-                var currModsState = ReflectionHelper.GetPrivateField<ModifierManager.NetworkModifier[]>(manager, "_currModsState");
+                var modifiersList = GameFields.Modifiers(manager) ?? new List<Modifier>();
+                var currModsState = GameFields.ModifierStates(manager);
 
                 if (currModsState != null)
                 {
@@ -92,8 +93,8 @@ namespace SpiderSurge
                     modifiersList.Add(modifier);
                 }
 
-                ReflectionHelper.SetPrivateField(manager, "_modifiers", modifiersList);
-                ReflectionHelper.SetPrivateField(manager, "_currModsState", currModsState);
+                GameFields.Modifiers(manager) = modifiersList;
+                GameFields.ModifierStates(manager) = currModsState;
             }
             catch (Exception ex)
             {

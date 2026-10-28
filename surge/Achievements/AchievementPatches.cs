@@ -19,8 +19,6 @@ namespace SpiderSurge
         public const int ThermalTeammateKills = 3;
         public const float BlastSurvivalMargin = 0.25f;
 
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-
         public static Explosion CurrentExplosion;
         // Whether CurrentExplosion is a Big Grenade blast, unknown until a spider it damages asks, so its name is read at most once per knockback
         public static bool? CurrentIsBigGrenade;
@@ -46,7 +44,7 @@ namespace SpiderSurge
                    team == otherTeam;
         }
 
-        public static bool Gone(SpiderHealthSystem spider) => spider == null || spider.dead || spider.astralDead || SpiderDying(spider);
+        public static bool Gone(SpiderHealthSystem spider) => spider == null || spider.dead || spider.astralDead || GameFields.SpiderDying(spider);
 
         public static void Run(string what, Action action) => Run(what, static run => run(), action);
 
@@ -327,7 +325,6 @@ namespace SpiderSurge
     // Not On My Watch: a laser stops on a spider inside Null Field, and the next thing on its line is a teammate it would have hit
     internal static class LaserBlock
     {
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> ImmuneTill = AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
         private static readonly RaycastHit2D[] Behind = new RaycastHit2D[16];
 
         public static bool Watching => Net.IsAuthority && ImmuneAbility.AnyImmune && !SurgeAchievements.IsUnlocked(SurgeAchievements.NotOnMyWatch);
@@ -366,7 +363,7 @@ namespace SpiderSurge
             if (next.collider == null || next.collider.gameObject == weapon || next.collider.gameObject == shooter) return;
 
             SpiderHealthSystem teammate = SpiderOf(next.collider);
-            if (teammate == null || teammate == protector || AchievementTracker.Gone(teammate) || ImmuneTill(teammate) > Time.time) return;
+            if (teammate == null || teammate == protector || AchievementTracker.Gone(teammate) || GameFields.SpiderImmuneTill(teammate) > Time.time) return;
             ImmuneAbility teammateField = ImmuneAbility.GetByHealthSystem(teammate);
             if (teammateField != null && teammateField.IsImmune) return;
 

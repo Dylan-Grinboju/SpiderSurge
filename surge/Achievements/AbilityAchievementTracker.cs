@@ -52,7 +52,6 @@ namespace SpiderSurge
 
     internal static class AbilityAchievementTracker
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = GameEvents.WaveInProgress;
         internal static Component Attack;
         internal static EnemyHealthSystem LastWasp;
         internal static PlayerController ThermalCaster;
@@ -65,7 +64,7 @@ namespace SpiderSurge
         internal static void CompleteWave(SurvivalMode survival)
         {
             if (!Net.IsAuthority) return;
-            if (pendingOverkill != null && survival.CurrentWave == pendingWave && WaveInProgress(survival))
+            if (pendingOverkill != null && survival.CurrentWave == pendingWave && GameFields.WaveInProgress(survival))
                 SurgeAchievements.Unlock(SurgeAchievements.Overkill, pendingOverkill);
             ClearWave();
         }
@@ -73,7 +72,7 @@ namespace SpiderSurge
         internal static EnemyHealthSystem LastPlainWasp()
         {
             SurvivalMode survival = SurvivalMode.instance;
-            if (survival == null || !survival.GameModeActive() || !WaveInProgress(survival)) return null;
+            if (survival == null || !survival.GameModeActive() || !GameFields.WaveInProgress(survival)) return null;
             EnemyHealthSystem last = null;
             foreach (EnemyHealthSystem enemy in EnemyHealthSystem.s_activeEnemies)
             {

@@ -6,6 +6,7 @@ using Doozy.Engine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -98,7 +99,6 @@ namespace SpiderSurge
     {
         // The HUD keeps these private and Mono enforces that at run time, so they are reached through Harmony's field access
         private static readonly AccessTools.FieldRef<SurvivalModeHud, PerkChoiseTimer> ChoiceTimer = AccessTools.FieldRefAccess<SurvivalModeHud, PerkChoiseTimer>("choiseTimerComponent");
-        private static readonly AccessTools.FieldRef<SurvivalModifierChoiceCard, int> CardIndex = AccessTools.FieldRefAccess<SurvivalModifierChoiceCard, int>("cardIndex");
 
         public static void Refresh()
         {
@@ -112,7 +112,7 @@ namespace SpiderSurge
                 if (card.modifier != null)
                 {
                     if (card.modifierIconImage != null && card.modifier.data != null) card.modifierIconImage.sprite = card.modifier.data.icon;
-                    SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, CardIndex(card), false);
+                    SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(card, card.modifier, card.level, GameFields.CardIndex(card), false);
                 }
             }
             SurvivalModeHud_ShowPerkChoicesClientRpc_Patch.Apply(hud, true);
