@@ -14,19 +14,14 @@ namespace SpiderSurge
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
             if (page.Current == SurgeGuide.Page || page.Current.StartsWith(SurgeGuide.Page + ".", StringComparison.Ordinal)) { SurgeGuide.Build(page); return; }
             if (page.Current == AchievementsPage.Page) { AchievementsPage.Build(page); return; }
+            if (page.Current == "surge.rules") { BuildRules(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
             page.Button("How to play", () => page.Open(SurgeGuide.Page));
             page.Note("Start with a guided first run, then explore abilities, synergies, enemies, chaos points and challenges, and multiplayer.");
 
-            page.Spacer();
-            page.Header("Play");
-            page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
-            page.Note("Removes the perk-choice countdown. Select a card to lock it, then move down to Confirm when everyone is ready. The starting ability choice always works this way, with or without this setting.");
-            page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
-            page.Note("Surge Survival runs have no abilities, no ultimates and no ability perks: the first perk choice is a normal one, and waves 30 and 60 bring no ultimate choice. Luck still appears. Applies from the next run.");
-            page.Paragraph($"<size=95%><color={SettingsPage.Gray}>Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)}. Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}. To move your controller's ability, hold Select and double-tap another button.</color></size>");
-
+            page.Button("Advanced run rules", () => page.Open("surge.rules"));
+            page.Note("Perk-choice timer and playing without abilities. Gameplay rules are shared; the host chooses them online.");
             page.Spacer();
             page.Header("Effects");
             page.Toggle("Reduced visual effects", ModConfig.ReducedEffectsKey);
@@ -38,7 +33,10 @@ namespace SpiderSurge
             page.Note("Every Surge sound: abilities, ultimates and the perk choice sounds. The default is 50%; 80% plays them at their original volume.");
 
             page.Spacer();
-            BuildIndicator(page, false);
+            page.Button("Ability display: " + (ModConfig.IndicatorCompactHud ? "Corner panel" : "Beside spider"),
+                () => Settings.Set(ModConfig.IndicatorCompactHudKey, !ModConfig.IndicatorCompactHud));
+            page.Note("Beside spider keeps readiness near the action. Corner panel shows named players and their remaining cooldowns. This changes only your display.");
+            page.Button("Customize ability display", () => page.Open("surge.indicator"));
             page.Spacer();
             page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.StatsLoggingKey, ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
         }
@@ -49,13 +47,16 @@ namespace SpiderSurge
             else page.Header("Ability indicator");
             page.Toggle("Use compact ability HUD", ModConfig.IndicatorCompactHudKey);
             page.Note("Replaces the ring beside each spider with a fixed panel at the bottom right. Active effects count down; cooldown bars fill until ready. Changes apply immediately.");
-            page.Header("Ring position and size");
-            page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f, effectiveValue: ModConfig.IndicatorRadius);
-            page.Note("Size of the ability ring beside each spider. This affects the world ring; the compact HUD keeps its own size.");
-            page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
-            page.Note("Moves the ring left or right relative to the spider. This only affects the world ring.");
-            page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
-            page.Note("Moves the ring up or down relative to the spider. This only affects the world ring.");
+            if (!ModConfig.IndicatorCompactHud)
+            {
+                page.Header("Ring position and size");
+                page.Slider("Size", ModConfig.IndicatorRadiusKey, ModConfig.MinIndicatorRadius, ModConfig.MaxIndicatorRadius, 0.5f, effectiveValue: ModConfig.IndicatorRadius);
+                page.Note("Size of the ability ring beside each spider. This affects the world ring; the compact HUD keeps its own size.");
+                page.Slider("Sideways offset", ModConfig.IndicatorOffsetXKey, -10f, 10f, 0.5f);
+                page.Note("Moves the ring left or right relative to the spider. This only affects the world ring.");
+                page.Slider("Height", ModConfig.IndicatorOffsetYKey, -5f, 20f, 0.5f);
+                page.Note("Moves the ring up or down relative to the spider. This only affects the world ring.");
+            }
             page.Header("Colors and visibility");
             page.Cycle("Ready color", ModConfig.IndicatorAvailableColorKey, Colors, ColorNames, IsInUse(ModConfig.IndicatorAvailableColorKey));
             page.Note("Color used when the ability is ready. Applies to the ring and the compact HUD. Select to cycle through the colors.");
@@ -74,18 +75,26 @@ namespace SpiderSurge
             return value => ModConfig.TryParseColor(value, out Color color) && color == inUse;
         }
 
-        // On the General page, since plain Survival runs are recorded and shared too
+        private static void BuildRules(SettingsPage page)
+        {
+            page.Title("Advanced run rules");
+            page.Note("Shared gameplay rules. Online, the host decides for the group.");
+            page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
+            page.Note("Choose a card, then move down to Confirm. The starting ability choice always waits for confirmation.");
+            page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
+            page.Note("Keep Surge enemies, Luck, Chaos and challenges, but remove abilities and their upgrades. Applies from the next run; versus abilities are separate.");
+        }
+
         public static void BuildTelemetry(SettingsPage page)
         {
-            page.Header("Telemetry");
-            page.Toggle("Record each run", ModConfig.StatsLoggingKey);
-            page.Note("Builds a report of every Survival run: waves, perks, deaths, and each player's ability and ultimate use. Surge runs save it as a text file in Silk\\Logs\\SpiderSurge and give the Stats titles their ability counts. Sharing new reports needs it on.");
+            page.Header("Anonymous reports");
             page.Toggle("Share anonymous run reports", ModConfig.TelemetryKey);
-            page.Note("Uploads the report of each finished Survival run, with or without Surge, to help balance and improve the mod. No personal identifiers are sent.");
-            if (ModConfig.TelemetryEnabled && !ModConfig.EnableStatsLogging)
-            {
-                page.Warning("No new reports are shared while Record each run is off. Older reports already queued may still upload while Share anonymous run reports is on.");
-            }
+            page.Note("Share finished Survival reports to help balance the mod. No personal identifiers are sent. This does not require local text exports; match history stays on this PC.");
+        }
+
+        public static void BuildTelemetrySupport(SettingsPage page)
+        {
+            page.Header("Report diagnostics");
             string anonId = Logging.SpiderSurgeTelemetryUploader.Instance.GetAnonymousIdOrNull() ?? "not set";
             page.Paragraph($"<b>Anonymous ID:</b> <noparse>{anonId}</noparse>");
             page.ConfirmButton("Reset telemetry ID", () =>

@@ -27,7 +27,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
-- **Achievements**: 24 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
+- **Achievements**: 24 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
@@ -42,7 +42,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 
 ## Achievements
 
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
 | Achievement | How to unlock it |
 |---|---|
@@ -73,28 +73,29 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 
 ## Chaos points, shop and challenges
 
-The team shares a numerical chaos-point balance. Ability use never earns points. At each map choice there is a 75% chance to mark exactly one offered card with **+1 chaos point**, paid when that map is chosen. Rerolling keeps the bonus on the same card slot, without another chance roll.
+The team shares a chaos-point balance, shown with a gold spark inside a broken ring. Ability use never earns points. At each map choice there is a 75% chance to mark exactly one offered card with **+1 Chaos**, paid when that map is chosen. Rerolling keeps the bonus on the same card slot, without another chance roll.
 
 The shop offers two items per visit: Reroll (1 point), Extra Life (2), Mystery Perk (3), Bigger Heart (5; +1 maximum life and +1 current life), or Blood Pact (one life for one point, leaving at least one life). Each item can be bought once by the whole team per visit, including rerolls and Blood Pact. Sold-out items remain visible. Buying Mystery Perk replaces its shop slot with the acquired perk's icon, name and description for everyone until the next visit. Rebuilds, rerolls and reconnects do not restock them. Press right from the last perk card to enter the shop, select an item and then Buy. Any player can purchase.
 
-After choosing a map, the team sees one optional challenge before the map loads. The host holds Accept or Skip for 2 seconds to confirm; a bar shows the hold progress. Release the previous button press before starting a hold. Releasing early, moving away, switching buttons, opening the pause menu or losing focus cancels the hold. Remote players see that the host is deciding; only the host can accept or skip. The game waits without a countdown, and the pause menu stays usable meanwhile. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
+After choosing a map, the team sees one optional challenge before the map loads. The host holds Accept for 0.8 seconds or presses Skip immediately; a bar shows acceptance progress. Recent challenge offers are avoided when alternatives are eligible. Release the previous button press before starting a hold. Releasing early, moving away, switching buttons, opening the pause menu or losing focus cancels the hold. Remote players see that the host is deciding; only the host can accept or skip. The game waits without a countdown, and the pause menu stays usable meanwhile. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
 
 | Challenge | Effect | Reward |
 |---|---|---:|
-| Poisoned Heart | Reduce current lives to one; return withheld lives upon completion. Losing the last life ends the run. Requires two current lives. | 2 |
+| Poisoned Heart | Reduce current lives to one; return withheld lives upon completion. Losing the last life ends the run. Requires two current lives. | 3 |
 | Double Cooldown | Double regular and ultimate cooldowns after perk adjustments. | 1 |
 | No Abilities | Abilities disabled; ultimates remain usable. | 2 |
 | Life Wager | First lost team life costs one point, floored at zero, and forfeits the reward. Further losses cost no points. | 1 if no life lost |
 | No Ultimate | Ultimates disabled; regular abilities work. Only offered with an unlocked ultimate. | 1 |
-| Overrun | 50% more enemy budget above normal Surge, with unchanged spawn pacing and simultaneous-enemy limits. | 2 |
+| Overrun | Larger enemy waves: 50% more budget, with unchanged spawn pacing and simultaneous-enemy limits. | 2 |
+| Clean Hands | With two or more players, finish without a teammate kill or teammate shield break credited to a player. Failure forfeits the reward without taking existing points. | 1 |
 
-The HUD shows the active challenge and reward status. Map bonuses, completed challenges, purchases and penalties are logged. The economy also works with abilities disabled; inapplicable challenges are excluded. Existing perk-synergy hints remain below the cards.
+The HUD uses a small currency icon and balance beneath the lives display, with a quieter challenge status line. First encounters with laser enemies and cocoons show a brief local hint without pausing; the guide remains available afterward. Surge results add a compact recap above the existing titles and retain the full scoreboard separately. Map bonuses, completed challenges, purchases and penalties are logged. The economy also works with abilities disabled; inapplicable challenges are excluded. Existing perk-synergy hints remain below the cards.
 
 ## How to configure Surge
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Indicator controls are on the Surge page. Changes apply right away, except **Play without abilities**, which applies from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **General** page, since plain Survival runs use them too.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Settings** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Choose Beside spider or Corner panel on the Surge page; detailed controls are in Customize ability display. Advanced run rules contains the timer and no-abilities options. Changes apply right away, except **Play without abilities**, which applies from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **Settings** > **Records and privacy** page, since plain Survival runs use them too.
 
 ### Using the Yaml file:
 
@@ -135,9 +136,9 @@ The guide is available from **How to play** in settings. The old `surge.showTuto
 `surge.indicator.showOnlyWhenReady`: If true, the indicator only appears when the ability is off cooldown. Default: `false`.
 
 ### Logging:
-`surge.statsLogging`: **Record each run** on the General page. Builds a report of every Survival run (waves, perks, deaths, ability and ultimate use). Surge runs save it to a local file and feed it to the Stats titles. Telemetry sends this report, so nothing is uploaded while it's off. Default: `true`.
+`surge.statsLogging`: The Surge part of **Export detailed reports** under Settings > Records and privacy. Writes a local text report of Surge runs. Match history and anonymous sharing independently prepare the data they need. Default: `true`.
 
-`surge.telemetry`: **Share anonymous run reports** on the General page. Uploads the report of each finished Survival run, with or without Surge mode. See [Telemetry](#telemetry). Default: `false`.
+`surge.telemetry`: **Share anonymous run reports** under Settings > Records and privacy. Uploads the report of each finished Survival run, with or without Surge mode. See [Telemetry](#telemetry). Default: `false`.
 
 `surge.showTelemetryPrompt`: Asks whether to share run stats a few seconds after the game starts. Answering the question turns it off. Default: `true`.
 
@@ -149,7 +150,7 @@ SpiderSurge supports optional telemetry to help track balancing and gameplay tre
 
 ### How to enable
 
-Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run reports** in **Mods** > **SpiderSurge** > **General**, or `surge.telemetry` in the file. Uploads also need **Record each run** (`surge.statsLogging`) on.
+Telemetry is off until you agree. The first time the game starts with Surge on, a popup asks whether to share anonymous run stats. You can change your answer at any time with **Share anonymous run reports** in **Mods** > **SpiderSurge** > **Settings** > **Records and privacy**, or `surge.telemetry` in the file. Sharing does not require local text exports.
 
 ### What is sent
 
@@ -170,7 +171,7 @@ A very long run's report leaves out its oldest perk choices and waves, so it sta
 - Telemetry uses an anonymous random ID, not player names.
 - The anonymous ID is generated locally and stored in:
     `...\Silk\Logs\SpiderSurge\telemetry_anonymous_id.txt`
-- The **General** page shows the ID, and **Reset telemetry ID** replaces it with a new one.
+- The **Settings** > **Records and privacy** page shows the ID, and **Reset telemetry ID** replaces it with a new one.
 
 
 ### Local log files (non-telemetry)

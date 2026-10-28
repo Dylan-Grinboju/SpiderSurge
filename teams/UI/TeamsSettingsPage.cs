@@ -94,7 +94,7 @@ namespace SpiderTeams
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Mod parts shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Settings > Advanced > Mod parts and game fixes shows why.");
                 return;
             }
 
@@ -120,14 +120,18 @@ namespace SpiderTeams
                 page.Note(Consts.Surge.UltimateDescriptions[ability]);
             }
 
-            page.Button($"{Consts.Surge.CooldownName}: {PerkLevel(ModConfig.SurgeCooldown)}", () => ModConfig.SetSurgeCooldown(NextPerkLevel(ModConfig.SurgeCooldown)));
-            page.Note(Consts.Surge.CooldownDescription);
-            page.Button($"{Consts.Surge.DurationNames[ability]}: {PerkLevel(ModConfig.SurgeDuration)}", () => ModConfig.SetSurgeDuration(NextPerkLevel(ModConfig.SurgeDuration)));
-            page.Note(Consts.Surge.DurationDescription);
-            page.Checkbox(Consts.Surge.ShortTermName, () => ModConfig.SurgeShortTerm, ModConfig.SetSurgeShortTerm);
-            page.Note(Consts.Surge.ShortTermDescription);
-            page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
-            page.Note(Consts.Surge.LongTermDescription);
+            page.Button(page.AdvancedAbilities ? "Hide advanced ability rules" : "Advanced ability rules", page.ToggleAdvancedAbilities);
+            if (page.AdvancedAbilities)
+            {
+                page.Button($"{Consts.Surge.CooldownName}: {PerkLevel(ModConfig.SurgeCooldown)}", () => ModConfig.SetSurgeCooldown(NextPerkLevel(ModConfig.SurgeCooldown)));
+                page.Note(Consts.Surge.CooldownDescription);
+                page.Button($"{Consts.Surge.DurationNames[ability]}: {PerkLevel(ModConfig.SurgeDuration)}", () => ModConfig.SetSurgeDuration(NextPerkLevel(ModConfig.SurgeDuration)));
+                page.Note(Consts.Surge.DurationDescription);
+                page.Checkbox(Consts.Surge.ShortTermName, () => ModConfig.SurgeShortTerm, ModConfig.SetSurgeShortTerm);
+                page.Note(Consts.Surge.ShortTermDescription);
+                page.Checkbox(Consts.Surge.LongTermName, () => ModConfig.SurgeLongTerm, ModConfig.SetSurgeLongTerm);
+                page.Note(Consts.Surge.LongTermDescription);
+            }
 
             page.Note($"Ability: {Controls.Display(Controls.AbilityKeyboard)} or {Controls.Display(Controls.AbilityController)} (hold Select and double-tap a button to pick your own). Ultimate: {Controls.Display(Controls.UltimateKeyboard)} or {Controls.Display(Controls.UltimateController)}.");
             page.Note("Online, every player runs the same SpiderSurge version; the host turns away anyone else.");

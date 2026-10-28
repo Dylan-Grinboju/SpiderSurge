@@ -34,6 +34,7 @@ namespace StatsMod
         {
             public PlayerController Killer;
             public bool Friendly;
+            internal object CleanHandsHarm;
             public string Weapon;
             internal bool Streak;
             internal int StreakSerial;
@@ -587,6 +588,7 @@ namespace StatsMod
 
         public void RevertKill(KillCredit credit)
         {
+            if (credit.Friendly && Parts.Surge.Running) SpiderSurge.ChallengeController.RevertFriendlyHarm(credit.CleanHandsHarm);
             if (!Net.IsAuthority || credit.Killer == null || !activePlayers.TryGetValue(credit.Killer, out PlayerData data)) return;
 
             if (credit.Friendly)
@@ -613,12 +615,15 @@ namespace StatsMod
             }
         }
 
-        public void IncrementFriendlyKill(PlayerController player)
+        public KillCredit IncrementFriendlyKill(PlayerController player)
         {
+            var credit = new KillCredit { Killer = player, Friendly = true };
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyKills++;
+                if (Parts.Surge.Running) credit.CleanHandsHarm = SpiderSurge.ChallengeController.FriendlyHarm();
             }
+            return credit;
         }
 
         public void IncrementWaveClutch(PlayerController player)
@@ -642,6 +647,7 @@ namespace StatsMod
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyShieldsHit++;
+                if (Parts.Surge.Running) SpiderSurge.ChallengeController.FriendlyHarm();
             }
         }
 

@@ -43,11 +43,16 @@ namespace SpiderSurge
                 rect.SetParent(hud.survivalHud.transform, false);
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
                 rect.sizeDelta = new Vector2(470, 54);
+                const float sectionInset = 60f;
                 var chaos = root.AddComponent<ChaosHud>();
                 chaos._points = chaos.Label(hud.livesCounter, "Points", 0, 15);
-                chaos._points.alignment = TextAlignmentOptions.Left;
-                chaos._points.rectTransform.sizeDelta = new Vector2(470, 50);
-                chaos._challenge = chaos.Label(hud.livesCounter, "Challenge", -54, 14);
+                chaos._points.rectTransform.pivot = new Vector2(0, 0.5f);
+                chaos._points.rectTransform.sizeDelta = new Vector2(430 - sectionInset, 28);
+                chaos._points.rectTransform.anchoredPosition = new Vector2(sectionInset + 28, -25);
+                ChaosIcon.Add(root.transform, new Vector2(sectionInset + 12, -25), 14, Hud.Warm, new Vector2(0, 1));
+                chaos._challenge = chaos.Label(hud.livesCounter, "Challenge", -32, 12);
+                chaos._challenge.rectTransform.anchoredPosition = new Vector2(sectionInset, -32);
+                chaos._challenge.rectTransform.sizeDelta = new Vector2(470 - sectionInset, 25);
                 _instance = chaos;
             }
             catch (System.Exception ex)
@@ -63,7 +68,7 @@ namespace SpiderSurge
             if (ChaosWallet.Points != _shownPoints)
             {
                 _shownPoints = ChaosWallet.Points;
-                _points.text = $"chaos point: {_shownPoints}";
+                _points.text = $"{_shownPoints}";
             }
             AnimatePoints();
             string status = ChallengeController.Status;
@@ -71,6 +76,7 @@ namespace SpiderSurge
             {
                 _shownStatus = status;
                 _challenge.text = status;
+                _challenge.color = ChallengeController.Failed ? Hud.Pink : Hud.Muted;
             }
         }
 

@@ -34,6 +34,7 @@ namespace SpiderSurge
             if (Instance == null)
             {
                 Instance = this;
+                gameObject.AddComponent<EncounterHints>();
                 DontDestroyOnLoad(gameObject);
             }
             else
@@ -44,7 +45,11 @@ namespace SpiderSurge
 
         public void SetActive(bool active)
         {
-            if (!active) AbilitySelection.Reset();
+            if (!active)
+            {
+                AbilitySelection.Reset();
+                EncounterHints.ResetRun();
+            }
             IsActive = IsModeEnabled && active;
             if (active)
             {

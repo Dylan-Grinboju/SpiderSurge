@@ -171,7 +171,7 @@ namespace StatsMod
 
         public void ShowDisplay()
         {
-            if (!isDisplayVisible) { preset = 0; presetPage = 0; }
+            if (!isDisplayVisible) OpenPreferredPreset();
             isDisplayVisible = true;
         }
 

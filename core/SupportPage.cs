@@ -11,6 +11,7 @@ namespace SpiderSurge.Common
         public static void Build(SettingsPage page)
         {
             page.Title("Support");
+            if (Parts.Surge.Running) SurgeSettingsPage.BuildTelemetrySupport(page);
             page.Button("Open logs", () => OpenFolder(Path.Combine(Path.GetDirectoryName(Application.dataPath), "Silk", "Logs")));
             page.Button("Open config folder", () => OpenFolder(Path.GetDirectoryName(Settings.FilePath)));
             page.Button("Open save folder", () => OpenFolder(ModData.Folder));

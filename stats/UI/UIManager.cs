@@ -47,7 +47,7 @@ namespace StatsMod
             {
                 var session = GameSessionManager.Instance;
                 GameMode mode = session.CurrentGameMode != GameMode.None ? session.CurrentGameMode : session.LastGameMode;
-                return ModConfig.ShowStatsWindow && ModConfig.TitlesEnabled && mode != GameMode.Versus;
+                return ModConfig.ShowStatsWindow && (ModConfig.TitlesEnabled || RunRecap.Last != null) && mode != GameMode.Versus;
             }
         }
         internal static bool TitlesBlockedByMenu
@@ -129,34 +129,9 @@ namespace StatsMod
             _scaledWidth = Screen.width;
             _scaledHeight = Screen.height;
 
-            if (ModConfig.AutoScale)
-            {
-                // Base resolution: 1920x1080
-                float baseWidth = 1920f;
-                float baseHeight = 1080f;
-
-                // Get current screen resolution
-                float currentWidth = Screen.width;
-                float currentHeight = Screen.height;
-
-                // Calculate scale based on the smaller dimension to maintain readability
-                float widthScale = currentWidth / baseWidth;
-                float heightScale = currentHeight / baseHeight;
-                float autoScale = Mathf.Min(widthScale, heightScale);
-
-                // Apply manual scale multiplier
-                _uiScaleFactor = autoScale * ModConfig.UIScale;
-
-                // Clamp to reasonable values
-                _uiScaleFactor = Mathf.Clamp(_uiScaleFactor, 0.5f, 3.0f);
-
-                if (!_scalingLogged) Logger.LogInfo($"UI Auto-scaling initialized: Screen {currentWidth}x{currentHeight}, Scale factor: {_uiScaleFactor:F2}");
-            }
-            else
-            {
-                _uiScaleFactor = ModConfig.UIScale;
-                if (!_scalingLogged) Logger.LogInfo($"UI Manual scaling: Scale factor: {_uiScaleFactor:F2}");
-            }
+            float autoScale = Mathf.Min(Screen.width / 1920f, Screen.height / 1080f);
+            _uiScaleFactor = Mathf.Clamp(autoScale * ModConfig.UIScale, 0.5f, 3f);
+            if (!_scalingLogged) Logger.LogInfo($"UI scaling: Screen {Screen.width}x{Screen.height}, scale {_uiScaleFactor:F2}");
 
             _scalingInitialized = true;
             _scalingLogged = true;

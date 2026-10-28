@@ -267,6 +267,11 @@ namespace SpiderSurge
 
         private static void OnLeftHost()
         {
+            if (Parts.Stats.Running && StatsMod.GameSessionManager.Instance.IsActive)
+            {
+                if (SurgeGameModeManager.IsSurgeRunActive) RunRecap.Capture();
+                else RunRecap.Clear();
+            }
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
             SurgeGameModeManager.Instance?.ResetRun();
@@ -352,13 +357,14 @@ namespace SpiderSurge
                 }
                 int spawnEpoch = reader.ReadInt32();
 
+                bool becameActive = active && !SurgeGameModeManager.IsSurgeRunActive;
                 SurgeGameModeManager.SelectMode(modeEnabled);
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
-                // Spiders already alive when a client joins mid-run started before Surge was active there
-                if (_awaitingFirstState)
+                // A spider may spawn before the first active snapshot, including after an inactive waiting-room snapshot.
+                if (_awaitingFirstState || becameActive)
                 {
                     _awaitingFirstState = false;
                     if (active)
