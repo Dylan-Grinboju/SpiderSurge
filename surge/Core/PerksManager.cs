@@ -111,6 +111,11 @@ namespace SpiderSurge
         private static void Enable(string perkName)
         {
             var (ability, ultimate, type) = System.Array.Find(Abilities, entry => entry.ability == perkName || entry.ultimate == perkName);
+            if (type == null)
+            {
+                Logger.LogError($"Cannot enable {perkName}: not an ability or ultimate perk");
+                return;
+            }
             bool isUltimate = perkName == ultimate;
             try
             {

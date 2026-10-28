@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SpiderTeams
 {
@@ -81,8 +82,8 @@ namespace SpiderTeams
                 SpiderSurge.Consts.PerkNames.PulseAbilityUltimate,
                 SpiderSurge.Consts.PerkNames.StorageAbilityUltimate,
             };
-            public static readonly string[] AbilityNames = { DisplayName(AbilityPerks[0]), DisplayName(AbilityPerks[1]), DisplayName(AbilityPerks[2]), DisplayName(AbilityPerks[3]), "Random" };
-            public static readonly string[] UltimateNames = { DisplayName(UltimatePerks[0]), DisplayName(UltimatePerks[1]), DisplayName(UltimatePerks[2]), DisplayName(UltimatePerks[3]) };
+            public static readonly string[] AbilityNames = AbilityPerks.Select(DisplayName).Append("Random").ToArray();
+            public static readonly string[] UltimateNames = UltimatePerks.Select(DisplayName).ToArray();
 
             public static readonly string[] AbilityDescriptions =
             {

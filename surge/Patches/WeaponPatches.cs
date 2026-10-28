@@ -2,7 +2,6 @@ using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using Logger = Silk.Logger;
 
 namespace SpiderSurge
 {
@@ -100,20 +99,12 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static void Prefix(Weapon __instance, ref float value)
         {
-            AmmoAbility clip = AmmoAbility.ActiveFor(__instance, out int playerId);
+            AmmoAbility clip = AmmoAbility.ActiveFor(__instance);
             if (clip == null) return;
 
             if (SpiderSurge.Common.Net.IsAuthority && value < __instance.ammo)
             {
-                // Caught and logged like SurgeVfx.Safely, without allocating a closure per shot
-                try
-                {
-                    clip.AccentShot(__instance, playerId);
-                }
-                catch (System.Exception ex)
-                {
-                    Logger.LogWarning($"SurgeVfx: an effect failed and was skipped: {ex}");
-                }
+                Vfx.SurgeVfx.Safely(static shot => shot.clip.AccentShot(shot.weapon), (clip, weapon: __instance));
             }
             float floor = clip.GetHeldWeaponFloorAmmo(__instance);
             if (floor >= 0f && value < floor)

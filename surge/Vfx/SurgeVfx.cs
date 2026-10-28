@@ -34,6 +34,19 @@ namespace SpiderSurge.Vfx
             }
         }
 
+        // Hot paths pass their values with a static lambda, so nothing is allocated per call
+        public static void Safely<TArg>(System.Action<TArg> draw, TArg arg)
+        {
+            try
+            {
+                draw(arg);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogWarning($"SurgeVfx: an effect failed and was skipped: {ex}");
+            }
+        }
+
         public static T Safely<T>(System.Func<T> make) where T : class
         {
             T made = null;

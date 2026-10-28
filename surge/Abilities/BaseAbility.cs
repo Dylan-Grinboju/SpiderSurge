@@ -326,13 +326,13 @@ namespace SpiderSurge
             }
             SurgeNet.SendAbility(PlayerId, Kind, ultimate);
 
-            if ((ultimate ? UltimateDuration : AbilityDuration) > 0)
+            if (activeDuration > 0)
             {
                 if (durationCoroutine != null)
                 {
                     StopCoroutine(durationCoroutine);
                 }
-                durationCoroutine = StartCoroutine(DurationCoroutine(ultimate));
+                durationCoroutine = StartCoroutine(DurationCoroutine(activeDuration));
             }
         }
 
@@ -554,10 +554,10 @@ namespace SpiderSurge
             SoundManager.Play(Consts.SoundNames.AbilityEnded, Consts.SoundVolumes.AbilityEnded);
         }
 
-        private IEnumerator DurationCoroutine(bool ultimate)
+        private IEnumerator DurationCoroutine(float duration)
         {
             bool wasUltimate = isUltimateActive;
-            yield return new WaitForSeconds(ultimate ? UltimateDuration : AbilityDuration);
+            yield return new WaitForSeconds(duration);
 
             if (isActive)
             {

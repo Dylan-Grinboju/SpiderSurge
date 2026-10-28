@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
-using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderTeams
@@ -19,13 +18,13 @@ namespace SpiderTeams
                 AccessTools.Method(typeof(BoomSpear), "ExplodeClientRpc", new[] { typeof(Vector3), typeof(int), typeof(Color) }));
         }
 
-        // Recorded once on the host's send pass; the explosion it creates is matched to it by position.
+        // Recorded once on the host's send pass while team mode is on, the only time an attack reads it; the explosion it creates is matched to it by position.
         [HarmonyPrefix]
         public static void Prefix(Weapon __instance, Vector3 position)
         {
             try
             {
-                if (Net.IsHost && ReflectionCache.IsRpcSendStage(__instance))
+                if (TeamManager.HostTeamMode && ReflectionCache.IsRpcSendStage(__instance))
                 {
                     ExplosionOwners.Record(position, OwnerRegistry.OfWeapon(__instance));
                 }
@@ -45,7 +44,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (Net.IsHost && ReflectionCache.IsRpcSendStage(__instance))
+                if (TeamManager.HostTeamMode && ReflectionCache.IsRpcSendStage(__instance))
                 {
                     ExplosionOwners.Record(position, OwnerRegistry.Get(__instance.gameObject));
                 }
@@ -66,7 +65,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (Net.IsHost)
+                if (TeamManager.HostTeamMode)
                 {
                     ExplosionOwners.Record(hitPoint, RailShot_ProcessHit_Patch.Owner(__instance));
                 }

@@ -17,13 +17,11 @@ namespace SpiderSurge
         public static Dictionary<int, AmmoAbility> playerAmmoAbilities = new Dictionary<int, AmmoAbility>();
 
         // Weapon.ammo is set on every shot, so the holder is only looked up while some Bottomless Clip is running
-        internal static AmmoAbility ActiveFor(Weapon weapon, out int playerId)
+        internal static AmmoAbility ActiveFor(Weapon weapon)
         {
-            playerId = -1;
             if (!AnyActive || weapon == null || !weapon.equipped || weapon.owner == null) return null;
 
-            playerId = Players.IdOf(weapon.owner);
-            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive)
+            if (!playerAmmoAbilities.TryGetValue(Players.IdOf(weapon.owner), out AmmoAbility ability) || ability == null || !ability.isActive)
                 return null;
 
             return ability;
@@ -276,7 +274,7 @@ namespace SpiderSurge
 
         private float nextShotAccent;
 
-        internal void AccentShot(Weapon weapon, int player)
+        internal void AccentShot(Weapon weapon)
         {
             if (aura == null || Time.time < nextShotAccent) return;
             nextShotAccent = Time.time + 0.08f;
@@ -284,7 +282,7 @@ namespace SpiderSurge
             Vector3 direction = weapon.transform.up;
             float angle = Mathf.Atan2(direction.y, direction.x);
             WeaponVfx.Shot(position, angle);
-            if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ClipShot, player, position, angle, false);
+            SurgeNet.SendFx(SurgeFx.ClipShot, PlayerId, position, angle, false);
         }
 
         private WeaponAura aura;

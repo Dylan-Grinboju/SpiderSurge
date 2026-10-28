@@ -98,14 +98,9 @@ namespace SpiderSurge
 
         public static void PlayPowerUpSound()
         {
-            if (SoundManager.Instance != null)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.PowerUp,
-                    Consts.SoundVolumes.PowerUp
-                );
-                PowerUpSoundPlayedThisSelection = true;
-            }
+            if (SoundManager.Instance == null) return;
+            SoundManager.Play(Consts.SoundNames.PowerUp, Consts.SoundVolumes.PowerUp);
+            PowerUpSoundPlayedThisSelection = true;
         }
     }
 
