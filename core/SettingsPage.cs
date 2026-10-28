@@ -785,6 +785,11 @@ namespace SpiderSurge.Common
             StyleRow(slider.gameObject);
             StyleLabel(slider.sliderDescription, -1f, 1f);
             StyleLabel(slider.sliderValueText, 48f, 0f);
+            slider.sliderValueText.enableWordWrapping = false;
+            float valueWidth = 48f;
+            foreach (string text in new[] { Format(min, step, unit), Format(max, step, unit), Format(value, step, unit) })
+                valueWidth = Mathf.Max(valueWidth, Mathf.Ceil(slider.sliderValueText.GetPreferredValues(text, float.PositiveInfinity, float.PositiveInfinity).x) + 4f);
+            SetLayout(slider.sliderValueText.gameObject, valueWidth, RowHeight, 0f, RowHeight);
             SetLayout(slider.slider.gameObject, 110f, RowHeight, 0f, RowHeight);
             Register(slider.slider);
             _created.Add(slider.gameObject);

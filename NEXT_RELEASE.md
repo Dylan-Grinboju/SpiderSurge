@@ -31,7 +31,7 @@ A small live window sits in a corner of the screen while you play: each spider's
 
 <img width="680" alt="The small stats window next to the game's HUD" src="docs/images/stats-small-window-closeup.png" />
 
-The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). It opens on the customizable Default preset; Combat, Enemy kills, Weapon kills, Accuracy and Movement offer fixed sets of columns. Each page shows up to six columns. Green is good, pink is a hit you took, amber is friendly fire.
+The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). Choose its opening preset in Settings > Stats > Starting scoreboard. My scoreboard has customizable columns; Combat, Enemy kills, Weapon kills, Accuracy and Movement offer fixed sets. Each page fits its columns to the available width. Green is good, pink is a hit you took, amber is friendly fire.
 
 <img width="1600" alt="The big stats window during a Survival run" src="docs/images/stats-big-window.jpg" />
 

@@ -45,7 +45,11 @@ namespace SpiderSurge
 
         public void SetActive(bool active)
         {
-            if (!active) AbilitySelection.Reset();
+            if (!active)
+            {
+                AbilitySelection.Reset();
+                EncounterHints.ResetRun();
+            }
             IsActive = IsModeEnabled && active;
             if (active)
             {

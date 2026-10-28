@@ -45,6 +45,7 @@ public class SurvivalModeHud {
     public View survivalHud = new View();
     public class View { public bool IsVisible = true; }
 }
+public static class LevelController { public static bool IsLoading; }
 namespace Unity.Netcode { public class NetworkObject { public bool IsSpawned = true; } }
 namespace UnityEngine {
     public class MonoBehaviour { }
@@ -121,4 +122,21 @@ Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $
 Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('cocoon', 'Cocoon hint', $survivor)) $true 'Only the completed display suppresses later attempts'
 [void]$update.Invoke($hints, @())
 Assert-Equal ($null -eq $current.GetValue($hints)) $true 'Repeated attempts did not duplicate the hint'
+[void][SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $survivor)
+[void]$update.Invoke($hints, @())
+[SpiderSurge.EncounterHints]::ResetRun()
+Assert-Equal ($null -eq $current.GetValue($hints)) $true 'A synchronous restart immediately clears the visible hint'
+Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $survivor)) $false 'Restart does not save an unfinished hint as seen'
+[void]$update.Invoke($hints, @())
+[LevelController]::IsLoading = $true
+1..7 | ForEach-Object { [void]$update.Invoke($hints, @()) }
+Assert-Equal ($null -eq $current.GetValue($hints)) $true 'Loading clears visible and queued hints'
+[LevelController]::IsLoading = $false
+Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $survivor)) $false 'Loading time does not complete an unseen hint'
+[void]$update.Invoke($hints, @())
+$survivor.Dead = $true
+[void]$update.Invoke($hints, @())
+Assert-Equal ($null -eq $current.GetValue($hints)) $true 'An enemy dying during a hint cancels that display'
+$replacement = [EnemyHealthSystem]::new()
+Assert-Equal ([SpiderSurge.EncounterHints]::Encounter('laser', 'Laser hint', $replacement)) $false 'Another living enemy can retry an interrupted hint'
 Write-Output "PASS: $checks review regression checks"

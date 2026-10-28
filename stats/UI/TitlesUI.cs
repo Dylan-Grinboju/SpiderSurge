@@ -130,6 +130,11 @@ namespace StatsMod
         {
             if (!UIManager.CanShowTitles) return;
             isDisplayVisible = true;
+            if (!ModConfig.TitlesEnabled)
+            {
+                StopAnimation();
+                return;
+            }
             if (TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0 && !hasAnimationPlayed)
             {
                 StartAnimation();

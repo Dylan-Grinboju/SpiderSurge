@@ -50,14 +50,26 @@ namespace SpiderSurge
         private static bool Visible => ChaosWallet.Enabled && !GameMenus.Open && !ChallengeController.Pending &&
             SurvivalModeHud.instance != null && SurvivalModeHud.instance.survivalHud.IsVisible;
 
+        public static void ResetRun()
+        {
+            if (instance == null) return;
+            instance.current = null;
+            instance.remaining = 0f;
+            instance.waiting.Clear();
+            instance.queued.Clear();
+        }
+
         private void Update()
         {
-            if (!SurgeGameModeManager.IsSurgeRunActive)
+            if (!SurgeGameModeManager.IsSurgeRunActive || LevelController.IsLoading)
             {
-                current = null;
-                waiting.Clear();
-                queued.Clear();
+                ResetRun();
                 return;
+            }
+            if (current != null && (current.Enemy == null || current.Enemy.IsDead()))
+            {
+                queued.Remove(current.Key);
+                current = null;
             }
             if (!Visible) return;
             if (current == null && waiting.Count > 0)
