@@ -101,17 +101,13 @@ namespace SpiderSurge
 
         private TMP_Text Label(TMP_Text template, string name, float y, float size)
         {
-            var text = Instantiate(template.gameObject, transform).GetComponent<TMP_Text>();
-            text.name = name;
-            SettingsPage.SetText(text, "");
+            var text = Hud.CloneText(template, transform, name, "");
             text.fontSize = size;
             text.enableAutoSizing = false;
             text.enableWordWrapping = false;
             text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.raycastTarget = false;
             text.color = Color.white;
             var rect = text.rectTransform;
-            rect.localScale = Vector3.one;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
             rect.anchoredPosition = new Vector2(0, y);
             rect.sizeDelta = new Vector2(470, 25);

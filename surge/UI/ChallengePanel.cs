@@ -105,11 +105,7 @@ namespace SpiderSurge
 
         private TMP_Text Text(TMP_Text template, string name, string value, Vector2 position, Vector2 size, float fontSize)
         {
-            var text = Instantiate(template.gameObject, transform).GetComponent<TMP_Text>();
-            text.name = name;
-            SettingsPage.SetText(text, value);
-            text.gameObject.SetActive(true);
-            text.raycastTarget = false;
+            var text = Hud.CloneText(template, transform, name, value);
             text.alignment = TextAlignmentOptions.Center;
             text.enableAutoSizing = true;
             text.fontSizeMin = fontSize - 2;
@@ -119,8 +115,6 @@ namespace SpiderSurge
             text.enableWordWrapping = true;
             text.overflowMode = TextOverflowModes.Ellipsis;
             var rect = text.rectTransform;
-            rect.localScale = Vector3.one;
-            rect.localRotation = Quaternion.identity;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;

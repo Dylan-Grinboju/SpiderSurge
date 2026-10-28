@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace SpiderSurge.Common
@@ -139,6 +140,19 @@ namespace SpiderSurge.Common
                 return value.ToString();
             }
             return _numbers[value] ??= value.ToString();
+        }
+
+        // A copy of one of the game's texts that keeps the given text instead of its I2 term; size, alignment and autosize are the caller's
+        public static TMP_Text CloneText(TMP_Text template, Transform parent, string name, string text)
+        {
+            var clone = Object.Instantiate(template.gameObject, parent).GetComponent<TMP_Text>();
+            clone.name = name;
+            clone.gameObject.SetActive(true);
+            SettingsPage.SetText(clone, text);
+            clone.raycastTarget = false;
+            clone.rectTransform.localScale = Vector3.one;
+            clone.rectTransform.localRotation = Quaternion.identity;
+            return clone;
         }
 
         public static float Width(GUIStyle style, string text) => style.CalcSize(new GUIContent(text)).x;

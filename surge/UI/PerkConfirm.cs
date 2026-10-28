@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using SpiderSurge.Common;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Logger = Silk.Logger;
@@ -77,15 +76,13 @@ namespace SpiderSurge
     {
         public const string ObjectName = "SurgeConfirm";
 
-        private Button _button;
-        private Image _background;
-        private TMP_Text _label;
+        private PerkActionButton _action;
         private SurvivalModeHud _hud;
         private SurvivalModifierChoiceCard _submitted;
 
         public static PerkConfirmButton Current { get; private set; }
 
-        public Button Button => _button;
+        public Button Button => _action != null ? _action.Button : null;
 
         // Called when a run ends, so a stale button never waits for the next run's first perk screen
         public static void Clear()
@@ -105,49 +102,19 @@ namespace SpiderSurge
 
             try
             {
-                GameObject buttonObject = Instantiate(hud.perkCardPrefab, hud.perkChoiceView.transform);
-                buttonObject.name = ObjectName;
-                var card = buttonObject.GetComponent<SurvivalModifierChoiceCard>();
-                var confirm = buttonObject.AddComponent<PerkConfirmButton>();
-                buttonObject.AddComponent<PerkActionButton>();
+                PerkConfirmButton confirm = null;
+                var action = PerkActionButton.Create(hud.perkCardPrefab, hud.perkChoiceView.transform, ObjectName, () => confirm.OnClick(), 8f);
+                confirm = action.gameObject.AddComponent<PerkConfirmButton>();
                 confirm._hud = hud;
-                confirm._button = buttonObject.GetComponent<Button>();
-                confirm._background = buttonObject.GetComponent<Image>();
-                if (card != null)
-                {
-                    confirm._label = card.perkNameText;
-                    PerkChoiceWidget.HideCardParts(card, false, false);
-                    Destroy(card);
-                }
+                confirm._action = action;
 
-                var rect = (RectTransform)buttonObject.transform;
-                rect.localScale = Vector3.one;
+                var rect = (RectTransform)action.transform;
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
                 rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 1f);
                 rect.sizeDelta = new Vector2(Consts.Values.Chaos.ConfirmWidth, Consts.Values.Chaos.ConfirmHeight);
                 confirm.Reposition();
-
-                if (confirm._label != null)
-                {
-                    SettingsPage.SetText(confirm._label, "");
-                    var labelRect = confirm._label.rectTransform;
-                    labelRect.pivot = new Vector2(0.5f, 0.5f);
-                    SettingsPage.Stretch(labelRect, new Vector2(8f, 2f), new Vector2(-8f, -2f));
-                    confirm._label.fontSize = 13f;
-                    confirm._label.alignment = TextAlignmentOptions.Center;
-                    confirm._label.enableWordWrapping = false;
-                    confirm._label.overflowMode = TextOverflowModes.Ellipsis;
-                }
-                if (confirm._button != null)
-                {
-                    confirm._button.onClick.RemoveAllListeners();
-                    confirm._button.onClick.AddListener(confirm.OnClick);
-                    // The card prefab's disabled tint is black, which would hide the frame while nothing is locked
-                    ColorBlock colors = confirm._button.colors;
-                    colors.disabledColor = Consts.Values.Chaos.ConfirmDisabledTint;
-                    confirm._button.colors = colors;
-                }
+                if (action.Label != null) action.Label.fontSize = 13f;
                 confirm.LinkNavigation();
                 confirm.Refresh();
                 Current = confirm;
@@ -184,6 +151,7 @@ namespace SpiderSurge
         // Down from any card reaches the button; up goes back to the locked card, or the first one
         private void LinkNavigation()
         {
+            Button confirm = Button;
             var cards = new List<Button>();
             foreach (var card in PerkChoiceWidget.Cards(_hud))
             {
@@ -197,18 +165,18 @@ namespace SpiderSurge
                 nav.selectOnLeft = i > 0 ? cards[i - 1] : null;
                 nav.selectOnRight = i < cards.Count - 1 ? cards[i + 1] : null;
                 nav.selectOnUp = null;
-                nav.selectOnDown = _button;
+                nav.selectOnDown = confirm;
                 cards[i].navigation = nav;
             }
-            if (_button != null)
+            if (confirm != null)
             {
-                Navigation nav = _button.navigation;
+                Navigation nav = confirm.navigation;
                 nav.mode = Navigation.Mode.Explicit;
                 nav.selectOnUp = cards.Count > 0 ? cards[0] : null;
                 nav.selectOnDown = null;
                 nav.selectOnLeft = null;
                 nav.selectOnRight = null;
-                _button.navigation = nav;
+                confirm.navigation = nav;
             }
         }
 
@@ -225,24 +193,16 @@ namespace SpiderSurge
 
         public void Refresh()
         {
-            if (this == null || _button == null) return;
+            if (this == null || Button == null) return;
             var locked = PerkConfirm.Locked;
             bool can = CanConfirm(locked);
             bool confirmed = _submitted != null && (locked == _submitted || !Net.IsRemoteClient);
-            PerkChoiceWidget.SetInteractable(_button, can, locked != null && locked.cardButton != null ? locked.cardButton : PerkChoiceWidget.FirstCard(_hud));
-            if (locked != null && locked.cardButton != null)
-            {
-                Navigation nav = _button.navigation;
-                nav.selectOnUp = locked.cardButton;
-                _button.navigation = nav;
-            }
-            if (_label != null)
+            _action.Show(can, locked != null && locked.cardButton != null ? locked.cardButton : null, _hud);
+            if (_action.Label != null)
             {
                 string name = locked != null && locked.perkNameText != null ? locked.perkNameText.text : null;
-                _label.text = confirmed ? "Confirmed" : name != null ? $"Confirm <color={Consts.Formatting.ColorGold}>{name}</color>" : "Pick a card to confirm";
-                _label.color = PerkChoiceWidget.Faded(_label.color, can ? 1f : 0.5f);
+                _action.Label.text = confirmed ? "Confirmed" : name != null ? $"Confirm <color={Consts.Formatting.ColorGold}>{name}</color>" : "Pick a card to confirm";
             }
-            if (_background != null) _background.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
     }
 }

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using Doozy.Engine.UI;
 using HarmonyLib;
 using SpiderSurge.Common;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -145,6 +147,61 @@ namespace SpiderSurge
     // Marks the Confirm and Buy buttons: disabled, they mean nothing to do, so the focus must not rest on them the way it may on a shop entry a pad walks through
     public sealed class PerkActionButton : MonoBehaviour
     {
+        public Button Button { get; private set; }
+        public Image Background { get; private set; }
+        public TMP_Text Label { get; private set; }
+
+        // A card from the prefab cut down to its frame and one centered label, so it looks like the cards and takes the same controller input
+        public static PerkActionButton Create(GameObject prefab, Transform parent, string name, UnityAction onClick, float inset)
+        {
+            GameObject buttonObject = Instantiate(prefab, parent);
+            buttonObject.name = name;
+            var action = buttonObject.AddComponent<PerkActionButton>();
+            var card = buttonObject.GetComponent<SurvivalModifierChoiceCard>();
+            action.Button = buttonObject.GetComponent<Button>();
+            action.Background = buttonObject.GetComponent<Image>();
+            if (card != null)
+            {
+                action.Label = card.perkNameText;
+                PerkChoiceWidget.HideCardParts(card, false, false);
+                Destroy(card);
+            }
+            buttonObject.transform.localScale = Vector3.one;
+            if (action.Label != null)
+            {
+                SettingsPage.SetText(action.Label, "");
+                var labelRect = action.Label.rectTransform;
+                labelRect.pivot = new Vector2(0.5f, 0.5f);
+                SettingsPage.Stretch(labelRect, new Vector2(inset, 2f), new Vector2(-inset, -2f));
+                action.Label.alignment = TextAlignmentOptions.Center;
+                action.Label.enableWordWrapping = false;
+                action.Label.overflowMode = TextOverflowModes.Ellipsis;
+            }
+            if (action.Button != null)
+            {
+                action.Button.onClick.RemoveAllListeners();
+                action.Button.onClick.AddListener(onClick);
+                // The card prefab's disabled tint is black, which would hide the frame while there is nothing to do
+                ColorBlock colors = action.Button.colors;
+                colors.disabledColor = Consts.Values.Chaos.ConfirmDisabledTint;
+                action.Button.colors = colors;
+            }
+            return action;
+        }
+
+        // Up leads back to the chosen entry, which also takes the focus when the button turns off under it; the caller writes the label afterwards
+        public void Show(bool can, Selectable up, SurvivalModeHud hud)
+        {
+            PerkChoiceWidget.SetInteractable(Button, can, up != null ? up : PerkChoiceWidget.FirstCard(hud));
+            if (up != null)
+            {
+                Navigation nav = Button.navigation;
+                nav.selectOnUp = up;
+                Button.navigation = nav;
+            }
+            if (Label != null) Label.color = PerkChoiceWidget.Faded(Label.color, can ? 1f : 0.5f);
+            if (Background != null) Background.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
+        }
     }
 
     // A perk card's scale built from its vanilla scale, the shop layout's factor and the lock highlight, so repeated layouts never compound and Doozy's punches return to it

@@ -40,9 +40,7 @@ namespace SpiderSurge
         private SurvivalModeHud _hud;
         private Vector2 _viewSize;
         private Entry _selected;
-        private Button _buy;
-        private Image _buyBackground;
-        private TMP_Text _buyLabel;
+        private PerkActionButton _buy;
         private int _lives = -1;
         private int _maxLives = -1;
         private ModifierManager _modifiers;
@@ -191,14 +189,8 @@ namespace SpiderSurge
 
         private TMP_Text CloneText(TMP_Text source, string name)
         {
-            var text = Instantiate(source.gameObject, transform).GetComponent<TMP_Text>();
-            text.gameObject.name = name;
-            text.gameObject.SetActive(true);
-            SettingsPage.SetText(text, "");
-            text.raycastTarget = false;
+            var text = Hud.CloneText(source, transform, name, "");
             text.enableAutoSizing = false;
-            text.rectTransform.localScale = Vector3.one;
-            text.rectTransform.localRotation = Quaternion.identity;
             return text;
         }
 
@@ -312,41 +304,14 @@ namespace SpiderSurge
 
         private void BuildBuyButton(float y)
         {
-            GameObject buyObject = Instantiate(_hud.perkCardPrefab, transform);
-            buyObject.name = "Shop Buy";
-            buyObject.AddComponent<PerkActionButton>();
-            var card = buyObject.GetComponent<SurvivalModifierChoiceCard>();
-            _buy = buyObject.GetComponent<Button>();
-            _buyBackground = buyObject.GetComponent<Image>();
-            if (card != null)
+            _buy = PerkActionButton.Create(_hud.perkCardPrefab, transform, "Shop Buy", OnBuy, 6f);
+            PlaceTop((RectTransform)_buy.transform, y, M.BuyHeight, 0f);
+            TMP_Text label = _buy.Label;
+            if (label != null)
             {
-                _buyLabel = card.perkNameText;
-                PerkChoiceWidget.HideCardParts(card, false, false);
-                Destroy(card);
-            }
-            var rect = (RectTransform)buyObject.transform;
-            rect.localScale = Vector3.one;
-            PlaceTop(rect, y, M.BuyHeight, 0f);
-            if (_buyLabel != null)
-            {
-                SettingsPage.SetText(_buyLabel, "");
-                var labelRect = _buyLabel.rectTransform;
-                labelRect.pivot = new Vector2(0.5f, 0.5f);
-                SettingsPage.Stretch(labelRect, new Vector2(6f, 2f), new Vector2(-6f, -2f));
-                _buyLabel.alignment = TextAlignmentOptions.Center;
-                _buyLabel.enableWordWrapping = false;
-                _buyLabel.overflowMode = TextOverflowModes.Ellipsis;
-                _buyLabel.enableAutoSizing = true;
-                _buyLabel.fontSizeMin = M.MinLabelFontSize;
-                _buyLabel.fontSizeMax = 13f;
-            }
-            if (_buy != null)
-            {
-                _buy.onClick.RemoveAllListeners();
-                _buy.onClick.AddListener(OnBuy);
-                ColorBlock colors = _buy.colors;
-                colors.disabledColor = M.ConfirmDisabledTint;
-                _buy.colors = colors;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = M.MinLabelFontSize;
+                label.fontSizeMax = 13f;
             }
         }
 
@@ -374,6 +339,7 @@ namespace SpiderSurge
             Button last = cards.Count > 0 ? cards[cards.Count - 1] : null;
             Button beforeLast = cards.Count > 1 ? cards[cards.Count - 2] : null;
             Button confirm = PerkConfirmButton.Current != null ? PerkConfirmButton.Current.Button : null;
+            Button buy = _buy != null ? _buy.Button : null;
             Button first = _entries.Count > 0 ? _entries[0].Button : null;
             if (last != null && first != null)
             {
@@ -392,20 +358,20 @@ namespace SpiderSurge
                 Navigation nav = button.navigation;
                 nav.mode = Navigation.Mode.Explicit;
                 nav.selectOnUp = i > 0 ? _entries[i - 1].Button : null;
-                nav.selectOnDown = i < _entries.Count - 1 ? _entries[i + 1].Button : _buy;
+                nav.selectOnDown = i < _entries.Count - 1 ? _entries[i + 1].Button : buy;
                 nav.selectOnLeft = last;
                 nav.selectOnRight = null;
                 button.navigation = nav;
             }
-            if (_buy != null)
+            if (buy != null)
             {
-                Navigation nav = _buy.navigation;
+                Navigation nav = buy.navigation;
                 nav.mode = Navigation.Mode.Explicit;
                 nav.selectOnUp = _entries.Count > 0 ? _entries[_entries.Count - 1].Button : null;
                 nav.selectOnDown = null;
                 nav.selectOnLeft = confirm != null ? confirm : last;
                 nav.selectOnRight = null;
-                _buy.navigation = nav;
+                buy.navigation = nav;
             }
             if (confirm != null && first != null)
             {
@@ -537,23 +503,15 @@ namespace SpiderSurge
 
         private void RefreshBuy(bool selectedCan)
         {
-            if (_buy == null) return;
+            if (_buy == null || _buy.Button == null) return;
             bool can = _selected != null && selectedCan;
-            PerkChoiceWidget.SetInteractable(_buy, can, _selected != null && _selected.Button != null ? _selected.Button : PerkChoiceWidget.FirstCard(_hud));
-            if (_selected != null && _selected.Button != null)
+            _buy.Show(can, _selected != null && _selected.Button != null ? _selected.Button : null, _hud);
+            if (_buy.Label != null)
             {
-                Navigation nav = _buy.navigation;
-                nav.selectOnUp = _selected.Button;
-                _buy.navigation = nav;
-            }
-            if (_buyLabel != null)
-            {
-                _buyLabel.text = _selected == null ? "Pick an item to buy"
+                _buy.Label.text = _selected == null ? "Pick an item to buy"
                     : _selected.Item == ShopItem.Perk && PerkShop.PurchasedPerk != null ? "Purchased"
                     : $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
-                _buyLabel.color = PerkChoiceWidget.Faded(_buyLabel.color, can ? 1f : 0.5f);
             }
-            if (_buyBackground != null) _buyBackground.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
 
         // After a reroll the selected card is gone with the old cards, so the view's first card is selected again; a view that is still hidden selects its own when it opens
