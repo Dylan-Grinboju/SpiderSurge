@@ -455,6 +455,7 @@ namespace StatsMod
             if (hit.Weapon == PulseWeapon && hit.DeathZoneDeadline.HasValue && Parts.Surge.Running)
             {
                 SpiderSurge.SurgeAchievements.Unlock(SpiderSurge.SurgeAchievements.Begone, hit.Player);
+                SpiderSurge.AbilityAchievementTracker.Evicted(enemy, hit.Player);
             }
 
             if (TryGetKillCategory(enemy, out string displayName))

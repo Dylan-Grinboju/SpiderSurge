@@ -27,7 +27,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
-- **Achievements**: 13 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
+- **Achievements**: 24 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Achievements** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
@@ -59,6 +59,17 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 | Kiss of Death | Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability |
 | Not On My Watch | Block a Laser Cannon or Laser Cube beam headed for a teammate while Null Field makes you immune. A teammate who is immune at that moment doesn't count |
 | Max Capacity | Buy a Bigger Heart (+1 max lives) in the Surge shop |
+| Factory Reset | Turn a Wasp Cocoon into a Wasp with Rewind |
+| Hold That Thought | Freeze a laser enemy while its laser ring is firing |
+| Cold Cuts | Kill 3 frozen enemies with a Particle Blade during one Freeze Time activation |
+| Still Sharp | Die to any frozen enemy, including its stinger, blade, struts, saw or poison |
+| Return to Sender | Push a Missile Whisp's rocket back with Kinetic Pulse and kill its original shooter with the blast |
+| Eviction Notice | Push a Wasp Cocoon into lava with Kinetic Pulse |
+| Personal Space | Knock 5 enemies away with one Kinetic Pulse |
+| Family Heirloom | Carry the same stored weapon through 3 map changes; deaths and retries on the same map do not add to the count |
+| Light Snack | Swallow 3 different enemy types with one Black Hole; shield and laser variants of the same type count once |
+| Overkill | Use Thermal Detonation to kill the wave's last enemy: a single plain Wasp |
+| We Brought Our Own | Have a friendly Wasp summoned by Neural Backup kill a Wasp hatched by a Cocoon |
 
 ## Chaos points, shop and challenges
 

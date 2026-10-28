@@ -127,6 +127,11 @@ namespace SpiderSurge.Patches
                 if (bp != null)
                 {
                     bp.projectileOwnerId = __instance.NetworkObjectId;
+                    if (__instance.name.Contains("MissileWhisp"))
+                    {
+                        var missile = gameObject.AddComponent<MissileAchievementOrigin>();
+                        missile.Shooter = __instance.GetComponent<EnemyHealthSystem>();
+                    }
                 }
 
                 // Ignore collision with shooter

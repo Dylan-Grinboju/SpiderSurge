@@ -58,7 +58,11 @@ namespace SpiderSurge
             }
         }
 
-        public static void ResetRevives() => Revives.Clear();
+        public static void ResetRevives()
+        {
+            Revives.Clear();
+            AbilityAchievementTracker.ClearWave();
+        }
 
         public static int CountRevive(PlayerController caster, PlayerController revived)
         {
