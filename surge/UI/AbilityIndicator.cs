@@ -19,6 +19,7 @@ namespace SpiderSurge
         private SpriteRenderer weapon;
         private Material material;
         private float drawnProgress = -1f;
+        private Color? drawnColor;
         private readonly Vector3[] points = new Vector3[Segments + 1];
 
         public void Initialize(BaseAbility tracked, Transform follow)
@@ -98,12 +99,21 @@ namespace SpiderSurge
             bool ready = !active && !ability.IsOnCooldown();
             bool shown = !ModConfig.IndicatorCompactHud && alive && (!showOnlyWhenReady || ready);
             float progress = active ? ability.ActiveProgress : ability.CooldownProgress;
-            track.enabled = shown;
-            fill.enabled = shown && progress > 0f;
+            if (track.enabled != shown) track.enabled = shown;
+            bool fillShown = shown && progress > 0f;
+            if (fill.enabled != fillShown) fill.enabled = fillShown;
             Color color = active ? activeColor : ready ? availableColor : cooldownColor;
-            track.startColor = track.endColor = new Color(color.r, color.g, color.b, 0.2f);
-            fill.startColor = fill.endColor = color;
-            if (Mathf.Abs(progress - drawnProgress) > 0.001f || progress == 1f && drawnProgress != 1f)
+            if (!drawnColor.HasValue || !drawnColor.Value.Equals(color))
+            {
+                track.startColor = track.endColor = new Color(color.r, color.g, color.b, 0.2f);
+                fill.startColor = fill.endColor = color;
+                drawnColor = color;
+            }
+            if (!fillShown)
+            {
+                drawnProgress = -1f;
+            }
+            else if (Mathf.Abs(progress - drawnProgress) > 0.001f || progress == 1f && drawnProgress != 1f)
             {
                 DrawArc(fill, progress);
                 drawnProgress = progress;
