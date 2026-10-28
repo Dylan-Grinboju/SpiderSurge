@@ -23,6 +23,10 @@ $variantStubs = @'
         public static List<TitleEntry> GetExternalTitles() => new List<TitleEntry>();
         public static List<TitleDefinition> GetDescribedTitles() => new List<TitleDefinition>();
     }
+    public static class RunReportSources {
+        public static List<TitleEntry> Titles() => new List<TitleEntry>();
+        public static List<TitleDefinition> DescribedTitles => new List<TitleDefinition>();
+    }
     public static class Probe {
         private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
         private static object Call(object target, string method, params object[] args) => typeof(TitlesManager).GetMethod(method, Any).Invoke(target, args);
