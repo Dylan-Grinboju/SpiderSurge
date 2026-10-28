@@ -118,7 +118,6 @@ namespace SpiderSurge
             }
         }
 
-        // Teams spares teammates here unless friendly fire does damage
         // Teams spares teammates by friendly fire rules; the flag says whether the Black Hole pulls rather than swallows
         public static System.Func<StorageAbility, SpiderHealthSystem, bool, bool> SparesTarget;
 
