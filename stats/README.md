@@ -32,7 +32,7 @@ Each spider's kills and deaths, next to its color. A dead spider's row fades unt
 ### Big window (F2)
 The run time, enemies killed and a table with a portrait for each spider. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. In versus it shows the match time instead.
 
-The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page shows up to six columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
+The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page uses the available width for its columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
 
 <img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
 
@@ -82,7 +82,7 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.display.position`: The position of the Small UI's top left corner as `xPercent` and `yPercent`, percentages of the screen's width and height from 0 to 100, with 0,0 being the top left corner of the screen. Being a share of the screen, it keeps the window in the same place when the resolution or window size changes. This value is saved every time you click and drag the UI, and a position saved in pixels by an older version is converted on the next launch. If the UI doesn't show up on your screen, set both values to 1. Default: `xPercent: 0.5`, `yPercent: 1`.
 
-`stats.display.bigUI.columns`: Setting a column to true includes it in the Default preset. Columns are split across pages of up to six.
+`stats.display.bigUI.columns`: Setting a column to true includes it in the Default preset. Columns are split across pages according to the available screen width.
 
 `stats.display.presets.combat`, `enemies`, `weapons`, `accuracy` and `movement`: Show or hide each fixed scoreboard preset. Default is always available. Each fixed preset uses its own columns, independent of the Default column settings. All are on by default.
 

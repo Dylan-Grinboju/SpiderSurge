@@ -14,6 +14,12 @@ namespace SpiderSurge
         private SpiderController _controller;
         private SpiderWeaponManager _weapons;
         private Weapon _weapon;
+        private float _weaponHeldAt;
+        private float? _rayChargeLeft;
+        private bool _chargeHeld;
+        private bool _weaponEnabled;
+        private static readonly AccessTools.FieldRef<DeathRay, float> RayChargeStart = AccessTools.FieldRefAccess<DeathRay, float>("_chargeStartTime");
+        private static readonly AccessTools.FieldRef<KhepriStaff, float> StaffReadyTime = AccessTools.FieldRefAccess<KhepriStaff, float>("_readyTime");
         private float _thawTime;
         private bool _controllerEnabled;
         private bool _held;
@@ -78,8 +84,9 @@ namespace SpiderSurge
                 if (Net.IsAuthority)
                 {
                     frozen._weapons.tryingToPickupWeapon.Value = false;
-                    frozen._weapon?.Use(false);
+                    if (frozen._weapon is Railvolver railvolver) railvolver.Use(false);
                 }
+                frozen.HoldCharge();
                 if (frozen._weapon != null) Hold(frozen._weapon.gameObject, frozen._weaponBodies);
             }
             Hold(frozen.gameObject, frozen._bodies);
@@ -104,12 +111,47 @@ namespace SpiderSurge
 
         private void Update()
         {
-            if (_weapons == null || _weapons.equippedWeapon != _weapon) Restore(_weaponBodies);
+            if (_weapons == null || _weapons.equippedWeapon != _weapon)
+            {
+                RestoreCharge();
+                Restore(_weaponBodies);
+            }
             if (_health == null || _health.dead || _health.astralDead || TimeLeft <= 0f || !SurgeGameModeManager.IsSurgeRunActive)
             {
                 Thaw();
                 Destroy(this);
             }
+        }
+
+        // Charged shots resume their remaining windup after the holder thaws, on every peer.
+        private void HoldCharge()
+        {
+            if (!(_weapon is DeathRay) && !(_weapon is KhepriStaff)) return;
+            _chargeHeld = true;
+            _weaponHeldAt = Time.time;
+            _weaponEnabled = _weapon.enabled;
+            _weapon.enabled = false;
+            if (_weapon is DeathRay ray && ray.IsInvoking("Fire"))
+            {
+                _rayChargeLeft = Mathf.Max(0f, RayChargeStart(ray) + ray.chargeTime - Time.time);
+                ray.CancelInvoke("Fire");
+            }
+        }
+
+        private void RestoreCharge()
+        {
+            if (!_chargeHeld) return;
+            _chargeHeld = false;
+            if (_weapon == null) return;
+            float held = Time.time - _weaponHeldAt;
+            if (_weapon is DeathRay ray && _rayChargeLeft.HasValue)
+            {
+                RayChargeStart(ray) += held;
+                ray.Invoke("Fire", _rayChargeLeft.Value);
+                _rayChargeLeft = null;
+            }
+            else if (_weapon is KhepriStaff staff) StaffReadyTime(staff) += held;
+            _weapon.enabled = _weaponEnabled;
         }
 
         private static void Restore(List<BodyState> states, bool momentum = true)
@@ -134,8 +176,9 @@ namespace SpiderSurge
             _thawTime = 0f;
             bool alive = _health != null && !_health.dead && !_health.astralDead;
             Restore(_bodies, alive);
+            RestoreCharge();
             Restore(_weaponBodies);
-            if (alive && _controller != null) _controller.enabled = _controllerEnabled;
+            if (_health != null && !_health.dead && _controller != null) _controller.enabled = _controllerEnabled;
             foreach (var pair in _animators) if (pair.Key != null) AnimatorSpeed.SetValue(pair.Key, pair.Value, null);
             _animators.Clear();
             if (_frost != null)
