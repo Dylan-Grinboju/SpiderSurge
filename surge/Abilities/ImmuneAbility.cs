@@ -528,6 +528,8 @@ namespace SpiderSurge
             }
 
             var spawnedObj = Instantiate(friendlyWaspPrefab, spawn.position, spawn.rotation);
+            EnemyHealthSystem summoned = spawnedObj.GetComponent<EnemyHealthSystem>();
+            if (summoned != null) EnemyAchievementOrigin.Of(summoned).Summoner = playerController;
             spawnedObj.SetActive(true);
             NullFieldVfx.Summon(spawn.position);
 

@@ -20,6 +20,7 @@ namespace SpiderSurge
         private Vector3 _lastPosition;
         private float _enemyPull;
         private readonly List<CaughtEnemy> _caught = new List<CaughtEnemy>();
+        private readonly BlackHoleMeal _achievementMeal = new BlackHoleMeal();
         private static readonly RaycastHit2D[] WallHits = new RaycastHit2D[8];
 
         private class CaughtEnemy
@@ -141,6 +142,11 @@ namespace SpiderSurge
                 {
                     _caught.RemoveAt(i);
                     SwallowedTarget.BeginEnemy(enemy, _body, _casterController, Consts.Values.Storage.BlackHoleTakeTime);
+                    if (SwallowedTarget.IsSwallowed(enemy.gameObject))
+                    {
+                        if (_achievementMeal.Eat(enemy.name))
+                            AchievementTracker.Run("Light Snack", () => SurgeAchievements.Unlock(SurgeAchievements.LightSnack, _casterController));
+                    }
                 }
                 else if (distance <= _range)
                 {

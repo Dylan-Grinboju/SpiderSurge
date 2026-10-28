@@ -117,13 +117,17 @@ namespace SpiderSurge
             if (!IsAuthority) return;
 
             float duration = AbilityDuration;
+            var achievementCast = new FreezeAchievementCast(PlayerId, Time.time + duration);
             foreach (EnemyHealthSystem enemy in EnemiesInRange(origin, range))
             {
                 Vector2 position = enemy.rb2D != null ? enemy.rb2D.position : (Vector2)enemy.transform.position;
                 if (!HasLineOfSight(origin, position)) continue;
+                var laser = enemy.GetComponentInChildren<Enemies.LaserRing>();
+                bool firing = !FrozenEnemy.IsHeld(enemy) && laser != null && laser.IsFiring;
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
+                    AchievementTracker.Run("Freeze Time", () => AbilityAchievementTracker.FreezeEnemy(enemy, achievementCast, firing));
                 }
             }
             if (FrozenSpider.FreezeAround(origin, range, duration, PlayerId)) _frozeAny = true;
@@ -236,7 +240,7 @@ namespace SpiderSurge
             return name == wasp.name || (shieldedWasp != null && name == shieldedWasp.name);
         }
 
-        private static void RewindEnemy(EnemyHealthSystem enemy, GameObject wasp, GameObject shieldedWasp)
+        private void RewindEnemy(EnemyHealthSystem enemy, GameObject wasp, GameObject shieldedWasp)
         {
             bool shielded = enemy.shield != null && enemy.shield.activeInHierarchy;
             GameObject prefab = shielded && shieldedWasp != null ? shieldedWasp : wasp;
@@ -259,6 +263,8 @@ namespace SpiderSurge
             {
                 if (shielded && prefab == wasp && health.shield != null) health.shield.SetActive(true);
                 if (frozenFor > 0f) FrozenEnemy.Freeze(health, frozenFor, frozenBy);
+                if (enemy.GetComponent<Enemies.SpawnerBrain>() != null)
+                    AchievementTracker.Run("Factory Reset", () => SurgeAchievements.Unlock(SurgeAchievements.FactoryReset, Players.ById(PlayerId)));
             }
 
             Destroy(enemy.gameObject);

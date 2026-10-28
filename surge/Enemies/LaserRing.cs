@@ -32,6 +32,8 @@ namespace SpiderSurge.Enemies
         private bool held;
         private bool remoteHold;
 
+        internal bool IsFiring => isActiveAndEnabled && phase == Phase.Active && line != null && line.enabled;
+
         public void Initialize(EnemyHealthSystem enemyHealth, LaserCannon laserCannon, DeathRay deathRay)
         {
             health = enemyHealth;

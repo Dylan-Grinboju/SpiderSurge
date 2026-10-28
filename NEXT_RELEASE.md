@@ -23,6 +23,8 @@ Stats and Teams used to be separate mods, SpiderStats and SpiderTeams. They are 
 
 ## A look around
 
+Surge has 11 new ability achievements, bringing the collection to 24. They reward interactions with Freeze Time, Rewind, Kinetic Pulse, Pocket Dimension, Black Hole, Thermal Detonation and Neural Backup, including frozen-enemy hazards, reflected missiles and Cocoon hatchlings. See the [achievement list](surge/README.md#achievements) for the unlock conditions.
+
 ### Stats
 
 A small live window sits in a corner of the screen while you play: each spider's kills and deaths, next to its color. It fades a spider's row while it's dead. Drag it anywhere with the mouse.

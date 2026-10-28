@@ -322,6 +322,11 @@ namespace SpiderSurge
                     if (rb != null)
                         rb.velocity = Vector2.zero;
                     damageable.Impact(force, closestPoint, true, true);
+                    if (!deadly && rb != null)
+                    {
+                        var missile = rb.GetComponent<MissileAchievementOrigin>();
+                        if (missile != null && rb.velocity.sqrMagnitude > 0f) missile.ReturnedBy = playerController;
+                    }
                 }
             }
 
@@ -348,14 +353,24 @@ namespace SpiderSurge
 
         private void LaunchEnemies(PulseParams p, bool deadly)
         {
+            int launched = 0;
             foreach (EnemyHealthSystem enemy in _enemiesToLaunch)
             {
                 if (enemy != null && !enemy.dead)
                 {
                     PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
+                    if (enemy.needToKillToCompleteLevel)
+                    {
+                        launched++;
+                        var origin = EnemyAchievementOrigin.Of(enemy);
+                        origin.PulsePlayer = playerController;
+                        origin.RegularPulse = !deadly;
+                    }
                 }
             }
             _enemiesToLaunch.Clear();
+            if (!deadly && launched >= 5)
+                AchievementTracker.Run("Personal Space", () => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, playerController));
         }
 
         // The activating player must never be affected by their own pulse.

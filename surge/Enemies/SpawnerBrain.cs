@@ -105,6 +105,7 @@ namespace SpiderSurge.Enemies
 
             GameObject hatchling = Instantiate(prefab, transform.position, transform.rotation);
             EnemyHealthSystem hatchlingHealth = hatchling.GetComponent<EnemyHealthSystem>();
+            if (hatchlingHealth != null) EnemyAchievementOrigin.Of(hatchlingHealth).Hatchling = true;
             spawner.spawnedEnemies.Add(hatchling);
             hatchlings.Add(hatchlingHealth);
             allHatchlings.Add(hatchlingHealth);

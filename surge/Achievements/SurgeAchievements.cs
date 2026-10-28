@@ -52,6 +52,17 @@ namespace SpiderSurge
         public const string KissOfDeath = "kissOfDeath";
         public const string NotOnMyWatch = "notOnMyWatch";
         public const string MaxCapacity = "maxCapacity";
+        public const string FactoryReset = "factoryReset";
+        public const string HoldThatThought = "holdThatThought";
+        public const string ColdCuts = "coldCuts";
+        public const string StillSharp = "stillSharp";
+        public const string ReturnToSender = "returnToSender";
+        public const string EvictionNotice = "evictionNotice";
+        public const string PersonalSpace = "personalSpace";
+        public const string FamilyHeirloom = "familyHeirloom";
+        public const string LightSnack = "lightSnack";
+        public const string Overkill = "overkill";
+        public const string WeBroughtOurOwn = "weBroughtOurOwn";
 
         public static readonly Achievement[] All =
         {
@@ -68,6 +79,17 @@ namespace SpiderSurge
             new Achievement(KissOfDeath, "Kiss of Death", "Hit a Power Twin Blade Whisp with a Particle Blade below 15% durability."),
             new Achievement(NotOnMyWatch, "Not On My Watch", "Block a laser beam headed for a teammate while Null Field makes you immune."),
             new Achievement(MaxCapacity, "Max Capacity", "Buy a Bigger Heart in the Surge shop."),
+            new Achievement(FactoryReset, "Factory Reset", "Turn a Wasp Cocoon into a Wasp with Rewind."),
+            new Achievement(HoldThatThought, "Hold That Thought", "Freeze a laser enemy while its laser ring is firing."),
+            new Achievement(ColdCuts, "Cold Cuts", "Kill 3 frozen enemies with a Particle Blade during one Freeze Time activation."),
+            new Achievement(StillSharp, "Still Sharp", "Die to a frozen enemy."),
+            new Achievement(ReturnToSender, "Return to Sender", "Push a Missile Whisp's rocket back with Kinetic Pulse and kill its shooter with the blast."),
+            new Achievement(EvictionNotice, "Eviction Notice", "Push a Wasp Cocoon into lava with Kinetic Pulse."),
+            new Achievement(PersonalSpace, "Personal Space", "Knock 5 enemies away with one Kinetic Pulse."),
+            new Achievement(FamilyHeirloom, "Family Heirloom", "Carry the same stored weapon through 3 map changes."),
+            new Achievement(LightSnack, "Light Snack", "Swallow 3 different enemy types with one Black Hole."),
+            new Achievement(Overkill, "Overkill", "Use Thermal Detonation to kill the wave's last enemy: a single plain Wasp."),
+            new Achievement(WeBroughtOurOwn, "We Brought Our Own", "Have a friendly Wasp summoned by Neural Backup kill a Wasp spawned by a Cocoon."),
         };
 
         private static readonly ProgressSection<AchievementUnlock> _unlocks = new ProgressSection<AchievementUnlock>(Section, TryParse, Format, Earlier, AnnounceAll);
