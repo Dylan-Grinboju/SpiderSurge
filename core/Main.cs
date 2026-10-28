@@ -1,6 +1,7 @@
 using Silk;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
+using ModData = SpiderSurge.Common.ModData;
 
 namespace SpiderSurge
 {
@@ -48,6 +49,7 @@ namespace SpiderSurge
             Settings.Tick();
             HistoryStore.Tick();
             CollectionSeen.Tick();
+            ModData.Tick();
             Net.Tick();
         }
 
@@ -58,6 +60,7 @@ namespace SpiderSurge
                 Settings.Flush();
                 HistoryStore.FinishWrites();
                 CollectionSeen.Flush();
+                ModData.FinishWrites();
             }
         }
 
@@ -72,6 +75,7 @@ namespace SpiderSurge
             CollectionSeen.Flush();
             Parts.StopAll();
             HistoryStore.FinishWrites();
+            ModData.FinishWrites();
             Net.Shutdown();
             Settings.Flush();
             OldMods.Release();

@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -22,8 +24,16 @@ namespace SpiderSurge.Common
         private const int MaxFileBytes = 1024 * 1024;
         private const double FirstRetrySeconds = 2;
         private const double MaxRetrySeconds = 30;
+        private const double SaveRetrySeconds = 5;
+        private const int ShutdownWaitMs = 3000;
 
         private static readonly SortedDictionary<string, List<string>> _sections = new SortedDictionary<string, List<string>>(StringComparer.Ordinal);
+        private static readonly object _writeGate = new object();
+        private static Task _writer = Task.CompletedTask;
+        private static byte[] _queued;
+        private static bool _saveFailed;
+        private static bool _failing;
+        private static DateTime _saveRetryAt;
         private static string _path;
         private static bool _loaded;
         private static bool _mainDamaged;
@@ -51,7 +61,7 @@ namespace SpiderSurge.Common
 
         public static string Decode(string field) => Encoding.UTF8.GetString(Convert.FromBase64String(field));
 
-        // Replaces one section and keeps every other one, including those of parts that are turned off; with imported, the same save records that an older version's data moved in. False when the file couldn't be saved
+        // Replaces one section and keeps every other one, including those of parts that are turned off; with imported, the same save records that an older version's data moved in and waits for the disk. False when the file can't be read or that save failed
         public static bool Write(string section, IEnumerable<string> lines, string imported = null)
         {
             if (!IsSectionName(section)) throw new ArgumentException($"Bad section name: {section}");
@@ -61,7 +71,7 @@ namespace SpiderSurge.Common
             if (list.Count > 0) _sections[section] = list;
             else _sections.Remove(section);
             if (imported != null && !Imported(imported)) _sections[ImportedSection] = Lines(ImportedSection).Concat(new[] { imported }).ToList();
-            return Save();
+            return imported != null ? SaveNow() : Save();
         }
 
         // A file another program holds open is tried again later, less often each time, rather than treated as damaged and overwritten
@@ -166,66 +176,140 @@ namespace SpiderSurge.Common
             return read;
         }
 
-        // The new file is fully written and flushed before it replaces the old one, which stays as the backup, so a crash or power cut mid-save loses nothing
+        // The file is built here from the in-memory sections, which stay authoritative; one background writer puts the newest copy on disk
         private static bool Save()
         {
-            string temp = FilePath + ".tmp";
+            var body = new StringBuilder(Header).Append('\n');
+            foreach (var section in _sections)
+            {
+                body.Append('[').Append(section.Key).Append("]\n");
+                foreach (string line in section.Value) body.Append(line).Append('\n');
+            }
+            string content = body.ToString();
+            byte[] bytes = new UTF8Encoding(false).GetBytes(content + ChecksumPrefix + Checksum(Header, content) + "\n");
+            if (bytes.Length > MaxFileBytes)
+            {
+                Logger.LogError($"Didn't save {FilePath}: it would be bigger than {MaxFileBytes / 1024} KB");
+                return false;
+            }
+
+            string path = FilePath;
+            lock (_writeGate)
+            {
+                _saveFailed = false;
+                bool scheduled = _queued != null;
+                _queued = bytes;
+                if (!scheduled) _writer = _writer.ContinueWith(_ => WriteQueued(path), TaskScheduler.Default);
+            }
+            return true;
+        }
+
+        // An older version's data is deleted once its import is saved, so that save waits for the disk
+        private static bool SaveNow()
+        {
+            if (!Save()) return false;
+            WaitForWriter(Timeout.Infinite);
+            lock (_writeGate) return !_saveFailed;
+        }
+
+        // The new file is fully written and flushed before it replaces the old one, which stays as the backup, so a crash or power cut mid-save loses nothing
+        private static void WriteQueued(string path)
+        {
+            byte[] bytes;
+            lock (_writeGate)
+            {
+                bytes = _queued;
+                _queued = null;
+            }
+            if (bytes == null) return;
+
+            string temp = path + ".tmp";
             try
             {
-                var body = new StringBuilder(Header).Append('\n');
-                foreach (var section in _sections)
-                {
-                    body.Append('[').Append(section.Key).Append("]\n");
-                    foreach (string line in section.Value) body.Append(line).Append('\n');
-                }
-                string content = body.ToString();
-                byte[] bytes = new UTF8Encoding(false).GetBytes(content + ChecksumPrefix + Checksum(Header, content) + "\n");
-                if (bytes.Length > MaxFileBytes)
-                {
-                    Logger.LogError($"Didn't save {FilePath}: it would be bigger than {MaxFileBytes / 1024} KB");
-                    return false;
-                }
-
-                Directory.CreateDirectory(Folder);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
                 using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     stream.Write(bytes, 0, bytes.Length);
                     stream.Flush(true);
                 }
-                Replace(temp);
-                return true;
+                Replace(path, temp);
+                lock (_writeGate)
+                {
+                    if (_failing) ThreadSafeLog.LogInfo($"{path} could be saved again");
+                    _failing = false;
+                }
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Couldn't save the mod's progress to {FilePath}: {ex.Message}");
                 TryDelete(temp);
-                return false;
+                lock (_writeGate)
+                {
+                    if (_queued != null) return;
+                    if (!_failing) ThreadSafeLog.LogError($"Couldn't save the mod's progress to {path} ({ex.Message}); trying again every {SaveRetrySeconds:0} s");
+                    _failing = true;
+                    _saveFailed = true;
+                    _saveRetryAt = DateTime.UtcNow.AddSeconds(SaveRetrySeconds);
+                }
+            }
+        }
+
+        // Called every frame; a save that failed is tried again with the newest data
+        public static void Tick()
+        {
+            lock (_writeGate)
+            {
+                if (!_saveFailed || DateTime.UtcNow < _saveRetryAt) return;
+            }
+            Save();
+        }
+
+        // Called on quit and unload so the newest progress reaches the disk
+        public static void FinishWrites()
+        {
+            bool retry;
+            lock (_writeGate) retry = _saveFailed;
+            if (retry) Save();
+            WaitForWriter(ShutdownWaitMs);
+        }
+
+        private static void WaitForWriter(int milliseconds)
+        {
+            Task writer;
+            lock (_writeGate) writer = _writer;
+            try
+            {
+                writer.Wait(milliseconds);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Saving the mod's progress didn't finish: {ex.Message}");
             }
         }
 
         // A damaged file is overwritten rather than kept as the backup, so the backup it was restored from survives
-        private static void Replace(string temp)
+        private static void Replace(string path, string temp)
         {
-            if (!File.Exists(FilePath))
+            if (!File.Exists(path))
             {
-                File.Move(temp, FilePath);
+                File.Move(temp, path);
                 return;
             }
             if (_mainDamaged)
             {
-                File.Copy(temp, FilePath, true);
+                File.Copy(temp, path, true);
                 File.Delete(temp);
                 _mainDamaged = false;
                 return;
             }
+            string backup = path + ".bak";
             try
             {
-                File.Replace(temp, FilePath, BackupPath, true);
+                File.Replace(temp, path, backup, true);
             }
             catch (Exception ex) when (ex is PlatformNotSupportedException || ex is NotImplementedException || ex is IOException)
             {
-                File.Copy(FilePath, BackupPath, true);
-                File.Copy(temp, FilePath, true);
+                File.Copy(path, backup, true);
+                File.Copy(temp, path, true);
                 File.Delete(temp);
             }
         }
@@ -252,7 +336,7 @@ namespace SpiderSurge.Common
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Logger.LogWarning($"Couldn't delete {path}: {ex.Message}");
+                ThreadSafeLog.LogWarning($"Couldn't delete {path}: {ex.Message}");
                 return false;
             }
         }
