@@ -80,16 +80,20 @@ namespace SpiderTeams
         }
     }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Damage), new[] { typeof(Vector3), typeof(Vector3), typeof(bool) })]
-    public static class SpiderHealthSystem_Damage_Patch
+    // Friendly fire decides whether a teammate's hit lands, after Surge's Pulse protection
+    internal static class FriendlyFireHits
     {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static bool Prefix(SpiderHealthSystem __instance, Vector3 force, Vector3 point, bool stun)
+        public static void Hook(bool on)
+        {
+            SpiderHits.Damage.Gate(AllowDamage, on);
+            SpiderHits.Impact.Gate(AllowImpact, on);
+        }
+
+        private static bool AllowDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                return FriendlyFireGate.Allow(__instance, force, point, stun);
+                return FriendlyFireGate.Allow(spider, force, point, stun);
             }
             catch (Exception ex)
             {
@@ -97,18 +101,12 @@ namespace SpiderTeams
                 return true;
             }
         }
-    }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Impact), new[] { typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
-    public static class SpiderHealthSystem_Impact_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static bool Prefix(SpiderHealthSystem __instance)
+        private static bool AllowImpact(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                return FriendlyFireGate.AllowImpact(__instance);
+                return FriendlyFireGate.AllowImpact(spider);
             }
             catch (Exception ex)
             {

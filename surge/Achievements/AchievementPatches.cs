@@ -166,19 +166,17 @@ namespace SpiderSurge
     }
 
     // An explosion only calls Damage on a spider inside its death radius, so this is a Big Grenade blast that would have killed
-    [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Damage))]
-    public static class SpiderHealthSystem_Damage_Achievement_Patch
+    public static class NullFieldBlastAchievement
     {
         private static readonly AccessTools.FieldRef<Explosion, float> BlastEnd = AccessTools.FieldRefAccess<Explosion, float>("_stopAt");
         private static readonly HashSet<(int spider, int blast)> Watched = new HashSet<(int, int)>();
 
-        [HarmonyPrefix]
-        public static void Prefix(SpiderHealthSystem __instance, bool __runOriginal)
+        internal static void OnDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             Explosion explosion = AchievementTracker.CurrentExplosion;
-            if (!__runOriginal || explosion == null || !(AchievementTracker.CurrentIsBigGrenade ??= explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal))) return;
+            if (explosion == null || !(AchievementTracker.CurrentIsBigGrenade ??= explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal))) return;
 
-            AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider: __instance, explosion));
+            AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider, explosion));
         }
 
         private static void Watch(SpiderHealthSystem spider, Explosion explosion)

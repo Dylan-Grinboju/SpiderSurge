@@ -169,36 +169,34 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), "Impact")]
-    [HarmonyAfter("com.SpiderSurge.teams")]
-    class SpiderImpactReceiverPatch
+    // Stats records the hits on a spider that land
+    static class SpiderHitReceivers
     {
-        static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
+        public static void Hook(bool on)
+        {
+            SpiderHits.Impact.Observe(OnImpact, on);
+            SpiderHits.Damage.Observe(OnDamage, on);
+        }
+
+        private static void OnImpact(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                // Teams friendly fire on Ignore can cancel the knockback
-                if (!__runOriginal) return;
-                HitLogic.OnPlayerHit(__instance, damage: false, stun);
+                HitLogic.OnPlayerHit(spider, damage: false, stun);
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Error recording spider knockback: {ex.Message}");
             }
         }
-    }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), "Damage")]
-    [HarmonyAfter("com.SpiderSurge.surge", "com.SpiderSurge.teams")]
-    class SpiderDamageReceiverPatch
-    {
-        static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
+        private static void OnDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                // Surge immunity and Teams friendly fire can cancel the hit
-                if (!__runOriginal || Time.time < GameFields.SpiderImmuneTill(__instance)) return;
-                HitLogic.OnPlayerHit(__instance, damage: true, stun);
+                // Damage returns at once while the spider is immune, so that hit doesn't count
+                if (Time.time < GameFields.SpiderImmuneTill(spider)) return;
+                HitLogic.OnPlayerHit(spider, damage: true, stun);
             }
             catch (Exception ex)
             {

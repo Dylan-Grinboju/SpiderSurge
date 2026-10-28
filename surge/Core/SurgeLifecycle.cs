@@ -15,6 +15,9 @@ namespace SpiderSurge
 
         private static void Hook(bool on)
         {
+            SpiderHits.Impact.Gate(SpiderHealthSystemPatches.AllowImpact, on);
+            SpiderHits.Damage.Observe(NullFieldBlastAchievement.OnDamage, on);
+            SpiderHits.Damage.Observe(SpiderHealthSystemPatches.RecordHit, on);
             if (on)
             {
                 GameEvents.RunStarted += SurvivalMode_StartGame_Patch.OnRunStarted;

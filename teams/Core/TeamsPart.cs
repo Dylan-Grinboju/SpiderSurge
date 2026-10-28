@@ -35,6 +35,7 @@ namespace SpiderTeams
             GameEvents.SceneLoaded += LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
             GameEvents.RoundStarting += VersusMode_StartRound_Patch.OnRoundStarting;
             SurgeHooks.Install();
+            FriendlyFireHits.Hook(true);
         }
 
         protected internal override void OnStop()
@@ -64,6 +65,7 @@ namespace SpiderTeams
             GameEvents.SceneLoaded -= LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
             GameEvents.RoundStarting -= VersusMode_StartRound_Patch.OnRoundStarting;
             SurgeHooks.Remove();
+            FriendlyFireHits.Hook(false);
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();
