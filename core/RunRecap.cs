@@ -27,7 +27,7 @@ namespace SpiderSurge.Common
         public static void Capture()
         {
             Last = null;
-            if (!SurgeGameModeManager.IsSurgeRunActive) return;
+            if (!SurgeGameModeManager.IsSurgeRunActive || StatsMod.GameSessionManager.Instance.CurrentGameMode != StatsMod.GameMode.Survival) return;
             var perks = PerksManager.Instance;
             var keys = perks == null ? System.Array.Empty<string>() : perks.GetAllPerkNames().Where(k => perks.GetPerkLevel(k) > 0).ToArray();
             var core = keys.Where(k => perks.IsAbilityPerk(k) || perks.GetAbilityUltimatePerkNames().Contains(k));
