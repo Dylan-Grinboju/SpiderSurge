@@ -37,6 +37,7 @@ namespace SpiderTeams
             SurgeHooks.Install();
             FriendlyFireHits.Hook(true);
             TeamAttacks.Register();
+            Owners.ExplosionCreated += BlastOwners.OnExplosionCreated;
         }
 
         protected internal override void OnStop()
@@ -68,10 +69,9 @@ namespace SpiderTeams
             SurgeHooks.Remove();
             FriendlyFireHits.Hook(false);
             TeamAttacks.Unregister();
+            Owners.ExplosionCreated -= BlastOwners.OnExplosionCreated;
             ModConfig.Shutdown();
-            OwnerRegistry.Clear();
-            ExplosionOwners.Clear();
-            SpawnScope.Clear();
+            BlastOwners.Clear();
             Announcements.Clear();
             MatchSnapshot.Clear();
         }

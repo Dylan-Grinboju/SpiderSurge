@@ -30,6 +30,9 @@ namespace StatsMod
             SpiderSurge.SwallowedTarget.SpiderKilled += HitLogic.OnPlayerSwallowed;
             SpiderHitReceivers.Hook(true);
             AttackTargets.Register();
+            Owners.ExplosionCreated += HitLogic.SetExplosionOwner;
+            Owners.Equipped += AccuracyTracker.Forget;
+            Owners.Reflected += AccuracyTracker.Forget;
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -46,6 +49,9 @@ namespace StatsMod
             SpiderSurge.SwallowedTarget.SpiderKilled -= HitLogic.OnPlayerSwallowed;
             SpiderHitReceivers.Hook(false);
             HitLogic.Attacks.Unregister();
+            Owners.ExplosionCreated -= HitLogic.SetExplosionOwner;
+            Owners.Equipped -= AccuracyTracker.Forget;
+            Owners.Reflected -= AccuracyTracker.Forget;
             TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)

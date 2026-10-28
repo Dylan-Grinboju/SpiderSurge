@@ -1,13 +1,15 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace SpiderTeams
 {
-    // Explosions are plain MonoBehaviours with no owner, so the host notes where each owned blast was requested and matches by position.
-    internal static class ExplosionOwners
+    // Who set off each explosion: the explode ClientRpcs name it, even nobody, as they create it; the rail's impact splash is matched by where it landed
+    internal static class BlastOwners
     {
         private struct Entry
         {
+            public int Explosion;
             public Vector3 Position;
             public int Owner;
             public float Time;
@@ -16,15 +18,31 @@ namespace SpiderTeams
         private static readonly List<Entry> _records = new List<Entry>(16);
         private static readonly Dictionary<int, int> _resolved = new Dictionary<int, int>();
 
-        public static void Record(Vector3 position, int owner)
+        // Recorded on the host while team mode is on, the only time an attack reads it
+        public static void OnExplosionCreated(Explosion explosion, NetworkBehaviour source)
         {
-            if (owner < 0)
+            try
             {
-                return;
-            }
+                if (!TeamManager.HostTeamMode)
+                {
+                    return;
+                }
 
-            Prune(UnityEngine.Time.time);
-            _records.Add(new Entry { Position = position, Owner = owner, Time = UnityEngine.Time.time });
+                int owner = source is BasicProjectile ? OwnerRegistry.Get(source.gameObject) : OwnerRegistry.OfWeapon(source as Weapon);
+                Add(new Entry { Explosion = explosion.GetInstanceID(), Owner = owner });
+            }
+            catch (System.Exception ex)
+            {
+                PatchScopes.Report("explosion owner tracking", ex);
+            }
+        }
+
+        public static void RecordRail(Vector3 position, int owner)
+        {
+            if (owner >= 0)
+            {
+                Add(new Entry { Position = position, Owner = owner });
+            }
         }
 
         public static int Resolve(Explosion explosion)
@@ -53,6 +71,16 @@ namespace SpiderTeams
                     continue;
                 }
 
+                if (record.Explosion != 0)
+                {
+                    if (record.Explosion == key)
+                    {
+                        owner = record.Owner;
+                        break;
+                    }
+                    continue;
+                }
+
                 float distance = (record.Position - position).sqrMagnitude;
                 if (distance <= best)
                 {
@@ -69,6 +97,14 @@ namespace SpiderTeams
         {
             _records.Clear();
             _resolved.Clear();
+        }
+
+        private static void Add(Entry entry)
+        {
+            float now = UnityEngine.Time.time;
+            Prune(now);
+            entry.Time = now;
+            _records.Add(entry);
         }
 
         private static void Prune(float now)

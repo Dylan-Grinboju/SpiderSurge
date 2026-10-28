@@ -4,7 +4,6 @@ using System.Reflection;
 using HarmonyLib;
 using Interfaces;
 using SpiderSurge.Common;
-using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -13,20 +12,6 @@ namespace SpiderTeams
     internal static class PatchScopes
     {
         private static readonly HashSet<string> _reported = new HashSet<string>();
-
-        public static bool EnterSpawn<T>(T source, Func<T, int> resolve)
-        {
-            SpawnScope.Push(Resolve(source, resolve));
-            return true;
-        }
-
-        public static void ExitSpawn(bool entered)
-        {
-            if (entered)
-            {
-                SpawnScope.Pop();
-            }
-        }
 
         public static IEnumerable<MethodBase> Existing(string patch, params MethodInfo[] methods)
         {
@@ -100,7 +85,7 @@ namespace SpiderTeams
             // An explosion set off inside another attack, like the Pulse ultimate's, belongs to that attacker.
             Add<Explosion>("Explosion_KnockBack_Patch", explosion =>
                 {
-                    int owner = ExplosionOwners.Resolve(explosion);
+                    int owner = BlastOwners.Resolve(explosion);
                     return owner != OwnerRegistry.Unknown ? owner : DamageContext.Current;
                 },
                 AccessTools.Method(typeof(Explosion), "KnockBack"));
@@ -189,132 +174,6 @@ namespace SpiderTeams
                 }
             }
             return OwnerRegistry.Get(shot.gameObject);
-        }
-    }
-
-    [HarmonyPatch]
-    public static class WeaponSpawn_Patch
-    {
-        [HarmonyTargetMethods]
-        public static IEnumerable<MethodBase> TargetMethods()
-        {
-            return PatchScopes.Existing("WeaponSpawn_Patch",
-                AccessTools.Method(typeof(ProjectileLauncher), "Shoot", Type.EmptyTypes),
-                AccessTools.Method(typeof(BurstProjectileLauncher), "Shoot", Type.EmptyTypes),
-                AccessTools.Method(typeof(DiscLauncher), "LaunchDisc", Type.EmptyTypes),
-                AccessTools.Method(typeof(ClusterMine), "CreateObject", new[] { typeof(GameObject), typeof(float) }),
-                AccessTools.Method(typeof(Railvolver), "ShootProjectile", new[] { typeof(Vector3) }),
-                AccessTools.Method(typeof(KhepriStaff), "LaunchProjectile", Type.EmptyTypes));
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(Weapon __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterSpawn(__instance, weapon => OwnerRegistry.OfWeapon(weapon));
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            PatchScopes.ExitSpawn(__state);
-        }
-    }
-
-    [HarmonyPatch]
-    public static class NetworkObject_SpawnInternal_Patch
-    {
-        [HarmonyTargetMethod]
-        public static MethodBase TargetMethod()
-        {
-            foreach (MethodInfo method in AccessTools.GetDeclaredMethods(typeof(NetworkObject)))
-            {
-                if (method.Name == "SpawnInternal")
-                {
-                    return method;
-                }
-            }
-            return null;
-        }
-
-        // Spawns outside a weapon's scope clear any owner left on a pooled object.
-        [HarmonyPostfix]
-        public static void Postfix(NetworkObject __instance)
-        {
-            try
-            {
-                if (SpawnScope.Active)
-                {
-                    OwnerRegistry.Set(__instance.gameObject, SpawnScope.Owner);
-                }
-                else
-                {
-                    OwnerRegistry.Remove(__instance.gameObject);
-                }
-            }
-            catch (Exception ex)
-            {
-                PatchScopes.Report("spawn owner tracking", ex);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(Weapon), nameof(Weapon.Equip), new[] { typeof(WeaponManager) })]
-    public static class Weapon_Equip_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(Weapon __instance)
-        {
-            try
-            {
-                if (__instance.owner != null)
-                {
-                    OwnerRegistry.Set(__instance.gameObject, OwnerRegistry.OfManager(__instance.owner));
-                }
-            }
-            catch (Exception ex)
-            {
-                PatchScopes.Report("weapon owner tracking", ex);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(EnergyBall), nameof(EnergyBall.ChangeOwner))]
-    public static class EnergyBall_ChangeOwner_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(EnergyBall __instance, GameObject newOwner)
-        {
-            try
-            {
-                OwnerRegistry.Set(__instance.gameObject, OwnerRegistry.Resolve(newOwner));
-            }
-            catch (Exception ex)
-            {
-                PatchScopes.Report("energy ball owner tracking", ex);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(EnergyBall), "Overload", new[] { typeof(GameObject) })]
-    public static class EnergyBall_Overload_Patch
-    {
-        // Overload hands the ball to itself, so the blade that overloaded it becomes the owner.
-        [HarmonyPostfix]
-        public static void Postfix(EnergyBall __instance, GameObject go)
-        {
-            try
-            {
-                int owner = OwnerRegistry.Resolve(go);
-                if (owner != OwnerRegistry.Unknown)
-                {
-                    OwnerRegistry.Set(__instance.gameObject, owner);
-                }
-            }
-            catch (Exception ex)
-            {
-                PatchScopes.Report("energy ball overload tracking", ex);
-            }
         }
     }
 }

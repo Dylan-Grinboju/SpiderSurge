@@ -12,9 +12,7 @@ namespace SpiderTeams
         {
             try
             {
-                OwnerRegistry.Clear();
-                ExplosionOwners.Clear();
-                SpawnScope.Clear();
+                BlastOwners.Clear();
 
                 if (scene.name != "Lobby")
                 {

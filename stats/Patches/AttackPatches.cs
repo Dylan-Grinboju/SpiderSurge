@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -264,21 +263,6 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch]
-    class ExplosionOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll(
-            (typeof(Grenade), "ExplodeClientRpc"),
-            (typeof(Mine), "ExplodeClientRpc"),
-            (typeof(BoomSpear), "ExplodeClientRpc"),
-            (typeof(BasicProjectile), "DestroyProjectileClientRpc"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(Explosion), nameof(Explosion.explosionOwnerId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetExplosionOwner)));
-    }
-
     // A grenade or mine dropped without being armed belongs to nobody. Firing it in hand arms it, and so does a hit
     [HarmonyPatch]
     class ExplosiveFiredPatch
@@ -312,82 +296,6 @@ namespace StatsMod
             catch (Exception ex)
             {
                 Logger.LogError($"Error recording who armed {__instance.name}: {ex.Message}");
-            }
-        }
-    }
-
-    // A held Particle Blade that reflects an energy ball makes the ball its own owner, its hits then belong to the blade's player
-    [HarmonyPatch(typeof(EnergyBall), "Overload")]
-    class EnergyBallReflectPatch
-    {
-        static void Prefix(EnergyBall __instance, GameObject go)
-        {
-            try
-            {
-                ParticleBlade blade = go.GetComponent<ParticleBlade>();
-                if (blade != null && blade.owner != null)
-                {
-                    HitLogic.OnBallReflected(__instance, HitLogic.WeaponPlayer(blade));
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording energy ball reflection: {ex.Message}");
-            }
-        }
-    }
-
-    [HarmonyPatch]
-    class ProjectileOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll(
-            (typeof(ProjectileLauncher), "Shoot"),
-            (typeof(BurstProjectileLauncher), "LaunchProjectile"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(BasicProjectile), nameof(BasicProjectile.projectileOwnerId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetProjectileOwner)));
-    }
-
-    // A launched blade belongs to the launcher's player
-    [HarmonyPatch]
-    class LaunchedWeaponOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll((typeof(ProjectileLauncher), "Shoot"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(Weapon), nameof(Weapon.ownerWeaponClientId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetLaunchedWeaponOwner)));
-    }
-
-    internal static class OwnerStoreRewriter
-    {
-        // Turns "target.field = value" into "setter(target, value, this)"; the setter does the same store
-        public static IEnumerable<CodeInstruction> Rewrite(IEnumerable<CodeInstruction> instructions, MethodBase original, FieldInfo field, MethodInfo setter)
-        {
-            int replaced = 0;
-            foreach (CodeInstruction instruction in instructions)
-            {
-                if (instruction.StoresField(field))
-                {
-                    CodeInstruction loadThis = new CodeInstruction(OpCodes.Ldarg_0);
-                    loadThis.labels.AddRange(instruction.labels);
-                    loadThis.blocks.AddRange(instruction.blocks);
-                    yield return loadThis;
-                    yield return new CodeInstruction(OpCodes.Call, setter);
-                    replaced++;
-                }
-                else
-                {
-                    yield return instruction;
-                }
-            }
-
-            if (replaced == 0)
-            {
-                Logger.LogWarning($"{original.DeclaringType?.Name}.{original.Name} no longer sets {field.Name}, its owner is not tracked");
             }
         }
     }

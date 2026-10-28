@@ -60,20 +60,19 @@ namespace StatsMod
         }
     }
 
-    // The launcher's holder owns the disc, recorded as soon as LaunchDisc creates it
+    // A launched saw disc is a shot of the launcher's player
     [HarmonyPatch(typeof(DiscLauncher), "LaunchDisc")]
     class DiscLauncherLaunchDiscPatch
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
             AccuracyProjectilePatch.TrackSpawns(instructions, original, AccessTools.Method(typeof(DiscLauncherLaunchDiscPatch), nameof(Launched)),
-                "saw disc kills and accuracy are not tracked");
+                "saw disc accuracy is not tracked");
 
         static GameObject Launched(GameObject disc, DiscLauncher launcher)
         {
             try
             {
                 if (!disc.TryGetComponent<SawDisc>(out _)) return disc;
-                HitLogic.RegisterDiscOwner(disc, HitLogic.WeaponPlayer(launcher), launcher);
                 AccuracyTracker.Fire(launcher, disc);
             }
             catch (System.Exception ex)
@@ -81,25 +80,6 @@ namespace StatsMod
                 Logger.LogError($"Error tracking a launched saw disc: {ex.Message}");
             }
             return disc;
-        }
-    }
-
-    // The player who equips a weapon owns it until someone else equips it, also after it is thrown
-    [HarmonyPatch(typeof(Weapon), "Equip")]
-    class WeaponEquipPatch
-    {
-        static void Postfix(Weapon __instance, WeaponManager wm)
-        {
-            try
-            {
-                AccuracyTracker.Forget(__instance);
-                PlayerController playerController = wm != null && wm.healthSystem != null ? wm.healthSystem.GetComponentInParent<PlayerController>() : null;
-                HitLogic.SetWeaponPlayer(__instance, playerController);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error in WeaponEquipPatch: {ex.Message}");
-            }
         }
     }
 
