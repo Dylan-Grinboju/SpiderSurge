@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using I2.Loc;
 using Unity.Netcode;
@@ -47,6 +48,7 @@ namespace SpiderTeams
         private static readonly AccessTools.FieldRef<bool> _roundInProgress = StaticRef<bool>(VersusRoundInProgress);
         private static readonly AccessTools.FieldRef<bool> _roundEnding = StaticRef<bool>(VersusRoundEnding);
         private static readonly AccessTools.FieldRef<VersusMode, bool> _waitingRoom = InstanceRef<VersusMode, bool>(VersusWaitingRoom);
+        private static readonly Func<NetworkBehaviour, int> _rpcExecStage = EnumReader<NetworkBehaviour>(RpcExecStage);
 
         public static bool RoundRulesAvailable =>
             _roundInProgress != null && _roundEnding != null && _waitingRoom != null &&
@@ -80,19 +82,7 @@ namespace SpiderTeams
         // On the host a ClientRpc body runs twice: once to send (stage 0) and once nested to execute.
         public static bool IsRpcSendStage(NetworkBehaviour behaviour)
         {
-            if (RpcExecStage == null || behaviour == null)
-            {
-                return true;
-            }
-
-            try
-            {
-                return Convert.ToInt32(RpcExecStage.GetValue(behaviour)) == 0;
-            }
-            catch
-            {
-                return true;
-            }
+            return _rpcExecStage == null || behaviour == null || _rpcExecStage(behaviour) == 0;
         }
 
         public static GameObject ActiveCharacter(PlayerController player)
@@ -146,7 +136,7 @@ namespace SpiderTeams
         {
             var members = new Dictionary<string, object>
             {
-                { "NetworkBehaviour.__rpc_exec_stage", RpcExecStage },
+                { "NetworkBehaviour.__rpc_exec_stage", _rpcExecStage },
                 { "VersusMode._roundInProgress", _roundInProgress },
                 { "VersusMode._roundEnding", _roundEnding },
                 { "VersusMode._waitingRoom", _waitingRoom },
@@ -200,6 +190,35 @@ namespace SpiderTeams
             try
             {
                 return AccessTools.StaticFieldRefAccess<F>(field);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"SpiderTeams could not bind {field.DeclaringType?.Name}.{field.Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Reads an int-backed enum field as its number without boxing; the method belongs to T so it may read T's protected fields
+        private static Func<T, int> EnumReader<T>(FieldInfo field)
+        {
+            if (field == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                if (!field.FieldType.IsEnum || Enum.GetUnderlyingType(field.FieldType) != typeof(int))
+                {
+                    throw new InvalidOperationException($"it is a {field.FieldType.Name}, not an int enum");
+                }
+
+                var reader = new DynamicMethod("Read" + field.Name, typeof(int), new[] { typeof(T) }, typeof(T), true);
+                ILGenerator il = reader.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld, field);
+                il.Emit(OpCodes.Ret);
+                return (Func<T, int>)reader.CreateDelegate(typeof(Func<T, int>));
             }
             catch (Exception ex)
             {
