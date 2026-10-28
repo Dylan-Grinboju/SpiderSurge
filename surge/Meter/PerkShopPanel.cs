@@ -256,11 +256,8 @@ namespace SpiderSurge
                 {
                     SettingsPage.SetText(entry.Title, "");
                     var titleRect = entry.Title.rectTransform;
-                    titleRect.anchorMin = Vector2.zero;
-                    titleRect.anchorMax = Vector2.one;
                     titleRect.pivot = new Vector2(0.5f, 0.5f);
-                    titleRect.offsetMin = new Vector2(textLeft, entryHeight - 30f);
-                    titleRect.offsetMax = new Vector2(-6f, -6f);
+                    SettingsPage.Stretch(titleRect, new Vector2(textLeft, entryHeight - 30f), new Vector2(-6f, -6f));
                     entry.Title.alignment = TextAlignmentOptions.MidlineLeft;
                     entry.Title.enableWordWrapping = false;
                     entry.Title.overflowMode = TextOverflowModes.Ellipsis;
@@ -272,11 +269,8 @@ namespace SpiderSurge
                 {
                     SettingsPage.SetText(entry.Description, "");
                     var descriptionRect = entry.Description.rectTransform;
-                    descriptionRect.anchorMin = Vector2.zero;
-                    descriptionRect.anchorMax = Vector2.one;
                     descriptionRect.pivot = new Vector2(0.5f, 0.5f);
-                    descriptionRect.offsetMin = new Vector2(textLeft, 6f);
-                    descriptionRect.offsetMax = new Vector2(-6f, -32f);
+                    SettingsPage.Stretch(descriptionRect, new Vector2(textLeft, 6f), new Vector2(-6f, -32f));
                     entry.Description.enableAutoSizing = true;
                     entry.Description.fontSizeMin = M.MinLabelFontSize;
                     entry.Description.fontSizeMax = 12f;
@@ -316,11 +310,8 @@ namespace SpiderSurge
             {
                 SettingsPage.SetText(_buyLabel, "");
                 var labelRect = _buyLabel.rectTransform;
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
                 labelRect.pivot = new Vector2(0.5f, 0.5f);
-                labelRect.offsetMin = new Vector2(6f, 2f);
-                labelRect.offsetMax = new Vector2(-6f, -2f);
+                SettingsPage.Stretch(labelRect, new Vector2(6f, 2f), new Vector2(-6f, -2f));
                 _buyLabel.alignment = TextAlignmentOptions.Center;
                 _buyLabel.enableWordWrapping = false;
                 _buyLabel.overflowMode = TextOverflowModes.Ellipsis;

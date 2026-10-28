@@ -173,7 +173,7 @@ namespace SpiderSurge.Vfx
         }
 
         // A point light that fades out like the game's explosion light
-        public static LightFade Flash(Vector3 position, Color color, float intensity, float radius, float duration, Transform follow = null)
+        public static LightFade Flash(Vector3 position, Color color, float intensity, float radius, float duration)
         {
             return Create<LightFade>("SurgeFlash", position, fade =>
             {
@@ -185,12 +185,12 @@ namespace SpiderSurge.Vfx
                 light.pointLightOuterRadius = radius;
                 if (lightSortingLayers == null) lightSortingLayers = AccessTools.FieldRefAccess<Light2D, int[]>("m_ApplyToSortingLayers");
                 lightSortingLayers(light) = LightLayers;
-                fade.Setup(light, duration, follow);
+                fade.Setup(light, duration);
             });
         }
 
-        // A soft disc that scales between two radii while it fades; a pulse grows to the end radius and shrinks back
-        public static DiscFade Disc(Vector3 position, Color color, float startRadius, float endRadius, float duration, int order = Order, bool pulse = false, Transform follow = null, bool hard = false)
+        // A soft disc that scales between two radii while it fades
+        public static DiscFade Disc(Vector3 position, Color color, float startRadius, float endRadius, float duration, int order = Order, Transform follow = null, bool hard = false)
         {
             return Create<DiscFade>("SurgeDisc", position, fade =>
             {
@@ -198,7 +198,7 @@ namespace SpiderSurge.Vfx
                 renderer.sprite = hard ? HardDisc : SoftDisc;
                 renderer.sortingLayerName = SortingLayer;
                 renderer.sortingOrder = order;
-                fade.Setup(renderer, color, startRadius, endRadius, duration, pulse, follow);
+                fade.Setup(renderer, color, startRadius, endRadius, duration, follow);
             });
         }
 
@@ -220,11 +220,11 @@ namespace SpiderSurge.Vfx
         }
 
         // A steady stream of glowing dots that follows its parent; stop it with Fade
-        public static ParticleSystem Stream(Transform parent, Vector3 localPosition, Color from, Color to, float rate, float speedMin, float speedMax,
+        public static ParticleSystem Stream(Transform parent, Color from, Color to, float rate, float speedMin, float speedMax,
             float sizeMin, float sizeMax, float life, float radius, bool trails = false, float gravity = 0f, float radiusThickness = 1f, int order = Order)
         {
             ParticleSystem system = NewSystem("SurgeStream", parent.position, parent, from, to, speedMin, speedMax, sizeMin, sizeMax, life, life, radius, radiusThickness, trails, gravity, order);
-            system.transform.localPosition = localPosition;
+            system.transform.localPosition = Vector3.zero;
             ParticleSystem.MainModule main = system.main;
             main.loop = true;
             main.duration = 1f;
@@ -319,19 +319,16 @@ namespace SpiderSurge.Vfx
         private float startIntensity;
         private float duration;
         private float elapsed;
-        private Transform follow;
 
-        public void Setup(Light2D light, float fadeDuration, Transform followTarget)
+        public void Setup(Light2D light, float fadeDuration)
         {
             light2D = light;
             startIntensity = light.intensity;
             duration = Mathf.Max(0.01f, fadeDuration);
-            follow = followTarget;
         }
 
         private void Update()
         {
-            if (follow != null) transform.position = follow.position;
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             if (t >= 1f)
@@ -352,17 +349,15 @@ namespace SpiderSurge.Vfx
         private float duration;
         private float elapsed;
         private float spriteSize;
-        private bool pulse;
         private Transform follow;
 
-        public void Setup(SpriteRenderer spriteRenderer, Color discColor, float from, float to, float fadeDuration, bool isPulse, Transform followTarget)
+        public void Setup(SpriteRenderer spriteRenderer, Color discColor, float from, float to, float fadeDuration, Transform followTarget)
         {
             sprite = spriteRenderer;
             color = discColor;
             startRadius = from;
             endRadius = to;
             duration = Mathf.Max(0.01f, fadeDuration);
-            pulse = isPulse;
             follow = followTarget;
             spriteSize = spriteRenderer.sprite.bounds.size.x;
             Apply(0f);
@@ -383,19 +378,8 @@ namespace SpiderSurge.Vfx
 
         private void Apply(float t)
         {
-            float radius;
-            float alpha;
-            if (pulse && !ModConfig.ReducedEffects)
-            {
-                float wave = Mathf.Sin(t * Mathf.PI);
-                radius = Mathf.Lerp(startRadius, endRadius, wave);
-                alpha = color.a * Mathf.Min(1f, wave * 1.5f);
-            }
-            else
-            {
-                radius = Mathf.Lerp(startRadius, endRadius, t);
-                alpha = color.a * (1f - t * t);
-            }
+            float radius = Mathf.Lerp(startRadius, endRadius, t);
+            float alpha = color.a * (1f - t * t);
             float scale = radius * 2f / spriteSize;
             transform.localScale = new Vector3(scale, scale, 1f);
             sprite.color = SurgeVfx.SetAlpha(color, alpha);
@@ -405,7 +389,6 @@ namespace SpiderSurge.Vfx
     public class Follow : MonoBehaviour
     {
         public Transform Target;
-        public Vector3 Offset;
         public bool DestroyWithTarget = true;
 
         private void LateUpdate()
@@ -415,7 +398,7 @@ namespace SpiderSurge.Vfx
                 if (DestroyWithTarget) Destroy(gameObject);
                 return;
             }
-            transform.position = Target.position + Offset;
+            transform.position = Target.position;
         }
     }
 }

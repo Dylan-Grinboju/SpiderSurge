@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderTeams
@@ -24,7 +25,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (TeamManager.IsHost && ReflectionCache.IsRpcSendStage(__instance))
+                if (Net.IsHost && ReflectionCache.IsRpcSendStage(__instance))
                 {
                     ExplosionOwners.Record(position, OwnerRegistry.OfWeapon(__instance));
                 }
@@ -44,7 +45,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (TeamManager.IsHost && ReflectionCache.IsRpcSendStage(__instance))
+                if (Net.IsHost && ReflectionCache.IsRpcSendStage(__instance))
                 {
                     ExplosionOwners.Record(position, OwnerRegistry.Get(__instance.gameObject));
                 }
@@ -65,7 +66,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (TeamManager.IsHost)
+                if (Net.IsHost)
                 {
                     ExplosionOwners.Record(hitPoint, RailShot_ProcessHit_Patch.Owner(__instance));
                 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -117,7 +118,7 @@ namespace SpiderTeams
 
             if (winningScore - teamScore == 1)
             {
-                string name = solo ? TeamManager.DisplayName(_members[0]) : teamName;
+                string name = solo ? Players.NameOf(_members[0]) : teamName;
                 string almostWon = ReflectionCache.Term(ReflectionCache.VersusAlmostWonString, versus);
                 if (almostWon != null)
                 {

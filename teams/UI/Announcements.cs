@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -104,7 +105,7 @@ namespace SpiderTeams
                 }
 
                 var announcer = Announcer.instance;
-                if (announcer == null || !TeamManager.IsHost)
+                if (announcer == null || !Net.IsHost)
                 {
                     _queue.Clear();
                     return;
@@ -132,7 +133,7 @@ namespace SpiderTeams
             _pickNames.Clear();
             for (int i = 0; i < _picks.Count && manager != null; i++)
             {
-                var player = TeamManager.FindPlayer(_picks[i]);
+                var player = Players.ById(_picks[i]);
                 if (player != null)
                 {
                     _pickTeams.Add(manager.GetTeam(player));

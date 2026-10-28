@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using SpiderSurge.Common;
-using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -32,46 +31,34 @@ namespace SpiderTeams
         public bool TeamModeThisMatch { get; private set; }
         public int TeamCount => MatchLocked ? _matchTeamCount : ModConfig.TeamCount;
 
-        public static bool IsHost
-        {
-            get
-            {
-                var network = NetworkManager.Singleton;
-                return network != null && network.IsListening && network.IsHost;
-            }
-        }
-
-        // True on a client too, once the host's roster says team mode is on; host-only work still checks IsHost
+        // True on a client too, once the host's roster says team mode is on; host-only work checks HostTeamMatch
         public static bool TeamMatchActive
         {
             get
             {
                 var manager = Instance;
-                if (manager == null || !manager.TeamModeThisMatch)
-                {
-                    return false;
-                }
-
-                var versus = VersusMode.instance;
-                if (versus == null || !versus.GameModeActive())
-                {
-                    return false;
-                }
-                return manager.StartedWithTeams || manager.CountPresentTeams() >= 2;
+                return TeamModeRunning(manager) && (manager.StartedWithTeams || manager.CountPresentTeams() >= 2);
             }
         }
+
+        public static bool HostTeamMatch => Net.IsHost && TeamMatchActive;
+
+        // HostTeamMatch without counting teams, which hands a team to anyone still without one; it holds whenever HostTeamMatch does
+        internal static bool HostTeamMode => Net.IsHost && TeamModeRunning(Instance);
 
         // A team match stays one after a whole team leaves online, so the team that is left wins its rounds
         public bool StartedWithTeams => MatchLocked && _teamsAtLock >= 2;
         private int _teamsAtLock;
 
-        public static List<PlayerController> Players
+        private static bool TeamModeRunning(TeamManager manager)
         {
-            get
+            if (manager == null || !manager.TeamModeThisMatch)
             {
-                var lobby = LobbyController.instance;
-                return lobby != null ? lobby.spawnedPlayers : null;
+                return false;
             }
+
+            var versus = VersusMode.instance;
+            return versus != null && versus.GameModeActive();
         }
 
         private void Awake()
@@ -110,13 +97,13 @@ namespace SpiderTeams
             if (_rosterDirty)
             {
                 // A newcomer gets a team before the roster goes out, so clients never have to guess one
-                if (IsHost)
+                if (Net.IsHost)
                 {
                     NormalizeRoster();
                 }
                 _rosterDirty = false;
                 RaiseRosterChanged();
-                if (IsHost)
+                if (Net.IsHost)
                 {
                     TeamNet.BroadcastRoster();
                 }
@@ -156,7 +143,7 @@ namespace SpiderTeams
             Array.Clear(_teamScores, 0, _teamScores.Length);
             MatchSnapshot.Clear();
             Announcements.ClearPicks();
-            TeamModeThisMatch = ModConfig.TeamsEnabled && IsHost;
+            TeamModeThisMatch = ModConfig.TeamsEnabled && Net.IsHost;
             MatchLocked = false;
             if (lockNow)
             {
@@ -292,13 +279,9 @@ namespace SpiderTeams
             int scores = reader.ReadInt32();
             for (int team = 0; team < scores; team++)
             {
-                int score = reader.ReadInt32();
-                if (team < _teamScores.Length)
-                {
-                    _teamScores[team] = score;
-                }
+                _teamScores[team] = reader.ReadInt32();
             }
-            _teamsAtLock = reader.BaseStream.Position < reader.BaseStream.Length ? reader.ReadInt32() : 0;
+            _teamsAtLock = reader.ReadInt32();
             // A client keeps the host's team count in force through MatchLocked, whose TeamCount reads _matchTeamCount
             _matchTeamCount = Mathf.Max(1, teamCount);
             MatchLocked = locked || Net.IsRemoteClient;
@@ -355,7 +338,7 @@ namespace SpiderTeams
 
         public int GetMemberRank(PlayerController player)
         {
-            var players = Players;
+            var players = Players.All;
             if (player == null || players == null)
             {
                 return 0;
@@ -378,7 +361,7 @@ namespace SpiderTeams
         public void CollectPlayers(List<PlayerController> into)
         {
             into.Clear();
-            var players = Players;
+            var players = Players.All;
             if (players == null)
             {
                 return;
@@ -396,7 +379,7 @@ namespace SpiderTeams
         public void CollectMembers(int team, List<PlayerController> into)
         {
             into.Clear();
-            var players = Players;
+            var players = Players.All;
             if (players == null)
             {
                 return;
@@ -413,30 +396,11 @@ namespace SpiderTeams
             into.Sort(ByPlayerId);
         }
 
-        public static PlayerController FindPlayer(int playerId)
-        {
-            var players = Players;
-            if (players == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                var player = players[i];
-                if (player != null && player.playerID.Value == playerId)
-                {
-                    return player;
-                }
-            }
-            return null;
-        }
-
         public void GetTeamMasks(out uint present, out uint alive)
         {
             present = 0;
             alive = 0;
-            var players = Players;
+            var players = Players.All;
             if (players == null)
             {
                 return;
@@ -594,7 +558,7 @@ namespace SpiderTeams
 
         public void NormalizeRoster()
         {
-            var players = Players;
+            var players = Players.All;
             if (players == null)
             {
                 return;
@@ -640,39 +604,21 @@ namespace SpiderTeams
                     {
                         builder.Append(", ");
                     }
-                    builder.Append(DisplayName(_scratch[i]));
+                    builder.Append(Players.NameOf(_scratch[i]));
                 }
             }
             return builder.Length > 0 ? builder.ToString() : "no players";
         }
 
-        public static string DisplayName(PlayerController player)
-        {
-            if (player == null)
-            {
-                return "?";
-            }
-
-            string name = null;
-            try
-            {
-                name = player.playerName;
-            }
-            catch
-            {
-            }
-            return string.IsNullOrEmpty(name) ? "P" + (player.playerID.Value + 1) : name;
-        }
-
         public static string RichName(PlayerController player)
         {
-            return "<noparse>" + NoParseTag.Replace(DisplayName(player), string.Empty) + "</noparse>";
+            return "<noparse>" + NoParseTag.Replace(Players.NameOf(player), string.Empty) + "</noparse>";
         }
 
         private int SmallestTeam(int count, int excludeId)
         {
             Array.Clear(_assignSizes, 0, _assignSizes.Length);
-            var players = Players;
+            var players = Players.All;
             if (players != null)
             {
                 for (int i = 0; i < players.Count; i++)
@@ -703,25 +649,6 @@ namespace SpiderTeams
             return best;
         }
 
-        private static void RaiseRosterChanged()
-        {
-            Action handler = RosterChanged;
-            if (handler == null)
-            {
-                return;
-            }
-
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try
-                {
-                    ((Action)listener)();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"SpiderTeams roster listener failed: {ex}");
-                }
-            }
-        }
+        private static void RaiseRosterChanged() => Listeners.Raise(RosterChanged, "SpiderTeams roster listener failed");
     }
 }

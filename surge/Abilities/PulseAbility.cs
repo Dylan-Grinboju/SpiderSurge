@@ -13,8 +13,6 @@ namespace SpiderSurge
 {
     public class PulseAbility : BaseAbility
     {
-        public static Dictionary<int, PulseAbility> playerPulseAbilities = new Dictionary<int, PulseAbility>();
-
         public override string PerkName => Consts.PerkNames.PulseAbility;
         public override AbilityKind Kind => AbilityKind.Pulse;
 
@@ -26,30 +24,12 @@ namespace SpiderSurge
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Pulse.UltimateCooldownReductionPerLevel;
 
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Thermal Detonation";
-        public override string UltimatePerkDescription => "Pulse deals lethal damage in the death zone instead of just knockback.";
 
         private float GetKnockBackRadius(bool isUlt)
         {
-            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-            float radius;
-            int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-            int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-            if (isUlt)
-            {
-                radius = Consts.Values.Pulse.UltimateBaseKnockbackRadius;
-                if (durationLevel >= 2) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
-                if (shortTermLevel > 0) radius -= Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
-                if (longTermLevel > 0) radius += Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel;
-            }
-            else
-            {
-                radius = Consts.Values.Pulse.AbilityBaseKnockbackRadius;
-                if (durationLevel >= 1) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
-                if (shortTermLevel > 0) radius += Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
-                if (longTermLevel > 0) radius -= Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel;
-            }
-            return radius;
+            return isUlt
+                ? PerkScaled(Consts.Values.Pulse.UltimateBaseKnockbackRadius, Consts.Values.Pulse.UltimateKnockbackRadiusIncreasePerLevel, true)
+                : PerkScaled(Consts.Values.Pulse.AbilityBaseKnockbackRadius, Consts.Values.Pulse.AbilityKnockbackRadiusIncreasePerLevel, false);
         }
 
         private float GetKnockBackStrength(bool isUlt)
@@ -125,14 +105,6 @@ namespace SpiderSurge
         private Collider2D[] _pulseResults = new Collider2D[64];
 
         private readonly HashSet<EnemyHealthSystem> _enemiesToLaunch = new HashSet<EnemyHealthSystem>();
-        protected override void Start()
-        {
-            base.Start();
-            if (PlayerId >= 0)
-            {
-                playerPulseAbilities[PlayerId] = this;
-            }
-        }
 
         protected override void Awake()
         {
@@ -151,13 +123,7 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.PulseAbility,
-                    Consts.SoundVolumes.PulseAbility * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.PulseAbility, Consts.SoundVolumes.PulseAbility);
 
             TriggerPulse(deadly: false);
             // Start cooldown immediately since this is an instant ability
@@ -172,11 +138,6 @@ namespace SpiderSurge
             isActive = false;
             isUltimateActive = false;
             StartCooldown(wasUltimate: true);
-        }
-
-        protected override void OnDeactivate()
-        {
-            // Nothing to do - pulse is instant
         }
 
         private struct PulseParams
@@ -199,10 +160,7 @@ namespace SpiderSurge
             PulseParams pulseParams = CalculatePulseParameters(deadly);
 
             DrawPulse(pulseParams.Position, pulseParams.KnockBackRadius, deadly, GetExplosionPrefab(spiderHealthSystem), playerController);
-            if (Net.IsHost)
-            {
-                SurgeNet.SendFx(SurgeFx.PulseRing, PlayerId, pulseParams.Position, pulseParams.KnockBackRadius, deadly);
-            }
+            SurgeNet.SendFx(SurgeFx.PulseRing, PlayerId, pulseParams.Position, pulseParams.KnockBackRadius, deadly);
 
             if (IsAuthority)
             {
@@ -416,13 +374,7 @@ namespace SpiderSurge
         // ─── Explosion Reflection (for stats mod kill tracking) ─────────────────────
         private static bool _explosionReflectionInitialized;
         private static bool _canUseExplosion;
-        private static FieldInfo _expKnockBackRadius;
-        private static FieldInfo _expLayers;
-        private static FieldInfo _expDeathRadius;
         private static FieldInfo _expPlayerDeathRadius;
-        private static FieldInfo _expIsBoomSpear;
-        private static FieldInfo _expPlayerExplosionID;
-        private static FieldInfo _expOwnerId;
         private static MethodInfo _expKnockBack;
 
         private static void InitExplosionReflection()
@@ -432,23 +384,10 @@ namespace SpiderSurge
 
             try
             {
-                _expKnockBackRadius = AccessTools.Field(typeof(Explosion), "knockBackRadius");
-                _expLayers = AccessTools.Field(typeof(Explosion), "layers");
-                _expDeathRadius = AccessTools.Field(typeof(Explosion), "deathRadius");
                 _expPlayerDeathRadius = AccessTools.Field(typeof(Explosion), "_playerDeathRadius");
-                _expIsBoomSpear = AccessTools.Field(typeof(Explosion), "isBoomSpear");
-                _expPlayerExplosionID = AccessTools.Field(typeof(Explosion), "playerExplosionID");
-                _expOwnerId = AccessTools.Field(typeof(Explosion), "explosionOwnerId");
                 _expKnockBack = AccessTools.Method(typeof(Explosion), "KnockBack");
 
-                _canUseExplosion = _expKnockBack != null
-                    && _expKnockBackRadius != null
-                    && _expDeathRadius != null
-                    && _expOwnerId != null
-                    && _expLayers != null
-                    && _expPlayerDeathRadius != null
-                    && _expIsBoomSpear != null
-                    && _expPlayerExplosionID != null;
+                _canUseExplosion = _expKnockBack != null && _expPlayerDeathRadius != null;
 
                 if (!_canUseExplosion)
                     Logger.LogWarning("PulseAbility: Explosion reflection incomplete — pulse ult kills will use fallback (not tracked)");
@@ -474,13 +413,13 @@ namespace SpiderSurge
 
                 int playerID = playerController.playerID.Value;
 
-                _expKnockBackRadius.SetValue(explosion, p.DeathRadius);
-                _expLayers?.SetValue(explosion, pulseLayers);
-                _expDeathRadius.SetValue(explosion, p.DeathRadius);
+                explosion.knockBackRadius = p.DeathRadius;
+                explosion.layers = pulseLayers;
+                explosion.deathRadius = p.DeathRadius;
                 _expPlayerDeathRadius?.SetValue(explosion, p.DeathRadius);
-                _expIsBoomSpear?.SetValue(explosion, true);
-                _expPlayerExplosionID?.SetValue(explosion, playerID);
-                _expOwnerId.SetValue(explosion, playerController.OwnerClientId);
+                explosion.isBoomSpear = true;
+                explosion.playerExplosionID = playerID;
+                explosion.explosionOwnerId = playerController.OwnerClientId;
 
                 explosion.enabled = true;
                 _expKnockBack.Invoke(explosion, null);
@@ -569,16 +508,6 @@ namespace SpiderSurge
                 }
             }
             return null;
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-
-            if (playerPulseAbilities.TryGetValue(PlayerId, out var registered) && registered == this)
-            {
-                playerPulseAbilities.Remove(PlayerId);
-            }
         }
     }
 

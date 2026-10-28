@@ -507,42 +507,8 @@ namespace SpiderSurge.Common
             return hash;
         }
 
-        private static void Raise(Action handler)
-        {
-            if (handler == null)
-            {
-                return;
-            }
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try
-                {
-                    ((Action)listener)();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"SpiderSurge net listener failed: {ex}");
-                }
-            }
-        }
+        private static void Raise(Action handler) => Listeners.Raise(handler, "SpiderSurge net listener failed");
 
-        private static void Raise(Action<ulong> handler, ulong clientId)
-        {
-            if (handler == null)
-            {
-                return;
-            }
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try
-                {
-                    ((Action<ulong>)listener)(clientId);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"SpiderSurge net listener failed: {ex}");
-                }
-            }
-        }
+        private static void Raise(Action<ulong> handler, ulong clientId) => Listeners.Raise(handler, clientId, "SpiderSurge net listener failed");
     }
 }

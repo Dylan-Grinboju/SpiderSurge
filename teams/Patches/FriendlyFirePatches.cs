@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using Interfaces;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -13,9 +14,10 @@ namespace SpiderTeams
     {
         private static readonly HashSet<string> _reported = new HashSet<string>();
 
+        // Only the host's team match reads the attacker, so the owner lookup runs only while the host has team mode on
         public static bool EnterAttack<T>(T source, Func<T, int> resolve)
         {
-            DamageContext.Push(Resolve(source, resolve));
+            DamageContext.Push(TeamManager.HostTeamMode ? Resolve(source, resolve) : OwnerRegistry.Unknown);
             return true;
         }
 
@@ -261,7 +263,7 @@ namespace SpiderTeams
         [HarmonyPriority(Priority.First)]
         public static void Prefix(SpiderHealthSystem __instance, out bool __state)
         {
-            __state = PatchScopes.EnterAttack(__instance, health => OwnerRegistry.OfPlayer(health.GetComponentInParent<PlayerController>()));
+            __state = PatchScopes.EnterAttack(__instance, health => Players.IdOf(health));
         }
 
         [HarmonyFinalizer]

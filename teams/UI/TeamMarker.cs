@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -96,7 +97,7 @@ namespace SpiderTeams
         private void Sync(bool show)
         {
             var manager = TeamManager.Instance;
-            var players = TeamManager.Players;
+            var players = Players.All;
             if (!show || manager == null || players == null)
             {
                 foreach (var marker in _markers.Values)

@@ -179,7 +179,7 @@ namespace StatsMod
             {
                 if (scene.name.Equals("Lobby"))
                 {
-                    bool hasPendingTitles = TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0;
+                    bool hasPendingTitles = TitlesManager.Instance.HasGameEndedTitles;
 
                     if (hasPendingTitles)
                     {

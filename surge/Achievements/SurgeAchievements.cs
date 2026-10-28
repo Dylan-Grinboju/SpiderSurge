@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Doozy.Engine.UI;
 using SpiderSurge.Common;
 using TMPro;
@@ -95,8 +94,6 @@ namespace SpiderSurge
         private static readonly ProgressSection<AchievementUnlock> _unlocks = new ProgressSection<AchievementUnlock>(Section, TryParse, Format, Earlier, AnnounceAll);
         private static bool _legacyChecked;
 
-        public static event Action<Achievement> Unlocked;
-
         public static int UnlockedCount => All.Count(achievement => IsUnlocked(achievement.Id));
 
         public static bool IsUnlocked(string id)
@@ -150,7 +147,6 @@ namespace SpiderSurge
             string name = unlock.Player ?? "";
             Logger.LogInfo($"Achievement unlocked: {achievement.Name}{(name.Length > 0 ? " by " + name : "")}");
             ShowPopup(achievement, name);
-            Unlocked?.Invoke(achievement);
             SettingsPage.RefreshOpen();
         }
 
@@ -187,7 +183,7 @@ namespace SpiderSurge
             if (fields.Length != 3 || !IsId(fields[0]) || !DateTime.TryParse(fields[1], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime date)) return false;
             try
             {
-                unlock = new AchievementUnlock { Date = date, Player = Encoding.UTF8.GetString(Convert.FromBase64String(fields[2])) };
+                unlock = new AchievementUnlock { Date = date, Player = ModData.Decode(fields[2]) };
             }
             catch (FormatException)
             {
@@ -201,7 +197,7 @@ namespace SpiderSurge
 
         private static string Format(string id, AchievementUnlock unlock)
         {
-            return id + FieldSeparator + unlock.Date.ToString("o", CultureInfo.InvariantCulture) + FieldSeparator + Convert.ToBase64String(Encoding.UTF8.GetBytes(unlock.Player ?? ""));
+            return id + FieldSeparator + unlock.Date.ToString("o", CultureInfo.InvariantCulture) + FieldSeparator + ModData.Encode(unlock.Player ?? "");
         }
 
         private static void ShowPopup(Achievement achievement, string player)

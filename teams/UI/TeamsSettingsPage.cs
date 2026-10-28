@@ -46,7 +46,7 @@ namespace SpiderTeams
 
         private static void AddRoster(VersusTeamsPage page, TeamManager manager, bool readOnly)
         {
-            var players = TeamManager.Players;
+            var players = Players.All;
             if (players == null || players.Count == 0)
             {
                 return;

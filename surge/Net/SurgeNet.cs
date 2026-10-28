@@ -56,6 +56,15 @@ namespace SpiderSurge
         private const string EnemyChannel = "surge.enemy";
         private const string FreezeCooldownChannel = "surge.freeze.cooldown";
 
+        private static readonly (string channel, Net.Handler handler)[] Channels =
+        {
+            (StateChannel, OnState),
+            (AbilityChannel, OnAbility),
+            (FxChannel, OnFx),
+            (EnemyChannel, OnEnemyFx),
+            (FreezeCooldownChannel, OnFreezeCooldown),
+        };
+
         private static bool _initialized;
         private static bool _dirty;
         private static int _lastRemoteWave;
@@ -68,11 +77,10 @@ namespace SpiderSurge
                 return;
             }
             _initialized = true;
-            Net.Register(StateChannel, OnState);
-            Net.Register(AbilityChannel, OnAbility);
-            Net.Register(FxChannel, OnFx);
-            Net.Register(EnemyChannel, OnEnemyFx);
-            Net.Register(FreezeCooldownChannel, OnFreezeCooldown);
+            foreach (var (channel, handler) in Channels)
+            {
+                Net.Register(channel, handler);
+            }
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
@@ -88,11 +96,10 @@ namespace SpiderSurge
             }
             _initialized = false;
             Vfx.WeaponVfx.Shutdown();
-            Net.Unregister(StateChannel);
-            Net.Unregister(AbilityChannel);
-            Net.Unregister(FxChannel);
-            Net.Unregister(EnemyChannel);
-            Net.Unregister(FreezeCooldownChannel);
+            foreach (var (channel, _) in Channels)
+            {
+                Net.Unregister(channel);
+            }
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
@@ -128,7 +135,7 @@ namespace SpiderSurge
 
         internal static void SendFreezeCooldown(int playerId, float remaining)
         {
-            if (!Net.IsHost || !Net.HasRemotePlayers) return;
+            if (!Net.HasRemotePlayers) return;
             Net.SendToAll(FreezeCooldownChannel, writer =>
             {
                 writer.Write(playerId);
@@ -138,7 +145,7 @@ namespace SpiderSurge
 
         private static void OnFreezeCooldown(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
+            if (!Net.IsRemoteClient) return;
             int playerId = reader.ReadInt32();
             float remaining = reader.ReadSingle();
             PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Freeze)?.ApplyCooldownRemaining(remaining);
@@ -189,72 +196,49 @@ namespace SpiderSurge
             });
         }
 
+        // SendEnemyFx's message for one joining client
+        private static void SendEnemyFxTo(ulong clientId, EnemyFx fx, NetworkObject target, float value)
+        {
+            if (target == null || !target.IsSpawned)
+            {
+                return;
+            }
+            Net.SendTo(clientId, EnemyChannel, writer =>
+            {
+                writer.Write((byte)fx);
+                writer.Write(target.NetworkObjectId);
+                writer.Write(value);
+            });
+        }
+
+        private static void SendFrozenTo<T>(ulong clientId, EnemyFx fx, Func<T, float> timeLeft) where T : Component
+        {
+            foreach (T frozen in UnityEngine.Object.FindObjectsOfType<T>())
+            {
+                NetworkObject target = frozen.GetComponent<NetworkObject>();
+                float left = timeLeft(frozen);
+                if (left <= 0f) continue;
+                SendEnemyFxTo(clientId, fx, target, left);
+            }
+        }
+
         private static void OnPeerReady(ulong clientId)
         {
             Enemies.CustomEnemyNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
 
             // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.
-            foreach (FrozenSpider frozen in UnityEngine.Object.FindObjectsOfType<FrozenSpider>())
-            {
-                NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = frozen.TimeLeft;
-                if (target == null || !target.IsSpawned || left <= 0f) continue;
-                Net.SendTo(clientId, EnemyChannel, writer =>
-                {
-                    writer.Write((byte)EnemyFx.SpiderFrozen);
-                    writer.Write(target.NetworkObjectId);
-                    writer.Write(left);
-                });
-            }
-            foreach (FrozenEnemy frozen in UnityEngine.Object.FindObjectsOfType<FrozenEnemy>())
-            {
-                NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>());
-                if (target == null || !target.IsSpawned || left <= 0f) continue;
-                Net.SendTo(clientId, EnemyChannel, writer =>
-                {
-                    writer.Write((byte)EnemyFx.Frozen);
-                    writer.Write(target.NetworkObjectId);
-                    writer.Write(left);
-                });
-            }
-            foreach (FrozenCloud frozen in UnityEngine.Object.FindObjectsOfType<FrozenCloud>())
-            {
-                NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = frozen.TimeLeft;
-                if (target == null || !target.IsSpawned || left <= 0f) continue;
-                Net.SendTo(clientId, EnemyChannel, writer =>
-                {
-                    writer.Write((byte)EnemyFx.CloudFrozen);
-                    writer.Write(target.NetworkObjectId);
-                    writer.Write(left);
-                });
-            }
-            foreach (FrozenShot frozen in UnityEngine.Object.FindObjectsOfType<FrozenShot>())
-            {
-                NetworkObject target = frozen.GetComponent<NetworkObject>();
-                float left = frozen.TimeLeft;
-                if (target == null || !target.IsSpawned || left <= 0f) continue;
-                Net.SendTo(clientId, EnemyChannel, writer =>
-                {
-                    writer.Write((byte)EnemyFx.ShotFrozen);
-                    writer.Write(target.NetworkObjectId);
-                    writer.Write(left);
-                });
-            }
+            SendFrozenTo<FrozenSpider>(clientId, EnemyFx.SpiderFrozen, frozen => frozen.TimeLeft);
+            SendFrozenTo<FrozenEnemy>(clientId, EnemyFx.Frozen, frozen => FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>()));
+            SendFrozenTo<FrozenCloud>(clientId, EnemyFx.CloudFrozen, frozen => frozen.TimeLeft);
+            SendFrozenTo<FrozenShot>(clientId, EnemyFx.ShotFrozen, frozen => frozen.TimeLeft);
 
             // The game sends a shield's break only as it happens, so a joiner would see every broken shield still up
             foreach (EnemyHealthSystem enemy in UnityEngine.Object.FindObjectsOfType<EnemyHealthSystem>())
             {
                 NetworkObject target = enemy.NetworkObject;
-                if (enemy.shield == null || enemy.shield.activeSelf || target == null || !target.IsSpawned) continue;
-                Net.SendTo(clientId, EnemyChannel, writer =>
-                {
-                    writer.Write((byte)EnemyFx.ShieldBroken);
-                    writer.Write(target.NetworkObjectId);
-                    writer.Write(0f);
-                });
+                if (enemy.shield == null || enemy.shield.activeSelf) continue;
+                SendEnemyFxTo(clientId, EnemyFx.ShieldBroken, target, 0f);
             }
         }
 
@@ -320,7 +304,7 @@ namespace SpiderSurge
 
         private static void OnState(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }
@@ -416,7 +400,7 @@ namespace SpiderSurge
 
         private static void OnFx(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }
@@ -473,7 +457,7 @@ namespace SpiderSurge
 
         private static void OnEnemyFx(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }

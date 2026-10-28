@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using SpiderSurge;
+using SpiderSurge.Common;
 using UnityEngine;
 
 namespace SpiderTeams
@@ -13,7 +14,7 @@ namespace SpiderTeams
         [HarmonyPriority(Priority.First)]
         public static void Prefix(Component __instance, out bool __state)
         {
-            __state = PatchScopes.EnterAttack(__instance, ability => OwnerRegistry.OfPlayer(ability.GetComponentInParent<PlayerController>()));
+            __state = PatchScopes.EnterAttack(__instance, ability => Players.IdOf(ability));
             FriendlyFireGate.PulseDepth++;
         }
 

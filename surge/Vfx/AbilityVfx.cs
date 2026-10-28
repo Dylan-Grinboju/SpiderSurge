@@ -199,7 +199,7 @@ namespace SpiderSurge.Vfx
                 aura.follow.Target = weapon;
                 aura.follow.DestroyWithTarget = false;
                 Color color = Consts.Values.Vfx.ClipColor;
-                aura.embers = SurgeVfx.Stream(holder.transform, Vector3.zero, color, color, 12f, 1f, 4f, 0.4f, 0.7f, 0.35f, 1.5f, gravity: -0.3f);
+                aura.embers = SurgeVfx.Stream(holder.transform, color, color, 12f, 1f, 4f, 0.4f, 0.7f, 0.35f, 1.5f, gravity: -0.3f);
                 aura.glow = SurgeVfx.Flash(weapon.position, color, 0.65f, 8f, float.MaxValue);
                 aura.glow.transform.SetParent(holder.transform, true);
                 aura.shown = true;
@@ -272,7 +272,7 @@ namespace SpiderSurge.Vfx
                 bubble.spriteSize = bubble.shell.sprite.bounds.size.x;
                 bubble.baseAlpha = forceField != null ? Consts.Values.Vfx.NullFieldShellAlpha : 0.25f;
                 bubble.shell.color = SurgeVfx.SetAlpha(gold, bubble.baseAlpha);
-                bubble.motes = SurgeVfx.Stream(holder.transform, Vector3.zero, Color.white, gold, 14f, 2f, 5f, 0.5f, 0.9f, 1.2f, Radius, radiusThickness: 0.2f);
+                bubble.motes = SurgeVfx.Stream(holder.transform, Color.white, gold, 14f, 2f, 5f, 0.5f, 0.9f, 1.2f, Radius, radiusThickness: 0.2f);
                 bubble.flash = 1f;
             }));
         }
@@ -351,7 +351,7 @@ namespace SpiderSurge.Vfx
                 Follow follow = holder.AddComponent<Follow>();
                 follow.Target = body;
                 Color color = Consts.Values.Vfx.ReviveColor;
-                channel.motes = SurgeVfx.Stream(holder.transform, Vector3.zero, color, Color.white, 60f, -50f, -70f, 0.4f, 0.9f, 0.7f, 42f, trails: true, radiusThickness: 0f);
+                channel.motes = SurgeVfx.Stream(holder.transform, color, Color.white, 60f, -50f, -70f, 0.4f, 0.9f, 0.7f, 42f, trails: true, radiusThickness: 0f);
                 LightFade glow = SurgeVfx.Flash(body.position, color, 1.2f, 22f, float.MaxValue);
                 glow.transform.SetParent(holder.transform, true);
             }));

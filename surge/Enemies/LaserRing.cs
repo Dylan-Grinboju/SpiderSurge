@@ -115,10 +115,7 @@ namespace SpiderSurge.Enemies
             if (remoteHold || FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(health.gameObject))
             {
                 // Clients don't see the Black Hole's hold, so the host tells them when a hold starts; its next warning sync ends it
-                if (!held && Net.IsHost)
-                {
-                    SurgeNet.SendEnemyFx(EnemyFx.LaserHold, health.GetComponent<NetworkObject>(), 0f);
-                }
+                if (!held) SurgeNet.SendEnemyFx(EnemyFx.LaserHold, health.GetComponent<NetworkObject>(), 0f);
                 held = true;
                 startTime += Time.fixedDeltaTime;
                 if (phase != Phase.Idle)
@@ -137,11 +134,11 @@ namespace SpiderSurge.Enemies
             if (next != phase)
             {
                 phase = next;
-                if (phase == Phase.Warning && Net.IsHost)
+                if (phase == Phase.Warning)
                 {
                     SurgeNet.SendEnemyFx(EnemyFx.LaserPhase, health.GetComponent<NetworkObject>(), (Time.time - startTime) % Consts.Values.LaserRing.Period);
+                    StartWarning();
                 }
-                if (phase == Phase.Warning) StartWarning();
                 else if (phase == Phase.Active) StartBeam();
                 else StopBeam();
             }

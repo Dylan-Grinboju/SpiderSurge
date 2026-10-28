@@ -90,7 +90,7 @@ namespace SpiderTeams
 
         private static void OnRoster(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }
@@ -129,7 +129,7 @@ namespace SpiderTeams
 
         private static void OnSnapshot(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }

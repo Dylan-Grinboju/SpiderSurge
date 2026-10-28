@@ -23,42 +23,10 @@ namespace SpiderSurge
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.StorageAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Black Hole";
-        public override string UltimatePerkDescription => "Opens a pull around you for 3 seconds. It holds the enemies inside it when it opens and drags them and every spider inside it toward you, and whatever reaches your inner circle goes into the pocket dimension, forever.";
 
-        public override float AbilityDuration
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+        public override float AbilityDuration => PerkScaled(AbilityBaseDuration, -Consts.Values.Storage.AbilityDurationReductionPerLevel, false);
 
-                float duration = AbilityBaseDuration;
-                if (durationLevel >= 1) duration -= Consts.Values.Storage.AbilityDurationReductionPerLevel;
-                if (shortTermLevel > 0) duration -= Consts.Values.Storage.AbilityDurationReductionPerLevel;
-                if (longTermLevel > 0) duration += Consts.Values.Storage.AbilityDurationReductionPerLevel;
-
-                return duration;
-            }
-        }
-
-        public float BlackHoleRange
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-
-                float range = Consts.Values.Storage.BlackHoleBaseRange;
-                if (durationLevel == 2) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
-                if (shortTermLevel > 0) range -= Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
-                if (longTermLevel > 0) range += Consts.Values.Storage.BlackHoleRangeIncreasePerLevel;
-
-                return range;
-            }
-        }
+        public float BlackHoleRange => PerkScaled(Consts.Values.Storage.BlackHoleBaseRange, Consts.Values.Storage.BlackHoleRangeIncreasePerLevel, true);
         private int _cachedMoreGunsLevel = 0;
         private int _cachedMoreBoomLevel = 0;
         private int _cachedMoreParticlesLevel = 0;
@@ -119,19 +87,10 @@ namespace SpiderSurge
             if (spiderHealthSystem != null)
             {
                 BlackHoleField.Begin(this, spiderHealthSystem, playerController, BlackHoleRange, IsAuthority);
-                if (Net.IsHost)
-                {
-                    SurgeNet.SendFx(SurgeFx.BlackHole, PlayerId, spiderHealthSystem.transform.position, BlackHoleRange, false);
-                }
+                SurgeNet.SendFx(SurgeFx.BlackHole, PlayerId, spiderHealthSystem.transform.position, BlackHoleRange, false);
             }
             // Like the other abilities, only the caster's own machine plays the sound
-            if (!IsRemote)
-            {
-                SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.StorageSend,
-                    Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend);
         }
 
         private bool _clientSlotFilled;
@@ -142,17 +101,11 @@ namespace SpiderSurge
             bool hadStored = _clientSlotFilled;
             _clientSlotFilled = hadWeapon;
 
-            if (hadWeapon && SoundManager.Instance != null)
-            {
-                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume);
-            }
+            if (hadWeapon) SoundManager.Play(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend);
 
             yield return new WaitForSeconds(AbilityDuration);
 
-            if (hadStored && SoundManager.Instance != null)
-            {
-                SoundManager.Instance.PlaySound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume);
-            }
+            if (hadStored) SoundManager.Play(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve);
         }
 
         // Another player's Black Hole online, drawn from the host's message
@@ -208,13 +161,7 @@ namespace SpiderSurge
             heldWeaponObj.transform.localPosition = Vector3.zero;
             heldWeaponObj.SetActive(false);
 
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.StorageSend,
-                    Consts.SoundVolumes.StorageSend * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend);
 
             return new RuntimeStoredWeapon
             {
@@ -260,13 +207,7 @@ namespace SpiderSurge
                 WeaponVfx.Fold(weapon, _weaponManager.transform, true);
             }
 
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.StorageRetrieve,
-                    Consts.SoundVolumes.StorageRetrieve * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve);
         }
 
         // Netcode doesn't sync SetActive, so a stored weapon is despawned on clients until it comes back out

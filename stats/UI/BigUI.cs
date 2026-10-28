@@ -26,70 +26,70 @@ namespace StatsMod
             public Func<PlayerTracker.PlayerData, WeaponAccuracy> Accuracy;
         }
 
-        private static Column Count(string label, float width, Func<bool> shown, Tone tone, Func<PlayerTracker.PlayerData, int> count) =>
-            new Column { Label = label, Width = width, Shown = shown, Tone = tone, Count = count };
+        private static Column Count(string label, float width, string setting, Tone tone, Func<PlayerTracker.PlayerData, int> count) =>
+            new Column { Label = label, Width = width, Shown = () => ModConfig.Column(setting), Tone = tone, Count = count };
 
-        private static Column Duration(string label, float width, Func<bool> shown, Func<PlayerTracker.PlayerData, TimeSpan> time) =>
-            new Column { Label = label, Width = width, Shown = shown, Tone = Tone.Plain, Time = time };
+        private static Column Duration(string label, float width, string setting, Func<PlayerTracker.PlayerData, TimeSpan> time) =>
+            new Column { Label = label, Width = width, Shown = () => ModConfig.Column(setting), Tone = Tone.Plain, Time = time };
 
-        private static Column Enemy(string label, string key, Func<bool> shown) =>
-            new Column { Label = label, Group = "enemies", Width = COL_WIDTH_ENEMY_KILLS, Shown = shown, Tone = Tone.Good, Count = p => p.EnemyKills.TryGetValue(key, out int v) ? v : 0 };
+        private static Column Enemy(string label, string key, string setting) =>
+            new Column { Label = label, Group = "enemies", Width = COL_WIDTH_ENEMY_KILLS, Shown = () => ModConfig.Column(setting), Tone = Tone.Good, Count = p => p.EnemyKills.TryGetValue(key, out int v) ? v : 0 };
 
-        private static Column Weapon(string label, string key, Func<bool> shown) =>
-            new Column { Label = label, Group = "weapons", Width = COL_WIDTH_WEAPON_KILLS, Shown = shown, Tone = Tone.Good, Count = p => p.WeaponHits.TryGetValue(key, out int v) ? v : 0 };
+        private static Column Weapon(string label, string key, string setting) =>
+            new Column { Label = label, Group = "weapons", Width = COL_WIDTH_WEAPON_KILLS, Shown = () => ModConfig.Column(setting), Tone = Tone.Good, Count = p => p.WeaponHits.TryGetValue(key, out int v) ? v : 0 };
 
         private const float COL_WIDTH_ENEMY_KILLS = 100f;
         private const float COL_WIDTH_WEAPON_KILLS = 100f;
 
         private static readonly Column[] Columns = new Column[]
         {
-            Count("Total Offence", 100f, () => ModConfig.BigUIShowTotalOffence, Tone.Good, p => p.Kills + p.EnemyShieldsTakenDown),
-            Count("Friendly Hits", 100f, () => ModConfig.BigUIShowTotalFriendlyHits, Tone.Warm, p => p.FriendlyKills + p.FriendlyShieldsHit),
-            Count("Hits Taken", 90f, () => ModConfig.BigUIShowTotalHitsTaken, Tone.Bad, p => p.Deaths + p.ShieldsLost),
-            Count("Kills", 80f, () => ModConfig.BigUIShowKills, Tone.Good, p => p.Kills),
-            Count("Deaths", 90f, () => ModConfig.BigUIShowDeaths, Tone.Bad, p => p.Deaths),
-            Count("Max Kill Streak", 100f, () => ModConfig.BigUIShowMaxKillStreak, Tone.Good, p => p.MaxKillStreak),
-            Count("Kill Streak", 100f, () => ModConfig.BigUIShowCurrentKillStreak, Tone.Good, p => p.KillStreak),
-            Count("Max Solo Streak", 110f, () => ModConfig.BigUIShowMaxSoloKillStreak, Tone.Good, p => p.MaxKillStreakWhileSolo),
-            Count("Solo Streak", 110f, () => ModConfig.BigUIShowCurrentSoloKillStreak, Tone.Good, p => p.KillStreakWhileSolo),
-            Count("Friendly Kills", 110f, () => ModConfig.BigUIShowFriendlyKills, Tone.Warm, p => p.FriendlyKills),
-            Count("Enemy Shields", 110f, () => ModConfig.BigUIShowEnemyShields, Tone.Good, p => p.EnemyShieldsTakenDown),
-            Count("Shields Lost", 100f, () => ModConfig.BigUIShowShieldsLost, Tone.Bad, p => p.ShieldsLost),
-            Count("Friendly Shields", 110f, () => ModConfig.BigUIShowFriendlyShields, Tone.Warm, p => p.FriendlyShieldsHit),
-            Count("Wave Clutches", 110f, () => ModConfig.BigUIShowWaveClutches, Tone.Good, p => p.WaveClutches),
-            Duration("Alive Time", 120f, () => ModConfig.BigUIShowAliveTime, p => p.GetCurrentAliveTime()),
-            Count("Airborne Kills", 100f, () => false, Tone.Good, p => p.KillsWhileAirborne),
-            Count("Web Swings", 100f, () => ModConfig.BigUIShowWebSwings, Tone.Good, p => p.WebSwings),
-            Duration("Web Swing Time", 120f, () => ModConfig.BigUIShowWebSwingTime, p => p.GetCurrentWebSwingTime()),
-            Duration("Airborne Time", 120f, () => ModConfig.BigUIShowAirborneTime, p => p.GetCurrentAirborneTime()),
-            Count("Lava Deaths", 100f, () => ModConfig.BigUIShowLavaDeaths, Tone.Bad, p => p.LavaDeaths),
-            Count("Astral Returns", 110f, () => ModConfig.BigUIShowAstralReturns, Tone.Good, p => p.AstralReturns),
+            Count("Total Offence", 100f, "totalOffence", Tone.Good, p => p.Kills + p.EnemyShieldsTakenDown),
+            Count("Friendly Hits", 100f, "totalFriendlyHits", Tone.Warm, p => p.FriendlyKills + p.FriendlyShieldsHit),
+            Count("Hits Taken", 90f, "totalHitsTaken", Tone.Bad, p => p.Deaths + p.ShieldsLost),
+            Count("Kills", 80f, "kills", Tone.Good, p => p.Kills),
+            Count("Deaths", 90f, "deaths", Tone.Bad, p => p.Deaths),
+            Count("Max Kill Streak", 100f, "maxKillStreak", Tone.Good, p => p.MaxKillStreak),
+            Count("Kill Streak", 100f, "currentKillStreak", Tone.Good, p => p.KillStreak),
+            Count("Max Solo Streak", 110f, "maxSoloKillStreak", Tone.Good, p => p.MaxKillStreakWhileSolo),
+            Count("Solo Streak", 110f, "currentSoloKillStreak", Tone.Good, p => p.KillStreakWhileSolo),
+            Count("Friendly Kills", 110f, "friendlyKills", Tone.Warm, p => p.FriendlyKills),
+            Count("Enemy Shields", 110f, "enemyShields", Tone.Good, p => p.EnemyShieldsTakenDown),
+            Count("Shields Lost", 100f, "shieldsLost", Tone.Bad, p => p.ShieldsLost),
+            Count("Friendly Shields", 110f, "friendlyShields", Tone.Warm, p => p.FriendlyShieldsHit),
+            Count("Wave Clutches", 110f, "waveClutches", Tone.Good, p => p.WaveClutches),
+            Duration("Alive Time", 120f, "aliveTime", p => p.GetCurrentAliveTime()),
+            new Column { Label = "Airborne Kills", Width = 100f, Shown = () => false, Tone = Tone.Good, Count = p => p.KillsWhileAirborne },
+            Count("Web Swings", 100f, "webSwings", Tone.Good, p => p.WebSwings),
+            Duration("Web Swing Time", 120f, "webSwingTime", p => p.GetCurrentWebSwingTime()),
+            Duration("Airborne Time", 120f, "airborneTime", p => p.GetCurrentAirborneTime()),
+            Count("Lava Deaths", 100f, "lavaDeaths", Tone.Bad, p => p.LavaDeaths),
+            Count("Astral Returns", 110f, "astralReturns", Tone.Good, p => p.AstralReturns),
             new Column { Label = "Accuracy", Width = 110f, Shown = () => ModConfig.ShowAccuracy("overall"), Accuracy = p => p.ShootingAccuracy },
 
-            Enemy("Wasp", "Wasp", () => ModConfig.BigUIShowWaspKills),
-            Enemy("Wasp Cocoon", "Wasp Cocoon", () => ModConfig.BigUIShowWaspCocoonKills),
-            Enemy("Power Wasp", "Power Wasp", () => ModConfig.BigUIShowPowerWaspKills),
-            Enemy("Roller", "Roller", () => ModConfig.BigUIShowRollerKills),
-            Enemy("Whisp", "Whisp", () => ModConfig.BigUIShowWhispKills),
-            Enemy("Power Whisp", "Power Whisp", () => ModConfig.BigUIShowPowerWhispKills),
-            Enemy("Melee Whisp", "Melee Whisp", () => ModConfig.BigUIShowMeleeWhispKills),
-            Enemy("Power Melee Whisp", "Power Melee Whisp", () => ModConfig.BigUIShowPowerMeleeWhispKills),
-            Enemy("Khepri", "Khepri", () => ModConfig.BigUIShowKhepriKills),
-            Enemy("Power Khepri", "Power Khepri", () => ModConfig.BigUIShowPowerKhepriKills),
-            Enemy("Hornet Shaman", "Hornet Shaman", () => ModConfig.BigUIShowHornetShamanKills),
-            Enemy("Hornet", "Hornet", () => ModConfig.BigUIShowHornetKills),
+            Enemy("Wasp", "Wasp", "enemyKills.wasp"),
+            Enemy("Wasp Cocoon", "Wasp Cocoon", "enemyKills.waspCocoon"),
+            Enemy("Power Wasp", "Power Wasp", "enemyKills.powerWasp"),
+            Enemy("Roller", "Roller", "enemyKills.roller"),
+            Enemy("Whisp", "Whisp", "enemyKills.whisp"),
+            Enemy("Power Whisp", "Power Whisp", "enemyKills.powerWhisp"),
+            Enemy("Melee Whisp", "Melee Whisp", "enemyKills.meleeWhisp"),
+            Enemy("Power Melee Whisp", "Power Melee Whisp", "enemyKills.powerMeleeWhisp"),
+            Enemy("Khepri", "Khepri", "enemyKills.khepri"),
+            Enemy("Power Khepri", "Power Khepri", "enemyKills.powerKhepri"),
+            Enemy("Hornet Shaman", "Hornet Shaman", "enemyKills.hornetShaman"),
+            Enemy("Hornet", "Hornet", "enemyKills.hornet"),
 
-            Weapon("Shotgun", "Shotgun", () => ModConfig.BigUIShowShotgunKills),
-            Weapon("RailShot", "RailShot", () => ModConfig.BigUIShowRailShotKills),
-            Weapon("Death Cube", "DeathCube", () => ModConfig.BigUIShowDeathCubeKills),
-            Weapon("Death Ray", "DeathRay", () => ModConfig.BigUIShowDeathRayKills),
-            Weapon("Energy Ball", "EnergyBall", () => ModConfig.BigUIShowEnergyBallKills),
-            Weapon("Particle Blade", "Particle Blade", () => ModConfig.BigUIShowParticleBladeKills),
-            Weapon("Khepri Staff", "KhepriStaff", () => ModConfig.BigUIShowKhepriStaffKills),
-            Weapon("Laser Cannon", "Laser Cannon", () => ModConfig.BigUIShowLaserCannonKills),
-            Weapon("Laser Cube", "Laser Cube", () => ModConfig.BigUIShowLaserCubeKills),
-            Weapon("Saw Disc", "SawDisc", () => ModConfig.BigUIShowSawDiscKills),
-            Weapon("Explosions", "Explosions", () => ModConfig.BigUIShowExplosionKills),
+            Weapon("Shotgun", "Shotgun", "weaponKills.shotgun"),
+            Weapon("RailShot", "RailShot", "weaponKills.railShot"),
+            Weapon("Death Cube", "DeathCube", "weaponKills.deathCube"),
+            Weapon("Death Ray", "DeathRay", "weaponKills.deathRay"),
+            Weapon("Energy Ball", "EnergyBall", "weaponKills.energyBall"),
+            Weapon("Particle Blade", "Particle Blade", "weaponKills.particleBlade"),
+            Weapon("Khepri Staff", "KhepriStaff", "weaponKills.khepriStaff"),
+            Weapon("Laser Cannon", "Laser Cannon", "weaponKills.laserCannon"),
+            Weapon("Laser Cube", "Laser Cube", "weaponKills.laserCube"),
+            Weapon("Saw Disc", "SawDisc", "weaponKills.sawDisc"),
+            Weapon("Explosions", "Explosions", "weaponKills.explosions"),
         }.Concat(WeaponAccuracy.Weapons.Select(weapon => new Column
         {
             Label = weapon.Label + " Accuracy",

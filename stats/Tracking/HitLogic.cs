@@ -157,7 +157,7 @@ namespace StatsMod
         // from the last player who hit the enemy. Bumps from enemies, pulls and portals outside an attack don't.
         public static void OnEnemyHit(EnemyHealthSystem enemy, bool damage)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
             AccuracyTracker.EnemyHit(current.Source);
 
@@ -210,7 +210,7 @@ namespace StatsMod
         // its own attack) replaces that record, and so does a stun from an attack. Bumps outside an attack don't.
         public static void OnPlayerHit(SpiderHealthSystem spider, bool damage, bool stun)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             PlayerController victim = Players.Of(spider.rootObject);
             if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(current.Source, victim);
             int id = spider.GetInstanceID();
@@ -436,7 +436,7 @@ namespace StatsMod
 
         public static void OnEnemyDeath(EnemyHealthSystem enemy)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
 
@@ -482,7 +482,7 @@ namespace StatsMod
         // SpiderSurge's Black Hole removes the enemy without a death; the caster gets the kill
         public static void OnEnemySwallowed(EnemyHealthSystem enemy, PlayerController caster)
         {
-            if (enemy == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (enemy == null || !GameSessionManager.IsRecording) return;
             EnemiesTracker.Instance.IncrementEnemiesKilled();
 
             int id = enemy.GetInstanceID();
@@ -505,7 +505,7 @@ namespace StatsMod
 
         public static void OnEnemyShieldDestroyed(EnemyHealthSystem enemy)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             if (!TryGetRecentHit(lastEnemyHits, enemy.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
             Logger.LogDebug($"Recording shield hit on enemy {enemy.name} by {PlayerLabel(hit.Player)}");
@@ -515,7 +515,7 @@ namespace StatsMod
 
         public static void OnPlayerShieldBroken(SpiderHealthSystem spider)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             if (!TryGetRecentHit(lastPlayerHits, spider.GetInstanceID(), ShieldCreditWindow, out HitRecord hit)) return;
 
             PlayerController victim = Players.Of(spider.rootObject);
@@ -530,7 +530,7 @@ namespace StatsMod
 
         public static void OnPlayerDeath(SpiderHealthSystem spider)
         {
-            if (!Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (!GameSessionManager.IsRecording) return;
             // Lava and falling out of the map mark the spider as dying before it dies, a damage kill happens on the hit
             float? window = ReflectionCache.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
             if (!TryTakeHit(lastPlayerHits, spider.GetInstanceID(), window, out HitRecord hit, out _)) return;
@@ -574,7 +574,7 @@ namespace StatsMod
         // SpiderSurge's Black Hole kills the spider right after this, so its own death finds no hit to credit
         public static void OnPlayerSwallowed(SpiderHealthSystem spider, PlayerController caster)
         {
-            if (spider == null || !Net.IsAuthority || !GameSessionManager.Instance.IsActive) return;
+            if (spider == null || !GameSessionManager.IsRecording) return;
             lastPlayerHits.Remove(spider.GetInstanceID());
 
             PlayerController victim = Players.Of(spider.rootObject);

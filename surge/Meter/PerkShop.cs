@@ -267,7 +267,7 @@ namespace SpiderSurge
         // On the machine that asked; a refusal from the host comes with its reason, a local one is already on the panel
         public static void ShowRefused(ShopItem item, string reason)
         {
-            SoundManager.Instance?.PlaySound(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume);
+            SoundManager.Play(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady);
             if (!string.IsNullOrEmpty(reason)) Toast.Show($"{NameOf(item)}: {reason}", Color.white);
         }
 

@@ -63,23 +63,20 @@ namespace SpiderSurge
 
         public static class SoundVolumes
         {
-            public static float LuckyUpgrade = 1f;
-            public static float AbilityNotReady = 0.5f;
-            public static float AbilityReady = 1f;
-            public static float AmmoAbility = 0.75f;
-            public static float PulseAbility = 0.75f;
-            public static float PowerUp = 1f;
-            public static float ImmuneAbility = 0.9f;
-            public static float ImmuneUlt = 0.9f;
-            public static float StorageSend = 0.7f;
-            public static float StorageRetrieve = 0.7f;
-            public static float FreezeAbility = 0.8f;
-            public static float FreezeUlt = 0.7f;
-            public static float Unfreeze = 0.8f;
-            public static float AbilityEnded = 0.7f;
-
-            // Master volume multiplier
-            public static float MasterVolume = 1f;
+            public const float LuckyUpgrade = 1f;
+            public const float AbilityNotReady = 0.5f;
+            public const float AbilityReady = 1f;
+            public const float AmmoAbility = 0.75f;
+            public const float PulseAbility = 0.75f;
+            public const float PowerUp = 1f;
+            public const float ImmuneAbility = 0.9f;
+            public const float ImmuneUlt = 0.9f;
+            public const float StorageSend = 0.7f;
+            public const float StorageRetrieve = 0.7f;
+            public const float FreezeAbility = 0.8f;
+            public const float FreezeUlt = 0.7f;
+            public const float Unfreeze = 0.8f;
+            public const float AbilityEnded = 0.7f;
         }
 
         public static class Formatting
@@ -113,10 +110,6 @@ namespace SpiderSurge
             public const int MaxPayloadBytes = 32 * 1024;
         }
 
-        public static class ModUpdater
-        {
-            public const int RequestTimeoutMs = 5000;
-        }
 
         public static class Values
         {
@@ -462,12 +455,6 @@ namespace SpiderSurge
             {
                 public const float ComboWindow = 0.15f;
             }
-
-            public static class UI
-            {
-                public const string UltimateDisplayName = "<color=" + Formatting.ColorRed + ">Ultimate</color>";
-                public const string UltimateDefaultDescription = "<color=" + Formatting.ColorRed + ">Ultimate version of the ability.</color>";
-            }
         }
 
         public static class Descriptions
@@ -513,26 +500,14 @@ namespace SpiderSurge
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
             {
-                [PerkNames.ImmuneAbility] = "",
-                [PerkNames.AmmoAbility] = "",
-                [PerkNames.PulseAbility] = "",
-                [PerkNames.StorageAbility] = "",
-                [PerkNames.FreezeAbility] = "",
                 [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
                 [PerkNames.AbilityDuration] = "Increases ultimate duration",
-                [PerkNames.ShortTermInvestment] = "",
-                [PerkNames.LongTermInvestment] = "",
-                [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
-                [PerkNames.ImmuneAbilityUltimate] = "",
-                [PerkNames.AmmoAbilityUltimate] = "",
-                [PerkNames.PulseAbilityUltimate] = "",
-                [PerkNames.StorageAbilityUltimate] = "",
-                [PerkNames.FreezeAbilityUltimate] = ""
+                [PerkNames.PerkLuck] = "Increases chance to see level 2 perks."
             };
 
             // Custom display names for Duration perk based on active ability
-            private const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
-            private const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+            internal const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
+            internal const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
             private const string DURATION_NAME_WITH_FREEZE = "Deep Freeze";
 
             // Custom descriptions for Duration perk based on active ability
@@ -545,70 +520,40 @@ namespace SpiderSurge
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
             private static readonly string DURATION_UPGRADE_DESC_WITH_IMMUNE = $"Neural Backup casts {Values.Immune.UltimateDurationIncreasePerLevel:0.#} seconds faster";
 
+            // Duration perk texts per ability in check order, a null text skipped; kept below DURATION_UPGRADE_DESC_WITH_IMMUNE because static fields initialize in file order
+            private static readonly (string ability, string displayName, string description, string upgradeDescription)[] DurationTexts =
+            {
+                (PerkNames.PulseAbility, DURATION_NAME_WITH_PULSE, DURATION_DESC_WITH_PULSE, DURATION_UPGRADE_DESC_WITH_PULSE),
+                (PerkNames.StorageAbility, DURATION_NAME_WITH_STORAGE, DURATION_DESC_WITH_STORAGE, DURATION_UPGRADE_DESC_WITH_STORAGE),
+                (PerkNames.FreezeAbility, DURATION_NAME_WITH_FREEZE, DURATION_DESC_WITH_FREEZE, DURATION_UPGRADE_DESC_WITH_FREEZE),
+                (PerkNames.AmmoAbility, null, null, DURATION_UPGRADE_DESC_WITH_AMMO),
+                (PerkNames.ImmuneAbility, null, null, DURATION_UPGRADE_DESC_WITH_IMMUNE)
+            };
+
             public static string GetDisplayName(string name, PerksManager perksManager = null)
             {
-                if (perksManager != null && name == PerkNames.AbilityDuration)
-                {
-                    if (perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_PULSE;
-                    }
-                    if (perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_STORAGE;
-                    }
-                    if (perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
-                    {
-                        return DURATION_NAME_WITH_FREEZE;
-                    }
-                }
-                return displayNames.ContainsKey(name) ? displayNames[name] : name;
+                return DurationText(name, perksManager, texts => texts.displayName) ?? (displayNames.TryGetValue(name, out string text) ? text : name);
             }
 
             public static string GetDescription(string name, PerksManager perksManager)
             {
-                if (perksManager == null) return descriptions.ContainsKey(name) ? descriptions[name] : "";
-
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_PULSE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_STORAGE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
-                {
-                    return DURATION_DESC_WITH_FREEZE;
-                }
-                return descriptions.ContainsKey(name) ? descriptions[name] : "";
+                return DurationText(name, perksManager, texts => texts.description) ?? (descriptions.TryGetValue(name, out string text) ? text : "");
             }
 
             public static string GetUpgradeDescription(string name, PerksManager perksManager)
             {
-                if (perksManager == null) return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+                return DurationText(name, perksManager, texts => texts.upgradeDescription) ?? (upgradeDescriptions.TryGetValue(name, out string text) ? text : "");
+            }
 
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.PulseAbility) > 0)
+            private static string DurationText(string name, PerksManager perksManager, System.Func<(string ability, string displayName, string description, string upgradeDescription), string> pick)
+            {
+                if (perksManager == null || name != PerkNames.AbilityDuration) return null;
+                foreach (var texts in DurationTexts)
                 {
-                    return DURATION_UPGRADE_DESC_WITH_PULSE;
+                    string text = pick(texts);
+                    if (text != null && perksManager.GetPerkLevel(texts.ability) > 0) return text;
                 }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.StorageAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_STORAGE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.FreezeAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_FREEZE;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.AmmoAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_AMMO;
-                }
-                if (name == PerkNames.AbilityDuration && perksManager.GetPerkLevel(PerkNames.ImmuneAbility) > 0)
-                {
-                    return DURATION_UPGRADE_DESC_WITH_IMMUNE;
-                }
-                return upgradeDescriptions.ContainsKey(name) ? upgradeDescriptions[name] : "";
+                return null;
             }
         }
     }

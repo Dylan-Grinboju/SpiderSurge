@@ -169,7 +169,7 @@ namespace StatsMod
 
         private static void OnSnapshot(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }
@@ -266,7 +266,7 @@ namespace StatsMod
 
         private static void OnTitles(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
+            if (!Net.IsRemoteClient)
             {
                 return;
             }

@@ -17,25 +17,7 @@ namespace SpiderSurge.Logging
 
         private SpiderSurgeLogger()
         {
-            try
-            {
-                string gameDirectory = Path.GetDirectoryName(Application.dataPath);
-                if (string.IsNullOrEmpty(gameDirectory))
-                    gameDirectory = Environment.CurrentDirectory;
-
-                logDirectory = Path.Combine(gameDirectory, "Silk", "Logs", "SpiderSurge");
-
-                if (!Directory.Exists(logDirectory))
-                {
-                    Directory.CreateDirectory(logDirectory);
-                    Logger.LogInfo($"Created SpiderSurge log directory: {logDirectory}");
-                }
-            }
-            catch (Exception ex)
-            {
-                logDirectory = Environment.CurrentDirectory;
-                Logger.LogError($"Failed to create Silk/Logs/SpiderSurge directory, using current directory: {ex.Message}");
-            }
+            logDirectory = Common.LogFolder.Create("SpiderSurge", "SpiderSurge");
         }
 
         public void LogMatchStats(SpiderSurgeStatsSnapshot stats)

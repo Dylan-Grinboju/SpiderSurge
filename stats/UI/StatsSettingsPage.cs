@@ -79,7 +79,7 @@ namespace StatsMod
             page.Note("Time between title reveals at the end of a run. The titles key skips the reveal sequence.");
             page.Toggle("Save each run's stats to a file", Key("tracking.saveStatsToFile"));
             page.Note("Writes a local text report of the run's statistics. This is separate from match history and sharing anonymous reports.");
-            page.Toggle("Save match history", Key("tracking.saveHistory"));
+            page.Toggle("Save match history", ModConfig.SaveHistoryKey);
             page.Note("Keeps Survival and Versus results for Match history. Existing records remain available when this is off. No upload is required.");
 
             page.Spacer();

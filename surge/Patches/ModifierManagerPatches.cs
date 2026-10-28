@@ -2,7 +2,6 @@ using HarmonyLib;
 using Logger = Silk.Logger;
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Collections.Generic;
 using TMPro;
 
@@ -103,7 +102,7 @@ namespace SpiderSurge
             {
                 SoundManager.Instance.PlaySound(
                     Consts.SoundNames.PowerUp,
-                    Consts.SoundVolumes.PowerUp * Consts.SoundVolumes.MasterVolume
+                    Consts.SoundVolumes.PowerUp
                 );
                 PowerUpSoundPlayedThisSelection = true;
             }
@@ -113,16 +112,6 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalModifierChoiceCard), "SetupCard")]
     public class SurvivalModifierChoiceCard_SetupCard_Patch
     {
-        private static readonly FieldInfo _perkNameTextField;
-        private static readonly FieldInfo _perkDescriptionTextField;
-
-        static SurvivalModifierChoiceCard_SetupCard_Patch()
-        {
-            var t = typeof(SurvivalModifierChoiceCard);
-            _perkNameTextField = t.GetField("perkNameText", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            _perkDescriptionTextField = t.GetField("perkDescriptionText", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
         [HarmonyPostfix]
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
@@ -141,8 +130,8 @@ namespace SpiderSurge
 
             if (!isSurgePerk && !isLucky && !isSynergized) return;
 
-            var perkNameText = _perkNameTextField?.GetValue(__instance) as TMP_Text;
-            var perkDescriptionText = _perkDescriptionTextField?.GetValue(__instance) as TMP_Text;
+            TMP_Text perkNameText = __instance.perkNameText;
+            TMP_Text perkDescriptionText = __instance.perkDescriptionText;
 
             if (perkNameText == null) Logger.LogWarning($"[Surge] Could not find perkNameText for card {key}");
             if (perkDescriptionText == null) Logger.LogWarning($"[Surge] Could not find perkDescriptionText for card {key}");
@@ -427,12 +416,9 @@ namespace SpiderSurge
                 }
             }
 
-            if (anyLuckyPerk && !ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection && SoundManager.Instance != null)
+            if (anyLuckyPerk && !ModifierManager_SetModLevel_Patch.PowerUpSoundPlayedThisSelection)
             {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.LuckyUpgrade,
-                    Consts.SoundVolumes.LuckyUpgrade * Consts.SoundVolumes.MasterVolume
-                );
+                SoundManager.Play(Consts.SoundNames.LuckyUpgrade, Consts.SoundVolumes.LuckyUpgrade);
             }
 
             // The cards go out as a ClientRpc right after this, so clients need the lucky keys and phase first

@@ -10,24 +10,16 @@ namespace SpiderSurge.Patches
     [HarmonyPatch(typeof(WhispBrain), "LaunchChargeAttack")]
     public class WhispBrain_LaunchChargeAttack_Patch
     {
-        private static MethodInfo _stopChargeCosmeticsRpc;
-        private static MethodInfo _playAttackCosmeticsRpc;
-        private static FieldInfo _shotCooldownTillField;
-        private static FieldInfo _targetField;
-        private static FieldInfo _obstacleLayerField;
+        private static readonly MethodInfo _stopChargeCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
+        private static readonly MethodInfo _playAttackCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "PlayAttackCosmeticsClientRpc");
+        private static readonly FieldInfo _shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
+        private static readonly FieldInfo _targetField = AccessTools.Field(typeof(WhispBrain), "target"); // On EnemyBrain usually
 
         [HarmonyPrefix]
         public static bool Prefix(WhispBrain __instance)
         {
             if (!SurgeGameModeManager.IsSurgeRunActive) return true;
             if (!__instance.gameObject.activeSelf) return false;
-
-            // Initialize reflection cache
-            if (_stopChargeCosmeticsRpc == null) _stopChargeCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
-            if (_playAttackCosmeticsRpc == null) _playAttackCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "PlayAttackCosmeticsClientRpc");
-            if (_shotCooldownTillField == null) _shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
-            if (_targetField == null) _targetField = AccessTools.Field(typeof(WhispBrain), "target"); // On EnemyBrain usually
-            if (_obstacleLayerField == null) _obstacleLayerField = AccessTools.Field(typeof(WhispBrain), "obstacleLayer"); // On EnemyBrain
 
             _stopChargeCosmeticsRpc.Invoke(__instance, null);
 
@@ -36,7 +28,7 @@ namespace SpiderSurge.Patches
             if (target)
             {
                 float maxEngagementRange = __instance.maxEngagementRange;
-                LayerMask obstacleLayer = (LayerMask)_obstacleLayerField.GetValue(__instance);
+                LayerMask obstacleLayer = __instance.obstacleLayer;
 
                 RaycastHit2D hit = Physics2D.Raycast(__instance.transform.position, target.position - __instance.transform.position, maxEngagementRange * 2f, obstacleLayer);
                 if (!hit || hit.transform != target)

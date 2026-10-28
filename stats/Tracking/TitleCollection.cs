@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
@@ -205,7 +204,7 @@ public static class TitleCollection
         if (fields.Length != 4) return false;
         try
         {
-            name = Clean(Encoding.UTF8.GetString(Convert.FromBase64String(fields[0])));
+            name = Clean(ModData.Decode(fields[0]));
         }
         catch (FormatException)
         {
@@ -232,7 +231,7 @@ public static class TitleCollection
 
     private static string Format(string name, UnlockedTitle title)
     {
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(name)) + "\t"
+        return ModData.Encode(name) + "\t"
             + title.TimesEarned.ToString(CultureInfo.InvariantCulture) + "\t"
             + title.FirstEarnedUtc.Ticks.ToString(CultureInfo.InvariantCulture) + "\t"
             + title.LastEarnedUtc.Ticks.ToString(CultureInfo.InvariantCulture);

@@ -46,6 +46,11 @@ namespace SpiderSurge.Common
 
         public static bool Imported(string source) => Lines(ImportedSection).Contains(source);
 
+        // Free text such as a player name is stored as UTF-8 base64, so it can't break the line format
+        public static string Encode(string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+
+        public static string Decode(string field) => Encoding.UTF8.GetString(Convert.FromBase64String(field));
+
         // Replaces one section and keeps every other one, including those of parts that are turned off; with imported, the same save records that an older version's data moved in. False when the file couldn't be saved
         public static bool Write(string section, IEnumerable<string> lines, string imported = null)
         {

@@ -132,11 +132,8 @@ namespace SpiderSurge
                 {
                     SettingsPage.SetText(confirm._label, "");
                     var labelRect = confirm._label.rectTransform;
-                    labelRect.anchorMin = Vector2.zero;
-                    labelRect.anchorMax = Vector2.one;
                     labelRect.pivot = new Vector2(0.5f, 0.5f);
-                    labelRect.offsetMin = new Vector2(8f, 2f);
-                    labelRect.offsetMax = new Vector2(-8f, -2f);
+                    SettingsPage.Stretch(labelRect, new Vector2(8f, 2f), new Vector2(-8f, -2f));
                     confirm._label.fontSize = 13f;
                     confirm._label.alignment = TextAlignmentOptions.Center;
                     confirm._label.enableWordWrapping = false;

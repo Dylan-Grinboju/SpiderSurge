@@ -108,7 +108,7 @@ namespace SpiderSurge.Vfx
 
         public static ParticleSystem Create(Transform body, float radius, float core)
         {
-            var system = SurgeVfx.Stream(body, Vector3.zero, Consts.Values.Storage.RingColor, Color.white, 28f, 0f, 0f, 0.8f, 1.5f, 0.85f, radius, trails: true, radiusThickness: 0f);
+            var system = SurgeVfx.Stream(body, Consts.Values.Storage.RingColor, Color.white, 28f, 0f, 0f, 0.8f, 1.5f, 0.85f, radius, trails: true, radiusThickness: 0f);
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = system.main;
             main.simulationSpace = ParticleSystemSimulationSpace.Local;

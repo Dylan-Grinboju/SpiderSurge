@@ -21,26 +21,23 @@ namespace SpiderSurge
     public class EOSLeaderboards_GetRecordsText_Patch
     {
         [HarmonyPrefix]
-        public static bool Prefix(ref string __result)
-        {
-            if (SurgeGameModeManager.IsModeEnabled || SurgeGameModeManager.IsSurgeRunActive)
-            {
-                __result = "";
-                return false;
-            }
-            return true;
-        }
+        public static bool Prefix(ref string __result) => LeaderboardPatches.HideRecords(ref __result);
     }
 
     [HarmonyPatch(typeof(SonyLeaderboards), "GetRecordsText")]
     public class SonyLeaderboards_GetRecordsText_Patch
     {
         [HarmonyPrefix]
-        public static bool Prefix(ref string __result)
+        public static bool Prefix(ref string __result) => LeaderboardPatches.HideRecords(ref __result);
+    }
+
+    public static class LeaderboardPatches
+    {
+        public static bool HideRecords(ref string records)
         {
             if (SurgeGameModeManager.IsModeEnabled || SurgeGameModeManager.IsSurgeRunActive)
             {
-                __result = "";
+                records = "";
                 return false;
             }
             return true;

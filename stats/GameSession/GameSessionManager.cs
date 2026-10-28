@@ -48,6 +48,7 @@ namespace StatsMod
         private bool isMirrored;
 
         public bool IsActive => isSurvivalActive || isVersusActive;
+        public static bool IsRecording => Net.IsAuthority && Instance.IsActive;
         public GameMode CurrentGameMode => currentGameMode;
         public GameMode LastGameMode => lastGameMode;
         public string CurrentMapName => mapsPlayed.Count > 0 ? mapsPlayed[mapsPlayed.Count - 1] : "Unknown";
@@ -103,8 +104,7 @@ namespace StatsMod
             painLevel = -1;
 
             bool keepEndOfGameTitlesVisible = pauseAfterRestartOnNextSessionStart &&
-                                             TitlesManager.Instance.HasGameEndedTitles &&
-                                             TitlesManager.Instance.TitleCount > 0;
+                                             TitlesManager.Instance.HasGameEndedTitles;
 
             UIManager.OnGameSessionStarted(keepEndOfGameTitlesVisible);
 
@@ -168,8 +168,7 @@ namespace StatsMod
             int playerCount = statsSnapshot.ActivePlayers?.Count ?? 0;
             bool shouldShowTitles = ModConfig.TitlesEnabled &&
                                     playerCount > 1 &&
-                                    TitlesManager.Instance.HasGameEndedTitles &&
-                                    TitlesManager.Instance.TitleCount > 0;
+                                    TitlesManager.Instance.HasGameEndedTitles;
             int? newlyUnlocked = shouldShowTitles ? TitleCollection.Record(TitlesManager.Instance.CurrentTitles.Select(title => title.TitleName)) : null;
             TitlesManager.Instance.SetRunOutcome(shouldShowTitles, newlyUnlocked);
             MatchHistory.Complete(statsSnapshot, restartRequested);
@@ -236,7 +235,7 @@ namespace StatsMod
 
         public void RecordMap(string mapName)
         {
-            if (!IsActive || !Net.IsAuthority) return;
+            if (!IsRecording) return;
             if (string.IsNullOrEmpty(mapName)) return;
 
             mapsPlayed.Add(mapName);
@@ -244,7 +243,7 @@ namespace StatsMod
 
         public void RecordPerk(string perkName)
         {
-            if (!IsActive || !Net.IsAuthority) return;
+            if (!IsRecording) return;
             if (string.IsNullOrEmpty(perkName)) return;
 
             perksChosen.Add(perkName);
@@ -252,7 +251,7 @@ namespace StatsMod
 
         public void RecordPainLevel()
         {
-            if (!IsActive || !Net.IsAuthority) return;
+            if (!IsRecording) return;
 
             try
             {
@@ -390,8 +389,7 @@ namespace StatsMod
             }
 
             bool keepEndOfGameTitlesVisible = pauseAfterRestartOnNextSessionStart &&
-                                             TitlesManager.Instance.HasGameEndedTitles &&
-                                             TitlesManager.Instance.TitleCount > 0;
+                                             TitlesManager.Instance.HasGameEndedTitles;
             UIManager.OnGameSessionStarted(keepEndOfGameTitlesVisible);
             pauseAfterRestartOnNextSessionStart = false;
         }
@@ -401,8 +399,7 @@ namespace StatsMod
             int playerCount = playerTracker.GetActivePlayers().Count;
             bool shouldShowTitles = ModConfig.TitlesEnabled &&
                                     playerCount > 1 &&
-                                    TitlesManager.Instance.HasGameEndedTitles &&
-                                    TitlesManager.Instance.TitleCount > 0;
+                                    TitlesManager.Instance.HasGameEndedTitles;
 
             if (shouldShowTitles && ModConfig.ShowStatsWindow && remoteRestartRequested)
             {

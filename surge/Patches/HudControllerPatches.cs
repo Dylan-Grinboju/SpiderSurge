@@ -1,6 +1,6 @@
 using HarmonyLib;
 using Doozy.Engine.UI;
-using Unity.Netcode;
+using SpiderSurge.Common;
 using UnityEngine.UI;
 
 namespace SpiderSurge
@@ -11,7 +11,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(HudController __instance)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost)
+            if (!Net.IsHost)
             {
                 return true;
             }

@@ -44,11 +44,6 @@ namespace SpiderSurge
         private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();
         private const float ABILITY_NOT_READY_SOUND_COOLDOWN = 1f;
 
-        // Ability indicator settings
-        [Header("Ability Indicator")]
-        [SerializeField]
-        protected bool showIndicator = true;
-
         protected AbilityIndicator abilityIndicator;
 
         protected bool isUltimateActive = false;
@@ -65,13 +60,11 @@ namespace SpiderSurge
         // Override these in derived classes to enable Ultimate
         public virtual bool HasUltimate => false;
         public virtual string UltimatePerkName => $"{PerkName}Ultimate";
-        public virtual string UltimatePerkDisplayName => Consts.Values.UI.UltimateDisplayName;
-        public virtual string UltimatePerkDescription => Consts.Values.UI.UltimateDefaultDescription;
 
         // Cached buttons for unregistering when they change
         private string[] _cachedActivationButtons;
 
-        public virtual string[] ActivationButtons
+        public string[] ActivationButtons
         {
             get
             {
@@ -90,60 +83,35 @@ namespace SpiderSurge
         public virtual float UltimateDurationPerPerkLevel => 0f;
         public virtual float UltimateCooldownPerPerkLevel => 0f;
 
-        private float _cachedAbilityDuration;
-        private float _cachedAbilityCooldownTime;
-        private float _cachedUltimateDuration;
-        private float _cachedUltimateCooldownTime;
+        public virtual float AbilityDuration => PerkScaled(AbilityBaseDuration, AbilityDurationPerPerkLevel, false);
 
-        public virtual void UpdatePerkModifiers()
+        public float AbilityCooldownTime => PerkScaled(AbilityBaseCooldown, -AbilityCooldownPerPerkLevel, false, Consts.PerkNames.AbilityCooldown) * ChallengeController.CooldownMultiplier;
+
+        public virtual float UltimateDuration => PerkScaled(UltimateBaseDuration, UltimateDurationPerPerkLevel, true);
+
+        public float UltimateCooldownTime => PerkScaled(UltimateBaseCooldown, -UltimateCooldownPerPerkLevel, true, Consts.PerkNames.AbilityCooldown) * ChallengeController.CooldownMultiplier;
+
+        // The level perk adds step to an ability from level 1 and to an ultimate at level 2; Short Term Investment adds it to abilities and takes it from ultimates, Long Term the reverse
+        protected static float PerkScaled(float value, float step, bool ultimate, string levelPerk = Consts.PerkNames.AbilityDuration)
         {
-            int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-            int cooldownLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityCooldown) ?? 0;
-            int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-            int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+            PerksManager perks = PerksManager.Instance;
+            int level = perks?.GetPerkLevel(levelPerk) ?? 0;
+            int shortTermLevel = perks?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
+            int longTermLevel = perks?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
 
-            float duration = AbilityBaseDuration;
-            if (durationLevel >= 1) duration += AbilityDurationPerPerkLevel;
-            if (shortTermLevel > 0) duration += AbilityDurationPerPerkLevel;
-            if (longTermLevel > 0) duration -= AbilityDurationPerPerkLevel;
-            _cachedAbilityDuration = duration;
-
-            float cooldown = AbilityBaseCooldown;
-            if (cooldownLevel >= 1) cooldown -= AbilityCooldownPerPerkLevel;
-            if (shortTermLevel > 0) cooldown -= AbilityCooldownPerPerkLevel;
-            if (longTermLevel > 0) cooldown += AbilityCooldownPerPerkLevel;
-            _cachedAbilityCooldownTime = cooldown;
-
-            float uDuration = UltimateBaseDuration;
-            if (durationLevel == 2) uDuration += UltimateDurationPerPerkLevel;
-            if (shortTermLevel > 0) uDuration -= UltimateDurationPerPerkLevel;
-            if (longTermLevel > 0) uDuration += UltimateDurationPerPerkLevel;
-            _cachedUltimateDuration = uDuration;
-
-            float uCooldown = UltimateBaseCooldown;
-            if (cooldownLevel == 2) uCooldown -= UltimateCooldownPerPerkLevel;
-            if (shortTermLevel > 0) uCooldown += UltimateCooldownPerPerkLevel;
-            if (longTermLevel > 0) uCooldown -= UltimateCooldownPerPerkLevel;
-            _cachedUltimateCooldownTime = uCooldown;
+            float investment = ultimate ? -step : step;
+            if (ultimate ? level == 2 : level >= 1) value += step;
+            if (shortTermLevel > 0) value += investment;
+            if (longTermLevel > 0) value -= investment;
+            return value;
         }
 
-        public virtual float AbilityDuration => _cachedAbilityDuration;
-
-        public virtual float AbilityCooldownTime => _cachedAbilityCooldownTime * ChallengeController.CooldownMultiplier;
-
-        public virtual float UltimateDuration => _cachedUltimateDuration;
-
-        public virtual float UltimateCooldownTime => _cachedUltimateCooldownTime * ChallengeController.CooldownMultiplier;
+        // The perk values are computed when read, so there is nothing to refresh; QA's setup_game.py still calls this after granting a perk
+        public void UpdatePerkModifiers() { }
 
         protected virtual void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
-            UpdatePerkModifiers();
-        }
-
-        protected virtual void OnEnable()
-        {
-            UpdatePerkModifiers();
         }
 
         protected virtual void Start()
@@ -181,18 +149,11 @@ namespace SpiderSurge
             }
 
             // Perform delayed initialization
-            if (abilityIndicator == null && showIndicator && IsUnlocked())
-            {
-                CreateAbilityIndicator();
-            }
+            CreateAbilityIndicator();
 
-            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+            if (inputInterceptor != null && IsUnlocked())
             {
                 RegisterWithInputInterceptor();
-            }
-            else if (inputInterceptor == null && playerInput != null)
-            {
-                Logger.LogWarning($"InputInterceptor not found for {GetType().Name} on player {playerInput?.playerIndex} after waiting.");
             }
         }
 
@@ -253,30 +214,20 @@ namespace SpiderSurge
             action = null;
         }
 
-        private void OnComboFirstChanged(InputAction.CallbackContext context)
+        private void OnComboFirstChanged(InputAction.CallbackContext context) => OnComboChanged(context, ref comboFirstPressed, ref lastComboFirstPressTime);
+
+        private void OnComboSecondChanged(InputAction.CallbackContext context) => OnComboChanged(context, ref comboSecondPressed, ref lastComboSecondPressTime);
+
+        private void OnComboChanged(InputAction.CallbackContext context, ref bool comboPressed, ref float lastPressTime)
         {
             if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
             bool pressed = context.ReadValueAsButton();
-            if (pressed == comboFirstPressed) return;
+            if (pressed == comboPressed) return;
 
-            comboFirstPressed = pressed;
+            comboPressed = pressed;
             if (pressed)
             {
-                lastComboFirstPressTime = Time.time;
-                CheckCombo(context.control.device);
-            }
-        }
-
-        private void OnComboSecondChanged(InputAction.CallbackContext context)
-        {
-            if (context.control == null || !IsDeviceAssigned(context.control.device)) return;
-            bool pressed = context.ReadValueAsButton();
-            if (pressed == comboSecondPressed) return;
-
-            comboSecondPressed = pressed;
-            if (pressed)
-            {
-                lastComboSecondPressTime = Time.time;
+                lastPressTime = Time.time;
                 CheckCombo(context.control.device);
             }
         }
@@ -312,9 +263,9 @@ namespace SpiderSurge
             return false;
         }
 
-        protected virtual void CreateAbilityIndicator()
+        protected void CreateAbilityIndicator()
         {
-            if (!showIndicator || !IsUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
+            if (!IsUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
             {
                 return;
             }
@@ -324,10 +275,12 @@ namespace SpiderSurge
             abilityIndicator.Initialize(this, spiderHealthSystem.transform);
         }
 
-        public virtual void Activate()
-        {
-            UpdatePerkModifiers();
+        public void Activate() => TryActivate(false);
 
+        public void ActivateUltimate() => TryActivate(true);
+
+        private void TryActivate(bool ultimate)
+        {
             if (!IsUnlocked() || !AcceptsInput)
             {
                 return;
@@ -338,7 +291,12 @@ namespace SpiderSurge
                 return;
             }
 
-            if (!ChallengeController.CanActivate(false))
+            if (ultimate && !IsUltimateUnlocked())
+            {
+                return;
+            }
+
+            if (!ChallengeController.CanActivate(ultimate))
             {
                 return;
             }
@@ -355,27 +313,30 @@ namespace SpiderSurge
             }
 
             isActive = true;
-            activeDuration = AbilityDuration;
+            if (ultimate) isUltimateActive = true;
+            activeDuration = ultimate ? UltimateDuration : AbilityDuration;
             activeEndTime = Time.time + activeDuration;
-            OnActivate();
+            if (ultimate) OnActivateUltimate();
+            else OnActivate();
 
             if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
             {
-                SpiderSurgeStatsManager.Instance.LogAbilityActivation(PlayerId);
+                if (ultimate) SpiderSurgeStatsManager.Instance.LogUltimateActivation(PlayerId);
+                else SpiderSurgeStatsManager.Instance.LogAbilityActivation(PlayerId);
             }
-            SurgeNet.SendAbility(PlayerId, Kind, false);
+            SurgeNet.SendAbility(PlayerId, Kind, ultimate);
 
-            if (AbilityDuration > 0)
+            if ((ultimate ? UltimateDuration : AbilityDuration) > 0)
             {
                 if (durationCoroutine != null)
                 {
                     StopCoroutine(durationCoroutine);
                 }
-                durationCoroutine = StartCoroutine(AbilityDurationCoroutine());
+                durationCoroutine = StartCoroutine(DurationCoroutine(ultimate));
             }
         }
 
-        public virtual void Deactivate()
+        public void Deactivate()
         {
             if (isActive)
             {
@@ -389,63 +350,6 @@ namespace SpiderSurge
             }
         }
 
-        public virtual void ActivateUltimate()
-        {
-            UpdatePerkModifiers();
-
-            if (!IsUnlocked() || !AcceptsInput)
-            {
-                return;
-            }
-
-            if (!IsPlayerAlive())
-            {
-                return;
-            }
-
-            if (!IsUltimateUnlocked())
-            {
-                return;
-            }
-
-            if (!ChallengeController.CanActivate(true))
-            {
-                return;
-            }
-
-            if (onCooldown)
-            {
-                PlayAbilityNotReadySound();
-                return;
-            }
-
-            if (isActive)
-            {
-                return;
-            }
-
-            isActive = true;
-            isUltimateActive = true;
-            activeDuration = UltimateDuration;
-            activeEndTime = Time.time + activeDuration;
-            OnActivateUltimate();
-
-            if (IsAuthority && SpiderSurgeStatsManager.Instance != null)
-            {
-                SpiderSurgeStatsManager.Instance.LogUltimateActivation(PlayerId);
-            }
-            SurgeNet.SendAbility(PlayerId, Kind, true);
-
-            if (UltimateDuration > 0)
-            {
-                if (durationCoroutine != null)
-                {
-                    StopCoroutine(durationCoroutine);
-                }
-                durationCoroutine = StartCoroutine(UltimateDurationCoroutine());
-            }
-        }
-
         private bool AcceptsInput => !FrozenSpider.IsFrozen(spiderHealthSystem)
             && (fromNetwork ? GameMenus.AcceptRemotePlayerInput : GameMenus.AcceptPlayerInput);
 
@@ -455,14 +359,7 @@ namespace SpiderSurge
             fromNetwork = true;
             try
             {
-                if (ultimate)
-                {
-                    ActivateUltimate();
-                }
-                else
-                {
-                    Activate();
-                }
+                TryActivate(ultimate);
             }
             finally
             {
@@ -470,18 +367,18 @@ namespace SpiderSurge
             }
         }
 
-        public virtual bool IsPlayerAlive()
+        public bool IsPlayerAlive()
         {
             if (spiderHealthSystem == null) return false;
             return !spiderHealthSystem.dead && !spiderHealthSystem.astralDead;
         }
 
-        public virtual bool IsActive()
+        public bool IsActive()
         {
             return isActive;
         }
 
-        public virtual bool IsOnCooldown()
+        public bool IsOnCooldown()
         {
             return onCooldown;
         }
@@ -530,9 +427,8 @@ namespace SpiderSurge
             cooldownDuration *= factor;
         }
 
-        public void ForceStartCooldown(bool wasUltimate = false)
+        public void ForceStartCooldown()
         {
-            UpdatePerkModifiers();
             skipNextCooldown = false;
 
             if (cooldownCoroutine != null)
@@ -541,7 +437,7 @@ namespace SpiderSurge
                 cooldownCoroutine = null;
             }
 
-            float cooldown = wasUltimate ? UltimateCooldownTime : AbilityCooldownTime;
+            float cooldown = AbilityCooldownTime;
             if (cooldown <= 0f)
             {
                 onCooldown = false;
@@ -565,15 +461,10 @@ namespace SpiderSurge
             return HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
         }
 
-        protected virtual bool ShouldRegister()
-        {
-            return IsUnlocked();
-        }
-
         public void RegisterWithInputInterceptor()
         {
             CreateAbilityIndicator();
-            if (inputInterceptor != null && ShouldRegister() && ActivationButtons != null)
+            if (inputInterceptor != null && IsUnlocked())
             {
                 _cachedActivationButtons = ActivationButtons;
                 Logger.LogDebug($"[{GetType().Name}] Registering buttons: {string.Join(", ", _cachedActivationButtons)}");
@@ -585,9 +476,9 @@ namespace SpiderSurge
                     }
                 }
             }
-            else
+            else if (inputInterceptor == null && playerInput != null)
             {
-                if (inputInterceptor == null && playerInput != null) Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
+                Logger.LogWarning($"[{GetType().Name}] InputInterceptor is null!");
             }
         }
 
@@ -601,20 +492,10 @@ namespace SpiderSurge
                 return;
             }
 
-            // Unregister old bindings using cached buttons
-            if (_cachedActivationButtons != null)
-            {
-                foreach (string button in _cachedActivationButtons)
-                {
-                    if (!string.IsNullOrEmpty(button))
-                    {
-                        inputInterceptor.UnregisterAbility(this, button);
-                    }
-                }
-            }
+            UnregisterButtons();
 
             // Re-register with new bindings if ability is still unlocked
-            if (ShouldRegister())
+            if (IsUnlocked())
             {
                 RegisterWithInputInterceptor();
             }
@@ -624,11 +505,30 @@ namespace SpiderSurge
             }
         }
 
+        // Unregister old bindings using cached buttons
+        private void UnregisterButtons()
+        {
+            if (inputInterceptor == null || _cachedActivationButtons == null) return;
+            foreach (string button in _cachedActivationButtons)
+            {
+                if (!string.IsNullOrEmpty(button))
+                {
+                    inputInterceptor.UnregisterAbility(this, button);
+                }
+            }
+        }
+
         protected abstract void OnActivate();
         protected virtual void OnDeactivate() { }
         protected virtual void OnActivateUltimate() { OnActivate(); }
         protected virtual void OnDeactivateUltimate() { }
         protected virtual bool ShouldPlayAbilityEndedSound(bool wasUltimate) { return true; }
+
+        // Only the caster's own machine plays the sound
+        protected void PlayCasterSound(string soundName, float volume)
+        {
+            if (!IsRemote) SoundManager.Play(soundName, volume);
+        }
 
         private void PlayAbilityNotReadySound()
         {
@@ -645,42 +545,19 @@ namespace SpiderSurge
             if (Time.time - lastSoundTime >= ABILITY_NOT_READY_SOUND_COOLDOWN)
             {
                 lastAbilityNotReadySoundTimeByPlayer[playerId] = Time.time;
-                SoundManager.Instance?.PlaySound(
-                        Consts.SoundNames.AbilityNotReady,
-                        Consts.SoundVolumes.AbilityNotReady * Consts.SoundVolumes.MasterVolume
-                    );
+                SoundManager.Play(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady);
             }
         }
 
         protected virtual void PlayAbilityEndedSound(bool wasUltimate)
         {
-            SoundManager.Instance?.PlaySound(
-                Consts.SoundNames.AbilityEnded,
-                Consts.SoundVolumes.AbilityEnded * Consts.SoundVolumes.MasterVolume
-            );
+            SoundManager.Play(Consts.SoundNames.AbilityEnded, Consts.SoundVolumes.AbilityEnded);
         }
 
-        private IEnumerator AbilityDurationCoroutine()
+        private IEnumerator DurationCoroutine(bool ultimate)
         {
             bool wasUltimate = isUltimateActive;
-            yield return new WaitForSeconds(AbilityDuration);
-
-            if (isActive)
-            {
-                Deactivate();
-                if (!IsRemote && ShouldPlayAbilityEndedSound(wasUltimate))
-                {
-                    PlayAbilityEndedSound(wasUltimate);
-                }
-            }
-
-            StartCooldown(wasUltimate);
-        }
-
-        private IEnumerator UltimateDurationCoroutine()
-        {
-            bool wasUltimate = isUltimateActive;
-            yield return new WaitForSeconds(UltimateDuration);
+            yield return new WaitForSeconds(ultimate ? UltimateDuration : AbilityDuration);
 
             if (isActive)
             {
@@ -696,8 +573,6 @@ namespace SpiderSurge
 
         protected void StartCooldown(bool wasUltimate = false)
         {
-            UpdatePerkModifiers();
-
             if (skipNextCooldown)
             {
                 skipNextCooldown = false;
@@ -734,27 +609,12 @@ namespace SpiderSurge
                     ReadyVfx.Pulse(abilityIndicator.transform.position, abilityIndicator.availableColor);
             }
 
-            if (SoundManager.Instance != null && IsUnlocked() && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.AbilityReady,
-                    Consts.SoundVolumes.AbilityReady * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            if (IsUnlocked()) PlayCasterSound(Consts.SoundNames.AbilityReady, Consts.SoundVolumes.AbilityReady);
         }
 
         protected virtual void OnDestroy()
         {
-            if (inputInterceptor != null && _cachedActivationButtons != null)
-            {
-                foreach (string button in _cachedActivationButtons)
-                {
-                    if (!string.IsNullOrEmpty(button))
-                    {
-                        inputInterceptor.UnregisterAbility(this, button);
-                    }
-                }
-            }
+            UnregisterButtons();
 
             TearDownUltimateInputs();
 

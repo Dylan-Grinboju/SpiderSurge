@@ -81,8 +81,6 @@ namespace SpiderSurge.Common
 
         public static bool IsOpen => _open != null && _open._menu != null && _open._view.IsVisible;
 
-        public static bool IsShowingTree(string page) => IsOpen && (_open.Current == page || _open.Current.StartsWith(page + "."));
-
         public static bool IsShowing(string page) => IsOpen && _open.Current == page;
 
         internal static bool ScrollingHelp(Selectable control)
@@ -917,6 +915,15 @@ namespace SpiderSurge.Common
                 DestroyImmediate(localize);
             }
             text.text = value;
+        }
+
+        // Anchors a rect to its parent, whole by default, with the given edge offsets
+        internal static void Stretch(RectTransform rect, Vector2 min, Vector2 max, Vector2? anchorMin = null, Vector2? anchorMax = null)
+        {
+            rect.anchorMin = anchorMin ?? Vector2.zero;
+            rect.anchorMax = anchorMax ?? Vector2.one;
+            rect.offsetMin = min;
+            rect.offsetMax = max;
         }
 
         private static string Format(float value, float step, string unit)

@@ -23,8 +23,6 @@ namespace SpiderSurge
 
         public override bool HasUltimate => true;
         public override string UltimatePerkName => Consts.PerkNames.FreezeAbilityUltimate;
-        public override string UltimatePerkDisplayName => "Rewind";
-        public override string UltimatePerkDescription => "Turns back time on nearby enemies, turning them into wasps. Shielded enemies keep their shield.";
 
         private static readonly Dictionary<string, GameObject> EnemyPrefabs = new Dictionary<string, GameObject>();
         private static readonly RaycastHit2D[] WallHit = new RaycastHit2D[1];
@@ -60,48 +58,14 @@ namespace SpiderSurge
             }
         }
 
-        public float FreezeRange
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
+        public float FreezeRange => PerkScaled(Consts.Values.Freeze.AbilityBaseRange, Consts.Values.Freeze.AbilityRangeIncreasePerLevel, false);
 
-                float range = Consts.Values.Freeze.AbilityBaseRange;
-                if (durationLevel >= 1) range += Consts.Values.Freeze.AbilityRangeIncreasePerLevel;
-                if (shortTermLevel > 0) range += Consts.Values.Freeze.AbilityRangeIncreasePerLevel;
-                if (longTermLevel > 0) range -= Consts.Values.Freeze.AbilityRangeIncreasePerLevel;
-                return range;
-            }
-        }
-
-        public float RewindRange
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-
-                float range = Consts.Values.Freeze.UltimateBaseRange;
-                if (durationLevel == 2) range += Consts.Values.Freeze.UltimateRangeIncreasePerLevel;
-                if (shortTermLevel > 0) range -= Consts.Values.Freeze.UltimateRangeIncreasePerLevel;
-                if (longTermLevel > 0) range += Consts.Values.Freeze.UltimateRangeIncreasePerLevel;
-                return range;
-            }
-        }
+        public float RewindRange => PerkScaled(Consts.Values.Freeze.UltimateBaseRange, Consts.Values.Freeze.UltimateRangeIncreasePerLevel, true);
 
         // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when targets thaw.
         protected override void OnActivate()
         {
-            if (!IsRemote)
-            {
-                SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.FreezeAbility,
-                    Consts.SoundVolumes.FreezeAbility * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.FreezeAbility, Consts.SoundVolumes.FreezeAbility);
 
             _frozeAny = false;
             if (spiderHealthSystem == null) return;
@@ -109,10 +73,7 @@ namespace SpiderSurge
             Vector2 origin = spiderHealthSystem.transform.position;
             float range = FreezeRange;
             SpawnRing(origin, range);
-            if (Net.IsHost)
-            {
-                SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, origin, range, false);
-            }
+            SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, origin, range, false);
 
             if (!IsAuthority) return;
 
@@ -144,23 +105,14 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            if (!IsRemote)
-            {
-                SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.FreezeUlt,
-                    Consts.SoundVolumes.FreezeUlt * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.FreezeUlt, Consts.SoundVolumes.FreezeUlt);
 
             if (spiderHealthSystem != null)
             {
                 Transform body = spiderHealthSystem.transform;
                 float range = RewindRange;
                 SpawnRewindRing(body, range);
-                if (Net.IsHost)
-                {
-                    SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, body.position, range, true);
-                }
+                SurgeNet.SendFx(SurgeFx.Freeze, PlayerId, body.position, range, true);
 
                 if (IsAuthority)
                 {

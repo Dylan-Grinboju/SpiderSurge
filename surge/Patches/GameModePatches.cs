@@ -12,21 +12,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix()
         {
-            if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
-            {
-                SurgeGameModeManager.Instance.SetActive(false);
-
-                if (PerksManager.Instance != null)
-                {
-                    PerksManager.Instance.ResetPerks();
-                }
-            }
-
-            StoragePersistenceManager.ClearAllStoredWeapons();
-            ChaosWallet.ResetRun();
-            PerkShopPanel.Clear();
-            PerkConfirmButton.Clear();
-            PerkHint.Clear();
+            SurgeGameModeManager.EndRun(false);
         }
     }
 
@@ -38,20 +24,7 @@ namespace SpiderSurge
         {
             if (scene.name == "Lobby")
             {
-                if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive)
-                {
-                    SurgeGameModeManager.Instance.SetActive(false);
-
-                    PerksManager.Instance?.ResetPerks();
-                }
-
-                StoragePersistenceManager.ClearAllStoredWeapons();
-                ChaosWallet.ResetRun();
-                PerkShopPanel.Clear();
-                PerkConfirmButton.Clear();
-                PerkHint.Clear();
-
-                SurgeGameModeManager.SelectMode(false);
+                SurgeGameModeManager.EndRun(true);
                 SurgeLobbyPlatform.EnsureCreated();
             }
         }

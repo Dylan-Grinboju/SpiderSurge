@@ -86,8 +86,8 @@ namespace SpiderSurge.Common
         private static readonly List<HistoryPlayer> departed = new List<HistoryPlayer>();
         private static readonly PropertyInfo[] Numbers = typeof(PlayerTracker.PlayerData).GetProperties()
             .Where(p => p.PropertyType == typeof(int) || p.PropertyType == typeof(float))
-            .Where(p => p.Name != "PlayerId" && p.Name != "JoinTime" && p.Name != "TotalAliveTime" && p.Name != "WebSwingTime" && p.Name != "AirborneTime").ToArray();
-        public static bool Enabled => Parts.Stats.Running && Settings.GetBool("stats.tracking.saveHistory");
+            .Where(p => p.Name != "PlayerId" && p.Name != "TotalAliveTime" && p.Name != "WebSwingTime" && p.Name != "AirborneTime").ToArray();
+        public static bool Enabled => Parts.Stats.Running && Settings.GetBool(StatsMod.ModConfig.SaveHistoryKey);
 
         public static void Begin()
         {
@@ -131,8 +131,7 @@ namespace SpiderSurge.Common
                     Mode = survival ? "survival" : "versus", Surge = survival ? SurgeGameModeManager.IsSurgeRunActive : surgeVersus,
                     Seconds = snapshot.LastGameDuration.TotalSeconds, Pain = snapshot.PainLevel,
                     Wave = survival && SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : 0,
-                    Outcome = restarted ? "Restarted" : survival ? (completedSurvival ? "Completed" : SurvivalMode.instance != null && SurvivalMode.instance.Lives <= 0 ? "Lost" : "Quit") : "Ended",
-                    Players = string.Join(", ", snapshot.ActivePlayers.Values.Select(p => p.PlayerName))
+                    Outcome = restarted ? "Restarted" : survival ? (completedSurvival ? "Completed" : SurvivalMode.instance != null && SurvivalMode.instance.Lives <= 0 ? "Lost" : "Quit") : "Ended"
                 };
                 var match = new HistoryMatch { Summary = summary, Maps = snapshot.MapsPlayed.ToList(), Perks = snapshot.PerksChosen.ToList(), SurgeStats = surge, EnemiesKilled = snapshot.EnemiesKilled };
                 bool teams = !survival && SpiderTeams.TeamManager.TeamMatchActive;

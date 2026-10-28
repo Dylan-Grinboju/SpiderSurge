@@ -129,12 +129,12 @@ namespace StatsMod
         {
             if (!UIManager.CanShowTitles) return;
             isDisplayVisible = true;
-            if (TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0 && !hasAnimationPlayed)
+            if (TitlesManager.Instance.HasGameEndedTitles && !hasAnimationPlayed)
             {
                 StartAnimation();
                 hasAnimationPlayed = true;
             }
-            else if (TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0)
+            else if (TitlesManager.Instance.HasGameEndedTitles)
             {
                 titlesToShow = TitlesManager.Instance.TitleCount;
             }
@@ -157,14 +157,6 @@ namespace StatsMod
             StopAnimation();
         }
 
-        public void ToggleDisplay()
-        {
-            if (isDisplayVisible)
-                HideDisplay();
-            else
-                ShowDisplay();
-        }
-
         public bool IsVisible()
         {
             return isDisplayVisible && UIManager.CanShowTitles;
@@ -183,27 +175,6 @@ namespace StatsMod
                 isAnimating = false;
                 ShowAllCards();
             }
-        }
-
-        public void ClearTitlesForNewGame()
-        {
-            TitlesManager.Instance.ClearTitles();
-            titlesToShow = 0;
-            isAnimating = false;
-            hasAnimationPlayed = false;
-        }
-
-        public void ResetRevealAnimationForCurrentTitles()
-        {
-            if (!TitlesManager.Instance.HasGameEndedTitles || TitlesManager.Instance.TitleCount == 0)
-            {
-                return;
-            }
-
-            isAnimating = false;
-            hasAnimationPlayed = false;
-            titlesToShow = 0;
-            animationTimer = 0f;
         }
         #endregion
 
@@ -270,15 +241,6 @@ namespace StatsMod
         }
         #endregion
 
-        #region Public Methods
-
-        public List<TitleEntry> GetCurrentTitles()
-        {
-            return TitlesManager.Instance.CurrentTitles;
-        }
-
-        #endregion
-
         #region Style Management
         private void InitializeStyles()
         {
@@ -320,7 +282,7 @@ namespace StatsMod
 
             Hud.Fill(new Rect(0f, 0f, Screen.width, Screen.height), Hud.Dimmer);
 
-            bool hasTitles = TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0;
+            bool hasTitles = TitlesManager.Instance.HasGameEndedTitles;
             if (_cachedTitles == null) _cachedTitles = TitlesManager.Instance.CurrentTitles;
             int titleCount = hasTitles ? Mathf.Min(_cachedTitles.Count, MAX_TITLES) : 0;
             int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;

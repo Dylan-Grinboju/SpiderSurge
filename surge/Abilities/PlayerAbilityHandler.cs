@@ -49,7 +49,7 @@ namespace SpiderSurge
 
             try
             {
-                if (SurgeGameModeManager.Instance == null || !SurgeGameModeManager.Instance.IsActive)
+                if (!SurgeGameModeManager.IsSurgeRunActive)
                 {
                     return;
                 }
