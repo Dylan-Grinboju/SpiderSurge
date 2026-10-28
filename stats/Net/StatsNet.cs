@@ -100,6 +100,7 @@ namespace StatsMod
         private static void OnJoinedHost()
         {
             RunRecap.Clear();
+            RunRecap.Begin();
             GameSessionManager.Instance.ClearRemote();
             TitlesManager.Instance.ClearTitles();
         }
