@@ -98,7 +98,6 @@ namespace SpiderSurge
             if (reward > 0)
             {
                 ChaosWallet.GrantPoints(reward, ChaosRules.Name(completed));
-                ChaosNet.Announce($"{ChaosRules.Name(completed)}: {ChaosRules.Points(reward, signed: true)}");
             }
             WagerFailed = false;
             ChaosWallet.Notify();
@@ -229,13 +228,13 @@ namespace SpiderSurge
         static bool Prefix() => !ChallengeController.Pending;
     }
 
-    // The game only pauses while it takes input, which the offer turns off. The offer has no countdown, so every machine can still open the pause menu, for instance to leave
+    // Choices disable gameplay input, but every machine can still open the menu to change settings or leave.
     [HarmonyPatch(typeof(GameController), nameof(GameController.CanBePaused))]
     internal static class ChallengePausePatch
     {
         static void Postfix(GameController __instance, ref bool __result)
         {
-            if (!__result && ChallengeController.Pending && !__instance.tempPauseBan) __result = true;
+            if (!__result && (ChallengeController.Pending || PerkChoiceMenu.Choosing) && !__instance.tempPauseBan) __result = true;
         }
     }
 

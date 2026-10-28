@@ -84,6 +84,7 @@ namespace SpiderSurge
                 float entryHeight = count > 0 ? Mathf.Clamp((height - M.WalletBlockHeight - M.BuyHeight - count * M.EntrySpacing) / count, M.MinEntryHeight, M.MaxEntryHeight) : 0f;
                 panel.Populate(entryHeight);
                 panel.LinkNavigation();
+                PerkChoiceMenu.LinkNavigation(hud);
                 panel.Refresh();
                 if (panel.isActiveAndEnabled) panel.StartCoroutine(panel.ReselectNextFrame());
                 PerkConfirmButton.Current?.Reposition();
@@ -457,7 +458,7 @@ namespace SpiderSurge
             int points = ChaosWallet.Points;
             if (_header != null)
             {
-                _header.text = $"Team chaos points: <color={Consts.Formatting.ColorGold}>{points}</color>";
+                _header.text = $"chaos point: <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -465,26 +466,57 @@ namespace SpiderSurge
                 int cost = PerkShop.CostOf(entry.Item);
                 string unavailable = PerkShop.Unavailable(entry.Item);
                 bool can = points >= cost && unavailable == null;
+                Modifier purchased = entry.Item == ShopItem.Perk ? PerkShop.PurchasedPerk : null;
+                bool revealed = purchased?.data != null;
+                LayoutEntry(entry, revealed);
                 if (entry == _selected) selectedCan = can;
-                float alpha = can ? 1f : 0.45f;
+                float alpha = can || revealed ? 1f : 0.45f;
                 if (entry.Title != null)
                 {
-                    entry.Title.text = $"<color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(entry.Item)}</color>  {PerkShop.NameOf(entry.Item)}";
+                    entry.Title.text = revealed ? PerkShop.DisplayNameOfPerk(purchased.data.key)
+                        : $"<color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(entry.Item)}</color>  {PerkShop.NameOf(entry.Item)}";
                     entry.Title.color = PerkChoiceWidget.Faded(entry.Title.color, alpha);
                 }
                 if (entry.Description != null)
                 {
-                    entry.Description.text = unavailable ?? (points < cost ? $"Need {cost - points} more point{(cost - points == 1 ? "" : "s")}" : PerkShop.DescriptionOf(entry.Item));
+                    entry.Description.text = revealed ? PurchasedDescription(purchased)
+                        : unavailable ?? (points < cost ? $"Need {cost - points} more point{(cost - points == 1 ? "" : "s")}" : PerkShop.DescriptionOf(entry.Item));
                     entry.Description.color = PerkChoiceWidget.Faded(entry.Description.color, alpha);
                 }
-                if (entry.Icon != null) entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);
+                if (entry.Icon != null)
+                {
+                    entry.Icon.sprite = revealed ? purchased.data.icon : IconLoader.GetIcon(PerkShop.IconOf(entry.Item));
+                    entry.Icon.color = PerkChoiceWidget.Faded(Color.white, alpha);
+                }
                 if (entry.Background != null)
                 {
                     Color tint = entry == _selected ? M.LockedCardTint : Color.white;
-                    entry.Background.color = PerkChoiceWidget.Faded(tint, can ? 1f : 0.6f);
+                    entry.Background.color = PerkChoiceWidget.Faded(tint, can || revealed ? 1f : 0.6f);
                 }
             }
             RefreshBuy(selectedCan);
+        }
+
+        private static void LayoutEntry(Entry entry, bool revealed)
+        {
+            if (entry.Button == null) return;
+            float height = ((RectTransform)entry.Button.transform).rect.height;
+            float iconSize = revealed ? 24f : Mathf.Min(height - 16f, 56f);
+            float textLeft = 8f + iconSize + 10f;
+            if (entry.Icon != null)
+            {
+                entry.Icon.rectTransform.sizeDelta = new Vector2(iconSize, iconSize);
+                entry.Icon.rectTransform.anchoredPosition = new Vector2(8f, revealed ? height / 2f - 18f : 0f);
+            }
+            if (entry.Title != null) entry.Title.rectTransform.offsetMin = new Vector2(textLeft, height - 30f);
+            if (entry.Description != null) entry.Description.rectTransform.offsetMin = new Vector2(revealed ? 8f : textLeft, 6f);
+        }
+
+        private static string PurchasedDescription(Modifier perk)
+        {
+            var perks = PerksManager.Instance;
+            return perks != null && perks.GetAllPerkNames().Contains(perk.data.key)
+                ? perks.GetDescription(perk.data.key) : (string)perk.data.description;
         }
 
         private void RefreshBuy(bool selectedCan)
@@ -501,6 +533,7 @@ namespace SpiderSurge
             if (_buyLabel != null)
             {
                 _buyLabel.text = _selected == null ? "Pick an item to buy"
+                    : _selected.Item == ShopItem.Perk && PerkShop.PurchasedPerk != null ? "Purchased"
                     : $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
                 _buyLabel.color = PerkChoiceWidget.Faded(_buyLabel.color, can ? 1f : 0.5f);
             }

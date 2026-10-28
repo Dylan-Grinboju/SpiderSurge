@@ -92,7 +92,7 @@ namespace SpiderSurge
             }
         }
 
-        // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when enemies thaw
+        // The ability stays active for the freeze time, so the indicator shows it and the cooldown starts when targets thaw.
         protected override void OnActivate()
         {
             if (!IsRemote)
@@ -126,6 +126,7 @@ namespace SpiderSurge
                     _frozeAny = true;
                 }
             }
+            if (FrozenSpider.FreezeAround(origin, range, duration, PlayerId)) _frozeAny = true;
             FrozenShot.FreezeAround(origin, range, duration);
         }
 

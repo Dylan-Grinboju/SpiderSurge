@@ -78,7 +78,8 @@ namespace SpiderSurge
                 _indicator.UpdateActiveMods();
             }
 
-            bool choosing = SurgeGameModeManager.IsSurgeRunActive && (_hud.perkChoiceView.IsVisible || _hud.perkChoiceView.IsShowing);
+            bool choosing = SurgeGameModeManager.IsSurgeRunActive && (HudController.instance == null || !HudController.instance.paused)
+                && (_hud.perkChoiceView.IsVisible || _hud.perkChoiceView.IsShowing);
             if (!choosing)
             {
                 Restore();

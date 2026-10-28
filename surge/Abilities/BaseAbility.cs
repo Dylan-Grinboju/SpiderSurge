@@ -446,7 +446,8 @@ namespace SpiderSurge
             }
         }
 
-        private bool AcceptsInput => fromNetwork ? GameMenus.AcceptRemotePlayerInput : GameMenus.AcceptPlayerInput;
+        private bool AcceptsInput => !FrozenSpider.IsFrozen(spiderHealthSystem)
+            && (fromNetwork ? GameMenus.AcceptRemotePlayerInput : GameMenus.AcceptPlayerInput);
 
         // The host runs a client's request through the same checks its own press would pass, except for the host's own menus
         public void ActivateFromNetwork(bool ultimate)

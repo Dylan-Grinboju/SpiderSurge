@@ -38,6 +38,17 @@ namespace SpiderSurge
         public static event Action OfferChanged;
         public static int VisitId { get; private set; }
         public static int PurchasedMask { get; private set; }
+        public static string PurchasedPerkKey { get; private set; } = "";
+        public static Modifier PurchasedPerk
+        {
+            get
+            {
+                var manager = ModifierManager.instance;
+                if (!SoldOut(ShopItem.Perk) || string.IsNullOrEmpty(PurchasedPerkKey) || manager == null) return null;
+                int id = manager.GetModId(PurchasedPerkKey);
+                return id >= 0 ? manager.GetModById(id) : null;
+            }
+        }
         public static int BonusSlot { get; private set; } = -1;
         public static bool BonusPaid { get; private set; }
         private static int _visitWave = -1;
@@ -52,6 +63,7 @@ namespace SpiderSurge
             _visitWave = wave;
             VisitId++;
             PurchasedMask = 0;
+            PurchasedPerkKey = "";
             BonusPaid = false;
             BonusSlot = ChaosRules.BonusSlot(UnityEngine.Random.value, upcoming.Count, UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count)));
             RollOffer(upcoming);
@@ -85,19 +97,21 @@ namespace SpiderSurge
         {
             VisitId++;
             PurchasedMask = 0;
+            PurchasedPerkKey = "";
             BonusSlot = -1;
             BonusPaid = false;
             _visitWave = -1;
             SetOffer(new ShopItem[0]);
         }
 
-        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer)
+        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer, string purchasedPerk)
         {
             if (!Net.IsRemoteClient) return;
             // The cards can show before this state arrives, so the bonus label follows the state too
             bool relabel = visit != VisitId || bonus != BonusSlot;
             VisitId = visit;
             PurchasedMask = purchased;
+            PurchasedPerkKey = purchasedPerk ?? "";
             BonusSlot = bonus;
             BonusPaid = paid;
             SetOffer(offer ?? new ShopItem[0]);
@@ -327,6 +341,7 @@ namespace SpiderSurge
             }
             string title = string.IsNullOrEmpty(perk.data.title) ? perk.data.key : perk.data.title;
             StatsMod.GameSessionManager.Instance?.RecordPerk(title + " (shop)");
+            PurchasedPerkKey = perk.data.key;
             return perk.data.key;
         }
 
@@ -391,6 +406,7 @@ namespace SpiderSurge
         // A popup on this machine only; the host sends every client the same purchase
         public static void ShowBought(ShopItem item, int buyerId, string detail)
         {
+            if (item == ShopItem.Sacrifice) return;
             if (item == ShopItem.Perk) PerkChoiceHud.RefreshPerks();
             string who = buyerId >= 0 ? Players.NameOf(buyerId) : "The team";
             string what;
@@ -399,7 +415,6 @@ namespace SpiderSurge
                 case ShopItem.Reroll: what = "rerolled the perks"; break;
                 case ShopItem.Life: what = "bought an extra life"; break;
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
-                case ShopItem.Sacrifice: what = "traded a life for a chaos point"; break;
                 default: what = "raised the max lives"; break;
             }
             Toast.Show($"{who} {what}", Hud.Pink);

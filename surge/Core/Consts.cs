@@ -265,7 +265,8 @@ namespace SpiderSurge
                 public const int SacrificePoints = 1;
                 public const int SacrificeMinLives = 2;
                 public const float MinLabelFontSize = 9f;
-                public const float HudBlinkSeconds = 0.8f;
+                public const float HudGainSeconds = 0.8f;
+                public const float HudGainScale = 1.15f;
                 public const float PanelWidth = 240f;
                 public const float PanelGap = 16f;
                 public const float SideMargin = 27f;
@@ -287,7 +288,7 @@ namespace SpiderSurge
 
             public static class Enemies
             {
-                public const float SpeedMultiplier = 1.2f;
+                public const float SpeedMultiplier = 1.1f;
                 public const float SpawnCountMultiplier = 2.1f;
                 public const int WavesPerCapacityIncrease = 8;
                 public const float SpawnInterval = 2.5f;
@@ -368,7 +369,8 @@ namespace SpiderSurge
 
             public static class Colors
             {
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.1f, 0.85f, 1f, 1f);
+                public static readonly UnityEngine.Color ShieldedEnemyIndicatorColor = new UnityEngine.Color(0.7f, 0.25f, 1f, 1f);
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f);
                 public static readonly UnityEngine.Color MissileWhispLightColor = new UnityEngine.Color(1f, 0.8f, 0f, 1f);
             }
 
@@ -496,7 +498,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
                 [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
-                [PerkNames.FreezeAbility] = "Freeze every enemy and shot in an area for a few seconds",
+                [PerkNames.FreezeAbility] = "Freeze enemies, other players and shots in an area for a few seconds",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
                 [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
@@ -538,7 +540,7 @@ namespace SpiderSurge
             private const string DURATION_UPGRADE_DESC_WITH_PULSE = "Increases Thermal Detonation's knockback area";
             private const string DURATION_DESC_WITH_STORAGE = "Faster ability retrieval from the storage";
             private const string DURATION_UPGRADE_DESC_WITH_STORAGE = "Increases Black Hole range";
-            private const string DURATION_DESC_WITH_FREEZE = "Freezes enemies for longer and farther away";
+            private const string DURATION_DESC_WITH_FREEZE = "Freezes targets for longer and farther away";
             private const string DURATION_UPGRADE_DESC_WITH_FREEZE = "Increases rewind range";
             private const string DURATION_UPGRADE_DESC_WITH_AMMO = "Ultimate spawns weapons at more points around the map";
             private static readonly string DURATION_UPGRADE_DESC_WITH_IMMUNE = $"Neural Backup casts {Values.Immune.UltimateDurationIncreasePerLevel:0.#} seconds faster";

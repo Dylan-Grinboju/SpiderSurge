@@ -34,7 +34,7 @@ namespace SpiderSurge
 
         public static bool IsFrozen(Component shot) => shot != null && FrozenIds.Contains(shot.gameObject.GetInstanceID());
 
-        // Every shot and effect in the area at the cast, whoever fired it; held weapons and spiders keep theirs, so a Shotgun still fires
+        // Every loose shot and effect in the area at the cast, whoever fired it; FrozenSpider handles other players and their held weapons.
         public static void FreezeAround(Vector2 origin, float range, float duration)
         {
             float until = Time.time + duration;

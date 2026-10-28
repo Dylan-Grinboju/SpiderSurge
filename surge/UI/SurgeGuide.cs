@@ -48,7 +48,7 @@ namespace SpiderSurge
                 Ability(page, "Bottomless Clip", "ammo_ability", "Shoot without spending ammo for a short time. Without Efficiency, most weapons disintegrate when the effect ends or you drop it.", "Care Package", "Spawn weapons around the map. Its upgrade places weapons at more existing spawn points.");
                 Ability(page, "Kinetic Pulse", "pulse_ability", "Push enemies, spiders and large projectiles such as rockets away. Small shots fly on. Use it to clear space or push enemies into lava.", "Thermal Detonation", "Kills enemies close to the caster and knocks back the rest of the pulse. Take care around teammates; team versus respects the friendly-fire setting.");
                 Ability(page, "Pocket Dimension", "storage_ability", "Store the held weapon, retrieve the stored one, or swap them. The weapon beside your ring is the one in storage. Matching weapon perks determine whether storage survives a map change or death.", "Black Hole", "For 3 seconds, a black hole around you holds the enemies that were inside it when it opened, so they can't move, shoot or explode, and pulls them toward you along with every spider inside it. Whatever reaches its small inner circle is swallowed into the pocket dimension, teammates included, so they have to get away, or you away from them. An enemy is swallowed before it can touch you. Enemies far out or behind a wall may not make it in time and stay where it leaves them.");
-                Ability(page, "Freeze Time", "freeze_ability", "Freeze nearby enemies and shots. Walls block the freeze. Spiders and held weapons remain free. Frozen blades, saws, poison and shots still hurt on contact. Shots continue moving when thawed; overlapping freezes keep the longer remaining freeze.", "Rewind", "Turn nearby enemies into plain Wasps. Shielded enemies keep their shields.");
+                Ability(page, "Freeze Time", "freeze_ability", "Freeze nearby enemies, other players and shots. Walls block the freeze. The caster remains free; frozen players cannot move, jump, shoot, swap weapons or activate abilities until they thaw. Frozen blades, saws, poison and shots still hurt on contact. Shots continue moving when thawed; overlapping freezes keep the longer remaining freeze.", "Rewind", "Turn nearby enemies into plain Wasps. Shielded enemies keep their shields.");
                 return;
             }
             if (section == Page + ".perks")
@@ -67,14 +67,16 @@ namespace SpiderSurge
             if (section == Page + ".chaos")
             {
                 page.Title("Chaos points and challenges");
-                page.Line("Chaos points belong to the team. Spend them in the shop at map choices; unspent points carry forward. Ability use does not earn points.");
+                page.Line("Chaos points belong to the team. The counter in the top HUD briefly grows and glows gold when points are earned. Spend them in the shop at map choices; unspent points carry forward. Ability use does not earn points.");
                 page.Line("Each map choice has a <b>75% chance</b> to mark one card with <b>+1 chaos point</b>. Choose that map to earn it. Rerolls keep the bonus on the same card slot.");
                 page.Line($"Each shop offers two items: <color={Gold}>1</color> Reroll, <color={Gold}>2</color> Extra Life, <color={Gold}>3</color> Mystery Perk, <color={Gold}>5</color> Bigger Heart (+1 maximum life and +1 life), or Blood Pact (one life for one point). Each item can be bought <b>once per visit by the team</b>. Rerolling does not restock it.");
                 page.Line("After choosing a map, accept or skip an optional challenge. It lasts until the next map choice, including retries. Rewards arrive before the next shop. The host accepts or skips for the team.");
                 foreach (ChallengeKind kind in new[] { ChallengeKind.PoisonedHeart, ChallengeKind.DoubleCooldown, ChallengeKind.NoRegularAbilities, ChallengeKind.LifeWager, ChallengeKind.NoUltimate, ChallengeKind.Overrun })
                     page.Line(Section(ChaosRules.Name(kind) + $" · +{ChaosRules.Reward(kind)}", ChaosRules.Description(kind)));
                 page.Line("Press right from the last perk card to enter the shop, select an item, then select Buy. A perk's synergy is explained below the cards.");
+                page.Line("After buying Mystery Perk, its shop slot reveals the perk's icon, name and description for the rest of that visit.");
                 page.Line("With the perk timer off (the default), clicking a card only <b>locks</b> it. Press down to the <b>Confirm</b> button to make the pick. The starting ability choice always works this way.");
+                page.Line("Use Menu, Escape, or the controller's Menu button during a perk choice to open settings or leave. Resume returns to the current choice. Press up from a card to reach Menu with a controller.");
                 return;
             }
             if (section == Page + ".enemies")
@@ -88,7 +90,7 @@ namespace SpiderSurge
                 Enemy(page, "Power Twin Blade Whisp", CustomEnemies.TwinBladePowerMeleeWhispPrefab, "The stronger twin-blade variant. Keep clear of the weapon's reach.");
                 Enemy(page, "Wasp Cocoon", CustomEnemies.WaspCocoonPrefab, "A stationary enemy that keeps hatching Wasps until destroyed, with a limit on its living offspring. Its Wasps must also die before the wave ends. Freeze Time pauses hatching.");
                 Enemy(page, "Shielded Wasp Cocoon", CustomEnemies.ShieldedWaspCocoonPrefab, "Hatches Shielded Wasps and sends out small purple waves that gently repel nearby spiders and loose objects every 2 seconds while its shield holds. Break the shield to stop the pulses and future offspring receiving that protection.");
-                Enemy(page, "Laser enemies", CustomEnemies.LaserPrefabs.TryGetValue("LaserWhisp", out var laserWhisp) ? laserWhisp : CustomEnemies.LaserPrefabs.Values.FirstOrDefault(),"Red-shielded variants periodically show a faint warning ring and play a charge sound, followed by a lethal laser ring. Stay clear of the ring. Breaking the red shield removes the laser attack permanently. Exploding Rollers do not get this variant.");
+                Enemy(page, "Laser enemies", CustomEnemies.LaserPrefabs.TryGetValue("LaserWhisp", out var laserWhisp) ? laserWhisp : CustomEnemies.LaserPrefabs.Values.FirstOrDefault(),"Red-shielded variants periodically show a faint warning ring and play a charge sound, followed by a lethal laser ring. Its hits can also trigger grenades, just like the Laser Cannon. Stay clear of the ring. Breaking the red shield removes the laser attack permanently. Exploding Rollers do not get this variant.");
                 return;
             }
             if (section == Page + ".controls")
