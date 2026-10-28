@@ -38,77 +38,7 @@ namespace SpiderSurge
 
             if (ShouldApplySurge(survivalConfig))
             {
-                // Find templates
-                GameObject meleeWhispPrefab = null;
-                GameObject powerMeleeWhispPrefab = null;
-                GameObject whispPrefab = null;
-                GameObject shieldSource = null;
-
-                foreach (var enemy in survivalConfig.enemies)
-                {
-                    if (enemy.enemyObject != null)
-                    {
-                        if (enemy.enemyObject.name.Contains("MeleeWhisp") && !enemy.enemyObject.name.Contains("Power"))
-                        {
-                            meleeWhispPrefab = enemy.enemyObject;
-                        }
-                        else if (enemy.enemyObject.name.Contains("MeleeWhisp") && enemy.enemyObject.name.Contains("Power"))
-                        {
-                            powerMeleeWhispPrefab = enemy.enemyObject;
-                        }
-                        else if (enemy.enemyObject.name.Contains("Whisp") && !enemy.enemyObject.name.Contains("Melee") && !enemy.enemyObject.name.Contains("Power"))
-                        {
-                            whispPrefab = enemy.enemyObject;
-                        }
-
-                        if (shieldSource == null)
-                        {
-                            var ehs = enemy.enemyObject.GetComponent<EnemyHealthSystem>();
-                            if (ehs != null && ehs.shield != null)
-                            {
-                                shieldSource = enemy.enemyObject;
-                            }
-                        }
-                    }
-                }
-
-                GameObject rocketProjectile = null;
-                if (CustomEnemies.MissileWhispPrefab == null)
-                {
-                    var projectiles = Resources.FindObjectsOfTypeAll<BasicProjectile>();
-                    foreach (var p in projectiles)
-                    {
-                        if (p.name == "Rocket")
-                        {
-                            rocketProjectile = p.gameObject;
-                            break;
-                        }
-                    }
-                }
-
-                // Initialize Custom Enemies if missing
-                if (meleeWhispPrefab != null)
-                {
-                    CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
-                }
-                if (powerMeleeWhispPrefab != null)
-                {
-                    CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
-                }
-                if (whispPrefab != null)
-                {
-                    if (CustomEnemies.MissileWhispPrefab == null && rocketProjectile != null)
-                    {
-                        CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
-                    }
-                    if (CustomEnemies.TwinWhispPrefab == null)
-                    {
-                        CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
-                    }
-                }
-                CustomEnemies.CreateWaspCocoon();
-
-                CustomEnemies.CreateLaserVariants(survivalConfig.enemies.Select(e => e.enemyObject).Concat(CustomEnemies.CustomBasePrefabs), shieldSource);
+                CustomEnemies.EnsureCreated(survivalConfig.enemies.Select(e => e.enemyObject), true);
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
