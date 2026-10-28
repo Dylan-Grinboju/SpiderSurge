@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using Logger = Silk.Logger;
 using HarmonyLib;
 using Unity.Netcode;
-using System.Reflection;
 
 
 namespace StatsMod
@@ -11,20 +12,14 @@ namespace StatsMod
     internal static class EnemyReflectionCache
     {
         // NetworkBehaviour
-        public static readonly PropertyInfo IsHostProperty =
-            AccessTools.Property(typeof(NetworkBehaviour), "IsHost");
+        public static readonly System.Func<NetworkBehaviour, bool> IsHost =
+            AccessTools.MethodDelegate<System.Func<NetworkBehaviour, bool>>(AccessTools.PropertyGetter(typeof(NetworkBehaviour), "IsHost"));
 
         // EnemyHealthSystem fields
         public static readonly AccessTools.FieldRef<EnemyHealthSystem, bool> EnemyExploding =
             AccessTools.FieldRefAccess<EnemyHealthSystem, bool>("_exploding");
         public static readonly AccessTools.FieldRef<EnemyHealthSystem, float> EnemyImmuneTime =
             AccessTools.FieldRefAccess<EnemyHealthSystem, float>("_immuneTime");
-
-        // DiscLauncher methods
-        public static readonly MethodInfo DiscLauncherLaunchDiscClientRpc =
-            AccessTools.Method(typeof(DiscLauncher), "LaunchDiscClientRpc");
-        public static readonly MethodInfo DiscLauncherImpact =
-            AccessTools.Method(typeof(DiscLauncher), "Impact");
     }
 
     // Every enemy death ends here: direct damage, lava (Disintegrate), roller struts, stuck in walls.
@@ -38,7 +33,7 @@ namespace StatsMod
             {
                 if (EnemyReflectionCache.EnemyExploding(__instance) ||
                     __instance.ignoreIndirectDamage ||
-                    !(bool)EnemyReflectionCache.IsHostProperty.GetValue(__instance))
+                    !EnemyReflectionCache.IsHost(__instance))
                 {
                     return;
                 }
@@ -102,54 +97,26 @@ namespace StatsMod
         }
     }
 
-    // DiscLauncher - Track disc projectiles and their owners
+    // The launcher's holder owns the disc, recorded as soon as LaunchDisc creates it
     [HarmonyPatch(typeof(DiscLauncher), "LaunchDisc")]
     class DiscLauncherLaunchDiscPatch
     {
-        static bool Prefix(DiscLauncher __instance)
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
+            AccuracyProjectilePatch.TrackSpawns(instructions, original, AccessTools.Method(typeof(DiscLauncherLaunchDiscPatch), nameof(Launched)));
+
+        static GameObject Launched(GameObject disc, DiscLauncher launcher)
         {
             try
             {
-                // Replicate the entire LaunchDisc function with our addition
-                if (__instance.ammo <= 0f)
-                {
-                    return false; // Skip original
-                }
-
-                float ammo = __instance.ammo;
-                __instance.ammo = ammo - 1f;
-
-                // Create the disc projectile
-                GameObject gameObject = Object.Instantiate(__instance.discProjectile, __instance.mountedDisc.transform.position, __instance.point.rotation);
-                gameObject.GetComponent<NetworkObject>().Spawn(true);
-                gameObject.GetComponent<Rigidbody2D>().AddForce(__instance.transform.up * __instance.shotForce, ForceMode2D.Impulse);
-
-                // **THIS IS OUR ADDITION** - Track the disc owner
-                PlayerController ownerPlayer = __instance.owner?.healthSystem?.GetComponentInParent<PlayerController>();
-                HitLogic.RegisterDiscOwner(gameObject, ownerPlayer, __instance);
-                AccuracyTracker.Fire(__instance, gameObject);
-
-                // Reset phase effect and visual elements
-                __instance.discPhaseEffect.ResetEffect();
-                __instance.mountedDisc.SetActive(false);
-                __instance.targetingLasers.SetActive(false);
-
-                if ((bool)EnemyReflectionCache.IsHostProperty.GetValue(__instance))
-                {
-                    // Call LaunchDiscClientRpc using cached reflection
-                    EnemyReflectionCache.DiscLauncherLaunchDiscClientRpc?.Invoke(__instance, null);
-                }
-
-                // Call Impact method using cached reflection
-                EnemyReflectionCache.DiscLauncherImpact?.Invoke(__instance, new object[] { __instance.transform.up * -__instance.recoil, __instance.point.position, false, true });
-
-                return false; // Skip the original method
+                PlayerController ownerPlayer = launcher.owner?.healthSystem?.GetComponentInParent<PlayerController>();
+                HitLogic.RegisterDiscOwner(disc, ownerPlayer, launcher);
+                AccuracyTracker.Fire(launcher, disc);
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error in DiscLauncher LaunchDisc patch: {ex.Message}");
-                return true; // Execute original method on error
+                Logger.LogError($"Error tracking a launched saw disc: {ex.Message}");
             }
+            return disc;
         }
     }
 

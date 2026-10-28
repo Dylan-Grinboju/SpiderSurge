@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace StatsMod
@@ -38,7 +37,7 @@ namespace StatsMod
         {
             try
             {
-                if (weapon == null || source == null || !Net.IsHost || !GameSessionManager.Instance.IsActive) return;
+                if (weapon == null || source == null || !GameSessionManager.IsRecording) return;
                 PlayerController player = HitLogic.WeaponPlayer(weapon);
                 if (player == null || !PlayerTracker.Instance.TryGetPlayer(player, out var data)) return;
 
