@@ -56,10 +56,9 @@ namespace SpiderSurge
         private const string EnemyChannel = "surge.enemy";
         private const string FreezeCooldownChannel = "surge.freeze.cooldown";
 
-        private static readonly (string channel, Net.Handler handler)[] Channels =
+        private static readonly (string channel, Net.Receiver receiver)[] HostChannels =
         {
             (StateChannel, OnState),
-            (AbilityChannel, OnAbility),
             (FxChannel, OnFx),
             (EnemyChannel, OnEnemyFx),
             (FreezeCooldownChannel, OnFreezeCooldown),
@@ -77,10 +76,11 @@ namespace SpiderSurge
                 return;
             }
             _initialized = true;
-            foreach (var (channel, handler) in Channels)
+            foreach (var (channel, receiver) in HostChannels)
             {
-                Net.Register(channel, handler);
+                Net.RegisterFromHost(channel, receiver);
             }
+            Net.RegisterFromClients(AbilityChannel, OnAbility, offline: false);
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
@@ -96,10 +96,11 @@ namespace SpiderSurge
             }
             _initialized = false;
             Vfx.WeaponVfx.Shutdown();
-            foreach (var (channel, _) in Channels)
+            foreach (var (channel, _) in HostChannels)
             {
                 Net.Unregister(channel);
             }
+            Net.Unregister(AbilityChannel);
             Net.PeerReady -= OnPeerReady;
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
@@ -143,9 +144,8 @@ namespace SpiderSurge
             });
         }
 
-        private static void OnFreezeCooldown(ulong sender, BinaryReader reader)
+        private static void OnFreezeCooldown(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             int playerId = reader.ReadInt32();
             float remaining = reader.ReadSingle();
             PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Freeze)?.ApplyCooldownRemaining(remaining);
@@ -307,12 +307,8 @@ namespace SpiderSurge
             writer.Write(PlayerAbilityHandler.SpawnEpoch);
         }
 
-        private static void OnState(ulong sender, BinaryReader reader)
+        private static void OnState(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             try
             {
                 bool modeEnabled = reader.ReadBoolean();
@@ -381,15 +377,11 @@ namespace SpiderSurge
         // A client may only trigger its own players' abilities; the host's instance runs the same checks the client did
         private static void OnAbility(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsHost)
-            {
-                return;
-            }
             int playerId = reader.ReadInt32();
             var kind = (AbilityKind)reader.ReadByte();
             bool ultimate = reader.ReadBoolean();
 
-            if (!Players.OwnedBy(playerId, sender))
+            if (!Players.MayActFor(playerId, sender))
             {
                 Logger.LogWarning($"SpiderSurge: client {sender} tried to use an ability of P{playerId + 1}, who is not theirs");
                 return;
@@ -404,12 +396,8 @@ namespace SpiderSurge
             ability.ActivateFromNetwork(ultimate);
         }
 
-        private static void OnFx(ulong sender, BinaryReader reader)
+        private static void OnFx(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             var fx = (SurgeFx)reader.ReadByte();
             int playerId = reader.ReadInt32();
             Vector3 position = reader.ReadVector3();
@@ -461,12 +449,8 @@ namespace SpiderSurge
             }
         }
 
-        private static void OnEnemyFx(ulong sender, BinaryReader reader)
+        private static void OnEnemyFx(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             var fx = (EnemyFx)reader.ReadByte();
             ulong objectId = reader.ReadUInt64();
             float value = reader.ReadSingle();

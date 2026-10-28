@@ -14,6 +14,7 @@ namespace SpiderSurge.Common
     public static class Net
     {
         public delegate void Handler(ulong sender, BinaryReader reader);
+        public delegate void Receiver(BinaryReader reader);
 
         public const string MessageName = "SpiderSurge";
         public const ulong ServerId = 0UL;
@@ -103,6 +104,23 @@ namespace SpiderSurge.Common
             _handlers[hash] = (channel, handler);
         }
 
+        // Host to client: the receiver runs only on a remote client, for the host's messages
+        public static void RegisterFromHost(string channel, Receiver receiver) => Register(channel, FromHost(receiver));
+
+        public static Handler FromHost(Receiver receiver) => (sender, reader) =>
+        {
+            if (IsRemoteClient && sender == ServerId) receiver(reader);
+        };
+
+        // Client to host: the handler runs on the host, and offline too when SendToServer's local call should reach it
+        public static void RegisterFromClients(string channel, Handler handler, bool offline)
+        {
+            Register(channel, (sender, reader) =>
+            {
+                if (offline ? IsAuthority : IsHost) handler(sender, reader);
+            });
+        }
+
         public static void Unregister(string channel)
         {
             _handlers.Remove(Hash(channel));
@@ -130,6 +148,10 @@ namespace SpiderSurge.Common
                 }
                 return;
             }
+            if (!includeLocal && !HasReadyClient())
+            {
+                return;
+            }
             byte[] payload = Payload(write);
             if (includeLocal)
             {
@@ -149,6 +171,18 @@ namespace SpiderSurge.Common
             }
         }
 
+        private static bool HasReadyClient()
+        {
+            foreach (ulong client in Manager.ConnectedClientsIds)
+            {
+                if (client != Net.ServerId && _readyClients.Contains(client))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static void SendTo(ulong clientId, string channel, Action<BinaryWriter> write)
         {
             if (!IsHost || clientId == Net.ServerId || !_readyClients.Contains(clientId))
@@ -165,9 +199,9 @@ namespace SpiderSurge.Common
                 return;
             }
             _registered = true;
-            Register(HelloChannel, OnHello);
-            Register(WelcomeChannel, OnWelcome);
-            Register(SettingsChannel, OnSettings);
+            RegisterFromClients(HelloChannel, OnHello, offline: false);
+            RegisterFromHost(WelcomeChannel, OnWelcome);
+            RegisterFromHost(SettingsChannel, ReadSharedSettings);
             Settings.Changed += OnSettingChanged;
             Bind();
         }
@@ -289,7 +323,7 @@ namespace SpiderSurge.Common
 
         private static void OnHello(ulong sender, BinaryReader reader)
         {
-            if (!IsHost || sender == Net.ServerId)
+            if (sender == Net.ServerId)
             {
                 return;
             }
@@ -299,24 +333,12 @@ namespace SpiderSurge.Common
             Raise(PeerReady, sender);
         }
 
-        private static void OnWelcome(ulong sender, BinaryReader reader)
+        private static void OnWelcome(BinaryReader reader)
         {
-            if (!IsRemoteClient)
-            {
-                return;
-            }
             _joinedHost = true;
             ReadSharedSettings(reader);
             Logger.LogInfo("Joined a SpiderSurge host");
             Raise(JoinedHost);
-        }
-
-        private static void OnSettings(ulong sender, BinaryReader reader)
-        {
-            if (IsRemoteClient && sender == Net.ServerId)
-            {
-                ReadSharedSettings(reader);
-            }
         }
 
         private static void OnSettingChanged(string key)

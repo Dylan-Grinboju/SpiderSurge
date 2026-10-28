@@ -70,6 +70,9 @@ namespace SpiderSurge.Common
             return player != null && player.OwnerClientId == clientId;
         }
 
+        // The host acts for every player; a client only for its own
+        public static bool MayActFor(int playerId, ulong sender) => sender == Net.ServerId || OwnedBy(playerId, sender);
+
         public static SpiderHealthSystem HealthOf(int playerId)
         {
             var player = ById(playerId);

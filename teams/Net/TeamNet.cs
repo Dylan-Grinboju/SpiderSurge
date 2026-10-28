@@ -21,9 +21,9 @@ namespace SpiderTeams
                 return;
             }
             _initialized = true;
-            Net.Register(RosterChannel, OnRoster);
-            Net.Register(PickChannel, OnPick);
-            Net.Register(SnapshotChannel, OnSnapshot);
+            Net.RegisterFromHost(RosterChannel, OnRoster);
+            Net.RegisterFromClients(PickChannel, OnPick, offline: false);
+            Net.RegisterFromHost(SnapshotChannel, OnSnapshot);
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
@@ -47,7 +47,7 @@ namespace SpiderTeams
         public static void BroadcastRoster()
         {
             var manager = TeamManager.Instance;
-            if (manager == null || !Net.HasRemotePlayers)
+            if (manager == null)
             {
                 return;
             }
@@ -56,7 +56,7 @@ namespace SpiderTeams
 
         public static void BroadcastSnapshot(MatchSnapshot snapshot)
         {
-            if (snapshot == null || !Net.HasRemotePlayers)
+            if (snapshot == null)
             {
                 return;
             }
@@ -88,22 +88,14 @@ namespace SpiderTeams
             MatchSnapshot.Clear();
         }
 
-        private static void OnRoster(ulong sender, BinaryReader reader)
+        private static void OnRoster(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             TeamManager.Instance?.ReadState(reader);
         }
 
         // A client may only move its own players; the host applies the change and the roster broadcast carries it back
         private static void OnPick(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsHost)
-            {
-                return;
-            }
             int playerId = reader.ReadInt32();
             var manager = TeamManager.Instance;
             var player = Players.ById(playerId);
@@ -127,12 +119,8 @@ namespace SpiderTeams
             }
         }
 
-        private static void OnSnapshot(ulong sender, BinaryReader reader)
+        private static void OnSnapshot(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             try
             {
                 MatchSnapshot.SetRemote(MatchSnapshot.Read(reader));

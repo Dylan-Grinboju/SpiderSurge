@@ -15,14 +15,17 @@ namespace SpiderSurge
         private const string RefusedChannel = "surge.chaos.refused";
         private const string ToastChannel = "surge.chaos.toast";
 
-        private static readonly (string channel, Net.Handler handler)[] Channels =
+        private static readonly (string channel, Net.Receiver receiver)[] HostChannels =
         {
             (StateChannel, OnState),
-            (ChallengeChannel, OnChallenge),
-            (BuyChannel, OnBuy),
             (BoughtChannel, OnBought),
             (RefusedChannel, OnRefused),
-            (ToastChannel, OnToast),
+        };
+
+        private static readonly (string channel, Net.Handler handler)[] ClientChannels =
+        {
+            (ChallengeChannel, OnChallenge),
+            (BuyChannel, OnBuy),
         };
 
         private static bool _initialized;
@@ -32,7 +35,9 @@ namespace SpiderSurge
         {
             if (_initialized) return;
             _initialized = true;
-            foreach (var (channel, handler) in Channels) Net.Register(channel, handler);
+            foreach (var (channel, receiver) in HostChannels) Net.RegisterFromHost(channel, receiver);
+            foreach (var (channel, handler) in ClientChannels) Net.RegisterFromClients(channel, handler, offline: true);
+            Net.Register(ToastChannel, OnToast);
             Net.PeerReady += OnPeerReady;
             Net.LeftHost += OnLeftHost;
         }
@@ -41,7 +46,9 @@ namespace SpiderSurge
         {
             if (!_initialized) return;
             _initialized = false;
-            foreach (var (channel, _) in Channels) Net.Unregister(channel);
+            foreach (var (channel, _) in HostChannels) Net.Unregister(channel);
+            foreach (var (channel, _) in ClientChannels) Net.Unregister(channel);
+            Net.Unregister(ToastChannel);
             Net.PeerReady -= OnPeerReady;
             Net.LeftHost -= OnLeftHost;
         }
@@ -56,7 +63,6 @@ namespace SpiderSurge
         {
             if (!_dirty) return;
             _dirty = false;
-            if (!Net.HasRemotePlayers) return;
             Net.SendToAll(StateChannel, WriteState);
         }
 
@@ -73,7 +79,6 @@ namespace SpiderSurge
 
         public static void SendBought(ShopItem item, int buyerId, string detail)
         {
-            if (!Net.HasRemotePlayers) return;
             Net.SendToAll(BoughtChannel, writer =>
             {
                 writer.Write((byte)item);
@@ -123,7 +128,6 @@ namespace SpiderSurge
 
         private static void OnChallenge(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsAuthority) return;
             ChallengeController.Decide(sender, reader.ReadInt32(), reader.ReadBoolean());
         }
 
@@ -137,9 +141,8 @@ namespace SpiderSurge
             ChaosWallet.ResetRun();
         }
 
-        private static void OnState(ulong sender, BinaryReader reader)
+        private static void OnState(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             try
             {
                 int points = reader.ReadInt32();
@@ -170,11 +173,10 @@ namespace SpiderSurge
         // A client may only buy in the name of its own players, and hears why when the host turns a buy down
         private static void OnBuy(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsAuthority) return;
             var item = (ShopItem)reader.ReadByte();
             int buyerId = reader.ReadInt32();
             int visit = reader.ReadInt32();
-            if (sender != Net.ServerId && buyerId >= 0 && !Players.OwnedBy(buyerId, sender))
+            if (buyerId >= 0 && !Players.MayActFor(buyerId, sender))
             {
                 Logger.LogWarning($"SpiderSurge: client {sender} tried to buy from the shop as P{buyerId + 1}, who is not theirs");
                 return;
@@ -189,18 +191,16 @@ namespace SpiderSurge
             });
         }
 
-        private static void OnBought(ulong sender, BinaryReader reader)
+        private static void OnBought(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var item = (ShopItem)reader.ReadByte();
             int buyerId = reader.ReadInt32();
             string detail = reader.ReadString();
             PerkShop.ShowBought(item, buyerId, detail);
         }
 
-        private static void OnRefused(ulong sender, BinaryReader reader)
+        private static void OnRefused(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var item = (ShopItem)reader.ReadByte();
             PerkShop.ShowRefused(item, reader.ReadString());
         }

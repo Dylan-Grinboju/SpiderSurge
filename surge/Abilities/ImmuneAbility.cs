@@ -112,7 +112,7 @@ namespace SpiderSurge
                     nextHitAccent = Time.time + 0.15f;
                     if (direction.sqrMagnitude < 0.001f) direction = Vector3.down;
                     if (bubble != null) bubble.Hit(direction);
-                    if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ImmuneHit, PlayerId, spiderHealthSystem.transform.position, Mathf.Atan2(direction.y, direction.x), false);
+                    SurgeNet.SendFx(SurgeFx.ImmuneHit, PlayerId, spiderHealthSystem.transform.position, Mathf.Atan2(direction.y, direction.x), false);
                 }
             }
         }

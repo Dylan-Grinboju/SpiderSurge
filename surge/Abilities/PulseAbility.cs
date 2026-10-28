@@ -287,7 +287,7 @@ namespace SpiderSurge
                     if (component != null && impactAccents.Add(component.GetInstanceID()))
                     {
                         SurgeVfx.Safely(() => AccentVfx.Impact(closestPoint, direction, deadly));
-                        if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
+                        SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
                     }
                     if (!deadly && rb != null)
                     {
