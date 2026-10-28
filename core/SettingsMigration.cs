@@ -12,13 +12,11 @@ namespace SpiderSurge.Common
     internal static class SettingsMigration
     {
         private const string OldStatsId = "Stats_Mod";
-        private const string OldTeamsId = "SpiderTeams";
         private const string BackupSuffix = ".old";
         private static readonly string[] PixelPositionKeys = { "display.position.x", "display.position.y" };
 
         private static readonly Dictionary<string, string> SurgeKeys = new Dictionary<string, string>
         {
-            { "UseDpadForUltimate", "surge.dpadUltimate" },
             { "UnlimitedPerkChoosingTime", "surge.unlimitedPerkTime" },
             { "EnableStatsLogging", "surge.statsLogging" },
             { "TelemetryEnabled", "surge.telemetry" },
@@ -32,34 +30,16 @@ namespace SpiderSurge.Common
             { "indicator.showOnlyWhenReady", "surge.indicator.showOnlyWhenReady" },
         };
 
-        private static readonly Dictionary<string, string> TeamsKeys = new Dictionary<string, string>
-        {
-            { "teams.enabled", "teams.enabled" },
-            { "teams.count", "teams.count" },
-            { "friendlyFire.mode", "teams.friendlyFire" },
-            { "visuals.recolorSpiders", "teams.recolorSpiders" },
-            { "visuals.showMarker", "teams.showMarker" },
-            { "spawns.groupTeammates", "teams.groupTeammates" },
-            { "surge.enabled", "teams.surge.enabled" },
-            { "surge.ability", "teams.surge.ability" },
-            { "surge.ultimate", "teams.surge.ultimate" },
-            { "surge.abilityCooldown", "teams.surge.abilityCooldown" },
-            { "surge.abilityDuration", "teams.surge.abilityDuration" },
-            { "surge.shortTermInvestment", "teams.surge.shortTermInvestment" },
-            { "surge.longTermInvestment", "teams.surge.longTermInvestment" },
-        };
-
         public static void Run()
         {
             MergeOldFiles();
         }
 
-        // Merges the files of earlier versions into the one settings file; a file whose old DLL is still installed stays where it is
+        // Imports released SpiderSurge and SpiderStats settings; a file whose old DLL is still installed stays where it is
         private static void MergeOldFiles()
         {
             string path = Settings.FilePath;
             string statsPath = Config.GetModConfigPath(OldStatsId);
-            string teamsPath = Config.GetModConfigPath(OldTeamsId);
             try
             {
                 Dictionary<string, object> current = Read(path);
@@ -67,10 +47,7 @@ namespace SpiderSurge.Common
                 bool legacySurge = current != null && SurgeKeys.Keys.Any(key => Find(current, key) != null);
                 Dictionary<string, object> surge = legacySurge && Parts.Surge.BlockedBy == null ? current : null;
                 Dictionary<string, object> stats = Parts.Stats.BlockedBy == null ? Read(statsPath) : null;
-                Dictionary<string, object> teams = Parts.Teams.BlockedBy == null ? Read(teamsPath) : null;
-                bool pixelPosition = current != null && PixelPositionKeys.Any(key => Find(current, "stats." + key) != null);
-                bool retiredParts = Parts.All.Any(part => !part.CanDisable && Find(current, part.SettingKey) != null);
-                if (!legacySurge && stats == null && teams == null && !pixelPosition && !retiredParts)
+                if (!legacySurge && stats == null)
                 {
                     return;
                 }
@@ -85,35 +62,18 @@ namespace SpiderSurge.Common
                 {
                     var statsKeys = Settings.Keys.Where(key => key.StartsWith("stats.")).ToDictionary(key => key.Substring("stats.".Length));
                     moved += Map(stats, statsKeys, values);
-                    MovePixelPosition(stats, "", values);
-                }
-                if (pixelPosition)
-                {
-                    MovePixelPosition(current, "stats.", values);
-                }
-                if (teams != null)
-                {
-                    moved += Map(teams, TeamsKeys, values);
+                    MovePixelPosition(stats, values);
                 }
 
                 if (!upgraded)
                 {
                     values["parts.fixes"] = true;
                 }
-                if (IsFalse(Find(stats, "tracking.enabled")) || IsFalse(Find(current, "parts.stats")))
+                if (IsFalse(Find(stats, "tracking.enabled")))
                 {
                     values["stats.display.showStatsWindow"] = false;
                 }
-                if (teams == null && IsFalse(Find(current, "parts.teams")))
-                {
-                    values["teams.enabled"] = false;
-                }
-                // SpiderTeams defaulted to on and only wrote keys the player changed, so a file without the key means team versus was on
-                else if (teams != null && Find(teams, "teams.enabled") == null)
-                {
-                    values["teams.enabled"] = true;
-                }
-                bool updates = !IsFalse(Find(stats, "updater.checkForUpdates")) && !IsFalse(Find(teams, "updater.checkForUpdates"));
+                bool updates = !IsFalse(Find(stats, "updater.checkForUpdates"));
                 if (!upgraded || !updates)
                 {
                     values[ModUpdater.CheckForUpdatesKey] = updates;
@@ -124,17 +84,12 @@ namespace SpiderSurge.Common
                 {
                     Settings.SetPath(tree, pair.Key, pair.Value);
                 }
-                foreach (Part part in Parts.All.Where(part => !part.CanDisable)) Remove(tree, part.SettingKey);
                 if (surge != null)
                 {
                     foreach (string key in SurgeKeys.Keys)
                     {
                         Remove(tree, key);
                     }
-                }
-                foreach (string key in PixelPositionKeys)
-                {
-                    Remove(tree, "stats." + key);
                 }
                 string yaml = new SerializerBuilder().Build().Serialize(tree);
 
@@ -153,11 +108,6 @@ namespace SpiderSurge.Common
                     MoveAside(statsPath);
                     sources.Add(Path.GetFileName(statsPath));
                 }
-                if (teams != null)
-                {
-                    MoveAside(teamsPath);
-                    sources.Add(Path.GetFileName(teamsPath));
-                }
 
                 if (sources.Count > 0)
                 {
@@ -168,10 +118,6 @@ namespace SpiderSurge.Common
                 {
                     Logger.LogInfo($"Kept the legacy Surge settings because {Parts.Surge.BlockedBy} is still in the Mods folder");
                 }
-                if (pixelPosition)
-                {
-                    Logger.LogInfo("The Stats window position is now saved as a percentage of the screen");
-                }
             }
             catch (Exception ex)
             {
@@ -180,13 +126,13 @@ namespace SpiderSurge.Common
         }
 
         // The small Stats window was placed in pixels; a percentage of the screen keeps its spot on any resolution
-        private static void MovePixelPosition(Dictionary<string, object> source, string prefix, Dictionary<string, object> values)
+        private static void MovePixelPosition(Dictionary<string, object> source, Dictionary<string, object> values)
         {
             int[] sizes = { UnityEngine.Screen.width, UnityEngine.Screen.height };
             string[] targets = { StatsMod.ModConfig.PositionXKey, StatsMod.ModConfig.PositionYKey };
             for (int i = 0; i < PixelPositionKeys.Length; i++)
             {
-                string raw = Find(source, prefix + PixelPositionKeys[i]);
+                string raw = Find(source, PixelPositionKeys[i]);
                 if (raw != null && double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double pixels))
                 {
                     values[targets[i]] = StatsMod.ModConfig.Percent(pixels, sizes[i]);
