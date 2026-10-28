@@ -19,6 +19,7 @@ namespace SpiderSurge
         public static bool Pending { get; private set; }
         public static bool WagerFailed { get; private set; }
         private static int _heldLives;
+        private static readonly CleanHandsProgress _cleanHands = new CleanHandsProgress();
         private static ChallengeKind _lastOffered, _previousOffered;
         public static bool Failed => WagerFailed;
         private static Action _loadChosenMap;
@@ -110,13 +111,26 @@ namespace SpiderSurge
             ChaosWallet.Notify();
         }
 
-        public static void FriendlyHarm()
+        public static object FriendlyHarm()
         {
-            if (!Net.IsAuthority || !ChaosWallet.Enabled || Active != ChallengeKind.CleanHands || WagerFailed) return;
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || Active != ChallengeKind.CleanHands) return null;
+            object harm = _cleanHands.RecordHarm();
+            if (WagerFailed) return harm;
             WagerFailed = true;
             ChaosWallet.Record("Clean Hands failed: teammate killed or shield broken");
             ChaosWallet.Notify();
             ChaosNet.Announce("Clean Hands lost · no reward this map");
+            return harm;
+        }
+
+        public static void RevertFriendlyHarm(object harm)
+        {
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || Active != ChallengeKind.CleanHands || !_cleanHands.Revert(harm)) return;
+            WagerFailed = _cleanHands.Failed;
+            if (WagerFailed) return;
+            ChaosWallet.Record("Clean Hands restored: teammate kill credit reverted");
+            ChaosWallet.Notify();
+            ChaosNet.Announce("Clean Hands restored · reward available this map");
         }
 
         public static void LostLife()
@@ -145,6 +159,7 @@ namespace SpiderSurge
         // it ends at a wave's completion, and the next wave's start and the new map's spiders reset every cooldown before anyone can cast again
         private static void SetActive(ChallengeKind kind)
         {
+            if (kind != Active) _cleanHands.Reset();
             bool doubling = kind == ChallengeKind.DoubleCooldown && Active != ChallengeKind.DoubleCooldown;
             Active = kind;
             if (doubling)

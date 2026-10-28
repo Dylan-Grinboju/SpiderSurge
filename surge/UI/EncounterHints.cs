@@ -44,7 +44,7 @@ namespace SpiderSurge
             Vector3 point = camera.WorldToViewportPoint(enemy.transform.position);
             if (point.z < 0f || point.x < 0f || point.x > 1f || point.y < 0f || point.y > 1f) return false;
             if (instance.queued.Add(key)) instance.waiting.Enqueue(new Hint { Key = key, Text = text, Enemy = enemy });
-            return true;
+            return false;
         }
 
         private static bool Visible => ChaosWallet.Enabled && !GameMenus.Open && !ChallengeController.Pending &&
