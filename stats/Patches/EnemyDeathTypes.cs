@@ -3,7 +3,6 @@ using System.Reflection;
 using UnityEngine;
 using Logger = Silk.Logger;
 using HarmonyLib;
-using Unity.Netcode;
 
 
 namespace StatsMod
@@ -11,10 +10,6 @@ namespace StatsMod
     // All AccessTools calls are done once at static initialization to avoid per-call overhead.
     internal static class EnemyReflectionCache
     {
-        // NetworkBehaviour
-        public static readonly System.Func<NetworkBehaviour, bool> IsHost =
-            AccessTools.MethodDelegate<System.Func<NetworkBehaviour, bool>>(AccessTools.PropertyGetter(typeof(NetworkBehaviour), "IsHost"));
-
         // EnemyHealthSystem fields
         public static readonly AccessTools.FieldRef<EnemyHealthSystem, bool> EnemyExploding =
             AccessTools.FieldRefAccess<EnemyHealthSystem, bool>("_exploding");
@@ -31,13 +26,7 @@ namespace StatsMod
         {
             try
             {
-                if (EnemyReflectionCache.EnemyExploding(__instance) ||
-                    __instance.ignoreIndirectDamage ||
-                    !EnemyReflectionCache.IsHost(__instance))
-                {
-                    return;
-                }
-
+                if (EnemyReflectionCache.EnemyExploding(__instance) || __instance.ignoreIndirectDamage) return;
                 HitLogic.OnEnemyDeath(__instance);
             }
             catch (System.Exception ex)
@@ -102,14 +91,15 @@ namespace StatsMod
     class DiscLauncherLaunchDiscPatch
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            AccuracyProjectilePatch.TrackSpawns(instructions, original, AccessTools.Method(typeof(DiscLauncherLaunchDiscPatch), nameof(Launched)));
+            AccuracyProjectilePatch.TrackSpawns(instructions, original, AccessTools.Method(typeof(DiscLauncherLaunchDiscPatch), nameof(Launched)),
+                "saw disc kills and accuracy are not tracked");
 
         static GameObject Launched(GameObject disc, DiscLauncher launcher)
         {
             try
             {
-                PlayerController ownerPlayer = launcher.owner?.healthSystem?.GetComponentInParent<PlayerController>();
-                HitLogic.RegisterDiscOwner(disc, ownerPlayer, launcher);
+                if (!disc.TryGetComponent<SawDisc>(out _)) return disc;
+                HitLogic.RegisterDiscOwner(disc, HitLogic.WeaponPlayer(launcher), launcher);
                 AccuracyTracker.Fire(launcher, disc);
             }
             catch (System.Exception ex)
