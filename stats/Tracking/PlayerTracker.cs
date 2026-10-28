@@ -618,6 +618,7 @@ namespace StatsMod
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyKills++;
+                if (Parts.Surge.Running) SpiderSurge.ChallengeController.FriendlyHarm();
             }
         }
 
@@ -642,6 +643,7 @@ namespace StatsMod
             if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
             {
                 data.FriendlyShieldsHit++;
+                if (Parts.Surge.Running) SpiderSurge.ChallengeController.FriendlyHarm();
             }
         }
 

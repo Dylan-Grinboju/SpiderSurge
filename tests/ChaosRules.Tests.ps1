@@ -27,13 +27,13 @@ $cases = @(
     @{ Lives = 2; Abilities = $false; Ultimate = $true; Expected = 'LifeWager,Overrun,PoisonedHeart' }
 )
 foreach ($case in $cases) {
-    $eligible = [SpiderSurge.ChaosRules]::Eligible($case.Lives, $case.Abilities, $case.Ultimate)
+    $eligible = [SpiderSurge.ChaosRules]::Eligible($case.Lives, $case.Abilities, $case.Ultimate, 1)
     $names = @($eligible | ForEach-Object { $_.ToString() } | Sort-Object)
     Assert-Equal ($names -join ',') $case.Expected 'Challenge eligibility'
     Assert-Equal (@($names | Select-Object -Unique).Count) $names.Count 'Uniform draw has no duplicate candidates'
 }
 
-$rewards = @{ None = 0; PoisonedHeart = 2; DoubleCooldown = 1; NoRegularAbilities = 2; LifeWager = 1; NoUltimate = 1; Overrun = 2 }
+$rewards = @{ None = 0; PoisonedHeart = 3; DoubleCooldown = 1; NoRegularAbilities = 2; LifeWager = 1; NoUltimate = 1; Overrun = 2; CleanHands = 1 }
 foreach ($kind in $rewards.Keys) {
     Assert-Equal ([SpiderSurge.ChaosRules]::Reward([SpiderSurge.ChallengeKind]$kind)) $rewards[$kind] "$kind reward"
 }
@@ -42,4 +42,18 @@ Assert-Equal ([SpiderSurge.ChaosRules]::Points(1, $false)) '1 chaos point' 'Sing
 Assert-Equal ([SpiderSurge.ChaosRules]::Points(2, $true)) '+2 chaos points' 'Signed plural points'
 Assert-Equal ([SpiderSurge.ChaosRules]::Points(-1, $true)) '-1 chaos point' 'Signed loss'
 Assert-Equal ([SpiderSurge.ChaosRules]::Points(0, $true)) '0 chaos points' 'Zero is plural and unsigned'
+foreach ($players in 0, 1, 2, 32) {
+    $eligible = [SpiderSurge.ChaosRules]::Eligible(2, $true, $true, $players)
+    Assert-Equal ($eligible.Contains([SpiderSurge.ChallengeKind]::CleanHands)) ($players -ge 2) 'Clean Hands needs teammates'
+}
+foreach ($lives in 1, 2) {
+    foreach ($last in [Enum]::GetValues([SpiderSurge.ChallengeKind])) {
+        foreach ($previous in [Enum]::GetValues([SpiderSurge.ChallengeKind])) {
+            $eligible = [SpiderSurge.ChaosRules]::Eligible($lives, $false, $false, 1)
+            [SpiderSurge.ChaosRules]::AvoidRecent($eligible, $last, $previous)
+            Assert-Equal ($eligible.Count -gt 0) $true 'Offer rotation always leaves a candidate'
+            Assert-Equal ($eligible.Contains($last)) $false 'Most recent offer is avoided'
+        }
+    }
+}
 Write-Output "PASS: $checks chaos rule checks"

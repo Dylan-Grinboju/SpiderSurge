@@ -34,6 +34,7 @@ namespace SpiderSurge
             if (Instance == null)
             {
                 Instance = this;
+                gameObject.AddComponent<EncounterHints>();
                 DontDestroyOnLoad(gameObject);
             }
             else

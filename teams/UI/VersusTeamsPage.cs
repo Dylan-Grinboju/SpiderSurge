@@ -55,6 +55,8 @@ namespace SpiderTeams
         private bool _captured;
         private GameObject _selected;
         private bool _dirty;
+        internal bool AdvancedAbilities { get; private set; }
+        internal void ToggleAdvancedAbilities() { AdvancedAbilities = !AdvancedAbilities; Refresh(); }
         private bool _showing;
         private string _confirming;
 

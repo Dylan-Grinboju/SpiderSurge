@@ -43,24 +43,35 @@ namespace SpiderSurge
             _current._canvas = canvas;
             _current._raycaster = root.GetComponent<GraphicRaycaster>();
             float width = Mathf.Min(700f, ((RectTransform)hud.perkChoiceView.transform).rect.width - 48f);
-            _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(ChallengeController.Offered), new Vector2(0, 70), new Vector2(width - 40, 90), 27);
-            _current.Text(template.perkNameText, "Reward", $"Complete for {ChaosRules.Points(ChaosRules.Reward(ChallengeController.Offered), signed: true)}", Vector2.zero, new Vector2(width, 40), 21);
-            // Only the host answers, so a client only sees that it is waiting
+            var offered = ChallengeController.Offered;
+            _current.Panel("Challenge card", new Vector2(0, 12), new Vector2(width, 400), new Color(.075f, .055f, .085f));
+            _current.Panel("Accent", new Vector2(0, 212), new Vector2(width, 3), Hud.Pink);
+            var emblem = _current.Panel("Challenge emblem", new Vector2(-width / 2 + 55, 154), new Vector2(56, 56), Hud.Pink);
+            emblem.sprite = IconLoader.GetIcon(ChaosRules.Icon(offered));
+            emblem.preserveAspect = true;
+            _current.Text(template.perkNameText, "Eyebrow", "OPTIONAL CHALLENGE", new Vector2(30, 185), new Vector2(width - 140, 26), 13).color = Hud.Pink;
+            _current.Text(template.perkNameText, "Name", ChaosRules.Name(offered).ToUpperInvariant(), new Vector2(30, 145), new Vector2(width - 140, 46), 29);
+            _current.Text(template.perkDescriptionText, "Flavor", ChaosRules.Flavor(offered), new Vector2(0, 95), new Vector2(width - 60, 28), 16).color = Hud.Muted;
+            _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(offered), new Vector2(0, 34), new Vector2(width - 65, 75), 23);
+            string detail = offered == ChallengeKind.PoisonedHeart ? "Losing the last life ends the run." : "Restrictions last through wave retries.";
+            _current.Text(template.perkDescriptionText, "Duration", "Until the next map choice. " + detail, new Vector2(0, -27), new Vector2(width - 60, 36), 14).color = Hud.Muted;
+            ChaosIcon.Add(_current.transform, new Vector2(-125, -77), 30, Hud.Warm);
+            _current.Text(template.perkNameText, "Reward", $"+{ChaosRules.Reward(offered)} TEAM CHAOS", new Vector2(15, -77), new Vector2(260, 36), 23).color = Hud.Warm;
+            _current.Text(template.perkDescriptionText, "Payout", "Paid before the next shop", new Vector2(0, -110), new Vector2(width - 60, 26), 14).color = Hud.Muted;
             if (Net.IsRemoteClient)
-            {
-                _current.Text(template.perkNameText, "Waiting", "Waiting for the host to accept or skip", new Vector2(0, -80), new Vector2(width, 40), 19);
-            }
+                _current.Text(template.perkNameText, "Waiting", "Host is deciding for the team", new Vector2(0, -156), new Vector2(width - 60, 40), 19);
             else
             {
-                float buttonWidth = Mathf.Min(250f, (width - 30f) / 2f);
-                _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -80), buttonWidth, true);
-                _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -80), buttonWidth, false);
+                float buttonWidth = Mathf.Min(250f, (width - 65f) / 2f);
+                _current._accept = _current.Button(hud, "Accept", new Vector2(-(buttonWidth + 16f) / 2, -156), buttonWidth, true);
+                _current._skip = _current.Button(hud, "Skip", new Vector2((buttonWidth + 16f) / 2, -156), buttonWidth, false);
                 var nav = new Navigation { mode = Navigation.Mode.Explicit, selectOnRight = _current._skip };
                 _current._accept.navigation = nav;
                 nav.selectOnRight = null;
                 nav.selectOnLeft = _current._accept;
                 _current._skip.navigation = nav;
             }
+            _current.Text(template.perkDescriptionText, "Footer", "Host decides for the team. No penalty for skipping.", new Vector2(0, -222), new Vector2(width, 32), 14).color = Hud.Muted;
             _current.SetVisible(visible);
             if (visible) _current.Refresh();
         }
@@ -82,6 +93,18 @@ namespace SpiderSurge
             if (!visible && events != null && events.currentSelectedGameObject != null && events.currentSelectedGameObject.transform.IsChildOf(transform)) events.SetSelectedGameObject(null);
         }
 
+        private Image Panel(string name, Vector2 position, Vector2 size, Color color)
+        {
+            var image = new GameObject(name, typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            image.transform.SetParent(transform, false);
+            image.raycastTarget = false;
+            image.color = color;
+            image.rectTransform.anchorMin = image.rectTransform.anchorMax = new Vector2(.5f, .5f);
+            image.rectTransform.sizeDelta = size;
+            image.rectTransform.anchoredPosition = position;
+            return image;
+        }
+
         private TMP_Text Text(TMP_Text template, string name, string value, Vector2 position, Vector2 size, float fontSize)
         {
             var text = Instantiate(template.gameObject, transform).GetComponent<TMP_Text>();
@@ -90,11 +113,13 @@ namespace SpiderSurge
             text.gameObject.SetActive(true);
             text.raycastTarget = false;
             text.alignment = TextAlignmentOptions.Center;
-            text.enableAutoSizing = false;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = fontSize - 2;
+            text.fontSizeMax = fontSize;
             text.fontSize = fontSize;
             text.color = Color.white;
             text.enableWordWrapping = true;
-            text.overflowMode = TextOverflowModes.Overflow;
+            text.overflowMode = TextOverflowModes.Ellipsis;
             var rect = text.rectTransform;
             rect.localScale = Vector3.one;
             rect.localRotation = Quaternion.identity;
@@ -190,8 +215,10 @@ namespace SpiderSurge
                     if (card.mapNameText == null) continue;
                     var text = UnityEngine.Object.Instantiate(card.mapNameText.gameObject, card.transform).GetComponent<TMP_Text>();
                     text.name = ObjectName;
-                    SettingsPage.SetText(text, $"<color={Consts.Formatting.ColorGold}>{ChaosRules.Points(1, signed: true)}</color>");
+                    SettingsPage.SetText(text, $"<color={Consts.Formatting.ColorGold}>+1 Chaos</color>");
                     text.raycastTarget = false;
+                    ChaosIcon.Add(text.transform, new Vector2(12, 0), 16, Hud.Warm, new Vector2(0, .5f));
+                    text.margin = new Vector4(26, 0, 0, 0);
                     text.color = Color.white;
                     text.fontSize = 14;
                     text.enableAutoSizing = false;

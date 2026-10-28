@@ -99,12 +99,14 @@ namespace StatsMod
 
         private static void OnJoinedHost()
         {
+            RunRecap.Clear();
             GameSessionManager.Instance.ClearRemote();
             TitlesManager.Instance.ClearTitles();
         }
 
         private static void OnLeftHost()
         {
+            RunRecap.Clear();
             GameSessionManager.Instance.ClearRemote();
             PlayerTracker.Instance.ResetPlayerStats();
             TitlesManager.Instance.ClearTitles();
@@ -115,6 +117,7 @@ namespace StatsMod
         {
             writer.Write((byte)reason);
             GameSessionManager.Instance.WriteSession(writer);
+            RunRecap.Write(writer);
             var players = PlayerTracker.Instance.GetActivePlayers();
             writer.Write(players.Count);
             foreach (var pair in players)
@@ -178,6 +181,7 @@ namespace StatsMod
                 var reason = (SnapshotReason)reader.ReadByte();
                 var session = GameSessionManager.Instance;
                 session.ReadSession(reader);
+                RunRecap.Read(reader);
 
                 int count = reader.ReadInt32();
                 for (int i = 0; i < count; i++)

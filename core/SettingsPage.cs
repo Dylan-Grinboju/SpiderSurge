@@ -353,9 +353,9 @@ namespace SpiderSurge.Common
 
                 _pageHelp = "Changes are saved automatically. Hover over a setting or select it with a controller to read more.";
                 _lastHelp = null;
-                _contextHelp = Current == MainPage || Current == "general" || Current == "parts"
-                    || Current == "surge" || Current == "surge.indicator" || Current == "teams"
-                    || Current == "stats" || Current == "stats.presets" || Current.StartsWith("stats.columns", StringComparison.Ordinal);
+                _contextHelp = Current == MainPage || Current == "settings" || Current == "general" || Current == "advanced" || Current == "parts"
+                    || Current == "surge" || Current == "surge.rules" || Current == "surge.indicator" || Current == "teams"
+                    || Current == "stats" || Current == "stats.appearance" || Current == "stats.presets" || Current.StartsWith("stats.columns", StringComparison.Ordinal);
                 _help.SetVisible(_contextHelp);
                 AddContent();
                 ConfigureNavigation();
@@ -385,6 +385,8 @@ namespace SpiderSurge.Common
                 return;
             }
             if (Current == "general") { AddGeneral(); return; }
+            if (Current == "settings") { AddSettings(); return; }
+            if (Current == "advanced") { AddAdvanced(); return; }
             if (Current == "parts") { AddParts(); return; }
             if (Current == "about") { AddAbout(); return; }
             if (Current == "support") { SupportPage.Build(this); return; }
@@ -416,33 +418,48 @@ namespace SpiderSurge.Common
 
         private void AddMain()
         {
-            Note("Choose a settings category. Changes are saved automatically.");
-            foreach (Part part in MenuOrder)
-            {
-                if (part.Running && part.HasSettings)
-                {
-                    Button(part.Title, () => Open(part.Key));
-                    Note(part.Description);
-                }
-            }
+            Note("Play, explore your collection, or make SpiderSurge feel right for you.");
             if (Parts.Surge.Running)
             {
                 Button("How to play", () => Open(SurgeGuide.Page));
                 Note("A guide to starting a run, abilities and ultimates, perk synergies, chaos points, challenges, enemies, controls and multiplayer.");
             }
+            Button("Settings", () => Open("settings"));
+            Note("Display, sound, run rules and privacy. Changes save automatically. Team rules are in Versus Battle setup.");
             if (Parts.Surge.Running || Parts.Stats.Running)
             {
-                Button("Achievements", () => Open(AchievementsHub));
+                Button("Collection", () => Open(AchievementsHub));
                 Note("Browse achievements and the title collection, see unlock requirements, and check what you earned recently.");
             }
-            Button("Mod parts", () => Open("parts"));
-            Note("Surge, Stats and Teams always load. Game fixes can be turned on or off; the change takes effect after restarting.");
             Button("Match history", () => Open("history"));
             Note("Review saved Survival and Versus results, including players, maps, perks, titles and weapon accuracy.");
-            Button("General", () => Open("general"));
-            Note("Update checks, local run recording, optional anonymous reports and reloading the settings file.");
             Button("About SpiderSurge", () => Open("about"));
             Note("Version, credits and support information.");
+        }
+
+        private void AddSettings()
+        {
+            Title("Settings");
+            foreach (Part part in MenuOrder)
+                if (part.Running && part.HasSettings)
+                {
+                    Button(part.Title, () => Open(part.Key));
+                    Note(part.Description);
+                }
+            Button("Records and privacy", () => Open("general"));
+            Note("Keep match history on this PC, export reports, or choose whether to share anonymous run reports.");
+            Button("Advanced", () => Open("advanced"));
+            Note("Updates, game fixes and manual settings files.");
+        }
+
+        private void AddAdvanced()
+        {
+            Title("Advanced");
+            Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
+            Note("Check for a newer SpiderSurge release at startup.");
+            Button("Mod parts and game fixes", () => Open("parts"));
+            Button("Reload the settings file", ReloadFile);
+            Note($"<noparse>{Settings.FilePath}</noparse>");
         }
 
         private void AddParts()
@@ -474,24 +491,28 @@ namespace SpiderSurge.Common
 
         private void AddGeneral()
         {
-            Title("General");
-            Header("Updates");
-            Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
-            Note("Check whether a newer SpiderSurge release is available when the mod starts.");
+            Title("Records and privacy");
+            if (Parts.Stats.Running)
+            {
+                Toggle("Keep match history", "stats.tracking.saveHistory");
+                Note("Keep completed match results on this PC. Turning this off keeps your existing history.");
+                Checkbox("Export detailed reports", Settings.GetBool("stats.tracking.saveStatsToFile") || (Parts.Surge.Running && ModConfig.EnableStatsLogging), value =>
+                {
+                    Settings.Set("stats.tracking.saveStatsToFile", value);
+                    if (Parts.Surge.Running) Settings.Set(ModConfig.StatsLoggingKey, value);
+                });
+                Note("Write detailed Stats and Surge text reports on this PC. Match history and anonymous sharing are separate choices.");
+            }
             if (Parts.Surge.Running)
             {
                 Spacer();
                 SurgeSettingsPage.BuildTelemetry(this);
             }
-            Spacer();
-            Header("Settings file");
-            Button("Reload the settings file", ReloadFile);
-            Note($"<noparse>{Settings.FilePath}</noparse>");
         }
 
         private void AddAchievements()
         {
-            Title("Achievements");
+            Title("Collection");
             if (Parts.Surge.Running) Button($"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})", () => Open(AchievementsPage.Page));
             if (Parts.Stats.Running) Button(StatsMod.StatsSettingsPage.TitlesButtonLabel, () => Open(StatsMod.StatsSettingsPage.TitlesPage));
         }

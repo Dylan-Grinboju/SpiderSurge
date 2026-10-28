@@ -14,46 +14,51 @@ Assert-Equal ($hold.Tick(10, $true, $false, $true)) $false 'Inherited press neve
 Assert-Equal $hold.Progress 0 'Inherited press shows no progress'
 Assert-Equal ($hold.Tick(11, $false, $true, $true)) $false 'Release arms confirmation'
 Assert-Equal ($hold.Tick(12, $true, $false, $true)) $false 'Fresh press starts hold'
-Assert-Equal ($hold.Tick(13, $true, $false, $true)) $false 'One second is too short'
-Assert-Equal $hold.Progress 0.5 'Halfway progress'
-Assert-Equal ($hold.Tick(13.99, $true, $false, $true)) $false 'Just under two seconds is too short'
-Assert-Equal ($hold.Tick(14, $true, $false, $true)) $true 'Exactly two seconds confirms'
+Assert-Equal ($hold.Tick(12.4, $true, $false, $true)) $false 'Half the hold is too short'
+Assert-Equal ([Math]::Abs($hold.Progress - 0.5) -lt .00001) $true 'Halfway progress'
+Assert-Equal ($hold.Tick(12.79, $true, $false, $true)) $false 'Just under 0.8 seconds is too short'
+Assert-Equal ($hold.Tick(12.81, $true, $false, $true)) $true 'A completed 0.8-second hold confirms'
 Assert-Equal ($hold.Tick(20, $true, $false, $true)) $false 'Continued hold cannot confirm twice'
 
 $hold.Reset()
 [void]$hold.Tick(0, $false, $true, $true)
 [void]$hold.Tick(1, $true, $false, $true)
-[void]$hold.Tick(2.5, $true, $false, $true)
-Assert-Equal ($hold.Tick(2.6, $false, $true, $true)) $false 'Early release cancels'
+[void]$hold.Tick(1.5, $true, $false, $true)
+Assert-Equal ($hold.Tick(1.6, $false, $true, $true)) $false 'Early release cancels'
 Assert-Equal $hold.Progress 0 'Early release clears progress'
 [void]$hold.Tick(3, $true, $false, $true)
-Assert-Equal ($hold.Tick(4, $true, $false, $true)) $false 'Separate presses do not accumulate'
-Assert-Equal ($hold.Tick(5, $true, $false, $true)) $true 'New hold gets its own two seconds'
+Assert-Equal ($hold.Tick(3.4, $true, $false, $true)) $false 'Separate presses do not accumulate'
+Assert-Equal ($hold.Tick(5, $true, $false, $true)) $true 'New hold gets its own duration'
 
 foreach ($interruption in 'Pause', 'Focus loss', 'Hidden panel', 'Disabled button') {
     $hold.Reset()
     [void]$hold.Tick(0, $false, $true, $true)
     [void]$hold.Tick(1, $true, $false, $true)
-    [void]$hold.Tick(2.5, $true, $false, $true)
-    Assert-Equal ($hold.Tick(2.6, $true, $false, $false)) $false "$interruption cancels"
+    [void]$hold.Tick(1.5, $true, $false, $true)
+    Assert-Equal ($hold.Tick(1.6, $true, $false, $false)) $false "$interruption cancels"
     Assert-Equal $hold.Progress 0 "$interruption clears progress"
     Assert-Equal ($hold.Tick(10, $true, $false, $true)) $false "$interruption requires release"
     [void]$hold.Tick(11, $false, $true, $true)
     [void]$hold.Tick(12, $true, $false, $true)
-    Assert-Equal ($hold.Tick(14, $true, $false, $true)) $true "$interruption allows a fresh hold"
+    Assert-Equal ($hold.Tick(12.81, $true, $false, $true)) $true "$interruption allows a fresh hold"
 }
 
 $hold.Reset()
 [void]$hold.Tick(0, $false, $true, $true)
 [void]$hold.Tick(1, $true, $false, $true)
-[void]$hold.Tick(2.5, $true, $false, $true)
+[void]$hold.Tick(1.5, $true, $false, $true)
 $hold.Reset()
 Assert-Equal ($hold.Tick(10, $true, $false, $true)) $false 'Switching buttons requires release'
 [void]$hold.Tick(11, $false, $false, $true)
 Assert-Equal ($hold.Tick(12, $true, $false, $true)) $false 'Another held input prevents arming'
-[void]$hold.Tick(13, $false, $true, $true)
+[void]$hold.Tick(12.4, $false, $true, $true)
 [void]$hold.Tick(14, $true, $false, $true)
 Assert-Equal ($hold.Tick(14, $true, $false, $true)) $false 'Repeated frame does not advance progress'
 Assert-Equal ($hold.Tick(16, $true, $false, $true)) $true 'Elapsed real time completes the hold'
 
+$skip = [SpiderSurge.HoldConfirmation]::new(0)
+Assert-Equal ($skip.Tick(0, $true, $false, $true)) $false 'Skip rejects the previous screen press'
+[void]$skip.Tick(1, $false, $true, $true)
+Assert-Equal ($skip.Tick(2, $true, $false, $true)) $true 'Skip responds to a fresh press immediately'
+Assert-Equal ($skip.Tick(3, $true, $false, $true)) $false 'Skip responds once'
 Write-Output "PASS: $checks hold confirmation checks"

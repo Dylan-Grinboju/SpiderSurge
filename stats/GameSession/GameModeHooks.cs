@@ -181,7 +181,7 @@ namespace StatsMod
                 {
                     bool hasPendingTitles = TitlesManager.Instance.HasGameEndedTitles && TitlesManager.Instance.TitleCount > 0;
 
-                    if (hasPendingTitles)
+                    if (hasPendingTitles || SpiderSurge.Common.RunRecap.Last != null)
                     {
                         UIManager.AutoShowTitles(animate: true);
                     }

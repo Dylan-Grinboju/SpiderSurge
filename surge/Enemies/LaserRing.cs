@@ -21,6 +21,7 @@ namespace SpiderSurge.Enemies
         [SerializeField] private AudioSource killSound;
         [SerializeField] private float chargeSoundStart;
 
+        private bool hintQueued;
         private static Collider2D[] hits = new Collider2D[32];
         private readonly HashSet<Rigidbody2D> hitThisPulse = new HashSet<Rigidbody2D>();
         private Vector3[] points;
@@ -109,6 +110,7 @@ namespace SpiderSurge.Enemies
                 if (phase != Phase.Idle) GoOut();
                 return;
             }
+            if (!hintQueued) hintQueued = EncounterHints.Encounter("laser-shield", "Break the red shield to stop this enemy's laser ring.", health);
             if (!synced) return;
 
             // Freeze Time and the Black Hole make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning

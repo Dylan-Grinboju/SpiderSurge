@@ -19,6 +19,7 @@ namespace SpiderSurge.Enemies
         private readonly HashSet<GameObject> ignored = new HashSet<GameObject>();
         private readonly List<EnemyHealthSystem> hatchlings = new List<EnemyHealthSystem>();
         private bool hatching;
+        private bool hintQueued;
         private float timer;
         private Vector3 telegraphPosition;
 
@@ -51,6 +52,11 @@ namespace SpiderSurge.Enemies
             health = GetComponent<EnemyHealthSystem>();
             colliders = GetComponentsInChildren<Collider2D>(true);
             timer = Mathf.Max(0f, interval - Consts.Values.Enemies.CocoonFirstHatchDelay);
+        }
+
+        private void Update()
+        {
+            if (!hintQueued) hintQueued = EncounterHints.Encounter("cocoon", "Destroy the cocoon to stop it hatching more wasps.", health);
         }
 
         private void FixedUpdate()
