@@ -14,12 +14,12 @@ namespace SpiderTeams
 {
     internal sealed class VersusTeamsPage : MonoBehaviour
     {
-        private const float RowWidth = 720f;
+        private float RowWidth => _viewport != null ? Mathf.Clamp(_viewport.rect.width - 8f, 480f, 720f) : 720f;
         private const float RowHeight = 30f;
         private const float ArrowWidth = 40f;
         private const float ValueWidth = 224f;
         private const float ColumnSpacing = 8f;
-        private const float LabelWidth = RowWidth - ValueWidth - 2f * ArrowWidth - 3f * ColumnSpacing;
+        private float LabelWidth => RowWidth - ValueWidth - 2f * ArrowWidth - 3f * ColumnSpacing;
         private const float FontSize = 19f;
         private const float MinFontSize = 12f;
 
@@ -55,6 +55,7 @@ namespace SpiderTeams
         private bool _captured;
         private GameObject _selected;
         private bool _dirty;
+        private float _builtViewportWidth;
         internal bool AdvancedAbilities { get; private set; }
         internal void ToggleAdvancedAbilities() { AdvancedAbilities = !AdvancedAbilities; Refresh(); }
         private bool _showing;
@@ -167,6 +168,11 @@ namespace SpiderTeams
             foreach (Transform child in _originals)
             {
                 if (child == _title || child == _back.transform) continue;
+                if (child.name == "VersusTypes")
+                {
+                    Vector3 scale = child.localScale;
+                    _undo.Add(() => { if (child != null) child.localScale = scale; });
+                }
                 child.SetParent(content, false);
                 if (IsChoiceRow(child))
                 {
@@ -235,6 +241,7 @@ namespace SpiderTeams
         private void LateUpdate()
         {
             if (_content == null) return;
+            if (_view.IsVisible && !Mathf.Approximately(_builtViewportWidth, _viewport.rect.width)) Rebuild(true);
             if (_dirty) Rebuild(false);
             GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             if (_showing)
@@ -255,6 +262,16 @@ namespace SpiderTeams
         private void Rebuild(bool force)
         {
             _dirty = false;
+            _builtViewportWidth = _viewport.rect.width;
+            foreach (Transform original in _originals)
+            {
+                if (IsChoiceRow(original)) StyleRow(original);
+                else if (original.name == "VersusTypes")
+                {
+                    float factor = Mathf.Min(1f, Mathf.Max(0f, _viewport.rect.width - 8f) / ((RectTransform)original).rect.width);
+                    original.localScale = new Vector3(factor, factor, 1f);
+                }
+            }
             var entries = new List<Entry>();
             _building = entries;
             _primaryCount = 0;
@@ -498,7 +515,7 @@ namespace SpiderTeams
         }
 
         // The game's rows and the Teams rows share one set of columns, so their edges line up.
-        private static void StyleRow(Transform row)
+        private void StyleRow(Transform row)
         {
             ((RectTransform)row).sizeDelta = new Vector2(RowWidth, RowHeight);
             var layout = row.GetComponent<HorizontalLayoutGroup>();

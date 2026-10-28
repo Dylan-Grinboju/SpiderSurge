@@ -267,6 +267,11 @@ namespace SpiderSurge
 
         private static void OnLeftHost()
         {
+            if (Parts.Stats.Running && StatsMod.GameSessionManager.Instance.IsActive)
+            {
+                if (SurgeGameModeManager.IsSurgeRunActive) RunRecap.Capture();
+                else RunRecap.Clear();
+            }
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
             SurgeGameModeManager.Instance?.ResetRun();

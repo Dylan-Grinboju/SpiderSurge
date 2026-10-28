@@ -385,6 +385,7 @@ namespace StatsMod
         public void OnRemoteSnapshot(SnapshotReason reason)
         {
             if (reason != SnapshotReason.Started) return;
+            RunRecap.Begin();
 
             if (currentGameMode == GameMode.Versus)
             {

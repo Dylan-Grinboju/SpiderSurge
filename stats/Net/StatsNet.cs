@@ -106,7 +106,6 @@ namespace StatsMod
 
         private static void OnLeftHost()
         {
-            RunRecap.Clear();
             GameSessionManager.Instance.ClearRemote();
             PlayerTracker.Instance.ResetPlayerStats();
             TitlesManager.Instance.ClearTitles();
