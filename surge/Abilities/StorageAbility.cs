@@ -454,7 +454,7 @@ namespace SpiderSurge
                     {
                         newWeapon.ammo = data.Ammo;
                         KeepRestoredAmmo(newWeapon, data.Ammo);
-                        AchievementTracker.Run("Family Heirloom", () => StoredWeaponAchievement.Restore(newWeapon, data.Journey, playerId));
+                        AchievementTracker.Run("Family Heirloom", static kept => StoredWeaponAchievement.Restore(kept.newWeapon, kept.Journey, kept.playerId), (newWeapon, data.Journey, playerId));
                     }
 
                     newWeaponObj.transform.SetParent(transform);

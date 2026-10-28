@@ -200,13 +200,12 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(StatsMod.HitLogic), nameof(StatsMod.HitLogic.SetExplosionOwner))]
-    internal static class MissileExplosionAchievementPatch
+    // A missile's blast carries its shooter and the player who returned it
+    internal static class MissileExplosionAchievement
     {
-        [HarmonyPostfix]
-        private static void Postfix(Explosion explosion, NetworkBehaviour source)
+        internal static void OnExplosionCreated(Explosion explosion, NetworkBehaviour source)
         {
-            if (Net.IsAuthority) AchievementTracker.Run("Returned missile", () => AbilityAchievementTracker.TransferMissile(explosion, source));
+            if (Net.IsAuthority) AchievementTracker.Run("Returned missile", static blast => AbilityAchievementTracker.TransferMissile(blast.explosion, blast.source), (explosion, source));
         }
     }
 }

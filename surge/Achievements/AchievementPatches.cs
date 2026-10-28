@@ -104,41 +104,39 @@ namespace SpiderSurge
     }
 
     // Total Destruction counts the teammates one Thermal Detonation kills
-    [HarmonyPatch(typeof(PulseAbility), "ApplyPulsePhysics")]
-    public static class PulseAbility_Achievement_Patch
+    public static class TotalDestructionAchievement
     {
-        [HarmonyPrefix]
-        public static void Prefix(PulseAbility __instance, bool deadly, out List<SpiderHealthSystem> __state)
+        public static List<SpiderHealthSystem> TeammatesAtRisk(PulseAbility ability, bool deadly)
         {
-            __state = null;
-            PlayerController caster = PulseAbility.CasterOf(__instance);
-            if (!deadly || caster == null) return;
+            PlayerController caster = PulseAbility.CasterOf(ability);
+            if (!deadly || caster == null) return null;
 
             var teammates = new List<SpiderHealthSystem>();
-            AchievementTracker.Run("Thermal Detonation", () =>
-            {
-                foreach (PlayerController player in Players.All)
-                {
-                    SpiderHealthSystem spider = player != null ? player.spiderHealthSystem : null;
-                    if (AchievementTracker.AreTeammates(caster, player) && !AchievementTracker.Gone(spider)) teammates.Add(spider);
-                }
-            });
-            if (teammates.Count >= AchievementTracker.ThermalTeammateKills) __state = teammates;
+            AchievementTracker.Run("Thermal Detonation", static at => Gather(at.caster, at.teammates), (caster, teammates));
+            return teammates.Count >= AchievementTracker.ThermalTeammateKills ? teammates : null;
         }
 
-        [HarmonyFinalizer]
-        public static void Finalizer(PulseAbility __instance, List<SpiderHealthSystem> __state)
+        private static void Gather(PlayerController caster, List<SpiderHealthSystem> teammates)
         {
-            if (__state == null) return;
-
-            AchievementTracker.Run("Thermal Detonation", () =>
+            foreach (PlayerController player in Players.All)
             {
-                int killed = __state.FindAll(AchievementTracker.Gone).Count;
+                SpiderHealthSystem spider = player != null ? player.spiderHealthSystem : null;
+                if (AchievementTracker.AreTeammates(caster, player) && !AchievementTracker.Gone(spider)) teammates.Add(spider);
+            }
+        }
+
+        public static void Counted(PulseAbility ability, List<SpiderHealthSystem> teammates)
+        {
+            if (teammates == null) return;
+
+            AchievementTracker.Run("Thermal Detonation", static at =>
+            {
+                int killed = at.teammates.FindAll(AchievementTracker.Gone).Count;
                 if (killed >= AchievementTracker.ThermalTeammateKills)
                 {
-                    SurgeAchievements.Unlock(SurgeAchievements.TotalDestruction, PulseAbility.CasterOf(__instance));
+                    SurgeAchievements.Unlock(SurgeAchievements.TotalDestruction, PulseAbility.CasterOf(at.ability));
                 }
-            });
+            }, (ability, teammates));
         }
     }
 

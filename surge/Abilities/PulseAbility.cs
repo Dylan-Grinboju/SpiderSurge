@@ -222,7 +222,21 @@ namespace SpiderSurge
 
         private readonly HashSet<int> impactAccents = new HashSet<int>();
 
+        // The attack scope wraps this whole method, so the achievement check runs inside it
         private void ApplyPulsePhysics(PulseParams p, bool deadly)
+        {
+            var teammates = TotalDestructionAchievement.TeammatesAtRisk(this, deadly);
+            try
+            {
+                Pulse(p, deadly);
+            }
+            finally
+            {
+                TotalDestructionAchievement.Counted(this, teammates);
+            }
+        }
+
+        private void Pulse(PulseParams p, bool deadly)
         {
             int playerID = playerController.playerID.Value;
 
@@ -291,7 +305,7 @@ namespace SpiderSurge
                     var component = damageable as Component;
                     if (component != null && impactAccents.Add(component.GetInstanceID()))
                     {
-                        SurgeVfx.Safely(() => AccentVfx.Impact(closestPoint, direction, deadly));
+                        SurgeVfx.Safely(static hit => AccentVfx.Impact(hit.closestPoint, hit.direction, hit.deadly), (closestPoint, direction, deadly));
                         SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
                     }
                     if (!deadly && rb != null)
@@ -342,7 +356,7 @@ namespace SpiderSurge
             }
             _enemiesToLaunch.Clear();
             if (!deadly && launched >= 5)
-                AchievementTracker.Run("Personal Space", () => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, playerController));
+                AchievementTracker.Run("Personal Space", static caster => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, caster), playerController);
         }
 
         // The activating player must never be affected by their own pulse.
