@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace SpiderSurge
 {
@@ -16,9 +17,9 @@ namespace SpiderSurge
         // A hit another prefix cancelled (Teams friendly fire) never reached the spider, so Null Field doesn't count it
         [HarmonyPatch("Damage")]
         [HarmonyPrefix]
-        public static void Damage_Prefix(SpiderHealthSystem __instance, bool __runOriginal)
+        public static void Damage_Prefix(SpiderHealthSystem __instance, Vector3 force, Vector3 point, bool __runOriginal)
         {
-            if (__runOriginal) TryRecordHit(__instance);
+            if (__runOriginal) TryRecordHit(__instance, direction: (point - __instance.transform.position).sqrMagnitude > 0.01f ? point - __instance.transform.position : -force);
         }
 
         // Lava disintegrates a spider inside a Null Field (the Black Hole spares it); so does falling below the map, which only delays the death and isn't a hit
@@ -62,12 +63,12 @@ namespace SpiderSurge
             storageAbility?.OnCharacterDied();
         }
 
-        private static void TryRecordHit(SpiderHealthSystem healthSystem, bool lava = false)
+        private static void TryRecordHit(SpiderHealthSystem healthSystem, bool lava = false, Vector3 direction = default)
         {
             ImmuneAbility ability = GetAbilitySafe(healthSystem);
             if (ability != null)
             {
-                ability.RegisterHit(lava);
+                ability.RegisterHit(lava, lava ? Vector3.down : direction);
             }
         }
 

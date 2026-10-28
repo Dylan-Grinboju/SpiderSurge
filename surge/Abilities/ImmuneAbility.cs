@@ -118,14 +118,29 @@ namespace SpiderSurge
         }
 
         // Record blocked hits for ability effects and statistics.
-        public void RegisterHit(bool lava = false)
+        public void RegisterHit(bool lava = false, Vector3 direction = default)
         {
             if (isActive && IsImmune)
             {
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
-                if (bubble != null) bubble.Hit();
+                if (IsAuthority && Time.time >= nextHitAccent)
+                {
+                    nextHitAccent = Time.time + 0.15f;
+                    if (direction.sqrMagnitude < 0.001f) direction = Vector3.down;
+                    if (bubble != null) bubble.Hit(direction);
+                    if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ImmuneHit, PlayerId, spiderHealthSystem.transform.position, Mathf.Atan2(direction.y, direction.x), false);
+                }
             }
+        }
+
+        private float nextHitAccent;
+
+        public static void ShowRemoteHit(int playerId, Vector3 direction)
+        {
+            var health = Players.HealthOf(playerId);
+            var ability = health != null ? GetByHealthSystem(health) : null;
+            if (ability != null && ability.bubble != null) ability.bubble.Hit(direction);
         }
 
         private NullFieldBubble bubble;
