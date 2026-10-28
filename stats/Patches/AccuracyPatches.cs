@@ -21,7 +21,8 @@ namespace StatsMod
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
             TrackSpawns(instructions, original, AccessTools.Method(typeof(AccuracyTracker), nameof(AccuracyTracker.Spawned)));
 
-        internal static IEnumerable<CodeInstruction> TrackSpawns(IEnumerable<CodeInstruction> instructions, MethodBase original, MethodInfo callback)
+        internal static IEnumerable<CodeInstruction> TrackSpawns(IEnumerable<CodeInstruction> instructions, MethodBase original, MethodInfo callback,
+            string lost = "accuracy is not tracked")
         {
             int tracked = 0;
             foreach (CodeInstruction instruction in instructions)
@@ -35,7 +36,7 @@ namespace StatsMod
                     tracked++;
                 }
             }
-            if (tracked == 0) Logger.LogWarning($"{original.DeclaringType?.Name}.{original.Name} no longer spawns projectiles; accuracy is not tracked");
+            if (tracked == 0) Logger.LogWarning($"{original.DeclaringType?.Name}.{original.Name} no longer spawns projectiles; {lost}");
         }
     }
 
