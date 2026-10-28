@@ -21,6 +21,12 @@ namespace SpiderSurge
         private string status;
         private int lastSeconds = -1;
         private int lastState = -1;
+        private float readyAt = -10f;
+
+        public static void Ready(BaseAbility tracked)
+        {
+            if (Rows.TryGetValue(tracked.PlayerId, out var row) && row.ability == tracked) row.readyAt = Time.time;
+        }
 
         // A dead player's spider is destroyed with its ability, so the row stays and shows Down until the next spider's ability takes it over
         public static void Track(BaseAbility tracked)
@@ -135,6 +141,9 @@ namespace SpiderSurge
             Hud.Fill(bar, Hud.Line);
             bar.width *= progress;
             Hud.Fill(bar, color);
+            float glint = Mathf.Clamp01(1f - (Time.time - readyAt) / 0.22f);
+            if (ready && glint > 0f)
+                Hud.Fill(new Rect(bar.xMax - 5f * scale, bar.y - 1f * scale, 5f * scale, bar.height + 2f * scale), new Color(1f, 1f, 1f, glint * (ModConfig.ReducedEffects ? 0.3f : 0.8f)));
 
             if (exists && ability is StorageAbility storage)
             {

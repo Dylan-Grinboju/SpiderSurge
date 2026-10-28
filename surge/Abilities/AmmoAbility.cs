@@ -236,7 +236,7 @@ namespace SpiderSurge
 
             if (spiderHealthSystem != null)
             {
-                ClipVfx.Cast(spiderHealthSystem.transform.position);
+                ClipVfx.Cast(trackedWeapon != null ? trackedWeapon.transform.position : spiderHealthSystem.transform.position);
                 aura = WeaponAura.Attach(spiderHealthSystem.transform);
                 ShowAuraOn(trackedWeapon);
                 if (Net.IsHost) SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
@@ -250,7 +250,7 @@ namespace SpiderSurge
             clip.StopAura();
             clip.showingRemote = on && clip.spiderHealthSystem != null;
             if (!clip.showingRemote) return;
-            ClipVfx.Cast(position);
+            ClipVfx.Cast(clip.weaponManager != null && clip.weaponManager.equippedWeapon != null ? clip.weaponManager.equippedWeapon.transform.position : position);
             clip.aura = WeaponAura.Attach(clip.spiderHealthSystem.transform);
             clip.ShowAuraOn(clip.weaponManager != null ? clip.weaponManager.equippedWeapon : null);
         }
@@ -268,6 +268,21 @@ namespace SpiderSurge
                 nearestDistance = distance;
             }
             if (nearest != null) ClipVfx.Drop(nearest);
+        }
+
+        private float nextShotAccent;
+
+        public static void AccentShot(Weapon weapon)
+        {
+            if (weapon == null || weapon.owner == null) return;
+            int player = Players.IdOf(weapon.owner);
+            if (!playerAmmoAbilities.TryGetValue(player, out var ability) || ability == null || !ability.isActive || ability.aura == null || Time.time < ability.nextShotAccent) return;
+            ability.nextShotAccent = Time.time + 0.08f;
+            Vector3 position = weapon.point != null ? weapon.point.position : weapon.transform.position;
+            Vector3 direction = weapon.transform.up;
+            float angle = Mathf.Atan2(direction.y, direction.x);
+            WeaponVfx.Shot(position, angle);
+            if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ClipShot, player, position, angle, false);
         }
 
         private WeaponAura aura;

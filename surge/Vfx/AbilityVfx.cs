@@ -13,10 +13,10 @@ namespace SpiderSurge.Vfx
                 float travel = radius / speed;
 
                 Shockwave.Expand(position, radius, color, speed, 2.5f);
-                SurgeVfx.Flash(position, color, deadly ? 2f : 1.3f, radius * 0.6f, 0.3f);
-                SurgeVfx.Disc(position, Color.white, 2f, radius * 0.25f, 0.2f, SurgeVfx.Order + 2);
-                SurgeVfx.Burst(position, Color.white, color, 36, speed, speed, 1.5f, 2.5f, travel, travel, 1f, trails: true);
-                SurgeVfx.Burst(position, color, color, 50, 30f, 140f, 0.5f, 1.2f, 0.4f, 0.9f, 3f, trails: false);
+                SurgeVfx.Flash(position, color, deadly ? 1.5f : 1.8f, Mathf.Min(radius * 0.45f, 35f), 0.14f);
+                SurgeVfx.Disc(position, SurgeVfx.SetAlpha(color, 0.8f), 2f, 12f, 0.1f, SurgeVfx.Order + 2);
+                SurgeVfx.Burst(position, Color.Lerp(color, Color.white, 0.3f), color, deadly ? 14 : 22, speed * 0.35f, speed * 0.95f, 0.8f, 1.8f, travel * 0.45f, travel, 1f, trails: true);
+                AccentVfx.Shards(position, color, deadly ? 16 : 26, 100f, 3f, 0.5f);
             });
         }
     }
@@ -32,10 +32,10 @@ namespace SpiderSurge.Vfx
                 float travel = range / speed;
 
                 Shockwave.Expand(position, range, ring, speed, 2f, 0.25f);
-                SurgeVfx.Flash(position, Consts.Values.Freeze.TintColor, 1.5f, range * 0.7f, 0.5f);
-                SurgeVfx.Disc(position, Consts.Values.Vfx.FrostColor, range * 0.3f, range, 0.7f);
-                SurgeVfx.Burst(position, Color.white, ring, 30, speed * 0.9f, speed, 1f, 2f, travel, travel, 1f, trails: true);
-                SurgeVfx.Burst(position, Color.white, Consts.Values.Freeze.TintColor, 60, 4f, 16f, 0.5f, 1.1f, 1f, 1.8f, range * 0.9f, trails: false, gravity: -0.02f);
+                SurgeVfx.Flash(position, Consts.Values.Freeze.TintColor, 1.2f, Mathf.Min(32f, range * 0.4f), 0.18f);
+                SurgeVfx.Disc(position, SurgeVfx.SetAlpha(Consts.Values.Vfx.FrostColor, 0.18f), range * 0.3f, range, 0.35f);
+                AccentVfx.Shards(position, ring, 32, 25f, range * 0.8f, 0.5f);
+                SurgeVfx.Burst(position, Consts.Values.Freeze.TintColor, ring, 24, 0.5f, 3f, 0.4f, 0.8f, 0.5f, 1f, range * 0.9f, trails: false);
             });
         }
 
@@ -43,8 +43,8 @@ namespace SpiderSurge.Vfx
         {
             SurgeVfx.Safely(() =>
             {
-                Shockwave.Expand(position, 12f, Consts.Values.Freeze.RingColor, 120f, 1.2f, 0.1f);
-                SurgeVfx.Burst(position, Color.white, Consts.Values.Freeze.TintColor, 18, 40f, 80f, 0.6f, 1.2f, 0.4f, 0.7f, 2f, trails: true, gravity: 0.5f);
+                AccentVfx.Shards(position, Consts.Values.Freeze.TintColor, 16, 65f, 3f, 0.38f);
+                SurgeVfx.Flash(position, Consts.Values.Freeze.TintColor, 0.8f, 14f, 0.1f);
             });
         }
 
@@ -81,8 +81,8 @@ namespace SpiderSurge.Vfx
             SurgeVfx.Safely(() =>
             {
                 Color purple = Consts.Values.Storage.RingColor;
-                Shockwave.Collapse(position, 14f, purple, 0.25f, 1.2f);
-                SurgeVfx.Burst(position, purple, Color.white, 20, -56f, -56f, 0.6f, 1.2f, 0.25f, 0.25f, 14f, trails: true, radiusThickness: 0f);
+
+                SurgeVfx.Burst(position, purple, purple, 8, -28f, -28f, 0.4f, 0.7f, 0.25f, 0.25f, 7f, trails: true, radiusThickness: 0f);
                 SurgeVfx.Flash(position, purple, 1.5f, 15f, 0.3f);
             });
         }
@@ -93,9 +93,9 @@ namespace SpiderSurge.Vfx
             SurgeVfx.Safely(() =>
             {
                 Color purple = Consts.Values.Storage.RingColor;
-                Shockwave.Expand(position, 18f, purple, 150f, 1.5f, 0.1f);
+
                 SurgeVfx.Disc(position, Color.white, 1f, 8f, 0.2f, SurgeVfx.Order + 2);
-                SurgeVfx.Burst(position, Color.white, purple, 24, 20f, 50f, 0.6f, 1.2f, 0.3f, 0.6f, 2f, trails: true);
+                AccentVfx.Shards(position, purple, 8, 24f, 2f, 0.3f);
                 SurgeVfx.Flash(position, purple, 2f, 20f, 0.3f);
             });
         }
@@ -107,15 +107,21 @@ namespace SpiderSurge.Vfx
             {
                 Color purple = Consts.Values.Storage.RingColor;
                 Vector3 position = body.position;
-                float fall = 0.8f;
-                return new BlackHoleVfx
+                float core = Consts.Values.Storage.BlackHoleCoreRadius;
+                var effect = new BlackHoleVfx
                 {
-                    Ring = Shockwave.Hold(position, range, purple, 2f, body),
-                    Inner = Shockwave.Hold(position, Consts.Values.Storage.BlackHoleCoreRadius, Color.white, 1f, body),
-                    Glow = SurgeVfx.Disc(position, purple, 0f, 13f, time * 2f, SurgeVfx.Order + 8, pulse: true, follow: body, hard: true),
-                    Core = SurgeVfx.Disc(position, Color.black, 0f, 9f, time * 2f, SurgeVfx.Order + 9, pulse: true, follow: body, hard: true),
-                    Motes = SurgeVfx.Stream(body, Vector3.zero, purple, Color.white, 40f, -range / fall, -range / fall, 0.8f, 1.6f, fall, range, trails: true, radiusThickness: 0f),
+                    Ring = Shockwave.Hold(position, range, SurgeVfx.SetAlpha(purple, 0.22f), 0.9f, body),
+                    Inner = Shockwave.Hold(position, core, purple, 2.4f, body),
+                    Glow = SurgeVfx.Disc(position, SurgeVfx.SetAlpha(purple, 0.75f), core * 1.15f, core * 1.15f, float.MaxValue, -2, follow: body),
+                    Core = SurgeVfx.Disc(position, SurgeVfx.SetAlpha(Color.black, 0.9f), core * 0.7f, core * 0.7f, float.MaxValue, -1, follow: body, hard: true),
+                    Motes = OrbitParticles.Create(body, range, core * 0.65f),
                 };
+                Object.Destroy(effect.Ring.gameObject, time + 1f);
+                Object.Destroy(effect.Inner.gameObject, time + 1f);
+                Object.Destroy(effect.Glow.gameObject, time + 1f);
+                Object.Destroy(effect.Core.gameObject, time + 1f);
+                Object.Destroy(effect.Motes.gameObject, time + 1f);
+                return effect;
             });
         }
 
@@ -133,10 +139,11 @@ namespace SpiderSurge.Vfx
                     SurgeVfx.Fade(open.Motes);
                 }
                 Color purple = Consts.Values.Storage.RingColor;
-                Shockwave.Collapse(position, range, purple, Consts.Values.Storage.BlackHoleCloseTime, 2f, body, at =>
+                Shockwave.Collapse(position, range, SurgeVfx.SetAlpha(purple, 0.3f), Consts.Values.Storage.BlackHoleCloseTime, 1f, body);
+                Shockwave.Collapse(position, Consts.Values.Storage.BlackHoleCoreRadius, purple, 0.14f, 3f, body, at =>
                 {
-                    SurgeVfx.Flash(at, purple, 3f, range * 0.4f, 0.35f);
-                    SurgeVfx.Burst(at, Color.white, purple, 30, 40f, 120f, 0.6f, 1.4f, 0.3f, 0.6f, 2f, trails: true);
+                    SurgeVfx.Flash(at, purple, 1.8f, 28f, 0.14f);
+                    AccentVfx.Shards(at, purple, 12, 45f, 2f, 0.3f);
                 });
             });
         }
@@ -158,9 +165,8 @@ namespace SpiderSurge.Vfx
             SurgeVfx.Safely(() =>
             {
                 Color color = Consts.Values.Vfx.ClipColor;
-                Shockwave.Expand(position, 22f, color, 180f, 1.5f, 0.1f);
-                SurgeVfx.Flash(position, color, 2f, 25f, 0.3f);
-                SurgeVfx.Burst(position, Color.white, color, 20, 30f, 70f, 0.6f, 1.2f, 0.3f, 0.6f, 3f, trails: true);
+                SurgeVfx.Flash(position, color, 0.9f, 12f, 0.15f);
+                AccentVfx.Shards(position, color, 8, 20f, 2f, 0.3f);
             });
         }
 
@@ -193,8 +199,8 @@ namespace SpiderSurge.Vfx
                 aura.follow.Target = weapon;
                 aura.follow.DestroyWithTarget = false;
                 Color color = Consts.Values.Vfx.ClipColor;
-                aura.embers = SurgeVfx.Stream(holder.transform, Vector3.zero, Color.white, color, 55f, 8f, 20f, 0.7f, 1.4f, 0.7f, 3f, gravity: -0.3f);
-                aura.glow = SurgeVfx.Flash(weapon.position, color, 1.5f, 12f, float.MaxValue);
+                aura.embers = SurgeVfx.Stream(holder.transform, Vector3.zero, color, color, 12f, 1f, 4f, 0.4f, 0.7f, 0.35f, 1.5f, gravity: -0.3f);
+                aura.glow = SurgeVfx.Flash(weapon.position, color, 0.65f, 8f, float.MaxValue);
                 aura.glow.transform.SetParent(holder.transform, true);
                 aura.shown = true;
             }));
@@ -208,7 +214,7 @@ namespace SpiderSurge.Vfx
         private void Show(Transform weapon)
         {
             shown = weapon != null;
-            if (follow != null) follow.Target = weapon;
+            if (follow != null) follow.Target = weapon != null ? (weapon.GetComponent<Weapon>()?.grip ?? weapon) : null;
             if (embers != null)
             {
                 ParticleSystem.EmissionModule emission = embers.emission;
@@ -234,16 +240,16 @@ namespace SpiderSurge.Vfx
     public class NullFieldBubble : MonoBehaviour
     {
         private const float Radius = 7f;
-        private const float RippleGap = 0.25f;
         private SpriteRenderer shell;
         private ParticleSystem motes;
         private Transform body;
         private float spriteSize;
         private float baseAlpha;
         private float flash;
-        private float nextRipple;
         private float ending;
         private bool popped;
+        private float hitTime = -10f;
+        private Vector3 hitDirection;
 
         public static NullFieldBubble Attach(Transform body)
         {
@@ -271,16 +277,18 @@ namespace SpiderSurge.Vfx
             }));
         }
 
-        // Lava and beams hit every tick, so the ripple and its light come at most once per gap while the shell keeps flashing
-        public void Hit()
+        // The caller throttles sustained hits before broadcasting them to every peer.
+        public void Hit(Vector3 direction)
         {
             flash = 1f;
-            if (Time.time < nextRipple) return;
-            nextRipple = Time.time + RippleGap;
+            hitTime = Time.time;
+            hitDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.down;
             SurgeVfx.Safely(() =>
             {
-                Shockwave.Expand(body != null ? body.position : transform.position, 20f, Consts.Values.Vfx.NullFieldColor, 160f, 1.5f, 0.1f);
-                SurgeVfx.Flash(transform.position, Consts.Values.Vfx.NullFieldColor, 2f, 25f, 0.25f);
+                Color gold = Consts.Values.Vfx.NullFieldColor;
+                ArcFlash.Draw(transform.position, hitDirection, gold, Radius, 2f, 0.18f, body);
+                AccentVfx.Shards(transform.position + hitDirection * Radius, gold, 7, 24f, 1f, 0.25f);
+                SurgeVfx.Flash(transform.position, gold, 0.9f, 14f, 0.12f);
             });
         }
 
@@ -318,13 +326,15 @@ namespace SpiderSurge.Vfx
                 float pulse = ModConfig.ReducedEffects ? 1f : 1f + 0.05f * Mathf.Sin(Time.time * 6f);
                 scale = Radius * 2f / spriteSize * pulse;
             }
-            shell.transform.localScale = new Vector3(scale, scale, 1f);
-            shell.transform.Rotate(0f, 0f, 40f * Time.deltaTime);
+            float hitAge = Time.time - hitTime;
+            float squash = !ModConfig.ReducedEffects && hitAge < 0.25f ? Mathf.Sin(hitAge / 0.25f * Mathf.PI * 2f) * 0.12f * (1f - hitAge / 0.25f) : 0f;
+            shell.transform.localScale = new Vector3(scale * (1f - squash), scale * (1f + squash), 1f);
+            shell.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(hitDirection.y, hitDirection.x) * Mathf.Rad2Deg);
 
             flash = Mathf.MoveTowards(flash, 0f, Time.deltaTime * 4f);
             float visibleFlash = flash * (ModConfig.ReducedEffects ? 0.25f : 1f);
             Color color = Color.Lerp(Consts.Values.Vfx.NullFieldColor, Color.white, visibleFlash * 0.7f);
-            color.a = Mathf.Lerp(baseAlpha, Mathf.Min(1f, baseAlpha * 3f), visibleFlash);
+            color.a = Mathf.Lerp(baseAlpha, Mathf.Min(1f, baseAlpha * 1.8f), visibleFlash);
             shell.color = color;
         }
     }
@@ -393,13 +403,13 @@ namespace SpiderSurge.Vfx
 
     public static class ReadyVfx
     {
-        // The ability coming off cooldown shows a small ring from the spider in the indicator's ready color
+        // Readiness glints on the indicator without competing with an activation.
         public static void Pulse(Vector3 position, Color color)
         {
             SurgeVfx.Safely(() =>
             {
-                Shockwave.Expand(position, 16f, color, 110f, 1.2f, 0.1f);
-                SurgeVfx.Flash(position, color, 1.5f, 18f, 0.3f);
+                SurgeVfx.Disc(position, color, 0.5f, 2.5f, 0.16f, 32767);
+                SurgeVfx.Burst(position, color, color, 4, 4f, 10f, 0.3f, 0.5f, 0.12f, 0.2f, 0.5f, trails: false, order: 32767);
             });
         }
     }

@@ -200,8 +200,8 @@ namespace SpiderSurge
             Weapon val = heldWeaponObj.GetComponent<Weapon>();
             if (val == null) return null;
 
+            WeaponVfx.Fold(val, _weaponManager.transform, false);
             _weaponManager.UnEquipWeapon();
-            StorageVfx.Send(heldWeaponObj.transform.position);
 
             HideFromClients(heldWeaponObj);
             heldWeaponObj.transform.SetParent(transform);
@@ -244,7 +244,7 @@ namespace SpiderSurge
             storedWeaponObj.SetActive(true);
             storedWeaponObj.transform.SetParent(null); // Detach from player so it can move freely
             ShowToClients(storedWeaponObj);
-            StorageVfx.Retrieve(_weaponManager.transform.position);
+
 
             Weapon weapon = storedWeaponObj.GetComponent<Weapon>();
             if (weapon != null)
@@ -257,6 +257,7 @@ namespace SpiderSurge
 
                 weapon.Equip(_weaponManager);
                 _weaponManager.OnEquipWeapon(weapon);
+                WeaponVfx.Fold(weapon, _weaponManager.transform, true);
             }
 
             if (SoundManager.Instance != null && !IsRemote)

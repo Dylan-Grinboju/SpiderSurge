@@ -729,7 +729,9 @@ namespace SpiderSurge
 
             if (IsUnlocked() && spiderHealthSystem != null && IsPlayerAlive())
             {
-                ReadyVfx.Pulse(spiderHealthSystem.transform.position, abilityIndicator != null ? abilityIndicator.availableColor : Color.white);
+                if (ModConfig.IndicatorCompactHud) AbilityHud.Ready(this);
+                else if (abilityIndicator != null)
+                    ReadyVfx.Pulse(abilityIndicator.transform.position, abilityIndicator.availableColor);
             }
 
             if (SoundManager.Instance != null && IsUnlocked() && !IsRemote)

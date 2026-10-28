@@ -99,6 +99,8 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static void Prefix(Weapon __instance, ref float value)
         {
+            if (SpiderSurge.Common.Net.IsAuthority && value < __instance.ammo && __instance.equipped)
+                Vfx.SurgeVfx.Safely(() => AmmoAbility.AccentShot(__instance));
             float floor = AmmoAbility.GetWeaponAmmoFloor(__instance);
             if (floor >= 0f && value < floor)
             {

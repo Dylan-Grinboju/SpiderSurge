@@ -257,6 +257,8 @@ namespace SpiderSurge
 
         internal static PlayerController CasterOf(PulseAbility ability) => ability.playerController;
 
+        private readonly HashSet<int> impactAccents = new HashSet<int>();
+
         private void ApplyPulsePhysics(PulseParams p, bool deadly)
         {
             int playerID = playerController.playerID.Value;
@@ -270,6 +272,7 @@ namespace SpiderSurge
                 System.Array.Resize(ref _pulseResults, _pulseResults.Length * 2);
             }
             CollectEnemiesToLaunch(hitCount, p);
+            impactAccents.Clear();
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -322,6 +325,12 @@ namespace SpiderSurge
                     if (rb != null)
                         rb.velocity = Vector2.zero;
                     damageable.Impact(force, closestPoint, true, true);
+                    var component = damageable as Component;
+                    if (component != null && impactAccents.Add(component.GetInstanceID()))
+                    {
+                        SurgeVfx.Safely(() => AccentVfx.Impact(closestPoint, direction, deadly));
+                        if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
+                    }
                     if (!deadly && rb != null)
                     {
                         var missile = rb.GetComponent<MissileAchievementOrigin>();
