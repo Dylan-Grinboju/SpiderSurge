@@ -10,6 +10,8 @@ namespace SpiderSurge
         public static int Points { get; private set; }
         public static int PointsEarned { get; private set; }
         public static int PointsSpent { get; private set; }
+        public static int ChallengesCompleted { get; private set; }
+        internal static void ChallengeCompleted() { ChallengesCompleted++; Notify(); }
         public static readonly List<ChaosEventRecord> Events = new List<ChaosEventRecord>();
         private static bool _synced;
         public static bool Enabled => SurgeGameModeManager.IsSurgeRunActive && SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive();
@@ -20,7 +22,7 @@ namespace SpiderSurge
         {
             ChallengeController.Reset();
             PerkShop.ClearOffer();
-            Points = PointsEarned = PointsSpent = 0;
+            Points = PointsEarned = PointsSpent = ChallengesCompleted = 0;
             Events.Clear();
             _synced = false;
             Notify();
@@ -64,13 +66,14 @@ namespace SpiderSurge
             Silk.Logger.LogInfo("[Chaos] " + text);
         }
 
-        internal static void ApplyRemote(int points, int earned, int spent)
+        internal static void ApplyRemote(int points, int earned, int spent, int challenges)
         {
             bool gained = _synced && earned > PointsEarned;
             _synced = true;
             Points = Math.Max(0, points);
             PointsEarned = earned;
             PointsSpent = spent;
+            ChallengesCompleted = Math.Max(0, challenges);
             Raise(Changed);
             if (gained) Raise(PointEarned);
         }

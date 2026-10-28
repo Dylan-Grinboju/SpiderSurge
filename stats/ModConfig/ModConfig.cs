@@ -24,6 +24,7 @@ namespace StatsMod
         public static readonly KeyValuePair<string, object>[] Defaults = new (string key, object value)[]
         {
             ("display.showStatsWindow", true),
+            ("display.startingPreset", "default"),
             ("display.showPlayers", true),
             ("display.showPlayTime", true),
             ("display.showEnemyDeaths", true),

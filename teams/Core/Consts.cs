@@ -121,8 +121,8 @@ namespace SpiderTeams
 
             public const string CooldownDescription = "Level 1 shortens the ability's cooldown, level 2 also the ultimate's.";
             public const string DurationDescription = "Level 1 strengthens the ability, level 2 also the ultimate.";
-            public const string ShortTermDescription = "Buffs the ability's duration and cooldown, but nerfs the ultimate's.";
-            public const string LongTermDescription = "Buffs the ultimate's duration and cooldown, but nerfs the ability's.";
+            public const string ShortTermDescription = "Your ability becomes stronger and recharges sooner, but your ultimate becomes weaker and recharges more slowly.";
+            public const string LongTermDescription = "Your ultimate becomes stronger and recharges sooner, but your ability becomes weaker and recharges more slowly.";
 
             // Surge's own name for a perk; with no PerksManager it is a plain lookup
             private static string DisplayName(string perk) => SpiderSurge.Consts.Descriptions.GetDisplayName(perk);

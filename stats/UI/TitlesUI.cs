@@ -17,6 +17,7 @@ namespace StatsMod
         public float CARD_PADDING = 24f;
         public float CARD_BAND_HEIGHT = 6f;
         public float HEADER_HEIGHT = 136f;
+        private float HeaderHeight => HEADER_HEIGHT + (RunRecap.Last != null ? 96f : 0f);
         public float HEADER_TO_GRID_SPACING = 30f;
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
         public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
@@ -129,6 +130,11 @@ namespace StatsMod
         {
             if (!UIManager.CanShowTitles) return;
             isDisplayVisible = true;
+            if (!ModConfig.TitlesEnabled)
+            {
+                StopAnimation();
+                return;
+            }
             if (TitlesManager.Instance.HasGameEndedTitles && !hasAnimationPlayed)
             {
                 StartAnimation();
@@ -282,7 +288,7 @@ namespace StatsMod
 
             Hud.Fill(new Rect(0f, 0f, Screen.width, Screen.height), Hud.Dimmer);
 
-            bool hasTitles = TitlesManager.Instance.HasGameEndedTitles;
+            bool hasTitles = ModConfig.TitlesEnabled && TitlesManager.Instance.HasGameEndedTitles;
             if (_cachedTitles == null) _cachedTitles = TitlesManager.Instance.CurrentTitles;
             int titleCount = hasTitles ? Mathf.Min(_cachedTitles.Count, MAX_TITLES) : 0;
             int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
@@ -293,17 +299,17 @@ namespace StatsMod
             float contentHeight = layoutContentHeight;
 
             float top = (Screen.height - contentHeight) * 0.5f;
-            string caption = !hasTitles ? ""
+            string caption = !hasTitles && RunRecap.Last == null ? ""
                 : GameSessionManager.Instance.IsActive ? LABEL_LAST_SESSION
                 : GameSessionManager.Instance.LastGameMode == GameMode.Versus ? LABEL_MATCH_OVER : LABEL_RUN_OVER;
-            DrawHeader(new Rect(0f, top, Screen.width, HEADER_HEIGHT * scale), caption, scale);
+            DrawHeader(new Rect(0f, top, Screen.width, HeaderHeight * scale), caption, scale);
 
-            float gridTop = top + (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale;
+            float gridTop = top + (HeaderHeight + HEADER_TO_GRID_SPACING) * scale;
             if (titleCount == 0)
             {
                 float lineHeight = EMPTY_FONT_SIZE * 2f * scale;
-                Hud.Label(new Rect(0f, gridTop, Screen.width, lineHeight), LABEL_NO_TITLES, emptyStyle, Hud.Text);
-                Hud.Label(new Rect(Screen.width * 0.25f, gridTop + lineHeight, Screen.width * 0.5f, lineHeight), LABEL_NO_TITLES_NOTE, emptyNoteStyle, Hud.Muted);
+                Hud.Label(new Rect(0f, gridTop, Screen.width, lineHeight), RunRecap.Last != null ? "Another run. Another build." : LABEL_NO_TITLES, emptyStyle, Hud.Text);
+                Hud.Label(new Rect(Screen.width * 0.15f, gridTop + lineHeight, Screen.width * 0.7f, lineHeight * 2f), RunRecap.Last != null ? "Switch to the scoreboard for full stats. Revisit this run in Match history." : LABEL_NO_TITLES_NOTE, emptyNoteStyle, Hud.Muted);
             }
             else
             {
@@ -324,7 +330,7 @@ namespace StatsMod
             }
 
             float baseGridWidth = GRID_COLUMNS * CARD_WIDTH + (GRID_COLUMNS - 1) * CARD_SPACING_X;
-            float scale = Hud.FitScale(uiScale, baseGridWidth, HEADER_HEIGHT, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
+            float scale = Hud.FitScale(uiScale, baseGridWidth, HeaderHeight, BASE_MAX_WIDTH_PERCENT, BASE_MAX_HEIGHT_PERCENT);
             float cardHeight = 0f;
             float contentHeight = 0f;
             for (int attempt = 0; attempt < 5; attempt++)
@@ -332,7 +338,7 @@ namespace StatsMod
                 ApplyScale(scale);
                 cardHeight = MeasureCards(titleCount, scale);
                 float gridHeight = rows == 0 ? 120f * scale : rows * cardHeight + (rows - 1) * CARD_SPACING_Y * scale;
-                contentHeight = (HEADER_HEIGHT + HEADER_TO_GRID_SPACING) * scale + gridHeight;
+                contentHeight = (HeaderHeight + HEADER_TO_GRID_SPACING) * scale + gridHeight;
                 float fit = Screen.height * BASE_MAX_HEIGHT_PERCENT / contentHeight;
                 if (fit >= 1f || attempt == 4) break;
                 scale *= fit * 0.99f;
@@ -353,7 +359,20 @@ namespace StatsMod
         {
             float captionHeight = CAPTION_FONT_SIZE * 2.2f * scale;
             Hud.Label(new Rect(header.x, header.y, header.width, captionHeight), caption, captionStyle, Hud.Pink);
-            Hud.Label(new Rect(header.x, header.y + captionHeight, header.width, header.height - captionHeight), LABEL_HEADER, headerStyle, Hud.Text);
+            var recap = RunRecap.Last;
+            Hud.Label(new Rect(header.x, header.y + captionHeight, header.width, recap != null ? 80f * scale : header.height - captionHeight), recap != null ? "RUN RESULTS" : LABEL_HEADER, headerStyle, Hud.Text);
+            if (recap != null)
+            {
+                float left = Screen.width * .08f;
+                float width = Screen.width * .84f;
+                Hud.Label(new Rect(left, header.y + 122f * scale, width, 30f * scale), recap.Build, emptyNoteStyle, Hud.Text);
+                Hud.Label(new Rect(left, header.y + 154f * scale, width, 30f * scale), recap.Summary, captionStyle, Hud.Warm);
+                string unlocks = recap.Achievements;
+                if (unlocks.Length > 100) unlocks = unlocks.Substring(0, 97) + "…";
+                string titles = TitlesManager.Instance.LastNewlyUnlocked > 0 ? $"{TitlesManager.Instance.LastNewlyUnlocked} new titles" : "";
+                string collection = (unlocks.Length > 0 ? "New team achievements: " + unlocks : "") + (titles.Length > 0 ? (unlocks.Length > 0 ? "  ·  " : "") + titles : "");
+                Hud.Label(new Rect(left, header.y + 190f * scale, width, 30f * scale), collection, captionStyle, Hud.Pink);
+            }
 
             float lineWidth = 64f * scale;
             Hud.Fill(new Rect((Screen.width - lineWidth) * 0.5f, header.yMax - 4f * scale, lineWidth, 4f * scale), Hud.Pink);

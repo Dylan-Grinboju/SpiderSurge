@@ -40,7 +40,7 @@ namespace SpiderSurge.Vfx
 
         private static void Receive(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient) return;
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var kind = (SerializationWeaponName)reader.ReadInt32();
             int player = reader.ReadInt32();
             Vector3 position = reader.ReadVector3();

@@ -116,6 +116,11 @@ namespace SpiderSurge.Common
             page.Title(s.Mode == "survival" ? "Survival result" : "Versus result");
             page.Line($"<b>{Date(s.DateUtc)}</b>{Badge(s)}\n{Duration(s.Seconds)} · {Text(s.Outcome)}\nSpiderSurge {Text(s.Version)}");
             if (s.Mode == "survival") page.Line($"Wave reached: {s.Wave} · Pain: {s.Pain} · Enemies killed: {selected.EnemiesKilled}" + (selected.SurgeStats != null ? $"\nWaves survived: {selected.SurgeStats.WavesSurvived}" : ""));
+            if (selected.Recap != null)
+            {
+                page.Line(Text(selected.Recap.Build) + "\n" + Text(selected.Recap.Summary));
+                if (!string.IsNullOrEmpty(selected.Recap.Achievements)) page.Note("New team achievements: " + Text(selected.Recap.Achievements));
+            }
             foreach (var team in selected.Teams) page.Line($"{Text(team.Name)}: {Points(team.Score)}");
             for (int i = 0; i < selected.Players.Count; i++)
             {

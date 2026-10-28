@@ -86,6 +86,7 @@ namespace StatsMod
             sessionStartTime = DateTime.Now;
 
             MatchHistory.Begin();
+            RunRecap.Begin();
             SpiderPortraits.ClearFinished();
             HitLogic.Clear();
             playerTracker.RefreshIdentities();
@@ -155,6 +156,7 @@ namespace StatsMod
             SpiderPortraits.CaptureFinished(statsSnapshot.ActivePlayers.Keys);
             TitlesManager.Instance.CalculateAndStoreTitles(statsSnapshot);
             statsSnapshot.Titles = TitlesManager.Instance.AllTitles;
+            RunRecap.Capture();
             lastGameMode = currentGameMode;
             currentGameMode = GameMode.None;
             StatsNet.SendSnapshot(SnapshotReason.Stopped);
@@ -382,6 +384,7 @@ namespace StatsMod
         public void OnRemoteSnapshot(SnapshotReason reason)
         {
             if (reason != SnapshotReason.Started) return;
+            RunRecap.Begin();
 
             if (currentGameMode == GameMode.Versus)
             {

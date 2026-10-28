@@ -98,6 +98,7 @@ namespace SpiderSurge
             writer.Write(ChaosWallet.Points);
             writer.Write(ChaosWallet.PointsEarned);
             writer.Write(ChaosWallet.PointsSpent);
+            writer.Write(ChaosWallet.ChallengesCompleted);
             writer.Write(PerkShop.VisitId);
             writer.Write(PerkShop.PurchasedMask);
             writer.Write(PerkShop.PurchasedPerkKey);
@@ -138,12 +139,13 @@ namespace SpiderSurge
 
         private static void OnState(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient) return;
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             try
             {
                 int points = reader.ReadInt32();
                 int earned = reader.ReadInt32();
                 int spent = reader.ReadInt32();
+                int challenges = reader.ReadInt32();
                 int visit = reader.ReadInt32();
                 int purchased = reader.ReadInt32();
                 string purchasedPerk = reader.ReadString();
@@ -156,7 +158,7 @@ namespace SpiderSurge
                 bool pending = reader.ReadBoolean();
                 bool failed = reader.ReadBoolean();
                 PerkShop.ApplyRemoteOffer(visit, purchased, bonus, paid, offer, purchasedPerk);
-                ChaosWallet.ApplyRemote(points, earned, spent);
+                ChaosWallet.ApplyRemote(points, earned, spent, challenges);
                 ChallengeController.ApplyRemote(offered, active, pending, failed);
             }
             catch (Exception ex)
@@ -189,7 +191,7 @@ namespace SpiderSurge
 
         private static void OnBought(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient) return;
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var item = (ShopItem)reader.ReadByte();
             int buyerId = reader.ReadInt32();
             string detail = reader.ReadString();
@@ -198,7 +200,7 @@ namespace SpiderSurge
 
         private static void OnRefused(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient) return;
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var item = (ShopItem)reader.ReadByte();
             PerkShop.ShowRefused(item, reader.ReadString());
         }

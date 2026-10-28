@@ -11,7 +11,7 @@ namespace SpiderSurge
 {
     public sealed class ChallengeHoldButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, ISubmitHandler, IDeselectHandler
     {
-        private readonly HoldConfirmation _hold = new HoldConfirmation();
+        private HoldConfirmation _hold;
         private Button _button;
         private ButtonControl _control;
         private RectTransform _progress;
@@ -23,8 +23,9 @@ namespace SpiderSurge
         {
             _button = button;
             _accept = accept;
+            _hold = new HoldConfirmation(accept ? HoldConfirmation.Duration : 0f);
             _canvas = GetComponentInParent<Canvas>();
-            SettingsPage.SetText(label, $"Hold {title} · 2s");
+            SettingsPage.SetText(label, accept ? "Hold to accept" : "Skip challenge");
             var bar = new GameObject("Hold progress", typeof(RectTransform), typeof(Image));
             _progress = (RectTransform)bar.transform;
             _progress.SetParent(transform, false);
@@ -69,6 +70,7 @@ namespace SpiderSurge
             if (!Available || eventData.button != PointerEventData.InputButton.Left) return;
             _control = Mouse.current?.leftButton;
             _pointer = true;
+            TrySkip();
         }
 
         public void OnPointerUp(PointerEventData eventData)
@@ -86,6 +88,12 @@ namespace SpiderSurge
             if (!Available) return;
             _control = InputModule?.submit?.action?.activeControl as ButtonControl;
             _pointer = false;
+            TrySkip();
+        }
+
+        private void TrySkip()
+        {
+            if (!_accept && _hold.Tick(Time.unscaledTime, true, false, Available)) ChaosNet.SendChallenge(false);
         }
 
         public void OnDeselect(BaseEventData eventData) => Cancel();
@@ -95,7 +103,7 @@ namespace SpiderSurge
         {
             _control = null;
             _pointer = false;
-            _hold.Reset();
+            _hold?.Reset();
             if (_progress != null) _progress.sizeDelta = Vector2.zero;
         }
     }

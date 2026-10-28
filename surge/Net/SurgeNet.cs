@@ -145,7 +145,7 @@ namespace SpiderSurge
 
         private static void OnFreezeCooldown(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient) return;
+            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             int playerId = reader.ReadInt32();
             float remaining = reader.ReadSingle();
             PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Freeze)?.ApplyCooldownRemaining(remaining);
@@ -251,6 +251,11 @@ namespace SpiderSurge
 
         private static void OnLeftHost()
         {
+            if (Parts.Stats.Running && StatsMod.GameSessionManager.Instance.IsActive)
+            {
+                if (SurgeGameModeManager.IsSurgeRunActive) RunRecap.Capture();
+                else RunRecap.Clear();
+            }
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
             SurgeGameModeManager.Instance?.ResetRun();
@@ -304,7 +309,7 @@ namespace SpiderSurge
 
         private static void OnState(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient)
+            if (!Net.IsRemoteClient || sender != 0)
             {
                 return;
             }
@@ -336,13 +341,14 @@ namespace SpiderSurge
                 }
                 int spawnEpoch = reader.ReadInt32();
 
+                bool becameActive = active && !SurgeGameModeManager.IsSurgeRunActive;
                 SurgeGameModeManager.SelectMode(modeEnabled);
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
-                // Spiders already alive when a client joins mid-run started before Surge was active there
-                if (_awaitingFirstState)
+                // A spider may spawn before the first active snapshot, including after an inactive waiting-room snapshot.
+                if (_awaitingFirstState || becameActive)
                 {
                     _awaitingFirstState = false;
                     if (active)
@@ -400,7 +406,7 @@ namespace SpiderSurge
 
         private static void OnFx(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient)
+            if (!Net.IsRemoteClient || sender != 0)
             {
                 return;
             }
@@ -457,7 +463,7 @@ namespace SpiderSurge
 
         private static void OnEnemyFx(ulong sender, BinaryReader reader)
         {
-            if (!Net.IsRemoteClient)
+            if (!Net.IsRemoteClient || sender != 0)
             {
                 return;
             }

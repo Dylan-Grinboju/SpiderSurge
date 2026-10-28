@@ -567,8 +567,7 @@ namespace StatsMod
         private static PlayerTracker.KillCredit CreditPlayerKill(PlayerController killer, bool friendly)
         {
             if (!friendly) return PlayerTracker.Instance.IncrementPlayerKill(killer);
-            PlayerTracker.Instance.IncrementFriendlyKill(killer);
-            return new PlayerTracker.KillCredit { Killer = killer, Friendly = true };
+            return PlayerTracker.Instance.IncrementFriendlyKill(killer);
         }
 
         // SpiderSurge's Black Hole kills the spider right after this, so its own death finds no hit to credit

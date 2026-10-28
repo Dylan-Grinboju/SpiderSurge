@@ -265,7 +265,7 @@ namespace SpiderSurge
                 public const float SideMargin = 27f;
                 public const float BottomMargin = 6f;
                 public const float MinCardFactor = 0.5f;
-                public const float WalletBlockHeight = 29f;
+                public const float WalletBlockHeight = 60f;
                 public const float MinEntryHeight = 56f;
                 public const float MaxEntryHeight = 96f;
                 public const float EntrySpacing = 5f;
@@ -488,8 +488,8 @@ namespace SpiderSurge
                 [PerkNames.FreezeAbility] = "Freeze enemies, other players and shots in an area for a few seconds",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
                 [PerkNames.AbilityDuration] = "Increases ability duration",
-                [PerkNames.ShortTermInvestment] = "Buffs ability duration and cooldown, but nerfs ultimate duration and cooldown",
-                [PerkNames.LongTermInvestment] = "Buffs ultimate duration and cooldown, but nerfs ability duration and cooldown",
+                [PerkNames.ShortTermInvestment] = "Your ability becomes stronger and recharges sooner, but your ultimate becomes weaker and recharges more slowly",
+                [PerkNames.LongTermInvestment] = "Your ultimate becomes stronger and recharges sooner, but your ability becomes weaker and recharges more slowly",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",

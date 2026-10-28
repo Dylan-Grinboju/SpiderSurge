@@ -27,6 +27,7 @@ namespace SpiderTeams
                 return false;
             }
             perks.ResetPerks();
+            perks.IsFirstNormalPerkSelection = false;
             return true;
         }
 

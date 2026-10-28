@@ -8,7 +8,7 @@ namespace StatsMod
     public partial class BigUI
     {
         internal static readonly string[] PresetKeys = { "default", "combat", "enemies", "weapons", "accuracy", "movement" };
-        internal static readonly string[] PresetNames = { "Default", "Combat", "Enemy kills", "Weapon kills", "Accuracy", "Movement" };
+        internal static readonly string[] PresetNames = { "My scoreboard", "Combat", "Enemy kills", "Weapon kills", "Accuracy", "Movement" };
         private static readonly HashSet<string> CombatColumns = new HashSet<string> { "Kills", "Deaths", "Max Kill Streak", "Enemy Shields", "Friendly Kills", "Shields Lost" };
         private static readonly HashSet<string> MovementColumns = new HashSet<string> { "Web Swings", "Web Swing Time", "Airborne Time", "Airborne Kills", "Lava Deaths", "Astral Returns" };
         private readonly List<Column> presetColumns = new List<Column>();
@@ -21,7 +21,13 @@ namespace StatsMod
         private int preset;
         private int presetPage;
         private Rect panelRect, previousRect, nextRect;
-        private bool PresetEnabled(int index) => index == 0 || Settings.GetBool("stats.display.presets." + PresetKeys[index]);
+        internal void OpenPreferredPreset()
+        {
+            preset = System.Array.IndexOf(PresetKeys, Settings.GetString("stats.display.startingPreset"));
+            if (preset < 0) preset = 0;
+            presetPage = 0;
+        }
+        private bool PresetEnabled(int index) => index == 0 || PresetKeys[index] == Settings.GetString("stats.display.startingPreset") || Settings.GetBool("stats.display.presets." + PresetKeys[index]);
 
         private void SelectColumns()
         {

@@ -75,6 +75,7 @@ namespace SpiderSurge.Common
         public List<HistoryTitle> Titles = new List<HistoryTitle>();
         public SpiderSurgeStatsSnapshot SurgeStats;
         public int EnemiesKilled;
+        public RunRecapData Recap;
     }
 
     internal static class MatchHistory
@@ -133,7 +134,7 @@ namespace SpiderSurge.Common
                     Wave = survival && SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : 0,
                     Outcome = restarted ? "Restarted" : survival ? (completedSurvival ? "Completed" : SurvivalMode.instance != null && SurvivalMode.instance.Lives <= 0 ? "Lost" : "Quit") : "Ended"
                 };
-                var match = new HistoryMatch { Summary = summary, Maps = snapshot.MapsPlayed.ToList(), Perks = snapshot.PerksChosen.ToList(), SurgeStats = surge, EnemiesKilled = snapshot.EnemiesKilled };
+                var match = new HistoryMatch { Recap = RunRecap.Last, Summary = summary, Maps = snapshot.MapsPlayed.ToList(), Perks = snapshot.PerksChosen.ToList(), SurgeStats = surge, EnemiesKilled = snapshot.EnemiesKilled };
                 bool teams = !survival && SpiderTeams.TeamManager.TeamMatchActive;
                 var manager = SpiderTeams.TeamManager.Instance;
                 match.Players.AddRange(departed);

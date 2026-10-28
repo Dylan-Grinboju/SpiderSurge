@@ -30,7 +30,7 @@ namespace SpiderSurge
                 if (weapons != null) return $"Pocket Dimension keeps stored {weapons} across map changes" + (offeredLevel >= 2 ? " and death." : ". Level 2 also keeps them after death.");
             }
             if (perks.GetPerkLevel(P.FreezeAbility) > 0 && IsSlowMotionPerk(key))
-                return $"Freeze Time / Rewind: perk slow motion cuts cooldown by {Consts.Values.Freeze.SlowMotionCooldownRefund:0.#}s per real second. Overlaps don't stack.";
+                return "Freeze Time and Rewind recharge faster during perk slow motion. Overlapping slow motion does not strengthen this effect.";
             return null;
         }
 

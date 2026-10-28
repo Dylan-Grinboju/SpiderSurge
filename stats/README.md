@@ -32,7 +32,7 @@ Each spider's kills and deaths, next to its color. A dead spider's row fades unt
 ### Big window (F2)
 The run time, enemies killed and a table with a portrait for each spider. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. In versus it shows the match time instead.
 
-The window opens on **Default**, the recommended preset, whose columns you can customize in **Stats** > **Scoreboard presets** > **Customize Default columns**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Scoreboard presets page. Each page uses the available width for its columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
+Choose the opening preset with **Settings** > **Stats** > **Starting scoreboard**. **My scoreboard** has editable columns in **Customize scoreboard**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Customize scoreboard page. Each page uses the available width for its columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
 
 <img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
 
@@ -42,7 +42,7 @@ Shown in the lobby when a run with two or more players ends. The cards are revea
 <img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
 
 ### Title collection
-Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Achievements** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
+Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Collection** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
 
 Use **Show** to cycle through All, Locked, Unlocked and Recently earned. NEW marks an unseen unlock; select an unlocked title or use **Mark all seen** to clear the marker. The end screen and saved match history still remember which titles were new that run.
 
@@ -54,11 +54,13 @@ Open **Mods** > **SpiderSurge** > **Match history**, then choose Survival or Ver
 
 Saving history is independent of text reports and telemetry. All recorded matches are kept on this PC, with 20 matches per list page, in the `SpiderSurge\History` folder beside `progress.dat`. History starts with this update; older text reports are available through **About SpiderSurge** > **Support** > **Open logs**. **Refresh history** rereads the files. **Clear match history** removes history after confirmation and keeps achievements, the title collection and highscores.
 
+Surge results include a compact run recap above the title cards: build, wave reached, completed challenges, Chaos earned/spent, and new team achievements. The full scoreboard stays separate. With history enabled, the recap is also saved with that run.
+
 ## How to configure Stats
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Stats**. Changes apply right away. The page has every setting below except the small window's position, which you set by dragging it. **Scoreboard presets** contains the preset switches and Default's column groups. **Reset Stats settings to defaults** keeps the small window's position.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Settings** > **Stats**. Changes apply right away. Display and reveal options holds secondary controls; Records and privacy holds file exports and match history. Drag the small window to place it. **Customize scoreboard** contains the preset switches and My scoreboard's column groups. **Reset Stats settings to defaults** keeps the small window's position.
 
 ### Using the Yaml file:
 
@@ -68,13 +70,13 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 <summary>Explanation of the fields</summary>
 
 ### UI:
-`stats.display.showStatsWindow`: shows the mod UI. If false, pressing F1 or F2 does nothing; F3 still shows the titles. Note that the tracking will still work, it will just not show you anything.
+`stats.display.showStatsWindow`: shows the mod UI. If false, stats and results windows stay hidden. Tracking continues.
 
 `stats.display.showPlayers`, `stats.display.showPlayTime` and `stats.display.showEnemyDeaths`: Exactly what it sounds like. Will hide/show the corresponding parts of the Big UI.
 
-`stats.display.autoScale`: If true, the mod will automatically scale the UI based on your screen resolution.
+`stats.display.autoScale`: Retained in old config files but ignored. Windows now always scale with the screen.
 
-`stats.display.uiScale`: You can use this to manually scale the UI, from 0.5 to 3. 1 is normal size, 2 is double size, 0.5 is half size and so on. You can use this in conjunction with autoScale or by itself.
+`stats.display.uiScale`: You can use this to manually scale the UI, from 0.5 to 3. 1 is normal size, 2 is double size, 0.5 is half size and so on. This adjusts the automatic screen scaling.
 
 `stats.display.bigUIOpacity`: Controls the transparency of the Big UI overlay (F2). Values range from 0 (fully transparent) to 100 (fully opaque). Default is 100. 
 
@@ -82,9 +84,11 @@ Stats' settings are the `stats` section of `...\Silk\Config\Mods\SpiderSurge.yam
 
 `stats.display.position`: The position of the Small UI's top left corner as `xPercent` and `yPercent`, percentages of the screen's width and height from 0 to 100, with 0,0 being the top left corner of the screen. Being a share of the screen, it keeps the window in the same place when the resolution or window size changes. This value is saved every time you click and drag the UI, and a position saved in pixels by an older version is converted on the next launch. If the UI doesn't show up on your screen, set both values to 1. Default: `xPercent: 0.5`, `yPercent: 1`.
 
-`stats.display.bigUI.columns`: Setting a column to true includes it in the Default preset. Columns are split across pages according to the available screen width.
+`stats.display.bigUI.columns`: Setting a column to true includes it in the My scoreboard preset. Columns are split across pages according to the available screen width.
 
-`stats.display.presets.combat`, `enemies`, `weapons`, `accuracy` and `movement`: Show or hide each fixed scoreboard preset. Default is always available. Each fixed preset uses its own columns, independent of the Default column settings. All are on by default.
+`stats.display.startingPreset`: The scoreboard opened first: `default` (My scoreboard), `combat`, `enemies`, `weapons`, `accuracy`, or `movement`.
+
+`stats.display.presets.combat`, `enemies`, `weapons`, `accuracy` and `movement`: Show or hide each fixed scoreboard preset. My scoreboard and the selected starting preset are always available. Each fixed preset uses its own columns, independent of the My scoreboard column settings. All are on by default.
 
 ### tracking:
 `stats.tracking.saveStatsToFile`: If true, the stats will be saved to a local txt file.

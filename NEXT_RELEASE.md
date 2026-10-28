@@ -31,7 +31,7 @@ A small live window sits in a corner of the screen while you play: each spider's
 
 <img width="680" alt="The small stats window next to the game's HUD" src="docs/images/stats-small-window-closeup.png" />
 
-The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). It opens on the customizable Default preset; Combat, Enemy kills, Weapon kills, Accuracy and Movement offer fixed sets of columns. Each page shows up to six columns. Green is good, pink is a hit you took, amber is friendly fire.
+The big window is a full scoreboard: run time, enemies killed and a table with the columns you pick (totals, streaks, wave clutches, alive time, kills per enemy and per weapon, and more). Choose its opening preset in Settings > Stats > Starting scoreboard. My scoreboard has customizable columns; Combat, Enemy kills, Weapon kills, Accuracy and Movement offer fixed sets. Each page fits its columns to the available width. Green is good, pink is a hit you took, amber is friendly fire.
 
 <img width="1600" alt="The big stats window during a Survival run" src="docs/images/stats-big-window.jpg" />
 
@@ -43,7 +43,7 @@ Achievements and the title collection have All, Locked, Unlocked and Recently ea
 
 ### Surge
 
-New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Chaos points now come from marked map choices (a 75% chance of one bonus card), optional map-long challenges, and Blood Pact. Ability use earns no points and the chaos bar is removed. The shop still offers two random items per visit; every item can be purchased once by the team, including Reroll and Blood Pact. Bigger Heart grants +1 maximum life and +1 current life. After selecting a map, accept or skip one optional challenge before play resumes: Poisoned Heart, Double Cooldown, No Regular Abilities, Life Wager, No Ultimate, or Overrun. Rewards and temporary restrictions settle at the next map choice. The host accepts or skips for the team; clients see that the host is deciding. Perk-synergy hints remain beneath the cards. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The starting ability choice always works this way. The in-game guide explains all of it. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated reference topics. The guide no longer opens automatically or uses the backtick key.
+New abilities and ultimates for Survival, perks that combine with the game's own, and new enemies. Each run starts with the team choosing its shared ability from cards before wave 1: 3 of them, or 2 from pain level 3. The ring over each spider drains while the ability is active and fills while it cools down, and a compact panel with a row for each player can replace the rings. Chaos points now come from marked map choices (a 75% chance of one bonus card), optional map-long challenges, and Blood Pact. Ability use earns no points and the chaos bar is removed. The shop still offers two random items per visit; every item can be purchased once by the team, including Reroll and Blood Pact. Bigger Heart grants +1 maximum life and +1 current life. After selecting a map, accept or skip one optional challenge before play resumes: Poisoned Heart, Double Cooldown, No Regular Abilities, Life Wager, No Ultimate, Overrun, or multiplayer-only Clean Hands. Clean Hands rewards a map without credited teammate kills or shield breaks. Poisoned Heart now pays 3 points. Rewards and temporary restrictions settle at the next map choice. The host accepts or skips for the team; clients see that the host is deciding. Perk-synergy hints remain beneath the cards. Freeze Time now combines with Adrenaline, Blademaster and Cool Explosions: each real second of their slow motion removes an extra 0.2 seconds from its shared ability / Rewind cooldown. With the perk timer off, a card click now only locks the card and a Confirm button under the cards makes the pick. The starting ability choice always works this way. The in-game guide explains all of it. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated reference topics. The guide no longer opens automatically or uses the backtick key.
 
 <img width="1600" alt="Your first Surge run, explained in How to play" src="docs/images/guide-first-run.png" />
 
@@ -95,20 +95,25 @@ On the first launch, SpiderSurge moves your settings from `SpiderSurge.yaml`, `S
 
 If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part stays off, because both copies would change the game at once, and its settings file stays where it is until you delete the DLL. The same goes for Surge and an older standalone `SpiderSurge.dll` left next to the new one. With two copies of SpiderSurge that include the merged parts, only the first one runs. A popup lists the files to delete.
 
+![The optional Clean Hands challenge and Chaos currency icon](docs/images/challenge-clean-hands.png)
+
 ## Settings
 
 ### From the Mods menu:
 
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
-- **Mod parts**: the switch for Game fixes, which takes effect after restarting the game. Surge, Stats and Teams always load; hide Stats from its settings page and choose team versus from the versus setup page.
-- Settings pages for Stats and Surge. Teams settings are on the versus setup page. Changes apply right away and are saved to the file.
-- **Achievements**: Surge's achievements and the Stats title collection, each on its own page.
-- **Match history**: browse recorded Survival and Versus matches, refresh the list or clear it after confirmation. **Save match history** controls recording separately from text reports and telemetry.
-- **General**: check for updates, the telemetry settings, and reload edits to the settings file without restarting the game.
-- **About SpiderSurge**: version, credits and **Support**, with buttons to open the logs, config and save folders, copy diagnostic information, or open the bug report form. Diagnostic information contains versions and mod-part status; these actions do not upload logs or saves.
+- **How to play**: a first-run guide and reference for abilities, enemies, Chaos, controls and multiplayer.
+- **Settings**: Stats, Surge, Records and privacy, and Advanced. Changes save automatically. Team rules stay in the versus setup page.
+- **Collection**: Surge achievements and the Stats title collection.
+- **Match history**: saved Survival and Versus results, including the compact Surge recap.
+- **About SpiderSurge**: version, credits and Support. Report diagnostics and the anonymous report ID live in Support.
 
-Stats > **Scoreboard presets** lets you hide fixed presets and customize Default. Its columns are grouped by totals, enemy kills, weapon kills, shooting accuracy and player stats. Indicator controls are directly on the Surge page, and Stats has a direct Player table columns link. Every reset asks for confirmation first.
+Stats offers a starting scoreboard and a single Customize scoreboard page; My scoreboard has editable columns, while fixed presets can be hidden. Resolution scaling is automatic, with a Size control. Secondary display controls are in Display and reveal options. Surge offers Beside spider or Corner panel for the ability display; ring placement is shown only for the ring display. Advanced run rules contains the perk timer and no-abilities mode. Versus ability tuning is folded under Advanced ability rules.
+
+Records and privacy separates Keep match history, Export detailed reports, and Share anonymous run reports. Sharing can prepare a report without writing a local text export. Advanced holds update checks, game fixes and manual config reload. Every reset asks for confirmation.
+
+Surge results place a compact recap above the existing title cards: final ability and key upgrades, wave reached, challenges completed, Chaos earned/spent, and new team achievements. Full statistics stay on the separate scoreboard. The recap is also saved in Match history when enabled. Brief first-encounter tips explain how to disable laser rings and cocoon reinforcements; they do not pause play and are remembered on each player's PC.
 
 ### Using the Yaml file:
 

@@ -90,7 +90,7 @@ namespace SpiderSurge.Logging
         public void StartTracking()
         {
             LastFinished = null;
-            if ((!ModConfig.EnableStatsLogging && !MatchHistory.Enabled) || !Net.IsAuthority) return;
+            if ((!ModConfig.EnableStatsLogging && !ModConfig.TelemetryEnabled && !MatchHistory.Enabled) || !Net.IsAuthority) return;
 
             SendPendingTelemetry();
             _titleCalculationsAtStart = StatsMod.TitlesManager.Instance.CalculationCount;
@@ -211,7 +211,7 @@ namespace SpiderSurge.Logging
                 Integration.StatsModBridge.SendSurgeTitles(snapshot);
             }
 
-            if (ModConfig.EnableStatsLogging && ShouldUploadTelemetryFromThisClient())
+            if (ModConfig.TelemetryEnabled && ShouldUploadTelemetryFromThisClient())
             {
                 Logger.LogInfo("SpiderSurge telemetry upload scheduled for this match.");
                 SendPendingTelemetry();

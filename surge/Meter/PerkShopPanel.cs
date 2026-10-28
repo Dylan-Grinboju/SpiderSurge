@@ -31,6 +31,7 @@ namespace SpiderSurge
             public Image Background;
             public Image Icon;
             public TMP_Text Title;
+            public ChaosIcon Currency;
             public TMP_Text Description;
         }
 
@@ -164,9 +165,20 @@ namespace SpiderSurge
             }
             var root = hud.perkCardsRoot as RectTransform;
             var layout = root != null ? root.GetComponent<ShopCardLayout>() : null;
-            if (layout == null) return;
-            root.anchoredPosition = layout.OriginalPosition;
-            root.sizeDelta = layout.OriginalSize;
+            if (layout != null)
+            {
+                root.anchoredPosition = layout.OriginalPosition;
+                root.sizeDelta = layout.OriginalSize;
+            }
+            if (!ChaosWallet.Enabled || !AbilitySelection.StartingChoiceOpen) return;
+            var view = hud.perkChoiceView.transform as RectTransform;
+            if (view == null) return;
+            float room = CardsTop(hud) + view.rect.height / 2f - M.BottomMargin - M.ConfirmGap - M.ConfirmHeight - PerkHint.Reserve;
+            foreach (var card in PerkChoiceWidget.Cards(hud))
+            {
+                float height = ((RectTransform)card.transform).rect.height * PerkCardScale.Of(card).Base.y;
+                if (height > 0f) PerkCardScale.Of(card).SetFactor(Mathf.Clamp(room / height, M.MinCardFactor, 1f));
+            }
         }
 
         // The cards sit at the top of their root, so the panel's top lines up with theirs
@@ -206,8 +218,16 @@ namespace SpiderSurge
             PlaceTop(_header.rectTransform, 0f, HeaderHeight, 0f);
             _header.fontSize = 14f;
             _header.alignment = TextAlignmentOptions.Center;
+            ChaosIcon.Add(_header.transform, new Vector2(12, 0), 18, Hud.Warm, new Vector2(0, .5f));
+            _header.margin = new Vector4(26, 0, 0, 0);
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
+            var note = CloneText(prefabCard.perkDescriptionText, "Shared wallet explanation");
+            PlaceTop(note.rectTransform, 25f, 28f, 0f);
+            note.fontSize = 10f;
+            note.alignment = TextAlignmentOptions.Center;
+            note.enableWordWrapping = true;
+            note.text = "Shared by the team\nEach item once per visit";
         }
 
         private void Populate(float entryHeight)
@@ -258,6 +278,7 @@ namespace SpiderSurge
                     var titleRect = entry.Title.rectTransform;
                     titleRect.pivot = new Vector2(0.5f, 0.5f);
                     SettingsPage.Stretch(titleRect, new Vector2(textLeft, entryHeight - 30f), new Vector2(-6f, -6f));
+                    entry.Currency = ChaosIcon.Add(entry.Title.transform, new Vector2(7, 0), 13, Hud.Warm, new Vector2(0, .5f));
                     entry.Title.alignment = TextAlignmentOptions.MidlineLeft;
                     entry.Title.enableWordWrapping = false;
                     entry.Title.overflowMode = TextOverflowModes.Ellipsis;
@@ -449,7 +470,7 @@ namespace SpiderSurge
             int points = ChaosWallet.Points;
             if (_header != null)
             {
-                _header.text = $"chaos point: <color={Consts.Formatting.ColorGold}>{points}</color>";
+                _header.text = $"TEAM CHAOS <color={Consts.Formatting.ColorGold}>{points}</color>";
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -464,6 +485,10 @@ namespace SpiderSurge
                 float alpha = can || revealed ? 1f : 0.45f;
                 if (entry.Title != null)
                 {
+                    bool showCurrency = !revealed && entry.Item != ShopItem.Sacrifice;
+                    entry.Currency.gameObject.SetActive(showCurrency);
+                    entry.Currency.color = PerkChoiceWidget.Faded(Hud.Warm, alpha);
+                    entry.Title.margin = new Vector4(showCurrency ? 18 : 0, 0, 0, 0);
                     entry.Title.text = revealed ? PerkShop.DisplayNameOfPerk(purchased.data.key)
                         : $"<color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(entry.Item)}</color>  {PerkShop.NameOf(entry.Item)}";
                     entry.Title.color = PerkChoiceWidget.Faded(entry.Title.color, alpha);

@@ -12,11 +12,11 @@ namespace SpiderSurge
     {
         public const string ObjectName = "SurgePerkHint";
         private const float Width = 640f;
-        private const float Height = 40f;
+        private const float Height = 68f;
         private const float Gap = 10f;
 
         // Room the cards leave under them for the line, two lines of text at most
-        public const float Reserve = Gap + 34f;
+        public const float Reserve = Gap + Height;
 
         private SurvivalModeHud _hud;
         private TMP_Text _text;
@@ -124,11 +124,14 @@ namespace SpiderSurge
 
         private static string Compose(string key, int level)
         {
-            if (key == Consts.PerkNames.AmmoAbility)
-                return HasEfficiency() ? "" : $"<color={Consts.Formatting.ColorGold}>Note:</color> Without Efficiency, most weapons disintegrate when Bottomless Clip ends or you drop them.";
-            string synergy = PerkSynergy.Describe(key, level);
-            if (synergy != null) return $"<color={Consts.Formatting.ColorGold}>Synergy:</color> {synergy}";
-            return "";
+            string detail = key == Consts.PerkNames.AmmoAbility && !HasEfficiency()
+                ? "Without Efficiency, most weapons disintegrate when Bottomless Clip ends or you drop them."
+                : PerkSynergy.Describe(key, level);
+            if (AbilitySelection.StartingChoiceOpen)
+                return "Shared team ability; each spider has its own cooldown.\n" +
+                    $"Use: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Ultimate choice at wave {Consts.Values.Waves.UltUpgradeWave}." +
+                    (string.IsNullOrEmpty(detail) ? "" : "\n" + detail);
+            return detail ?? "Perks apply to the whole team. Chaos buys extra upgrades in the shop.";
         }
 
         private static bool HasEfficiency() => ModifierManager.instance != null && ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency) > 0;

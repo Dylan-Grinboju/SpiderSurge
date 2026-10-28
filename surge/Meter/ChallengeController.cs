@@ -19,6 +19,9 @@ namespace SpiderSurge
         public static bool Pending { get; private set; }
         public static bool WagerFailed { get; private set; }
         private static int _heldLives;
+        private static readonly CleanHandsProgress _cleanHands = new CleanHandsProgress();
+        private static ChallengeKind _lastOffered, _previousOffered;
+        public static bool Failed => WagerFailed;
         private static Action _loadChosenMap;
         private static bool _wasPending;
         private static bool _panelFailed;
@@ -37,7 +40,7 @@ namespace SpiderSurge
                     _statusKind = Active;
                     _statusFailed = WagerFailed;
                     _status = Active == ChallengeKind.None ? "" :
-                        $"{ChaosRules.Name(Active)} · {(WagerFailed ? "Reward lost" : $"{ChaosRules.Points(ChaosRules.Reward(Active), signed: true)} on completion")}";
+                        $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
                 }
                 return _status;
             }
@@ -61,8 +64,11 @@ namespace SpiderSurge
             bool abilities = !SurgeGameModeManager.AbilitiesDisabled && PerksManager.Instance != null &&
                 PerksManager.Instance.GetAbilityPerkNames().Any(key => PerksManager.Instance.GetPerkLevel(key) > 0);
             bool ultimate = abilities && PerksManager.Instance.GetAbilityUltimatePerkNames().Any(key => PerksManager.Instance.GetPerkLevel(key) > 0);
-            var eligible = ChaosRules.Eligible(SurvivalMode.instance.Lives, abilities, ultimate);
+            var eligible = ChaosRules.Eligible(SurvivalMode.instance.Lives, abilities, ultimate, Parts.Stats.Running ? Players.All?.Count(player => player != null) ?? 0 : 0);
+            ChaosRules.AvoidRecent(eligible, _lastOffered, _previousOffered);
             Offered = eligible[UnityEngine.Random.Range(0, eligible.Count)];
+            _previousOffered = _lastOffered;
+            _lastOffered = Offered;
             Pending = true;
             ChaosWallet.Record($"Challenge offered: {ChaosRules.Name(Offered)}");
             ChaosNet.MarkDirty();
@@ -114,10 +120,34 @@ namespace SpiderSurge
             // A failed Life Wager was announced when the life was lost
             if (reward > 0)
             {
+                ChaosWallet.ChallengeCompleted();
                 ChaosWallet.GrantPoints(reward, ChaosRules.Name(completed));
+                ChaosNet.Announce($"{ChaosRules.Name(completed)} completed · +{reward} Chaos");
             }
             WagerFailed = false;
             ChaosWallet.Notify();
+        }
+
+        public static object FriendlyHarm()
+        {
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || Active != ChallengeKind.CleanHands) return null;
+            object harm = _cleanHands.RecordHarm();
+            if (WagerFailed) return harm;
+            WagerFailed = true;
+            ChaosWallet.Record("Clean Hands failed: teammate killed or shield broken");
+            ChaosWallet.Notify();
+            ChaosNet.Announce("Clean Hands lost · no reward this map");
+            return harm;
+        }
+
+        public static void RevertFriendlyHarm(object harm)
+        {
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || Active != ChallengeKind.CleanHands || !_cleanHands.Revert(harm)) return;
+            WagerFailed = _cleanHands.Failed;
+            if (WagerFailed) return;
+            ChaosWallet.Record("Clean Hands restored: teammate kill credit reverted");
+            ChaosWallet.Notify();
+            ChaosNet.Announce("Clean Hands restored · reward available this map");
         }
 
         public static void LostLife()
@@ -146,6 +176,7 @@ namespace SpiderSurge
         // it ends at a wave's completion, and the next wave's start and the new map's spiders reset every cooldown before anyone can cast again
         private static void SetActive(ChallengeKind kind)
         {
+            if (kind != Active) _cleanHands.Reset();
             bool doubling = kind == ChallengeKind.DoubleCooldown && Active != ChallengeKind.DoubleCooldown;
             Active = kind;
             if (doubling)
@@ -155,6 +186,7 @@ namespace SpiderSurge
         public static void Reset()
         {
             _loadChosenMap = null;
+            _lastOffered = _previousOffered = ChallengeKind.None;
             Pending = false;
             Offered = ChallengeKind.None;
             SetActive(ChallengeKind.None);

@@ -510,6 +510,7 @@ public class TitlesManager
 
     public void ClearTitles()
     {
+        SetRunOutcome(false, null);
         ReleasePortraits();
         currentTitles.Clear();
         allTitles.Clear();
@@ -518,6 +519,7 @@ public class TitlesManager
 
     public void SetRemoteTitles(List<TitleEntry> current, List<TitleEntry> all)
     {
+        SetRunOutcome(false, null);
         ReleasePortraits();
         currentTitles = current ?? new List<TitleEntry>();
         allTitles = all ?? new List<TitleEntry>();
