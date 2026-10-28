@@ -36,6 +36,7 @@ namespace SpiderSurge
 
             SurgeLobbyPlatform.EnsureCreated();
             StatsMod.RunReportSources.Register(Integration.SurgeReportSource.Instance);
+            SurgeLifecycle.Subscribe();
             Settings.Changed += OnSettingsChanged;
         }
 
@@ -43,6 +44,7 @@ namespace SpiderSurge
         {
             Settings.Changed -= OnSettingsChanged;
             StatsMod.RunReportSources.Unregister(Integration.SurgeReportSource.Instance);
+            SurgeLifecycle.Unsubscribe();
             SurgeNet.Shutdown();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);

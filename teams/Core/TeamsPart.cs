@@ -32,6 +32,8 @@ namespace SpiderTeams
             CreateManager();
             ReflectionCache.ReportMissing();
             TeamNet.Initialize();
+            GameEvents.SceneLoaded += LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
+            GameEvents.RoundStarting += VersusMode_StartRound_Patch.OnRoundStarting;
         }
 
         protected internal override void OnStop()
@@ -58,6 +60,8 @@ namespace SpiderTeams
 
             VersusTeamsPage.RemoveAll();
             TeamNet.Shutdown();
+            GameEvents.SceneLoaded -= LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
+            GameEvents.RoundStarting -= VersusMode_StartRound_Patch.OnRoundStarting;
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();

@@ -102,45 +102,41 @@ namespace SpiderSurge
             }
         }
 
-        [HarmonyPostfix]
-        public static void Postfix(bool __result, SurvivalConfig survivalConfig)
+        internal static void OnRunStarted(SurvivalMode survival, SurvivalConfig survivalConfig)
         {
-            if (__result)
+            if (ShouldApplySurge(survivalConfig))
             {
-                if (ShouldApplySurge(survivalConfig))
+                Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
+                Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
+                Logger.LogInfo($"Budget - Start: {survivalConfig.startingBudget}, PerWave: {survivalConfig.budgetPerWave}, PerPlayer: {survivalConfig.budgetPerPlayer}");
+                Logger.LogInfo($"Enemies:");
+                foreach (var enemy in survivalConfig.enemies)
                 {
-                    Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
-                    Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
-                    Logger.LogInfo($"Budget - Start: {survivalConfig.startingBudget}, PerWave: {survivalConfig.budgetPerWave}, PerPlayer: {survivalConfig.budgetPerPlayer}");
-                    Logger.LogInfo($"Enemies:");
-                    foreach (var enemy in survivalConfig.enemies)
-                    {
-                        var name = enemy.enemyObject != null ? enemy.enemyObject.name : "Null";
-                        Logger.LogInfo($" - {name} | Cost: {enemy.cost} | Waves: {enemy.minWave}-{enemy.maxWave}");
-                    }
-                    Logger.LogInfo($"=====================================");
+                    var name = enemy.enemyObject != null ? enemy.enemyObject.name : "Null";
+                    Logger.LogInfo($" - {name} | Cost: {enemy.cost} | Waves: {enemy.minWave}-{enemy.maxWave}");
+                }
+                Logger.LogInfo($"=====================================");
+            }
+
+            SurgeGameModeManager.EndRun(RunEnd.Starting);
+
+            if (ShouldApplySurge(survivalConfig))
+            {
+                if (SurgeGameModeManager.Instance == null) return;
+                SurgeGameModeManager.Instance.SetActive(true);
+                AbilitySelection.Arm();
+                if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
+
+                if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                {
+                    PlayerAbilityHandler.ResetSpawnTracking();
                 }
 
-                SurgeGameModeManager.EndRun(RunEnd.Starting);
-
-                if (ShouldApplySurge(survivalConfig))
+                var eventField = AccessTools.Field(typeof(SurvivalMode), "onHighScoreUpdated");
+                if (eventField != null && SurvivalMode.instance != null)
                 {
-                    if (SurgeGameModeManager.Instance == null) return;
-                    SurgeGameModeManager.Instance.SetActive(true);
-                    AbilitySelection.Arm();
-                    if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
-
-                    if (PlayerAbilityHandler.ActiveSpiderControllers != null)
-                    {
-                        PlayerAbilityHandler.ResetSpawnTracking();
-                    }
-
-                    var eventField = AccessTools.Field(typeof(SurvivalMode), "onHighScoreUpdated");
-                    if (eventField != null && SurvivalMode.instance != null)
-                    {
-                        var action = (Action<int>)eventField.GetValue(null);
-                        action?.Invoke(SurvivalMode.instance.GetHighScore());
-                    }
+                    var action = (Action<int>)eventField.GetValue(null);
+                    action?.Invoke(SurvivalMode.instance.GetHighScore());
                 }
             }
         }

@@ -240,15 +240,20 @@ namespace SpiderSurge
             }
         }
 
+        internal static void OnWaveFailed(SurvivalMode survival, bool lostLife)
+        {
+            if (ChaosWallet.Enabled && lostLife) LostLife();
+        }
+
         public static float AdjustBudget(float budget) => Active == ChallengeKind.Overrun ? budget * 1.5f : budget;
     }
 
     [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
     internal static class ChallengeMapChoicePatch
     {
-        static void Prefix(Modifier modifier, GameLevel level, NetworkVariable<bool> ____waitingForPerk)
+        internal static void OnPerkChoosing(Modifier modifier, GameLevel level)
         {
-            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing || !____waitingForPerk.Value) return;
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing) return;
             PerkShop.ResolveMap(modifier, level);
         }
 
@@ -293,16 +298,6 @@ namespace SpiderSurge
         static void Prefix(SurvivalMode __instance, int ____nextPerkChoiceWave)
         {
             if (ChaosWallet.Enabled && __instance.CurrentWave == ____nextPerkChoiceWave) ChallengeController.Settle();
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalMode), "FailWave")]
-    internal static class ChallengeLostLifePatch
-    {
-        static void Prefix(SurvivalMode __instance, out int __state) => __state = __instance.Lives;
-        static void Postfix(SurvivalMode __instance, int __state)
-        {
-            if (ChaosWallet.Enabled && __instance.Lives < __state) ChallengeController.LostLife();
         }
     }
 

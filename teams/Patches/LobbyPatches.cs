@@ -5,12 +5,10 @@ using Logger = Silk.Logger;
 
 namespace SpiderTeams
 {
-    [HarmonyPatch(typeof(LobbyController), "OnSceneLoaded")]
     public static class LobbyController_OnSceneLoaded_Patch
     {
         // Every scene drops the owner records; the lobby also ends Surge versus and puts the team colors and lobby label back.
-        [HarmonyPostfix]
-        public static void Postfix(Scene scene)
+        public static void OnSceneLoaded(Scene scene)
         {
             try
             {

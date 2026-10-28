@@ -52,7 +52,7 @@ namespace SpiderSurge
 
     internal static class AbilityAchievementTracker
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
+        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = GameEvents.WaveInProgress;
         internal static Component Attack;
         internal static EnemyHealthSystem LastWasp;
         internal static PlayerController ThermalCaster;
@@ -61,8 +61,10 @@ namespace SpiderSurge
 
         internal static void ClearWave() => pendingOverkill = null;
 
+        // Overkill waits for the wave to finish; a hostile spawn after the blast means that Wasp was not the wave's last enemy
         internal static void CompleteWave(SurvivalMode survival)
         {
+            if (!Net.IsAuthority) return;
             if (pendingOverkill != null && survival.CurrentWave == pendingWave && WaveInProgress(survival))
                 SurgeAchievements.Unlock(SurgeAchievements.Overkill, pendingOverkill);
             ClearWave();
@@ -159,17 +161,6 @@ namespace SpiderSurge
             var blast = explosion.gameObject.AddComponent<MissileAchievementOrigin>();
             blast.Shooter = missile.Shooter;
             blast.ReturnedBy = Attack == null && StatsMod.HitLogic.CurrentAttacker == null ? missile.ReturnedBy : null;
-        }
-    }
-
-    // Wait for the wave to finish; a hostile spawn after the blast means that Wasp was not the wave's last enemy.
-    [HarmonyPatch(typeof(SurvivalMode), "CompleteWave")]
-    internal static class OverkillWaveCompletePatch
-    {
-        [HarmonyPrefix]
-        private static void Prefix(SurvivalMode __instance)
-        {
-            if (Net.IsAuthority) AchievementTracker.Run("Overkill", () => AbilityAchievementTracker.CompleteWave(__instance));
         }
     }
 

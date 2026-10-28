@@ -27,11 +27,9 @@ namespace SpiderTeams
         }
     }
 
-    [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.StartRound))]
     public static class VersusMode_StartRound_Patch
     {
-        [HarmonyPrefix]
-        public static void Prefix(VersusMode __instance)
+        public static void OnRoundStarting(VersusMode __instance)
         {
             try
             {

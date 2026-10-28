@@ -22,7 +22,7 @@ namespace SpiderSurge
     public static class PerkShop
     {
         private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
-        private static readonly AccessTools.FieldRef<SurvivalMode, Unity.Netcode.NetworkVariable<bool>> WaitingForPerk = AccessTools.FieldRefAccess<SurvivalMode, Unity.Netcode.NetworkVariable<bool>>("_waitingForPerk");
+        private static readonly AccessTools.FieldRef<SurvivalMode, Unity.Netcode.NetworkVariable<bool>> WaitingForPerk = GameEvents.WaitingForPerk;
         private static readonly AccessTools.FieldRef<SurvivalMode, Unity.Netcode.NetworkVariable<int>> Lives = AccessTools.FieldRefAccess<SurvivalMode, Unity.Netcode.NetworkVariable<int>>("_lives");
         private static readonly MethodInfo GetRandomModifiers = AccessTools.Method(typeof(SurvivalMode), "GetRandomModifiers");
         private static readonly MethodInfo GetRandomLevels = AccessTools.Method(typeof(SurvivalMode), "GetRandomLevels");

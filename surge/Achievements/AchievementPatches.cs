@@ -266,29 +266,6 @@ namespace SpiderSurge
         }
     }
 
-    // LateUpdate keeps calling StartWave until a wave is running, so only the call that starts one counts
-    [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
-    public static class SurvivalMode_StartWave_Achievement_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance, out bool __state) => __state = WaveInProgress(__instance);
-
-        [HarmonyPostfix]
-        public static void Postfix(SurvivalMode __instance, bool __state)
-        {
-            if (!__state && WaveInProgress(__instance)) AchievementTracker.ResetRevives();
-        }
-    }
-
-    [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.StartRound))]
-    public static class VersusMode_StartRound_Achievement_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix() => AchievementTracker.ResetRevives();
-    }
-
     // Doomsday Scenario: Pocket Dimension takes a Big Grenade whose fuse is already lit
     [HarmonyPatch(typeof(StorageAbility), "StoreWeapon")]
     public static class StorageAbility_StoreWeapon_Achievement_Patch
@@ -475,34 +452,22 @@ namespace SpiderSurge
         }
     }
 
-    // The perk timer picks a card itself when it runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
-    [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
-    public static class SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch
+    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and a player picked it. The perk timer picks a card itself when it
+    // runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
+    internal static class LuckAchievement
     {
-        public static bool TimedOut;
+        private static bool _timedOut;
 
-        [HarmonyPrefix]
-        public static void Prefix() => AchievementTracker.Run("Luck", () => TimedOut = Logging.SpiderSurgeStatsManager.PerkChoiceTimerRanOut());
-    }
+        internal static void OnPerkSubmitted() => _timedOut = Logging.SpiderSurgeStatsManager.PerkChoiceTimerRanOut();
 
-    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and a player picked it
-    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
-    public static class SurvivalMode_ChoosePerk_Achievement_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<bool>> WaitingForPerk = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<bool>>("_waitingForPerk");
-
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance, Modifier modifier)
+        internal static void OnPerkChoosing(Modifier modifier, GameLevel level)
         {
-            AchievementTracker.Run("Luck", () =>
+            if (SurgeGameModeManager.IsSurgeRunActive && !_timedOut &&
+                modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
+                modifier.levelInSurvival == 0 && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(AchievementTracker.NothingPerk))
             {
-                if (SurgeGameModeManager.IsSurgeRunActive && WaitingForPerk(__instance).Value && !SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch.TimedOut &&
-                    modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
-                    modifier.levelInSurvival == 0 && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(AchievementTracker.NothingPerk))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.YayIGuess, null);
-                }
-            });
+                SurgeAchievements.Unlock(SurgeAchievements.YayIGuess, null);
+            }
         }
     }
 }

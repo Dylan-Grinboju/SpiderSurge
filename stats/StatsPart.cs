@@ -25,6 +25,7 @@ namespace StatsMod
             Logger.LogInfo("UI Manager initialized");
             StatsNet.Initialize();
             RunReportSources.Register(StatsModApi.Source);
+            GameModeHooks.Subscribe();
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -36,6 +37,7 @@ namespace StatsMod
         {
             StatsNet.Shutdown();
             RunReportSources.Unregister(StatsModApi.Source);
+            GameModeHooks.Unsubscribe();
             TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)
