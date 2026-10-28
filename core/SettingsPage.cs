@@ -29,7 +29,8 @@ namespace SpiderSurge.Common
         public const string AchievementsHub = "achievements";
         private static readonly string[] DoozyAnimations = { "Punch-Move", "Punch-Rotate", "Punch-Scale", "Punch-Fade", "State-Move", "State-Rotate", "State-Scale", "State-Fade", "Loop-Move", "Loop-Rotate", "Loop-Scale", "Loop-Fade" };
 
-        private static readonly Part[] MenuOrder = { Parts.Stats, Parts.Surge, Parts.Teams, Parts.Fixes };
+        // Surge's achievements list before the Stats titles, unlike the settings order
+        private static readonly Part[] CollectionOrder = { Parts.Surge, Parts.Stats, Parts.Teams, Parts.Fixes };
         private static readonly AccessTools.FieldRef<ModsMenu, UIButton> BackButtonOf = AccessTools.FieldRefAccess<ModsMenu, UIButton>("backButton");
         private static SettingsPage _open;
         private static int _backFrame = -1;
@@ -417,14 +418,11 @@ namespace SpiderSurge.Common
         private void AddMain()
         {
             Note("Play, explore your collection, or make SpiderSurge feel right for you.");
-            if (Parts.Surge.Running)
-            {
-                Button("How to play", () => Open(SurgeGuide.Page));
-                Note("A guide to starting a run, abilities and ultimates, perk synergies, chaos points, challenges, enemies, controls and multiplayer.");
-            }
+            foreach (Part part in Parts.MenuOrder)
+                if (part.Running) part.BuildHub(this);
             Button("Settings", () => Open("settings"));
             Note("Display, sound, run rules and privacy. Changes save automatically. Team rules are in Versus Battle setup.");
-            if (Parts.Surge.Running || Parts.Stats.Running)
+            if (Array.Exists(Parts.MenuOrder, part => part.Running && part.HasCollection))
             {
                 Button("Collection", () => Open(AchievementsHub));
                 Note("Browse achievements and the title collection, see unlock requirements, and check what you earned recently.");
@@ -438,7 +436,7 @@ namespace SpiderSurge.Common
         private void AddSettings()
         {
             Title("Settings");
-            foreach (Part part in MenuOrder)
+            foreach (Part part in Parts.MenuOrder)
                 if (part.Running && part.HasSettings)
                 {
                     Button(part.Title, () => Open(part.Key));
@@ -465,7 +463,7 @@ namespace SpiderSurge.Common
             Title("Mod parts");
             Note("Hide Stats from its settings page; choose team versus from the versus setup page in the lobby.");
             Note("Turning Game fixes on or off takes effect after restarting the game.");
-            foreach (Part part in MenuOrder)
+            foreach (Part part in Parts.MenuOrder)
             {
                 Spacer();
                 Header(part.Title);
@@ -490,29 +488,15 @@ namespace SpiderSurge.Common
         private void AddGeneral()
         {
             Title("Records and privacy");
-            if (Parts.Stats.Running)
-            {
-                Toggle("Keep match history", StatsMod.ModConfig.SaveHistoryKey);
-                Note("Keep completed match results on this PC. Turning this off keeps your existing history.");
-                Checkbox("Export detailed reports", Settings.GetBool("stats.tracking.saveStatsToFile") || (Parts.Surge.Running && ModConfig.EnableStatsLogging), value =>
-                {
-                    Settings.Set("stats.tracking.saveStatsToFile", value);
-                    if (Parts.Surge.Running) Settings.Set(ModConfig.StatsLoggingKey, value);
-                });
-                Note("Write detailed Stats and Surge text reports on this PC. Match history and anonymous sharing are separate choices.");
-            }
-            if (Parts.Surge.Running)
-            {
-                Spacer();
-                SurgeSettingsPage.BuildTelemetry(this);
-            }
+            foreach (Part part in Parts.MenuOrder)
+                if (part.Running) part.BuildRecords(this);
         }
 
         private void AddAchievements()
         {
             Title("Collection");
-            if (Parts.Surge.Running) Button($"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})", () => Open(AchievementsPage.Page));
-            if (Parts.Stats.Running) Button(StatsMod.StatsSettingsPage.TitlesButtonLabel, () => Open(StatsMod.StatsSettingsPage.TitlesPage));
+            foreach (Part part in CollectionOrder)
+                if (part.Running) part.BuildCollection(this);
         }
 
         private void AddAbout()

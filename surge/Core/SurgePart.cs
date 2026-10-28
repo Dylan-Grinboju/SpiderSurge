@@ -18,6 +18,8 @@ namespace SpiderSurge
         public override bool OnByDefault => true;
         public override bool CanDisable => false;
         public override bool HasSettings => true;
+        public override bool HasCollection => true;
+        public override IEnumerable<KeyValuePair<string, object>> SettingDefaults => ModConfig.Defaults;
 
         public override IEnumerable<string> SharedSettings => new[] { ModConfig.UnlimitedPerkTimeKey, ModConfig.NoAbilitiesKey };
 
@@ -59,6 +61,28 @@ namespace SpiderSurge
         public override void BuildSettings(SettingsPage page)
         {
             SurgeSettingsPage.Build(page);
+        }
+
+        public override void BuildHub(SettingsPage page)
+        {
+            page.Button("How to play", () => page.Open(SurgeGuide.Page));
+            page.Note("A guide to starting a run, abilities and ultimates, perk synergies, chaos points, challenges, enemies, controls and multiplayer.");
+        }
+
+        public override void BuildRecords(SettingsPage page)
+        {
+            page.Spacer();
+            SurgeSettingsPage.BuildTelemetry(page);
+        }
+
+        public override void BuildCollection(SettingsPage page)
+        {
+            page.Button($"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})", () => page.Open(AchievementsPage.Page));
+        }
+
+        public override void BuildSupport(SettingsPage page)
+        {
+            SurgeSettingsPage.BuildTelemetrySupport(page);
         }
 
         private static void OnSettingsChanged(string key)

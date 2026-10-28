@@ -25,6 +25,10 @@ namespace SpiderSurge.Common
         public Harmony Harmony { get; internal set; }
 
         public virtual bool HasSettings => false;
+        public virtual bool HasCollection => false;
+
+        // Defined for every part at startup, whether or not the part runs
+        public virtual IEnumerable<KeyValuePair<string, object>> SettingDefaults => Array.Empty<KeyValuePair<string, object>>();
 
         // Keys or prefixes whose values the host sends to its clients while they are connected
         public virtual IEnumerable<string> SharedSettings => Array.Empty<string>();
@@ -40,6 +44,22 @@ namespace SpiderSurge.Common
         public virtual void BuildSettings(SettingsPage page)
         {
         }
+
+        public virtual void BuildHub(SettingsPage page)
+        {
+        }
+
+        public virtual void BuildRecords(SettingsPage page)
+        {
+        }
+
+        public virtual void BuildCollection(SettingsPage page)
+        {
+        }
+
+        public virtual void BuildSupport(SettingsPage page)
+        {
+        }
     }
 
     public static class Parts
@@ -53,10 +73,15 @@ namespace SpiderSurge.Common
         public static readonly Part Stats = new global::StatsMod.StatsPart();
 
         public static readonly Part[] All = { Fixes, Surge, Teams, Stats };
+        public static readonly Part[] MenuOrder = { Stats, Surge, Teams, Fixes };
+        // The order the settings file has always listed the parts' sections in
+        private static readonly Part[] DefineOrder = { Surge, Stats, Teams, Fixes };
 
         private static Harmony _core;
 
         public static IEnumerable<KeyValuePair<string, object>> Defaults => All.Where(part => part.CanDisable).Select(part =>new KeyValuePair<string, object>(part.SettingKey, part.OnByDefault));
+
+        public static IEnumerable<KeyValuePair<string, object>> SettingDefaults => DefineOrder.SelectMany(part => part.SettingDefaults);
 
         public static bool IsShared(string key)
         {

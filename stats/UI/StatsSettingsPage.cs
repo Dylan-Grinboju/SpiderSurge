@@ -150,7 +150,20 @@ namespace StatsMod
             page.Note($"Saved in <noparse>{TitleCollection.FilePath}</noparse>");
         }
 
-        internal static string TitlesButtonLabel => TitleCollection.Readable
+        // Stats owns the report choice; while Surge runs the same checkbox also sets Surge's report setting
+        public static void BuildRecords(SettingsPage page)
+        {
+            page.Toggle("Keep match history", ModConfig.SaveHistoryKey);
+            page.Note("Keep completed match results on this PC. Turning this off keeps your existing history.");
+            page.Checkbox("Export detailed reports", Settings.GetBool("stats.tracking.saveStatsToFile") || (Parts.Surge.Running && SpiderSurge.ModConfig.EnableStatsLogging), value =>
+            {
+                Settings.Set("stats.tracking.saveStatsToFile", value);
+                if (Parts.Surge.Running) Settings.Set(SpiderSurge.ModConfig.StatsLoggingKey, value);
+            });
+            page.Note("Write detailed Stats and Surge text reports on this PC. Match history and anonymous sharing are separate choices.");
+        }
+
+        internal static string TitlesButtonLabel =>TitleCollection.Readable
             ? $"Titles ({TitleCatalog.All.Count(title => TitleCollection.Unlocked.ContainsKey(title.Name))} of {TitleCatalog.All.Count})"
             : "Titles";
 

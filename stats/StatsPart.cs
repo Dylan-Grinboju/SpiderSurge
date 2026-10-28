@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -15,6 +16,8 @@ namespace StatsMod
         public override bool OnByDefault => true;
         public override bool CanDisable => false;
         public override bool HasSettings => true;
+        public override bool HasCollection => true;
+        public override IEnumerable<KeyValuePair<string, object>> SettingDefaults => ModConfig.Defaults;
 
         protected internal override void OnStart()
         {
@@ -48,6 +51,16 @@ namespace StatsMod
         public override void BuildSettings(SettingsPage page)
         {
             StatsSettingsPage.Build(page);
+        }
+
+        public override void BuildRecords(SettingsPage page)
+        {
+            StatsSettingsPage.BuildRecords(page);
+        }
+
+        public override void BuildCollection(SettingsPage page)
+        {
+            page.Button(StatsSettingsPage.TitlesButtonLabel, () => page.Open(StatsSettingsPage.TitlesPage));
         }
     }
 }
