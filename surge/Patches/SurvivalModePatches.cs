@@ -237,7 +237,7 @@ namespace SpiderSurge
                         PlayerAbilityHandler.ResetSpawnTracking();
                     }
 
-                    var eventField = typeof(SurvivalMode).GetField("onHighScoreUpdated", BindingFlags.Public | BindingFlags.Static);
+                    var eventField = AccessTools.Field(typeof(SurvivalMode), "onHighScoreUpdated");
                     if (eventField != null && SurvivalMode.instance != null)
                     {
                         var action = (Action<int>)eventField.GetValue(null);

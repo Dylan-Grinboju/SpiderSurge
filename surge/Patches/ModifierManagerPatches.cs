@@ -79,16 +79,17 @@ namespace SpiderSurge
                             PerksManager.Instance.IsFirstNormalPerkSelection = false;
                         }
                     }
+                }
 
-                    if (PerksManager.Instance.IsUltUpgradePerkSelection)
-                    {
-                        PerksManager.Instance.IsUltUpgradePerkSelection = false;
-                    }
+                // Any pick ends the wave 30/60 ultimate screen, also a vanilla perk; the ultimate then returns in regular choices
+                if (PerksManager.Instance.IsUltUpgradePerkSelection)
+                {
+                    PerksManager.Instance.IsUltUpgradePerkSelection = false;
+                }
 
-                    if (PerksManager.Instance.IsUltSwapPerkSelection)
-                    {
-                        PerksManager.Instance.IsUltSwapPerkSelection = false;
-                    }
+                if (PerksManager.Instance.IsUltSwapPerkSelection)
+                {
+                    PerksManager.Instance.IsUltSwapPerkSelection = false;
                 }
             }
 
