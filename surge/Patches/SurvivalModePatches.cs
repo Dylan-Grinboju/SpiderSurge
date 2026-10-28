@@ -42,6 +42,7 @@ namespace SpiderSurge
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
+                SurvivalConfig_GetHighScore_Patch.RegisterSurgeConfig(surgeConfig);
 
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
