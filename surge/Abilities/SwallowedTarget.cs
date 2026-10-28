@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,6 +15,10 @@ namespace SpiderSurge
             AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
             AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
+
+        // Stats credits the caster with what the Black Hole takes
+        public static event Action<EnemyHealthSystem, PlayerController> EnemySwallowed;
+        public static event Action<SpiderHealthSystem, PlayerController> SpiderKilled;
 
         public PlayerController Caster { get; private set; }
 
@@ -31,6 +37,7 @@ namespace SpiderSurge
         {
             if (enemy == null || IsSwallowed(enemy.gameObject)) return;
 
+            Listeners.Raise(EnemySwallowed, enemy, caster, "SpiderSurge Black Hole listener failed");
             SwallowedTarget swallowed = enemy.gameObject.AddComponent<SwallowedTarget>();
             swallowed._enemy = enemy;
             swallowed.Caster = caster;
@@ -38,6 +45,7 @@ namespace SpiderSurge
             swallowed.FreezeEnemy();
             swallowed.StartPull(target);
             SurgeNet.SendEnemyFx(EnemyFx.Swallowed, enemy.GetComponent<NetworkObject>(), pullTime);
+            SwallowedAchievements.Enemy(enemy, caster);
         }
 
         public static void ShowSwallowed(EnemyHealthSystem enemy, float pullTime)
@@ -61,6 +69,7 @@ namespace SpiderSurge
             swallowed._pullTime = Consts.Values.Storage.BlackHoleTakeTime;
             swallowed.FreezeSpider();
             swallowed.StartPull(target);
+            SwallowedAchievements.Spider(spider, caster);
         }
 
         public static bool IsSwallowed(GameObject root)
@@ -80,6 +89,7 @@ namespace SpiderSurge
         // The Black Hole ignores shields; Stats credits the caster with this kill
         public static void KillSpider(SpiderHealthSystem spider, PlayerController caster)
         {
+            Listeners.Raise(SpiderKilled, spider, caster, "SpiderSurge Black Hole listener failed");
             spider.DisableShield();
             spider.Disintegrate();
         }

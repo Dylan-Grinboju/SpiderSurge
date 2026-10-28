@@ -89,33 +89,22 @@ namespace SpiderSurge
         public static PlayerController HolderOf(Weapon weapon) => weapon != null && weapon.equipped && weapon.owner != null ? Players.Of(weapon.owner) : null;
     }
 
-    // Black Hole and I Will Keep You Safe
-    [HarmonyPatch(typeof(SwallowedTarget))]
-    public static class SwallowedTarget_Achievement_Patches
+    // Black Hole and I Will Keep You Safe, called once the Black Hole has swallowed its target
+    public static class SwallowedAchievements
     {
-        [HarmonyPatch(nameof(SwallowedTarget.BeginEnemy))]
-        [HarmonyPostfix]
-        public static void BeginEnemy_Postfix(EnemyHealthSystem enemy, PlayerController caster)
+        public static void Enemy(EnemyHealthSystem enemy, PlayerController caster)
         {
             AchievementTracker.Run("Black Hole", () =>
             {
-                if (enemy != null && enemy.GetComponent<HornetShamanBrain>() != null && SwallowedTarget.IsSwallowed(enemy.gameObject))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.BlackHole, caster);
-                }
+                if (enemy.GetComponent<HornetShamanBrain>() != null) SurgeAchievements.Unlock(SurgeAchievements.BlackHole, caster);
             });
         }
 
-        [HarmonyPatch(nameof(SwallowedTarget.BeginSpider))]
-        [HarmonyPostfix]
-        public static void BeginSpider_Postfix(SpiderHealthSystem spider, PlayerController caster)
+        public static void Spider(SpiderHealthSystem spider, PlayerController caster)
         {
             AchievementTracker.Run("Black Hole", () =>
             {
-                if (spider != null && SwallowedTarget.IsSwallowed(spider.rootObject) && AchievementTracker.AreTeammates(caster, Players.Of(spider)))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.KeepYouSafe, caster);
-                }
+                if (AchievementTracker.AreTeammates(caster, Players.Of(spider))) SurgeAchievements.Unlock(SurgeAchievements.KeepYouSafe, caster);
             });
         }
     }
@@ -225,13 +214,10 @@ namespace SpiderSurge
         }
     }
 
-    // Healer and You Are Not Done Yet; Teams replaces the revive in versus, and its result still reaches the postfix
-    [HarmonyPatch(typeof(ImmuneAbility), "TryRespawnDeadPlayer")]
-    public static class ImmuneAbility_Revive_Achievement_Patch
+    // Healer and You Are Not Done Yet; the ghosts are read before the revive, including one Teams makes in versus
+    public static class ReviveAchievements
     {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(out List<PlayerController> __state)
+        public static List<PlayerController> Ghosts()
         {
             var ghosts = new List<PlayerController>();
             AchievementTracker.Run("Neural Backup", () =>
@@ -241,20 +227,16 @@ namespace SpiderSurge
                     if (ImmuneAbility.IsGhost(player)) ghosts.Add(player);
                 }
             });
-            __state = ghosts;
+            return ghosts;
         }
 
-        [HarmonyPostfix]
-        public static void Postfix(ImmuneAbility __instance, bool __result, ref PlayerController revivedPlayer, List<PlayerController> __state)
+        public static void Revived(ImmuneAbility ability, PlayerController revived, List<PlayerController> ghosts)
         {
-            PlayerController revived = revivedPlayer;
-            if (!__result || revived == null) return;
-
             AchievementTracker.Run("Neural Backup", () =>
             {
-                PlayerController caster = __instance.GetComponentInParent<PlayerController>() ?? Players.ById(__instance.PlayerId);
+                PlayerController caster = ability.GetComponentInParent<PlayerController>() ?? Players.ById(ability.PlayerId);
                 if (caster == null) return;
-                if (__state.Contains(revived))
+                if (ghosts.Contains(revived))
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.NotDoneYet, caster);
                 }
@@ -267,13 +249,11 @@ namespace SpiderSurge
     }
 
     // Doomsday Scenario: Pocket Dimension takes a Big Grenade whose fuse is already lit
-    [HarmonyPatch(typeof(StorageAbility), "StoreWeapon")]
-    public static class StorageAbility_StoreWeapon_Achievement_Patch
+    public static class DoomsdayAchievement
     {
         private static readonly AccessTools.FieldRef<Grenade, bool> Armed = AccessTools.FieldRefAccess<Grenade, bool>("_armed");
 
-        [HarmonyPrefix]
-        public static void Prefix(StorageAbility __instance, GameObject heldWeaponObj)
+        public static void Stored(StorageAbility ability, GameObject heldWeaponObj)
         {
             if (heldWeaponObj == null) return;
             AchievementTracker.Run("Pocket Dimension", () =>
@@ -281,7 +261,7 @@ namespace SpiderSurge
                 Grenade grenade = heldWeaponObj.GetComponent<Grenade>();
                 if (grenade != null && grenade.serializationWeaponName == SerializationWeaponName.BigGrenade && Armed(grenade))
                 {
-                    SurgeAchievements.Unlock(SurgeAchievements.Doomsday, Players.ById(__instance.PlayerId));
+                    SurgeAchievements.Unlock(SurgeAchievements.Doomsday, Players.ById(ability.PlayerId));
                 }
             });
         }
@@ -303,15 +283,14 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(AmmoAbility), "OnActivate")]
-    public static class AmmoAbility_OnActivate_Achievement_Patch
+    // Unlimited Power: Bottomless Clip cast while holding a fully upgraded blade
+    public static class UnlimitedPowerAchievement
     {
-        [HarmonyPostfix]
-        public static void Postfix(AmmoAbility __instance)
+        public static void Cast(AmmoAbility ability)
         {
             AchievementTracker.Run("Bottomless Clip", () =>
             {
-                PlayerController caster = Players.ById(__instance.PlayerId);
+                PlayerController caster = Players.ById(ability.PlayerId);
                 SpiderHealthSystem spider = caster != null ? caster.spiderHealthSystem : null;
                 SpiderWeaponManager weapons = spider != null ? spider.GetComponentInChildren<SpiderWeaponManager>() : null;
                 if (weapons != null && AchievementTracker.IsFullyUpgraded(weapons.equippedWeapon))

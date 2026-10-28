@@ -53,23 +53,6 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderSurge.SwallowedTarget), nameof(SpiderSurge.SwallowedTarget.BeginEnemy))]
-    class EnemySwallowedPatch
-    {
-        static void Prefix(EnemyHealthSystem enemy, PlayerController caster)
-        {
-            try
-            {
-                if (enemy == null || SpiderSurge.SwallowedTarget.IsSwallowed(enemy.gameObject)) return;
-                HitLogic.OnEnemySwallowed(enemy, caster);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error recording an enemy swallowed by the Black Hole: {ex.Message}");
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(EnemyHealthSystem), "DestroyShield")]
     class EnemyShieldDestroyedPatch
     {

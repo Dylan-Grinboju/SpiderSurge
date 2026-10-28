@@ -375,7 +375,19 @@ namespace SpiderSurge
             SpawnFriendlyWasps();
         }
 
+        // Teams brings back only teammates in Surge versus; it returns false to leave the revive to this ability
+        public delegate bool ReviveOverride(ImmuneAbility ability, out PlayerController revivedPlayer);
+        public static ReviveOverride OverrideRevive;
+
         private bool TryRespawnDeadPlayer(out PlayerController revivedPlayer)
+        {
+            var ghosts = ReviveAchievements.Ghosts();
+            bool revived = OverrideRevive != null && OverrideRevive(this, out revivedPlayer) ? revivedPlayer != null : ReviveAnyDead(out revivedPlayer);
+            if (revived) ReviveAchievements.Revived(this, revivedPlayer, ghosts);
+            return revived;
+        }
+
+        private bool ReviveAnyDead(out PlayerController revivedPlayer)
         {
             revivedPlayer = null;
 

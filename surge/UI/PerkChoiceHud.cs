@@ -147,11 +147,4 @@ namespace SpiderSurge
         [HarmonyPostfix]
         private static void Postfix() => PerkChoiceHud.RefreshPerks();
     }
-
-    [HarmonyPatch(typeof(PerksManager), nameof(PerksManager.ApplyRemote))]
-    internal static class PerksManager_ApplyRemote_ChoiceHudPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix() => PerkChoiceHud.RefreshPerks();
-    }
 }

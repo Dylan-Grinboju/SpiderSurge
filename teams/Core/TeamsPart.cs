@@ -34,6 +34,7 @@ namespace SpiderTeams
             TeamNet.Initialize();
             GameEvents.SceneLoaded += LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
             GameEvents.RoundStarting += VersusMode_StartRound_Patch.OnRoundStarting;
+            SurgeHooks.Install();
         }
 
         protected internal override void OnStop()
@@ -62,6 +63,7 @@ namespace SpiderTeams
             TeamNet.Shutdown();
             GameEvents.SceneLoaded -= LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
             GameEvents.RoundStarting -= VersusMode_StartRound_Patch.OnRoundStarting;
+            SurgeHooks.Remove();
             ModConfig.Shutdown();
             OwnerRegistry.Clear();
             ExplosionOwners.Clear();

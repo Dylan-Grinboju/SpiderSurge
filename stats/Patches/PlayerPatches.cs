@@ -71,22 +71,6 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderSurge.SwallowedTarget), nameof(SpiderSurge.SwallowedTarget.KillSpider))]
-    public class SpiderSwallowedPatch
-    {
-        static void Prefix(SpiderHealthSystem spider, PlayerController caster)
-        {
-            try
-            {
-                HitLogic.OnPlayerSwallowed(spider, caster);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording a spider swallowed by the Black Hole: {ex.Message}");
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(SpiderHealthSystem), "DisableDeathEffect")]
     public class SpiderHealthSystemDisableDeathEffect
     {

@@ -26,6 +26,8 @@ namespace StatsMod
             StatsNet.Initialize();
             RunReportSources.Register(StatsModApi.Source);
             GameModeHooks.Subscribe();
+            SpiderSurge.SwallowedTarget.EnemySwallowed += HitLogic.OnEnemySwallowed;
+            SpiderSurge.SwallowedTarget.SpiderKilled += HitLogic.OnPlayerSwallowed;
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -38,6 +40,8 @@ namespace StatsMod
             StatsNet.Shutdown();
             RunReportSources.Unregister(StatsModApi.Source);
             GameModeHooks.Unsubscribe();
+            SpiderSurge.SwallowedTarget.EnemySwallowed -= HitLogic.OnEnemySwallowed;
+            SpiderSurge.SwallowedTarget.SpiderKilled -= HitLogic.OnPlayerSwallowed;
             TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)
