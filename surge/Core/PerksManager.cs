@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -30,16 +31,27 @@ namespace SpiderSurge
             set { _isUltSwapPerkSelection = value; SurgeNet.MarkDirty(); }
         }
 
+        // Each ability with its ultimate and component, in the order GetChosenAbilityUltimate checks them
+        private static readonly (string ability, string ultimate, System.Type type)[] Abilities =
+        {
+            (Consts.PerkNames.ImmuneAbility, Consts.PerkNames.ImmuneAbilityUltimate, typeof(ImmuneAbility)),
+            (Consts.PerkNames.AmmoAbility, Consts.PerkNames.AmmoAbilityUltimate, typeof(AmmoAbility)),
+            (Consts.PerkNames.PulseAbility, Consts.PerkNames.PulseAbilityUltimate, typeof(PulseAbility)),
+            (Consts.PerkNames.StorageAbility, Consts.PerkNames.StorageAbilityUltimate, typeof(StorageAbility)),
+            (Consts.PerkNames.FreezeAbility, Consts.PerkNames.FreezeAbilityUltimate, typeof(FreezeAbility))
+        };
+
+        // Ultimate perks require the base ability to be unlocked
+        private static readonly Dictionary<string, string> BaseAbilities = Abilities.ToDictionary(entry => entry.ultimate, entry => entry.ability);
+
         // Ability perks - shown in special ability selection screen
-        private readonly HashSet<string> abilityPerks = new HashSet<string> { Consts.PerkNames.ImmuneAbility, Consts.PerkNames.AmmoAbility, Consts.PerkNames.PulseAbility, Consts.PerkNames.StorageAbility, Consts.PerkNames.FreezeAbility };
+        private readonly HashSet<string> abilityPerks = new HashSet<string>(Abilities.Select(entry => entry.ability));
 
         // Upgrade perks - shown in normal perk selection
         private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
         // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
-        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string> { Consts.PerkNames.ImmuneAbilityUltimate, Consts.PerkNames.AmmoAbilityUltimate, Consts.PerkNames.PulseAbilityUltimate, Consts.PerkNames.StorageAbilityUltimate, Consts.PerkNames.FreezeAbilityUltimate };
-
-
+        private readonly HashSet<string> abilityUltimatePerks = new HashSet<string>(Abilities.Select(entry => entry.ultimate));
 
         private readonly Dictionary<string, int> maxLevels = new Dictionary<string, int>
         {
@@ -59,26 +71,6 @@ namespace SpiderSurge
             [Consts.PerkNames.PulseAbilityUltimate] = 1,
             [Consts.PerkNames.StorageAbilityUltimate] = 1,
             [Consts.PerkNames.FreezeAbilityUltimate] = 1
-        };
-
-        private readonly Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
-        {
-            [Consts.PerkNames.ImmuneAbility] = new List<string>(),
-            [Consts.PerkNames.AmmoAbility] = new List<string>(),
-            [Consts.PerkNames.PulseAbility] = new List<string>(),
-            [Consts.PerkNames.StorageAbility] = new List<string>(),
-            [Consts.PerkNames.FreezeAbility] = new List<string>(),
-            [Consts.PerkNames.AbilityCooldown] = new List<string>(),
-            [Consts.PerkNames.AbilityDuration] = new List<string>(),
-            [Consts.PerkNames.ShortTermInvestment] = new List<string>(),
-            [Consts.PerkNames.LongTermInvestment] = new List<string>(),
-            [Consts.PerkNames.PerkLuck] = new List<string>(),
-            // Ultimate perks require the base ability to be unlocked
-            [Consts.PerkNames.ImmuneAbilityUltimate] = new List<string> { Consts.PerkNames.ImmuneAbility },
-            [Consts.PerkNames.AmmoAbilityUltimate] = new List<string> { Consts.PerkNames.AmmoAbility },
-            [Consts.PerkNames.PulseAbilityUltimate] = new List<string> { Consts.PerkNames.PulseAbility },
-            [Consts.PerkNames.StorageAbilityUltimate] = new List<string> { Consts.PerkNames.StorageAbility },
-            [Consts.PerkNames.FreezeAbilityUltimate] = new List<string> { Consts.PerkNames.FreezeAbility }
         };
 
         private readonly Dictionary<string, int> perkLevels = new Dictionary<string, int>();
@@ -103,117 +95,48 @@ namespace SpiderSurge
             }
         }
 
+        // SpiderInspector's call requests unlock abilities in live tests through these
+        public static void EnableImmuneAbility() => Enable(Consts.PerkNames.ImmuneAbility);
+        public static void EnableAmmoAbility() => Enable(Consts.PerkNames.AmmoAbility);
+        public static void EnablePulseAbility() => Enable(Consts.PerkNames.PulseAbility);
+        public static void EnableStorageAbility() => Enable(Consts.PerkNames.StorageAbility);
+        public static void EnableFreezeAbility() => Enable(Consts.PerkNames.FreezeAbility);
+        public static void EnableImmuneUltimate() => Enable(Consts.PerkNames.ImmuneAbilityUltimate);
+        public static void EnableAmmoUltimate() => Enable(Consts.PerkNames.AmmoAbilityUltimate);
+        public static void EnablePulseUltimate() => Enable(Consts.PerkNames.PulseAbilityUltimate);
+        public static void EnableStorageUltimate() => Enable(Consts.PerkNames.StorageAbilityUltimate);
+        public static void EnableFreezeUltimate() => Enable(Consts.PerkNames.FreezeAbilityUltimate);
 
-
-        public static void EnableImmuneAbility()
+        // An ultimate also unlocks its base ability
+        private static void Enable(string perkName)
         {
-            EnableAbility<ImmuneAbility>(Consts.PerkNames.ImmuneAbility);
-        }
-
-        public static void EnableAmmoAbility()
-        {
-            EnableAbility<AmmoAbility>(Consts.PerkNames.AmmoAbility);
-        }
-
-        public static void EnablePulseAbility()
-        {
-            EnableAbility<PulseAbility>(Consts.PerkNames.PulseAbility);
-        }
-
-        public static void EnableStorageAbility()
-        {
-            EnableAbility<StorageAbility>(Consts.PerkNames.StorageAbility);
-        }
-
-        public static void EnableFreezeAbility()
-        {
-            EnableAbility<FreezeAbility>(Consts.PerkNames.FreezeAbility);
-        }
-
-        public static void EnableImmuneUltimate()
-        {
-            EnableUltimate<ImmuneAbility>(Consts.PerkNames.ImmuneAbilityUltimate);
-        }
-
-        public static void EnableAmmoUltimate()
-        {
-            EnableUltimate<AmmoAbility>(Consts.PerkNames.AmmoAbilityUltimate);
-        }
-
-        public static void EnablePulseUltimate()
-        {
-            EnableUltimate<PulseAbility>(Consts.PerkNames.PulseAbilityUltimate);
-        }
-
-        public static void EnableStorageUltimate()
-        {
-            EnableUltimate<StorageAbility>(Consts.PerkNames.StorageAbilityUltimate);
-        }
-
-        public static void EnableFreezeUltimate()
-        {
-            EnableUltimate<FreezeAbility>(Consts.PerkNames.FreezeAbilityUltimate);
-        }
-
-        private static void EnableAbility<T>(string perkName) where T : BaseAbility
-        {
+            var (ability, ultimate, type) = System.Array.Find(Abilities, entry => entry.ability == perkName || entry.ultimate == perkName);
+            if (type == null)
+            {
+                Logger.LogError($"Cannot enable {perkName}: not an ability or ultimate perk");
+                return;
+            }
+            bool isUltimate = perkName == ultimate;
             try
             {
+                if (isUltimate) Instance.SetPerkLevel(ability, 1);
                 Instance.SetPerkLevel(perkName, 1);
 
                 // Register abilities with input interceptor now that they're unlocked
                 PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc == null);
                 foreach (SpiderController player in PlayerAbilityHandler.ActiveSpiderControllers)
                 {
-                    var ability = player.GetComponent<T>();
-                    if (ability != null)
+                    var component = player.GetComponent(type) as BaseAbility;
+                    if (component != null)
                     {
-                        ability.RegisterWithInputInterceptor();
+                        component.RegisterWithInputInterceptor();
                     }
                 }
                 Instance.UpdatePerkIcons();
             }
             catch (System.Exception ex)
             {
-                Logger.LogError($"Error enabling {typeof(T).Name}: {ex.Message}");
-            }
-        }
-
-        private static void EnableUltimate<T>(string perkName) where T : BaseAbility
-        {
-            try
-            {
-                if (!Instance.dependencies.TryGetValue(perkName, out List<string> perkDependencies) || perkDependencies == null || perkDependencies.Count == 0)
-                {
-                    Logger.LogError($"Cannot enable ultimate {perkName}: missing base ability dependency");
-                    return;
-                }
-
-                string baseAbility = perkDependencies[0];
-                if (string.IsNullOrEmpty(baseAbility))
-                {
-                    Logger.LogError($"Cannot enable ultimate {perkName}: invalid base ability dependency");
-                    return;
-                }
-
-                Instance.SetPerkLevel(baseAbility, 1);
-                Instance.SetPerkLevel(perkName, 1);
-
-                // Register abilities with input interceptor now that they're unlocked
-                PlayerAbilityHandler.ActiveSpiderControllers.RemoveAll(sc => sc == null);
-                foreach (SpiderController player in PlayerAbilityHandler.ActiveSpiderControllers)
-                {
-                    var ability = player.GetComponent<T>();
-                    if (ability != null)
-                    {
-                        ability.RegisterWithInputInterceptor();
-                    }
-                }
-                Instance.UpdatePerkIcons();
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"Error enabling {typeof(T).Name} ultimate: {ex.Message}");
+                Logger.LogError($"Error enabling {type.Name}{(isUltimate ? " ultimate" : "")}: {ex.Message}");
             }
         }
 
@@ -230,11 +153,6 @@ namespace SpiderSurge
         public IEnumerable<string> GetAbilityPerkNames()
         {
             return abilityPerks;
-        }
-
-        public IEnumerable<string> GetUpgradePerkNames()
-        {
-            return upgradePerks;
         }
 
         public IEnumerable<string> GetAbilityUltimatePerkNames()
@@ -254,13 +172,7 @@ namespace SpiderSurge
             if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck) return false;
             int level = GetPerkLevel(perkName);
             if (level >= maxLevel) return false;
-            if (dependencies.TryGetValue(perkName, out var deps))
-            {
-                foreach (var dep in deps)
-                {
-                    if (GetPerkLevel(dep) == 0) return false;
-                }
-            }
+            if (BaseAbilities.TryGetValue(perkName, out string baseAbility) && GetPerkLevel(baseAbility) == 0) return false;
 
             if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
             {
@@ -275,27 +187,21 @@ namespace SpiderSurge
             return true;
         }
 
-        public bool HasAnyAbilityUnlocked()
-        {
-            return GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0 || GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0 || GetPerkLevel(Consts.PerkNames.PulseAbility) > 0 || GetPerkLevel(Consts.PerkNames.StorageAbility) > 0 || GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0;
-        }
-
         private bool HasAnyUltimate()
         {
-            return GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0 ||
-                   GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0 ||
-                   GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0 ||
-                   GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0 ||
-                   GetPerkLevel(Consts.PerkNames.FreezeAbilityUltimate) > 0;
+            foreach (var entry in Abilities)
+            {
+                if (GetPerkLevel(entry.ultimate) > 0) return true;
+            }
+            return false;
         }
 
         public string GetChosenAbilityUltimate()
         {
-            if (GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0) return Consts.PerkNames.ImmuneAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return Consts.PerkNames.AmmoAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return Consts.PerkNames.PulseAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return Consts.PerkNames.StorageAbilityUltimate;
-            if (GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0) return Consts.PerkNames.FreezeAbilityUltimate;
+            foreach (var entry in Abilities)
+            {
+                if (GetPerkLevel(entry.ability) > 0) return entry.ultimate;
+            }
             return null;
         }
 
@@ -351,52 +257,24 @@ namespace SpiderSurge
             }
         }
 
-        private Dictionary<string, System.Action> _perkActions;
-
-        private void InitializePerkActions()
-        {
-            _perkActions = new Dictionary<string, System.Action>
-            {
-                [Consts.PerkNames.ImmuneAbility] = EnableImmuneAbility,
-                [Consts.PerkNames.AmmoAbility] = EnableAmmoAbility,
-                [Consts.PerkNames.PulseAbility] = EnablePulseAbility,
-                [Consts.PerkNames.StorageAbility] = EnableStorageAbility,
-                [Consts.PerkNames.FreezeAbility] = EnableFreezeAbility,
-                [Consts.PerkNames.ImmuneAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.ImmuneAbilityUltimate, EnableImmuneUltimate),
-                [Consts.PerkNames.AmmoAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.AmmoAbilityUltimate, EnableAmmoUltimate),
-                [Consts.PerkNames.PulseAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.PulseAbilityUltimate, EnablePulseUltimate),
-                [Consts.PerkNames.StorageAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.StorageAbilityUltimate, EnableStorageUltimate),
-                [Consts.PerkNames.FreezeAbilityUltimate] = () => HandleUltimateSelection(Consts.PerkNames.FreezeAbilityUltimate, EnableFreezeUltimate)
-            };
-        }
-
         public void OnSelected(string name)
         {
-            if (_perkActions == null) InitializePerkActions();
-
-            if (_perkActions.ContainsKey(name))
-            {
-                _perkActions[name].Invoke();
-            }
+            if (BaseAbilities.ContainsKey(name)) HandleUltimateSelection(name);
+            else if (IsAbilityPerk(name)) Enable(name);
         }
 
-        private void HandleUltimateSelection(string newUltName, System.Action enableMethod)
+        private void HandleUltimateSelection(string newUltName)
         {
             string currentUltPath = GetChosenAbilityUltimate();
 
-            if (currentUltPath != null && currentUltPath != newUltName)
+            if (currentUltPath != null && currentUltPath != newUltName && BaseAbilities.TryGetValue(currentUltPath, out string oldAbilityName))
             {
-                if (dependencies.ContainsKey(currentUltPath) && dependencies[currentUltPath].Count > 0)
-                {
-                    string oldAbilityName = dependencies[currentUltPath][0];
+                Logger.LogInfo($"[Perk Swap] Swapping from {oldAbilityName}/{currentUltPath} to {newUltName}");
 
-                    Logger.LogInfo($"[Perk Swap] Swapping from {oldAbilityName}/{currentUltPath} to {newUltName}");
-
-                    SetPerkLevel(currentUltPath, 0);
-                    SetPerkLevel(oldAbilityName, 0);
-                }
+                SetPerkLevel(currentUltPath, 0);
+                SetPerkLevel(oldAbilityName, 0);
             }
-            enableMethod?.Invoke();
+            Enable(newUltName);
         }
 
         public void ResetPerks()

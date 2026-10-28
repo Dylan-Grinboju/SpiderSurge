@@ -10,16 +10,14 @@ namespace SpiderSurge.Fixes
     public class WhispCooldownStartPatch
     {
         private static readonly FieldInfo shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
-        private static readonly FieldInfo shotCooldownField = AccessTools.Field(typeof(WhispBrain), "shotCooldown");
 
         static void Postfix(WhispBrain __instance)
         {
             try
             {
-                if (shotCooldownTillField != null && shotCooldownField != null)
+                if (shotCooldownTillField != null)
                 {
-                    float shotCooldown = (float)shotCooldownField.GetValue(__instance);
-                    shotCooldownTillField.SetValue(__instance, Time.time + shotCooldown);
+                    shotCooldownTillField.SetValue(__instance, Time.time + __instance.shotCooldown);
                 }
                 else
                 {

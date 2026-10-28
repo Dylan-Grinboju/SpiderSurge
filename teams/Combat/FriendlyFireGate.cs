@@ -48,7 +48,7 @@ namespace SpiderTeams
             attacker = DamageContext.Current;
             victimPlayer = null;
             attackerTeam = -1;
-            if (victim == null || attacker < 0 || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
+            if (victim == null || attacker < 0 || !TeamManager.HostTeamMatch)
             {
                 return false;
             }

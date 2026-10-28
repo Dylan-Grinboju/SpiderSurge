@@ -70,10 +70,7 @@ namespace SpiderSurge
             label.raycastTarget = false;
             var labelRect = label.rectTransform;
             labelRect.localScale = Vector3.one;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(4f, 2f);
-            labelRect.offsetMax = new Vector2(-4f, -2f);
+            SettingsPage.Stretch(labelRect, new Vector2(4f, 2f), new Vector2(-4f, -2f));
             _group = _hud.perkChoiceView.GetComponent<CanvasGroup>() ?? _hud.perkChoiceView.gameObject.AddComponent<CanvasGroup>();
         }
 

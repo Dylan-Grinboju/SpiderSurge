@@ -41,11 +41,11 @@ namespace SpiderSurge.Common
             _panel.offsetMax = _offsetMax;
             _panel.GetComponent<Image>().color = new Color(0.035f, 0.035f, 0.055f, 0.95f);
             _heading = Text("Help title", _panel, font, 18f);
-            Stretch(_heading.rectTransform, new Vector2(18f, -66f), new Vector2(-18f, -16f), new Vector2(0f, 1f), Vector2.one);
+            SettingsPage.Stretch(_heading.rectTransform, new Vector2(18f, -66f), new Vector2(-18f, -16f), new Vector2(0f, 1f), Vector2.one);
 
             var viewport = new GameObject("Help viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D)).GetComponent<RectTransform>();
             viewport.SetParent(_panel, false);
-            Stretch(viewport, new Vector2(18f, 44f), new Vector2(-18f, -76f));
+            SettingsPage.Stretch(viewport, new Vector2(18f, 44f), new Vector2(-18f, -76f));
             viewport.GetComponent<Image>().color = Color.clear;
             _scroll = viewport.gameObject.AddComponent<ScrollRect>();
             _scroll.horizontal = false;
@@ -53,7 +53,7 @@ namespace SpiderSurge.Common
             _scroll.scrollSensitivity = 15f;
             _scroll.viewport = viewport;
             _body = Text("Help text", viewport, font, 16f);
-            Stretch(_body.rectTransform, Vector2.zero, Vector2.zero, new Vector2(0f, 1f), Vector2.one);
+            SettingsPage.Stretch(_body.rectTransform, Vector2.zero, Vector2.zero, new Vector2(0f, 1f), Vector2.one);
             _body.rectTransform.pivot = new Vector2(0.5f, 1f);
             _body.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             _scroll.content = _body.rectTransform;
@@ -61,7 +61,7 @@ namespace SpiderSurge.Common
             var hint = Text("Help hint", _panel, font, 12f);
             hint.text = "SCROLL HELP: RIGHT STICK / WHEEL";
             hint.color = new Color(0.65f, 0.65f, 0.7f);
-            Stretch(hint.rectTransform, new Vector2(18f, 12f), new Vector2(-18f, 32f), Vector2.zero, new Vector2(1f, 0f));
+            SettingsPage.Stretch(hint.rectTransform, new Vector2(18f, 12f), new Vector2(-18f, 32f), Vector2.zero, new Vector2(1f, 0f));
         }
 
         public void SetVisible(bool visible)
@@ -128,13 +128,6 @@ namespace SpiderSurge.Common
             return text;
         }
 
-        private static void Stretch(RectTransform rect, Vector2 min, Vector2 max, Vector2? anchorMin = null, Vector2? anchorMax = null)
-        {
-            rect.anchorMin = anchorMin ?? Vector2.zero;
-            rect.anchorMax = anchorMax ?? Vector2.one;
-            rect.offsetMin = min;
-            rect.offsetMax = max;
-        }
     }
 
     public sealed class SettingsRowHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler

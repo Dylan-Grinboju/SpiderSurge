@@ -131,12 +131,12 @@ namespace SpiderSurge.Fixes
                 a.interfaceName == b.interfaceName && a.manufacturer == b.manufacturer && a.product == b.product;
         }
 
-        internal static bool Restore(LobbyController lobby, PlayerInput input, InputDevice device)
+        internal static void Restore(LobbyController lobby, PlayerInput input, InputDevice device)
         {
             var scheme = InputControlScheme.FindControlSchemeForDevices(new[] { device }, input.actions.controlSchemes);
             if (!scheme.HasValue)
             {
-                return false;
+                return;
             }
             input.user.UnpairDevices();
             input.SwitchCurrentControlScheme(scheme.Value.name, device);
@@ -147,7 +147,6 @@ namespace SpiderSurge.Fixes
                 lobby.OnDeviceRegained(controller, input);
             }
             Logger.LogInfo($"Restored gamepad to existing player input {input.playerIndex}");
-            return true;
         }
 
         internal static void RejectDuplicate(PlayerInput input)

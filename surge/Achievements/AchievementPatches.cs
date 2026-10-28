@@ -22,6 +22,8 @@ namespace SpiderSurge
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
 
         public static Explosion CurrentExplosion;
+        // Whether CurrentExplosion is a Big Grenade blast, unknown until a spider it damages asks, so its name is read at most once per knockback
+        public static bool? CurrentIsBigGrenade;
 
         private static readonly Dictionary<(int caster, int revived), int> Revives = new Dictionary<(int, int), int>();
         private static readonly HashSet<ParticleBlade> FullyUpgradedBlades = new HashSet<ParticleBlade>();
@@ -46,11 +48,14 @@ namespace SpiderSurge
 
         public static bool Gone(SpiderHealthSystem spider) => spider == null || spider.dead || spider.astralDead || SpiderDying(spider);
 
-        public static void Run(string what, Action action)
+        public static void Run(string what, Action action) => Run(what, static run => run(), action);
+
+        // Patches on hot paths pass their values with a static lambda, so nothing is allocated per call
+        public static void Run<T>(string what, Action<T> action, T arg)
         {
             try
             {
-                action();
+                action(arg);
             }
             catch (Exception ex)
             {
@@ -158,16 +163,18 @@ namespace SpiderSurge
     public static class Explosion_KnockBack_Achievement_Patch
     {
         [HarmonyPrefix]
-        public static void Prefix(Explosion __instance, out Explosion __state)
+        public static void Prefix(Explosion __instance, out (Explosion, bool?) __state)
         {
-            __state = AchievementTracker.CurrentExplosion;
+            __state = (AchievementTracker.CurrentExplosion, AchievementTracker.CurrentIsBigGrenade);
             AchievementTracker.CurrentExplosion = __instance;
+            AchievementTracker.CurrentIsBigGrenade = null;
         }
 
         [HarmonyFinalizer]
-        public static void Finalizer(Explosion __state)
+        public static void Finalizer((Explosion, bool?) __state)
         {
-            AchievementTracker.CurrentExplosion = __state;
+            AchievementTracker.CurrentExplosion = __state.Item1;
+            AchievementTracker.CurrentIsBigGrenade = __state.Item2;
         }
     }
 
@@ -182,19 +189,21 @@ namespace SpiderSurge
         public static void Prefix(SpiderHealthSystem __instance, bool __runOriginal)
         {
             Explosion explosion = AchievementTracker.CurrentExplosion;
-            if (!__runOriginal || explosion == null || !explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal)) return;
+            if (!__runOriginal || explosion == null || !(AchievementTracker.CurrentIsBigGrenade ??= explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal))) return;
 
-            AchievementTracker.Run("Null Field", () =>
+            AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider: __instance, explosion));
+        }
+
+        private static void Watch(SpiderHealthSystem spider, Explosion explosion)
+        {
+            ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(spider);
+            if (nullField == null || !nullField.IsImmune || !nullField.isActiveAndEnabled || AchievementTracker.Gone(spider)) return;
+
+            var key = (spider.GetInstanceID(), explosion.GetInstanceID());
+            if (Watched.Add(key))
             {
-                ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(__instance);
-                if (nullField == null || !nullField.IsImmune || !nullField.isActiveAndEnabled || AchievementTracker.Gone(__instance)) return;
-
-                var key = (__instance.GetInstanceID(), explosion.GetInstanceID());
-                if (Watched.Add(key))
-                {
-                    nullField.StartCoroutine(UnlockIfSurvived(__instance, key, BlastEnd(explosion)));
-                }
-            });
+                nullField.StartCoroutine(UnlockIfSurvived(spider, key, BlastEnd(explosion)));
+            }
         }
 
         // The blast keeps hitting every tick and Null Field can run out first, so the spider has to outlive the blast
@@ -344,16 +353,18 @@ namespace SpiderSurge
         public static void Prefix(ForceField __instance, Collision2D other)
         {
             if (other == null || other.gameObject == null) return;
-            AchievementTracker.Run("Particle Blade hit", () =>
-            {
-                EnemyHealthSystem enemy = other.gameObject.GetComponent<EnemyHealthSystem>();
-                if (enemy == null || enemy.IsDead() || !enemy.name.StartsWith(AchievementTracker.TwinBladePowerWhisp, StringComparison.Ordinal)) return;
+            AchievementTracker.Run("Particle Blade hit", static hit => CheckHit(hit.field, hit.other), (field: __instance, other));
+        }
 
-                ParticleBlade blade = __instance.GetComponentInParent<ParticleBlade>();
-                if (blade == null || blade.maxAmmo <= 0f || blade.ammo <= 0f || blade.ammo >= blade.maxAmmo * AchievementTracker.LowBladeDurability) return;
+        private static void CheckHit(ForceField field, Collision2D other)
+        {
+            EnemyHealthSystem enemy = other.gameObject.GetComponent<EnemyHealthSystem>();
+            if (enemy == null || enemy.IsDead() || !enemy.name.StartsWith(AchievementTracker.TwinBladePowerWhisp, StringComparison.Ordinal)) return;
 
-                SurgeAchievements.Unlock(SurgeAchievements.KissOfDeath, AchievementTracker.HolderOf(blade));
-            });
+            ParticleBlade blade = field.GetComponentInParent<ParticleBlade>();
+            if (blade == null || blade.maxAmmo <= 0f || blade.ammo <= 0f || blade.ammo >= blade.maxAmmo * AchievementTracker.LowBladeDurability) return;
+
+            SurgeAchievements.Unlock(SurgeAchievements.KissOfDeath, AchievementTracker.HolderOf(blade));
         }
     }
 
@@ -421,22 +432,24 @@ namespace SpiderSurge
         public static void Postfix(LaserCannon __instance)
         {
             if (!LaserBlock.Watching) return;
-            AchievementTracker.Run("Laser block", () =>
+            AchievementTracker.Run("Laser block", static cannon => Trace(cannon), __instance);
+        }
+
+        private static void Trace(LaserCannon cannon)
+        {
+            GameObject shooter = cannon.equipped && cannon.owner != null && cannon.owner.healthSystem != null ? cannon.owner.healthSystem.gameObject : null;
+            Vector2 origin = StartPoint(cannon);
+            Vector2 direction = cannon.transform.up;
+            for (int i = 0; i < cannon.countRays; i++)
             {
-                GameObject shooter = __instance.equipped && __instance.owner != null && __instance.owner.healthSystem != null ? __instance.owner.healthSystem.gameObject : null;
-                Vector2 origin = StartPoint(__instance);
-                Vector2 direction = __instance.transform.up;
-                for (int i = 0; i < __instance.countRays; i++)
-                {
-                    RaycastHit2D hit = Physics2D.CircleCast(origin, __instance.halfBeamWidth, direction, Range, __instance.laserColliderLayers);
-                    if (!hit) return;
-                    GameObject hitObject = hit.collider.gameObject;
-                    if (hitObject == shooter || hitObject == __instance.gameObject) return;
-                    LaserBlock.Check(hit, origin, direction, __instance.halfBeamWidth, Range, __instance.laserColliderLayers, __instance.gameObject, shooter);
-                    origin = hit.normal * 2f + hit.point;
-                    direction = Vector2.Reflect(direction, hit.normal);
-                }
-            });
+                RaycastHit2D hit = Physics2D.CircleCast(origin, cannon.halfBeamWidth, direction, Range, cannon.laserColliderLayers);
+                if (!hit) return;
+                GameObject hitObject = hit.collider.gameObject;
+                if (hitObject == shooter || hitObject == cannon.gameObject) return;
+                LaserBlock.Check(hit, origin, direction, cannon.halfBeamWidth, Range, cannon.laserColliderLayers, cannon.gameObject, shooter);
+                origin = hit.normal * 2f + hit.point;
+                direction = Vector2.Reflect(direction, hit.normal);
+            }
         }
     }
 
@@ -449,14 +462,16 @@ namespace SpiderSurge
         public static void Postfix(LaserCube __instance, Vector3 direction, LineRenderer lineRenderer)
         {
             if (!LaserBlock.Watching || lineRenderer == null) return;
-            AchievementTracker.Run("Laser block", () =>
-            {
-                float radius = __instance.beamWidth / 2f;
-                Vector2 origin = lineRenderer.transform.position + direction * radius;
-                RaycastHit2D hit = Physics2D.CircleCast(origin, radius, direction, Range, __instance.laserColliderLayers);
-                if (!hit || hit.collider.gameObject == __instance.gameObject) return;
-                LaserBlock.Check(hit, origin, direction, radius, Range, __instance.laserColliderLayers, __instance.gameObject, null);
-            });
+            AchievementTracker.Run("Laser block", static beam => Trace(beam.cube, beam.direction, beam.lineRenderer), (cube: __instance, direction, lineRenderer));
+        }
+
+        private static void Trace(LaserCube cube, Vector3 direction, LineRenderer lineRenderer)
+        {
+            float radius = cube.beamWidth / 2f;
+            Vector2 origin = lineRenderer.transform.position + direction * radius;
+            RaycastHit2D hit = Physics2D.CircleCast(origin, radius, direction, Range, cube.laserColliderLayers);
+            if (!hit || hit.collider.gameObject == cube.gameObject) return;
+            LaserBlock.Check(hit, origin, direction, radius, Range, cube.laserColliderLayers, cube.gameObject, null);
         }
     }
 

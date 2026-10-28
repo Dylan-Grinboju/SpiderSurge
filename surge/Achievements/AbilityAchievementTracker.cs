@@ -228,7 +228,7 @@ namespace SpiderSurge
         private static void Prefix(EnemyHealthSystem __instance, bool ____exploding)
         {
             if (!Net.IsAuthority || ____exploding || __instance.ignoreIndirectDamage) return;
-            AchievementTracker.Run("Ability kill", () => AbilityAchievementTracker.EnemyKilled(__instance));
+            AchievementTracker.Run("Ability kill", static enemy => AbilityAchievementTracker.EnemyKilled(enemy), __instance);
         }
     }
 
@@ -238,7 +238,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         private static void Prefix(SpiderHealthSystem __instance, out bool __state)
         {
-            __state = Net.IsAuthority && !AchievementTracker.Gone(__instance) &&
+            __state = Net.IsAuthority && FrozenEnemy.AnyFrozen && !AchievementTracker.Gone(__instance) &&
                 FrozenEnemy.IsFrozen(AbilityAchievementTracker.EnemyOf(AbilityAchievementTracker.Attack));
         }
 
@@ -246,7 +246,7 @@ namespace SpiderSurge
         private static void Postfix(SpiderHealthSystem __instance, bool __state)
         {
             if (__state && AchievementTracker.Gone(__instance))
-                AchievementTracker.Run("Still Sharp", () => SurgeAchievements.Unlock(SurgeAchievements.StillSharp, Players.Of(__instance)));
+                AchievementTracker.Run("Still Sharp", static spider => SurgeAchievements.Unlock(SurgeAchievements.StillSharp, Players.Of(spider)), __instance);
         }
     }
 

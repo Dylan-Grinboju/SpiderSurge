@@ -28,26 +28,9 @@ namespace SpiderSurge
         public override float UltimateDurationPerPerkLevel => Consts.Values.Immune.UltimateDurationIncreasePerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Immune.UltimateCooldownReductionPerLevel;
 
-        public override float UltimateDuration
-        {
-            get
-            {
-                int durationLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0;
-                int shortTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ShortTermInvestment) ?? 0;
-                int longTermLevel = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.LongTermInvestment) ?? 0;
-
-                float duration = UltimateBaseDuration;
-                if (durationLevel == 2) duration -= UltimateDurationPerPerkLevel;
-                if (shortTermLevel > 0) duration += UltimateDurationPerPerkLevel;
-                if (longTermLevel > 0) duration -= UltimateDurationPerPerkLevel;
-
-                return Mathf.Max(0.1f, duration);
-            }
-        }
+        public override float UltimateDuration => Mathf.Max(0.1f, PerkScaled(UltimateBaseDuration, -UltimateDurationPerPerkLevel, true));
 
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Neural Backup";
-        public override string UltimatePerkDescription => "After a cast time, revive one dead player or summon 3 friendly wasps if nobody is dead.";
 
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
         private static FieldInfo immuneTimeField;
@@ -173,13 +156,7 @@ namespace SpiderSurge
 
             ApplyImmunity(true);
 
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.ImmuneAbility,
-                    Consts.SoundVolumes.ImmuneAbility * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.ImmuneAbility, Consts.SoundVolumes.ImmuneAbility);
         }
 
         protected override void OnDeactivate()
@@ -223,13 +200,7 @@ namespace SpiderSurge
             hadBarrierOnUltimateCastStart = spiderHealthSystem != null && spiderHealthSystem.HasShield();
             if (spiderHealthSystem != null) channel = ChannelEffect.Attach(spiderHealthSystem.transform);
 
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.ImmuneUlt,
-                    Consts.SoundVolumes.ImmuneUlt * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.ImmuneUlt, Consts.SoundVolumes.ImmuneUlt);
         }
 
         protected override void OnDeactivateUltimate()
@@ -381,10 +352,7 @@ namespace SpiderSurge
             }
 
             SurgeVfx.Safely(() => ApplyRadiance(enable));
-            if (Net.IsHost)
-            {
-                SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
-            }
+            SurgeNet.SendFx(SurgeFx.Immune, PlayerId, Vector3.zero, 0f, enable);
         }
 
         private void ExecuteUltimateEffect()

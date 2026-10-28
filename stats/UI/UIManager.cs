@@ -31,10 +31,7 @@ namespace StatsMod
             }
             if (Settings.Affects(key, ModConfig.Prefix + "display.showStatsWindow") && !ModConfig.ShowStatsWindow && Instance != null)
             {
-                Instance.HideSmallUI();
-                Instance.HideBigUI();
-                Instance.HideTitlesUI();
-                Instance.currentUIState = UIState.Off;
+                Instance.SetState(UIState.Off);
                 Instance.restartTitlesPause = false;
             }
         }
@@ -54,9 +51,7 @@ namespace StatsMod
         {
             get
             {
-                if (SettingsPage.IsOpen) return true;
-                var perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
-                if (perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing)) return true;
+                if (SettingsPage.IsOpen || GameMenus.PerkChoiceOpen) return true;
                 if (!GameMenus.Open) return false;
                 HudController hud = HudController.instance;
                 if (Instance == null || !Instance.restartTitlesPause || hud == null || !hud.paused ||
@@ -135,16 +130,6 @@ namespace StatsMod
 
             _scalingInitialized = true;
             _scalingLogged = true;
-        }
-
-        public static float ScaleValue(float value)
-        {
-            return value * UIScaleFactor;
-        }
-
-        public static int ScaleFont(int baseFontSize)
-        {
-            return Mathf.RoundToInt(baseFontSize * UIScaleFactor);
         }
         #endregion
 
@@ -235,97 +220,35 @@ namespace StatsMod
             switch (currentUIState)
             {
                 case UIState.Off:
-                    currentUIState = UIState.SmallUI;
-                    HideBigUI();
-                    HideTitlesUI();
-                    ShowSmallUI();
+                    SetState(UIState.SmallUI);
                     break;
                 case UIState.SmallUI:
-                    currentUIState = UIState.BigUI;
-                    HideSmallUI();
-                    HideTitlesUI();
-                    ShowBigUI();
+                    SetState(UIState.BigUI);
                     break;
                 case UIState.BigUI:
-                    HideSmallUI();
-                    HideBigUI();
-                    if (CanShowTitles)
-                    {
-                        currentUIState = UIState.TitlesUI;
-                        ShowTitlesUIWithoutAnimation();
-                    }
-                    else
-                    {
-                        currentUIState = UIState.Off;
-                        HideTitlesUI();
-                    }
+                    SetState(CanShowTitles ? UIState.TitlesUI : UIState.Off);
                     break;
                 case UIState.TitlesUI:
-                    currentUIState = UIState.Off;
-                    HideSmallUI();
-                    HideBigUI();
-                    HideTitlesUI();
+                    SetState(UIState.Off);
                     break;
             }
         }
 
         private void CycleUIStateInGame()
         {
-            switch (currentUIState)
-            {
-                case UIState.Off:
-                    currentUIState = UIState.SmallUI;
-                    HideBigUI();
-                    HideTitlesUI();
-                    ShowSmallUI();
-                    break;
-                case UIState.SmallUI:
-                    currentUIState = UIState.Off;
-                    HideSmallUI();
-                    HideBigUI();
-                    HideTitlesUI();
-                    break;
-                default:
-                    currentUIState = UIState.SmallUI;
-                    HideBigUI();
-                    HideTitlesUI();
-                    ShowSmallUI();
-                    break;
-            }
+            SetState(currentUIState == UIState.SmallUI ? UIState.Off : UIState.SmallUI);
         }
 
         private void HandleSmallWindowKey()
         {
             bool isSmallVisible = smallUI != null && smallUI.IsVisible();
-            HideBigUI();
-            HideTitlesUI();
-            if (isSmallVisible)
-            {
-                HideSmallUI();
-                currentUIState = UIState.Off;
-            }
-            else
-            {
-                ShowSmallUI();
-                currentUIState = UIState.SmallUI;
-            }
+            SetState(isSmallVisible ? UIState.Off : UIState.SmallUI);
         }
 
         private void HandleBigWindowKey()
         {
             bool isBigVisible = bigUI != null && bigUI.IsVisible();
-            HideSmallUI();
-            HideTitlesUI();
-            if (isBigVisible)
-            {
-                HideBigUI();
-                currentUIState = UIState.Off;
-            }
-            else
-            {
-                ShowBigUI();
-                currentUIState = UIState.BigUI;
-            }
+            SetState(isBigVisible ? UIState.Off : UIState.BigUI);
         }
 
         private void HandleTitlesKey()
@@ -339,18 +262,36 @@ namespace StatsMod
             }
 
             bool isTitlesVisible = titlesUI != null && titlesUI.IsVisible();
-            HideSmallUI();
-            HideBigUI();
-            if (isTitlesVisible)
+            SetState(isTitlesVisible ? UIState.Off : UIState.TitlesUI);
+        }
+
+        private void SetState(UIState state, bool animateTitles = false)
+        {
+            if (state != UIState.SmallUI) HideSmallUI();
+            if (state != UIState.BigUI) HideBigUI();
+            if (state != UIState.TitlesUI) HideTitlesUI();
+
+            switch (state)
             {
-                HideTitlesUI();
-                currentUIState = UIState.Off;
+                case UIState.SmallUI:
+                    ShowSmallUI();
+                    break;
+                case UIState.BigUI:
+                    ShowBigUI();
+                    break;
+                case UIState.TitlesUI:
+                    if (animateTitles)
+                    {
+                        ShowTitlesUI();
+                    }
+                    else
+                    {
+                        ShowTitlesUIWithoutAnimation();
+                    }
+                    break;
             }
-            else
-            {
-                ShowTitlesUIWithoutAnimation();
-                currentUIState = UIState.TitlesUI;
-            }
+
+            currentUIState = state;
         }
 
         public void ToggleSmallUI()
@@ -425,11 +366,6 @@ namespace StatsMod
                 titlesUI.HideDisplay();
             }
         }
-
-        public TitlesUI GetTitlesUI()
-        {
-            return titlesUI;
-        }
         #endregion
 
         #region Cleanup
@@ -451,10 +387,7 @@ namespace StatsMod
             if (Instance == null) return;
 
 
-            Instance.ShowBigUI();
-            Instance.HideSmallUI();
-            Instance.HideTitlesUI();
-            Instance.currentUIState = UIState.BigUI;
+            Instance.SetState(UIState.BigUI);
         }
 
         public static void AutoShowTitles(bool animate = true)
@@ -462,24 +395,7 @@ namespace StatsMod
             if (!CanShowTitles) return;
             if (Instance == null) return;
 
-            Instance.HideSmallUI();
-            Instance.HideBigUI();
-
-            if (animate)
-            {
-                Instance.ShowTitlesUI();
-            }
-            else
-            {
-                Instance.ShowTitlesUIWithoutAnimation();
-            }
-
-            Instance.currentUIState = UIState.TitlesUI;
-        }
-
-        public static void ClearTitlesForNewGame()
-        {
-            Instance?.titlesUI?.ClearTitlesForNewGame();
+            Instance.SetState(UIState.TitlesUI, animate);
         }
 
         public static void OnGameSessionStarted(bool preserveEndOfGameTitles = false)
@@ -490,18 +406,14 @@ namespace StatsMod
 
             if (preserveEndOfGameTitles &&
                 Instance.currentUIState == UIState.TitlesUI &&
-                TitlesManager.Instance.HasGameEndedTitles &&
-                TitlesManager.Instance.TitleCount > 0)
+                TitlesManager.Instance.HasGameEndedTitles)
             {
                 return;
             }
 
             if (Instance.currentUIState == UIState.BigUI || Instance.currentUIState == UIState.TitlesUI)
             {
-                Instance.HideBigUI();
-                Instance.HideTitlesUI();
-                Instance.ShowSmallUI();
-                Instance.currentUIState = UIState.SmallUI;
+                Instance.SetState(UIState.SmallUI);
             }
         }
 

@@ -15,6 +15,16 @@ namespace SpiderSurge
         private const string RefusedChannel = "surge.chaos.refused";
         private const string ToastChannel = "surge.chaos.toast";
 
+        private static readonly (string channel, Net.Handler handler)[] Channels =
+        {
+            (StateChannel, OnState),
+            (ChallengeChannel, OnChallenge),
+            (BuyChannel, OnBuy),
+            (BoughtChannel, OnBought),
+            (RefusedChannel, OnRefused),
+            (ToastChannel, OnToast),
+        };
+
         private static bool _initialized;
         private static bool _dirty;
 
@@ -22,12 +32,7 @@ namespace SpiderSurge
         {
             if (_initialized) return;
             _initialized = true;
-            Net.Register(StateChannel, OnState);
-            Net.Register(ChallengeChannel, OnChallenge);
-            Net.Register(BuyChannel, OnBuy);
-            Net.Register(BoughtChannel, OnBought);
-            Net.Register(RefusedChannel, OnRefused);
-            Net.Register(ToastChannel, OnToast);
+            foreach (var (channel, handler) in Channels) Net.Register(channel, handler);
             Net.PeerReady += OnPeerReady;
             Net.LeftHost += OnLeftHost;
         }
@@ -36,12 +41,7 @@ namespace SpiderSurge
         {
             if (!_initialized) return;
             _initialized = false;
-            Net.Unregister(StateChannel);
-            Net.Unregister(ChallengeChannel);
-            Net.Unregister(BuyChannel);
-            Net.Unregister(BoughtChannel);
-            Net.Unregister(RefusedChannel);
-            Net.Unregister(ToastChannel);
+            foreach (var (channel, _) in Channels) Net.Unregister(channel);
             Net.PeerReady -= OnPeerReady;
             Net.LeftHost -= OnLeftHost;
         }
@@ -78,7 +78,7 @@ namespace SpiderSurge
             {
                 writer.Write((byte)item);
                 writer.Write(buyerId);
-                writer.Write(detail ?? string.Empty);
+                writer.WriteText(detail);
             });
         }
 

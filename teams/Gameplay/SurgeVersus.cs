@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 using Random = UnityEngine.Random;
@@ -26,7 +27,7 @@ namespace SpiderTeams
         // Host only. Runs before the round's spiders spawn, so SpiderSurge adds the abilities to them already unlocked.
         public static void OnRoundStarting(VersusMode versus, bool waitingRoom)
         {
-            if (!TeamManager.IsHost || waitingRoom || versus == null || !versus.GameModeActive() || !ModConfig.SurgeEnabled || !SurgeBridge.Available)
+            if (!Net.IsHost || waitingRoom || versus == null || !versus.GameModeActive() || !ModConfig.SurgeEnabled || !SurgeBridge.Available)
             {
                 Stop();
                 return;
@@ -42,7 +43,7 @@ namespace SpiderTeams
             _round++;
             bool firstRound = _round == 1;
             RoundActive = true;
-            SpiderSurge.Common.MatchHistory.MarkSurgeVersus();
+            MatchHistory.MarkSurgeVersus();
             CurrentAbility = ability;
             _lastPick = ability;
             Logger.LogInfo($"SpiderTeams Surge round: {Describe(ability)}");
@@ -131,7 +132,7 @@ namespace SpiderTeams
             PlayerController revived = _candidates[Random.Range(0, _candidates.Count)];
             _candidates.Clear();
             revived.SpawnCharacter(spawn.position, spawn.rotation);
-            Logger.LogInfo($"SpiderTeams: {TeamManager.DisplayName(caster)} revived {TeamManager.DisplayName(revived)}");
+            Logger.LogInfo($"SpiderTeams: {Players.NameOf(caster)} revived {Players.NameOf(revived)}");
             Announcements.Broadcast($"{TeamManager.RichName(caster)} revived {TeamManager.RichName(revived)}", TeamPalette.TeamColor(team), false);
             return revived;
         }

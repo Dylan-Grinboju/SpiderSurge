@@ -37,7 +37,6 @@ namespace SpiderSurge.Common
 
         private static void Schedule(Action action)
         {
-            string path = Folder;
             worker = worker.ContinueWith(_ => { lock (gate) action(); }, TaskScheduler.Default);
         }
         public static void Report(string message)

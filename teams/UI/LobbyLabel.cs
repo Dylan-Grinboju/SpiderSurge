@@ -1,5 +1,6 @@
 using System;
 using I2.Loc;
+using SpiderSurge.Common;
 using TMPro;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -24,7 +25,7 @@ namespace SpiderTeams
                     return;
                 }
 
-                if (ModConfig.TeamsEnabled && TeamManager.IsHost)
+                if (ModConfig.TeamsEnabled && Net.IsHost)
                 {
                     if (!_renamed)
                     {

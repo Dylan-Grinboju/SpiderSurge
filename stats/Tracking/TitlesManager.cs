@@ -90,13 +90,6 @@ public class TitleBuilder
             Requirements = new HashSet<string>(_requirements)
         };
     }
-
-    public static bool SamePlayer(params KeyValuePair<PlayerController, PlayerTracker.PlayerData>[] leaders)
-    {
-        if (leaders.Length == 0) return false;
-        var firstPlayer = leaders[0].Key;
-        return leaders.All(l => l.Key == firstPlayer);
-    }
 }
 
 public static class Req
@@ -188,12 +181,11 @@ public class TitlesManager
 
     private List<TitleEntry> currentTitles = new List<TitleEntry>();
     private List<TitleEntry> allTitles = new List<TitleEntry>();
-    private bool hasGameEndedTitles = false;
     private readonly Dictionary<int, RenderTexture> portraits = new Dictionary<int, RenderTexture>();
 
     public List<TitleEntry> CurrentTitles => currentTitles.ToList();
     public List<TitleEntry> AllTitles => allTitles.ToList();
-    public bool HasGameEndedTitles => hasGameEndedTitles;
+    public bool HasGameEndedTitles => currentTitles.Count > 0;
     public int TitleCount => currentTitles.Count;
     public event Action OnTitlesUpdated;
 
@@ -219,7 +211,6 @@ public class TitlesManager
 
         if (snapshot?.ActivePlayers == null || snapshot.GameMode != GameMode.Survival || snapshot.ActivePlayers.Count <= 1)
         {
-            hasGameEndedTitles = false;
             OnTitlesUpdated?.Invoke();
             return;
         }
@@ -253,7 +244,6 @@ public class TitlesManager
         currentTitles = SelectTopAndShuffleTitles(currentTitles, MaxDisplayedTitles);
         CapturePortraits();
 
-        hasGameEndedTitles = currentTitles.Count > 0;
         Logger.LogInfo($"Calculated {currentTitles.Count} titles for {players.Count} players");
         OnTitlesUpdated?.Invoke();
     }
@@ -524,7 +514,6 @@ public class TitlesManager
         ReleasePortraits();
         currentTitles.Clear();
         allTitles.Clear();
-        hasGameEndedTitles = false;
         OnTitlesUpdated?.Invoke();
     }
 
@@ -534,7 +523,6 @@ public class TitlesManager
         ReleasePortraits();
         currentTitles = current ?? new List<TitleEntry>();
         allTitles = all ?? new List<TitleEntry>();
-        hasGameEndedTitles = currentTitles.Count > 0;
         Logger.LogInfo($"Received {currentTitles.Count} titles from the host");
         OnTitlesUpdated?.Invoke();
     }

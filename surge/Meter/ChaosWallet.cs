@@ -84,14 +84,6 @@ namespace SpiderSurge
             ChaosNet.MarkDirty();
         }
 
-        private static void Raise(Action handler)
-        {
-            if (handler == null) return;
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try { ((Action)listener)(); }
-                catch (Exception ex) { Silk.Logger.LogError($"[Chaos] UI update failed: {ex}"); }
-            }
-        }
+        private static void Raise(Action handler) => Listeners.Raise(handler, "[Chaos] UI update failed");
     }
 }

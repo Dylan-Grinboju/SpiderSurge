@@ -1,7 +1,5 @@
 using UnityEngine;
-using System.IO;
 using System.Collections.Generic;
-using System.Reflection;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -28,53 +26,14 @@ namespace SpiderSurge
 
         private static void LoadEmbeddedIcons()
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string[] resourceNames = assembly.GetManifestResourceNames();
-
-            foreach (string resourceName in resourceNames)
+            EmbeddedResources.Load(".png", "IconLoader", "icon", nameof(LoadSpriteFromData), (iconName, fileData) =>
             {
-                if (resourceName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
+                Sprite sprite = LoadSpriteFromData(fileData);
+                if (sprite != null)
                 {
-                    string iconName = ExtractIconName(resourceName);
-
-                    try
-                    {
-                        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                        {
-                            if (stream != null)
-                            {
-                                byte[] fileData = new byte[stream.Length];
-                                stream.Read(fileData, 0, fileData.Length);
-
-                                Sprite sprite = LoadSpriteFromData(fileData);
-                                if (sprite != null)
-                                {
-                                    _loadedIcons[iconName] = sprite;
-                                }
-                            }
-                            else
-                            {
-                                Logger.LogWarning($"[IconLoader] Could not load resource stream: {resourceName}");
-                            }
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.LogError($"[IconLoader] Failed to load embedded icon '{resourceName}': {ex.Message}");
-                    }
+                    _loadedIcons[iconName] = sprite;
                 }
-            }
-        }
-
-        private static string ExtractIconName(string resourceName)
-        {
-            string withoutExtension = resourceName.Substring(0, resourceName.Length - 4);
-            int lastDot = withoutExtension.LastIndexOf('.');
-            if (lastDot >= 0)
-            {
-                return withoutExtension.Substring(lastDot + 1);
-            }
-            return withoutExtension;
+            });
         }
 
         public static Sprite GetIcon(string name)

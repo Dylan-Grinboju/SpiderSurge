@@ -15,6 +15,14 @@ namespace SpiderSurge.Common
                 if (ChallengeController.Pending) return true;
                 if (HudController.instance != null && HudController.instance.paused) return true;
                 if (GameController.instance != null && GameController.instance.gamePaused) return true;
+                return PerkChoiceOpen;
+            }
+        }
+
+        public static bool PerkChoiceOpen
+        {
+            get
+            {
                 UIView perkChoice = SurvivalModeHud.instance != null ? SurvivalModeHud.instance.perkChoiceView : null;
                 return perkChoice != null && perkChoice.gameObject.activeInHierarchy && (perkChoice.IsVisible || perkChoice.IsShowing);
             }

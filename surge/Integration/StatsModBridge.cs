@@ -47,40 +47,30 @@ namespace SpiderSurge.Integration
         private const string ReqMostImmuneUlt = "SurgeMostImmuneUlt";
         private const string ReqMostPulseUlt = "SurgeMostPulseUlt";
 
-        private static string GetActiveAbilityType()
+        private static readonly (string Type, string Ability, string Ultimate)[] AbilityPerks =
         {
-            if (PerksManager.Instance == null) return null;
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbility) > 0) return "Immune";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbility) > 0) return "Pulse";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbility) > 0) return "Ammo";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbility) > 0) return "Storage";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.FreezeAbility) > 0) return "Freeze";
-            return null;
-        }
+            ("Immune", Consts.PerkNames.ImmuneAbility, Consts.PerkNames.ImmuneAbilityUltimate),
+            ("Pulse", Consts.PerkNames.PulseAbility, Consts.PerkNames.PulseAbilityUltimate),
+            ("Ammo", Consts.PerkNames.AmmoAbility, Consts.PerkNames.AmmoAbilityUltimate),
+            ("Storage", Consts.PerkNames.StorageAbility, Consts.PerkNames.StorageAbilityUltimate),
+            ("Freeze", Consts.PerkNames.FreezeAbility, Consts.PerkNames.FreezeAbilityUltimate),
+        };
 
-        private static string GetActiveUltType()
+        private static string GetActiveType(bool ultimate)
         {
             if (PerksManager.Instance == null) return null;
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.ImmuneAbilityUltimate) > 0) return "Immune";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.PulseAbilityUltimate) > 0) return "Pulse";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.AmmoAbilityUltimate) > 0) return "Ammo";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.StorageAbilityUltimate) > 0) return "Storage";
-            if (PerksManager.Instance.GetPerkLevel(Consts.PerkNames.FreezeAbilityUltimate) > 0) return "Freeze";
+            foreach (var (type, ability, ultimatePerk) in AbilityPerks)
+            {
+                if (PerksManager.Instance.GetPerkLevel(ultimate ? ultimatePerk : ability) > 0) return type;
+            }
             return null;
         }
 
         private class LeaderInfo
         {
             public PlayerController Player;
-            public int Value;
             public bool HasStat;
             public string Description;
-        }
-
-        private class TitleRequirement
-        {
-            public LeaderInfo Leader;
-            public string ReqName;
         }
 
         private const string MostAbilityText = "Most Ability Activations";
@@ -88,28 +78,31 @@ namespace SpiderSurge.Integration
         private const string MostUltText = "Most Ultimate Activations";
         private const string LeastUltText = "Least Ultimate Activations";
 
-        private static readonly (string name, string mode, string[] requirements)[] SurgeTitles =
+        // Leaders are named by the text the collection shows; a title with a Type needs that ability, or its ultimate with Ultimate
+        private static readonly (string Name, string Type, bool Ultimate, int Bonus, (string Leader, string Req)[] Leaders, string StatsReq)[] SurgeTitles =
         {
-            ("Enhanced", null, new[] { MostAbilityText }),
-            ("Ultimate Form", null, new[] { MostUltText }),
-            ("Powered Up", null, new[] { MostUltText, MostAbilityText }),
-            ("Maximum Power", null, new[] { MostUltText, LeastAbilityText }),
-            ("Simple is Better", null, new[] { MostAbilityText, LeastUltText }),
-            ("Vanilla", null, new[] { LeastUltText, LeastAbilityText }),
-            ("Ability Destroyer", null, new[] { MostAbilityText, TitleCatalog.Label(Req.MostOffense) }),
-            ("Wasn't Fast Enough", "Immune ability", new[] { MostAbilityText, TitleCatalog.Label(Req.MostDamageTaken) }),
-            ("Down with the Ship", "Pulse ability", new[] { MostAbilityText, TitleCatalog.Label(Req.MostLavaDeaths) }),
-            ("Boom Boom", "Pulse ultimate", new[] { MostUltText, TitleCatalog.Label(Req.MostExplosionsKills) }),
-            ("Self Sacrifice", "Immune ultimate", new[] { MostUltText, TitleCatalog.Label(Req.MostDamageTaken) }),
+            ("Enhanced", null, false, 20, new[] { (MostAbilityText, ReqMostAbility) }, null),
+            ("Ultimate Form", null, false, 20, new[] { (MostUltText, ReqMostUlt) }, null),
+            ("Powered Up", null, false, 20, new[] { (MostUltText, ReqMostUlt), (MostAbilityText, ReqMostAbility) }, null),
+            ("Maximum Power", null, false, 20, new[] { (MostUltText, ReqMostUlt), (LeastAbilityText, ReqLeastAbility) }, null),
+            ("Simple is Better", null, false, 20, new[] { (MostAbilityText, ReqMostAbility), (LeastUltText, ReqLeastUlt) }, null),
+            ("Vanilla", null, false, 20, new[] { (LeastUltText, ReqLeastUlt), (LeastAbilityText, ReqLeastAbility) }, null),
+            ("Ability Destroyer", null, false, 20, new[] { (MostAbilityText, ReqMostAbility) }, Req.MostOffense),
+            ("Wasn't Fast Enough", "Immune", false, 20, new[] { (MostAbilityText, ReqMostImmuneAbility) }, Req.MostDamageTaken),
+            ("Down with the Ship", "Pulse", false, 10, new[] { (MostAbilityText, ReqMostPulseAbility) }, Req.MostLavaDeaths),
+            ("Boom Boom", "Pulse", true, 20, new[] { (MostUltText, ReqMostPulseUlt) }, Req.MostExplosionsKills),
+            ("Self Sacrifice", "Immune", true, 20, new[] { (MostUltText, ReqMostImmuneUlt) }, Req.MostDamageTaken),
         };
 
         // Lists Surge's titles in the Stats title collection, so they show before anyone earns them
         public static void DescribeSurgeTitles()
         {
-            foreach (var (name, mode, requirements) in SurgeTitles)
+            foreach (var title in SurgeTitles)
             {
-                string where = mode == null ? "Surge mode" : $"Surge mode with the {mode}";
-                StatsModApi.DescribeTitle(name, $"{where}: {string.Join(" + ", requirements)}");
+                string where = title.Type == null ? "Surge mode" : $"Surge mode with the {title.Type} {(title.Ultimate ? "ultimate" : "ability")}";
+                var requirements = title.Leaders.Select(l => l.Leader).ToList();
+                if (title.StatsReq != null) requirements.Add(TitleCatalog.Label(title.StatsReq));
+                StatsModApi.DescribeTitle(title.Name, $"{where}: {string.Join(" + ", requirements)}");
             }
         }
 
@@ -120,31 +113,21 @@ namespace SpiderSurge.Integration
 
             try
             {
-                var mostAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true, "Ability Activations");
-                var leastAbility = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false, "Ability Activations");
-                var mostUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations");
-                var leastUlt = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations");
+                var leaders = new Dictionary<string, LeaderInfo>
+                {
+                    [MostAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: true, "Ability Activations"),
+                    [LeastAbilityText] = GetLeader(snapshot, ps => ps.AbilityActivationCount, descending: false, "Ability Activations"),
+                    [MostUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations"),
+                    [LeastUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations"),
+                };
+                string abilityType = GetActiveType(ultimate: false);
+                string ultType = GetActiveType(ultimate: true);
 
-                TryRegisterTitle("Enhanced", LeaderReq(mostAbility, ReqMostAbility));
-                TryRegisterTitle("Ultimate Form", LeaderReq(mostUlt, ReqMostUlt));
-                TryRegisterTitle("Powered Up", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(mostAbility, ReqMostAbility));
-                TryRegisterTitle("Maximum Power", LeaderReq(mostUlt, ReqMostUlt), LeaderReq(leastAbility, ReqLeastAbility));
-                TryRegisterTitle("Simple is Better", LeaderReq(mostAbility, ReqMostAbility), LeaderReq(leastUlt, ReqLeastUlt));
-                TryRegisterTitle("Vanilla", LeaderReq(leastUlt, ReqLeastUlt), LeaderReq(leastAbility, ReqLeastAbility));
-                TryRegisterTitle("Ability Destroyer", LeaderReq(mostAbility, ReqMostAbility), ExternalReq("MostOffense"));
-
-                string abilityType = GetActiveAbilityType();
-                string ultType = GetActiveUltType();
-
-
-                if (abilityType == "Immune")
-                    TryRegisterTitle("Wasn't Fast Enough", LeaderReq(mostAbility, ReqMostImmuneAbility), ExternalReq("MostDamageTaken"));
-                if (abilityType == "Pulse")
-                    TryRegisterTitle("Down with the Ship", 10, LeaderReq(mostAbility, ReqMostPulseAbility), ExternalReq("MostLavaDeaths"));
-                if (ultType == "Pulse")
-                    TryRegisterTitle("Boom Boom", LeaderReq(mostUlt, ReqMostPulseUlt), ExternalReq("MostExplosionsKills"));
-                if (ultType == "Immune")
-                    TryRegisterTitle("Self Sacrifice", 20, LeaderReq(mostUlt, ReqMostImmuneUlt), ExternalReq("MostDamageTaken"));
+                foreach (var title in SurgeTitles)
+                {
+                    if (title.Type != null && title.Type != (title.Ultimate ? ultType : abilityType)) continue;
+                    TryRegisterTitle(title.Name, title.Bonus, title.Leaders.Select(l => (leaders[l.Leader], l.Req)).ToArray(), title.StatsReq);
+                }
             }
             catch (Exception ex)
             {
@@ -168,82 +151,26 @@ namespace SpiderSurge.Integration
             return new LeaderInfo
             {
                 Player = player,
-                Value = topValue,
                 HasStat = descending ? topValue > 0 : true,
                 Description = $"{label} {statLabel} ({topValue})"
             };
         }
 
-        private static TitleRequirement LeaderReq(LeaderInfo leader, string reqName)
+        // The title goes to a player only if they lead every Surge stat it needs; Stats checks its own requirement
+        private static void TryRegisterTitle(string titleName, int bonusPriority, (LeaderInfo Leader, string Req)[] leaders, string statsReq)
         {
-            return new TitleRequirement
-            {
-                Leader = leader,
-                ReqName = reqName
-            };
-        }
+            PlayerController primaryPlayer = leaders[0].Leader.Player;
+            if (primaryPlayer == null || leaders.Any(l => l.Leader.Player == null || !l.Leader.HasStat || l.Leader.Player != primaryPlayer)) return;
 
-        private static TitleRequirement ExternalReq(string reqName)
-        {
-            return new TitleRequirement
-            {
-                Leader = null,
-                ReqName = reqName
-            };
-        }
-
-        private static void TryRegisterTitle(string titleName, params TitleRequirement[] requirements)
-        {
-            TryRegisterTitle(titleName, 20, requirements);
-        }
-
-        private static void TryRegisterTitle(string titleName, int bonusPriority, params TitleRequirement[] requirements)
-        {
-            if (requirements.Length == 0) return;
-
-            var leaderReqs = new List<(LeaderInfo Leader, string ReqName)>();
-            var externalReqs = new List<string>();
-
-            foreach (var requirement in requirements)
-            {
-                if (requirement.Leader == null)
-                    externalReqs.Add(requirement.ReqName);
-                else
-                    leaderReqs.Add((requirement.Leader, requirement.ReqName));
-            }
-
-            PlayerController primaryPlayer = null;
-            bool allHaveStats = true;
-            var allReqNames = new List<string>();
-            var descriptions = new List<string>();
-
-            if (leaderReqs.Count > 0)
-            {
-                primaryPlayer = leaderReqs[0].Leader.Player;
-                if (primaryPlayer == null) return;
-
-                foreach (var (leader, _) in leaderReqs)
-                {
-                    if (leader.Player == null || !leader.HasStat) { allHaveStats = false; break; }
-                    if (leader.Player != primaryPlayer) { allHaveStats = false; break; }
-                }
-                if (!allHaveStats) return;
-
-                foreach (var (leader, reqName) in leaderReqs)
-                {
-                    allReqNames.Add(reqName);
-                    descriptions.Add(leader.Description);
-                }
-            }
-
-            allReqNames.AddRange(externalReqs);
+            var reqNames = leaders.Select(l => l.Req).ToList();
+            if (statsReq != null) reqNames.Add(statsReq);
 
             try
             {
                 bool success = StatsModApi.RegisterCustomTitle(
                     titleName,
-                    descriptions.Count > 0 ? string.Join("\n", descriptions) : "",
-                    allReqNames.ToArray(),
+                    string.Join("\n", leaders.Select(l => l.Leader.Description)),
+                    reqNames.ToArray(),
                     primaryPlayer,
                     true,
                     bonusPriority);

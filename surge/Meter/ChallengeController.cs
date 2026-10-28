@@ -26,8 +26,25 @@ namespace SpiderSurge
         private static bool _wasPending;
         private static bool _panelFailed;
         public static float CooldownMultiplier => Active == ChallengeKind.DoubleCooldown ? 2f : 1f;
-        public static string Status => Active == ChallengeKind.None ? "" :
-            $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
+
+        // The HUD reads this every frame, and the text only changes with the challenge and the wager
+        private static ChallengeKind _statusKind;
+        private static bool _statusFailed;
+        private static string _status = "";
+        public static string Status
+        {
+            get
+            {
+                if (Active != _statusKind || WagerFailed != _statusFailed)
+                {
+                    _statusKind = Active;
+                    _statusFailed = WagerFailed;
+                    _status = Active == ChallengeKind.None ? "" :
+                        $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
+                }
+                return _status;
+            }
+        }
 
         // Keep the selected perk, but wait for the challenge decision before loading its map.
         public static void LoadChosenMap(LevelController controller, GameLevel level, float delay, string nameOverride, string authorName)

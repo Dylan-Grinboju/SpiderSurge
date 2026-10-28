@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
-using Unity.Netcode;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -109,7 +109,7 @@ namespace StatsMod
         // Idle ones are reused, the gun's own first; copies live until DamageOnParticle destroys them with the gun.
         private static void PlayVolley(ParticleSystem particles, Shotgun weapon)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost || !GameSessionManager.Instance.IsActive)
+            if (!Net.IsHost || !GameSessionManager.Instance.IsActive)
             {
                 particles.Play();
                 return;

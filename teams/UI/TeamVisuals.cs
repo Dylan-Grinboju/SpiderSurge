@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -99,8 +100,8 @@ namespace SpiderTeams
                     return;
                 }
 
-                var players = TeamManager.Players;
-                if (players != null && TeamManager.IsHost)
+                var players = Players.All;
+                if (players != null && Net.IsHost)
                 {
                     for (int i = 0; i < players.Count; i++)
                     {
@@ -132,7 +133,7 @@ namespace SpiderTeams
 
         private static bool ShouldTint(bool inLevel)
         {
-            if (!ModConfig.RecolorSpiders || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
+            if (!ModConfig.RecolorSpiders || !TeamManager.HostTeamMatch)
             {
                 return false;
             }
@@ -166,7 +167,7 @@ namespace SpiderTeams
         private void TintAll()
         {
             var manager = TeamManager.Instance;
-            var players = TeamManager.Players;
+            var players = Players.All;
             if (manager == null || players == null)
             {
                 return;

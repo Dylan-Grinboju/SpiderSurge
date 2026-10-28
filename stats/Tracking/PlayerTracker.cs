@@ -17,12 +17,6 @@ namespace StatsMod
 
         private Dictionary<PlayerController, PlayerData> activePlayers = new Dictionary<PlayerController, PlayerData>();
 
-        // Cache for expensive player lookups
-        private static PlayerController[] cachedPlayerControllers;
-        private static float lastPlayerCacheUpdate = 0f;
-        private static float playerCacheRefreshInterval = 60f; // Refresh every 60 seconds
-        private static readonly object playerCacheLock = new object();
-
         private bool isPaused = false;
 
         public int RosterVersion { get; private set; }
@@ -137,7 +131,6 @@ namespace StatsMod
             public int MaxKillStreakWhileSolo { get => SoloRun.Max; set => SoloRun.Max = value; }
             public string PlayerName { get; set; }
             internal bool HasLocalName { get; set; }
-            public float JoinTime { get; set; }
             public Color PlayerColor { get; set; }
             public float? CurrentAliveStartTime { get; set; }
             public float TotalAliveTime { get; set; }
@@ -160,36 +153,8 @@ namespace StatsMod
             public PlayerData(int id, string name = "Player")
             {
                 PlayerId = id;
-                Deaths = 0;
-                LavaDeaths = 0;
-                Kills = 0;
-                KillsWhileAirborne = 0;
-                KillsWhileSolo = 0;
-                KillsDuringAbility = 0;
-                FriendlyKills = 0;
-                WaveClutches = 0;
-                AstralReturns = 0;
-                EnemyShieldsTakenDown = 0;
-                FriendlyShieldsHit = 0;
-                ShieldsLost = 0;
-                KillStreak = 0;
-                MaxKillStreak = 0;
-                KillStreakWhileSolo = 0;
-                MaxKillStreakWhileSolo = 0;
                 PlayerName = name;
-                JoinTime = Time.unscaledTime;
                 PlayerColor = Color.white;
-                CurrentAliveStartTime = null;
-                TotalAliveTime = 0f;
-                WasAliveWhenPaused = false;
-                WebSwings = 0;
-                WebSwingTime = 0f;
-                CurrentWebSwingStartTime = null;
-                WasSwingingWhenPaused = false;
-                AirborneTime = 0f;
-                CurrentAirborneStartTime = null;
-                WasAirborneWhenPaused = false;
-                HighestPoint = 0;
                 SecondaryColor = Color.white;
                 WeaponHits = new Dictionary<string, int>
                 {
@@ -305,22 +270,12 @@ namespace StatsMod
             SpiderCustomizer customizer = player.GetComponentInChildren<SpiderCustomizer>();
             if (customizer != null)
             {
-                if (ReflectionCache.PrimaryColorField != null)
-                {
-                    Color primaryColor = (Color)ReflectionCache.PrimaryColorField.GetValue(customizer);
-                    playerData.PlayerColor = primaryColor;
-                }
-                if (ReflectionCache.SecondaryColorField != null)
-                {
-                    Color secondaryColor = (Color)ReflectionCache.SecondaryColorField.GetValue(customizer);
-                    playerData.SecondaryColor = secondaryColor;
-                }
+                playerData.PlayerColor = customizer.GetPrimaryColor();
+                playerData.SecondaryColor = customizer.GetSecondaryColor();
             }
 
             activePlayers[player] = playerData;
             RosterVersion++;
-
-            RefreshPlayerCache();
         }
 
         private static string NameFor(PlayerController player)
@@ -370,8 +325,6 @@ namespace StatsMod
                 activePlayers.Remove(player);
                 RosterVersion++;
                 ForgetLooseWeapons(player);
-
-                RefreshPlayerCache();
 
                 StabilizerFixedUpdatePatch.ClearCache();
             }
@@ -440,7 +393,7 @@ namespace StatsMod
             {
                 PlayerController playerInput = Players.Of(spiderHealth.rootObject);
 
-                if (Net.IsAuthority && playerInput != null && activePlayers.TryGetValue(playerInput, out PlayerData data))
+                if (TryRecord(playerInput, out PlayerData data))
                 {
                     data.Deaths--;
                     data.AstralReturns++;
@@ -525,6 +478,13 @@ namespace StatsMod
 
         internal bool TryGetPlayer(PlayerController player, out PlayerData data) => activePlayers.TryGetValue(player, out data);
 
+        // A client mirrors the host's counts, so only the host records them
+        private bool TryRecord(PlayerController player, out PlayerData data)
+        {
+            data = null;
+            return Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out data);
+        }
+
         public bool IsOnlyOnePlayerAlive()
         {
             int aliveCount = activePlayers.Count(p => p.Value.IsAlive);
@@ -547,7 +507,7 @@ namespace StatsMod
         public KillCredit IncrementPlayerKill(PlayerController player)
         {
             KillCredit credit = new KillCredit { Killer = player };
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data))
             {
                 data.Kills++;
 
@@ -589,7 +549,7 @@ namespace StatsMod
         public void RevertKill(KillCredit credit)
         {
             if (credit.Friendly && Parts.Surge.Running) SpiderSurge.ChallengeController.RevertFriendlyHarm(credit.CleanHandsHarm);
-            if (!Net.IsAuthority || credit.Killer == null || !activePlayers.TryGetValue(credit.Killer, out PlayerData data)) return;
+            if (!TryRecord(credit.Killer, out PlayerData data)) return;
 
             if (credit.Friendly)
             {
@@ -618,7 +578,7 @@ namespace StatsMod
         public KillCredit IncrementFriendlyKill(PlayerController player)
         {
             var credit = new KillCredit { Killer = player, Friendly = true };
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data))
             {
                 data.FriendlyKills++;
                 if (Parts.Surge.Running) credit.CleanHandsHarm = SpiderSurge.ChallengeController.FriendlyHarm();
@@ -628,23 +588,17 @@ namespace StatsMod
 
         public void IncrementWaveClutch(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.WaveClutches++;
-            }
+            if (TryRecord(player, out PlayerData data)) data.WaveClutches++;
         }
 
         public void IncrementEnemyShieldsTakenDown(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.EnemyShieldsTakenDown++;
-            }
+            if (TryRecord(player, out PlayerData data)) data.EnemyShieldsTakenDown++;
         }
 
         public void IncrementFriendlyShieldsHit(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data))
             {
                 data.FriendlyShieldsHit++;
                 if (Parts.Surge.Running) SpiderSurge.ChallengeController.FriendlyHarm();
@@ -653,109 +607,75 @@ namespace StatsMod
 
         public void IncrementShieldsLost(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.ShieldsLost++;
-            }
+            if (TryRecord(player, out PlayerData data)) data.ShieldsLost++;
         }
 
         public void IncrementLavaDeaths(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.LavaDeaths++;
-            }
+            if (TryRecord(player, out PlayerData data)) data.LavaDeaths++;
         }
 
         public void IncrementWeaponHit(PlayerController player, string weaponName)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                if (data.WeaponHits.ContainsKey(weaponName))
-                {
-                    data.WeaponHits[weaponName]++;
-                }
-                else
-                {
-                    Logger.LogError($"Unknown weapon name: {weaponName}. This weapon is not pre-populated in WeaponHits dictionary.");
-                }
-            }
+            if (TryRecord(player, out PlayerData data)) Bump(data.WeaponHits, weaponName, "weapon", nameof(PlayerData.WeaponHits));
         }
 
         public void IncrementEnemyKillByName(PlayerController player, string enemyName)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data)) Bump(data.EnemyKills, enemyName, "enemy", nameof(PlayerData.EnemyKills));
+        }
+
+        private static void Bump(Dictionary<string, int> counts, string key, string kind, string countsName)
+        {
+            if (counts.ContainsKey(key))
             {
-                if (data.EnemyKills.ContainsKey(enemyName))
-                {
-                    data.EnemyKills[enemyName]++;
-                }
-                else
-                {
-                    Logger.LogError($"Unknown enemy name: {enemyName}. This enemy is not pre-populated in EnemyKills dictionary.");
-                }
+                counts[key]++;
+            }
+            else
+            {
+                Logger.LogError($"Unknown {kind} name: {key}. This {kind} is not pre-populated in {countsName} dictionary.");
             }
         }
 
         public void IncrementWebSwings(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.WebSwings++;
-            }
+            if (TryRecord(player, out PlayerData data)) data.WebSwings++;
         }
 
         public void StartWebSwingTimer(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data) && !data.CurrentWebSwingStartTime.HasValue)
             {
-                if (data.CurrentWebSwingStartTime.HasValue)
-                {
-                    return;
-                }
                 data.CurrentWebSwingStartTime = Time.unscaledTime;
             }
         }
 
         public void StopWebSwingTimer(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.StopWebSwingTimer();
-            }
+            if (TryRecord(player, out PlayerData data)) data.StopWebSwingTimer();
         }
 
         public void StartAirborneTimer(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (TryRecord(player, out PlayerData data) && !data.CurrentAirborneStartTime.HasValue)
             {
-                if (data.CurrentAirborneStartTime.HasValue)
-                {
-                    return;
-                }
                 data.CurrentAirborneStartTime = Time.unscaledTime;
             }
         }
 
         public void StopAirborneTimer(PlayerController player)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.StopAirborneTimer();
-            }
+            if (TryRecord(player, out PlayerData data)) data.StopAirborneTimer();
         }
 
         public void UpdatePlayerColor(PlayerController player, Color color)
         {
-            if (Net.IsAuthority && player != null && activePlayers.TryGetValue(player, out PlayerData data))
-            {
-                data.PlayerColor = color;
-            }
+            if (TryRecord(player, out PlayerData data)) data.PlayerColor = color;
         }
 
         public void UpdateHighestPoint(PlayerController player, SpiderController spider)
         {
-            if (Net.IsAuthority && player != null && spider != null && activePlayers.TryGetValue(player, out PlayerData data))
+            if (spider != null && TryRecord(player, out PlayerData data))
             {
                 if (spider.bodyRigidbody2D != null)
                 {
@@ -765,35 +685,6 @@ namespace StatsMod
                         data.HighestPoint = currentY;
                     }
                 }
-            }
-        }
-
-        public static PlayerController[] GetCachedPlayerControllers()
-        {
-            lock (playerCacheLock)
-            {
-                float currentTime = Time.time;
-                if (cachedPlayerControllers == null || currentTime - lastPlayerCacheUpdate > playerCacheRefreshInterval)
-                {
-                    cachedPlayerControllers = UnityEngine.Object.FindObjectsOfType<PlayerController>();
-                    lastPlayerCacheUpdate = currentTime;
-                }
-                return cachedPlayerControllers;
-            }
-        }
-
-        public static PlayerController FindPlayerById(ulong playerId)
-        {
-            return playerId <= int.MaxValue ? Players.ById((int)playerId) : null;
-        }
-
-
-        public static void RefreshPlayerCache()
-        {
-            lock (playerCacheLock)
-            {
-                cachedPlayerControllers = null;
-                lastPlayerCacheUpdate = 0f;
             }
         }
 

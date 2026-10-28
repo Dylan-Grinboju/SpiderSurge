@@ -197,8 +197,6 @@ namespace SpiderSurge.Common
             return reasons.Count > 0 ? string.Join("\n", reasons) : null;
         }
 
-        public static bool HasRemote => _remote.Count > 0;
-
         public static bool IsRemote(string key) => _remote.ContainsKey(key);
 
         // The host's value shows while connected, so a change would only rewrite this player's file unseen
@@ -573,25 +571,6 @@ namespace SpiderSurge.Common
             }
         }
 
-        private static void Raise(string key)
-        {
-            Action<string> handler = Changed;
-            if (handler == null)
-            {
-                return;
-            }
-
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try
-                {
-                    ((Action<string>)listener)(key);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"Settings listener failed: {ex}");
-                }
-            }
-        }
+        private static void Raise(string key) => Listeners.Raise(Changed, key, "Settings listener failed");
     }
 }

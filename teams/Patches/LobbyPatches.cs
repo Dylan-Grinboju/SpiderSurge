@@ -97,7 +97,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (!ModConfig.GroupTeammates || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
+                if (!ModConfig.GroupTeammates || !TeamManager.HostTeamMatch)
                 {
                     return true;
                 }

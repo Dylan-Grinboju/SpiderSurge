@@ -139,10 +139,10 @@ namespace SpiderTeams
 
             _scroll = new GameObject("Versus settings scroll", typeof(RectTransform), typeof(ScrollRect)).GetComponent<ScrollRect>();
             _scroll.transform.SetParent(transform, false);
-            Stretch((RectTransform)_scroll.transform, new Vector2(65f, 65f), new Vector2(-65f, -65f));
+            SettingsPage.Stretch((RectTransform)_scroll.transform, new Vector2(65f, 65f), new Vector2(-65f, -65f));
             _viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image)).GetComponent<RectTransform>();
             _viewport.SetParent(_scroll.transform, false);
-            Stretch(_viewport, Vector2.zero, Vector2.zero);
+            SettingsPage.Stretch(_viewport, Vector2.zero, Vector2.zero);
             _viewport.GetComponent<Image>().color = Color.clear;
             var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
             content.SetParent(_viewport, false);
@@ -184,13 +184,6 @@ namespace SpiderTeams
             if (gameObject.activeInHierarchy) Show();
         }
 
-        private static void Stretch(RectTransform rect, Vector2 min, Vector2 max)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = min;
-            rect.offsetMax = max;
-        }
 
         private void AddScrollbar()
         {
@@ -205,7 +198,7 @@ namespace SpiderTeams
             bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.1f);
             var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
             handle.transform.SetParent(bar.transform, false);
-            Stretch((RectTransform)handle.transform, Vector2.zero, Vector2.zero);
+            SettingsPage.Stretch((RectTransform)handle.transform, Vector2.zero, Vector2.zero);
             handle.color = new Color(1f, 1f, 1f, 0.65f);
             bar.handleRect = (RectTransform)handle.transform;
             bar.targetGraphic = handle;

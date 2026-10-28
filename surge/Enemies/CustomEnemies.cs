@@ -169,7 +169,7 @@ namespace SpiderSurge.Enemies
 
         private static readonly HashSet<string> FailedLaserVariants = new HashSet<string>();
 
-        private static GameObject CreateBaseEnemy(GameObject original, string name, Color? color = null)
+        private static GameObject CreateBaseEnemy(GameObject original, string name)
         {
             // Instantiating under an inactive holder keeps the copy's OnEnable/OnDisable from running (HornetShamanBrain.OnDisable throws without a network)
             var holder = new GameObject("SpiderSurgeEnemyHolder");
@@ -180,15 +180,6 @@ namespace SpiderSurge.Enemies
             newEnemyObj.transform.SetParent(null, false);
             Object.Destroy(holder);
             Object.DontDestroyOnLoad(newEnemyObj);
-
-            if (color.HasValue)
-            {
-                var renderers = newEnemyObj.GetComponentsInChildren<SpriteRenderer>(true);
-                foreach (var renderer in renderers)
-                {
-                    renderer.color = color.Value;
-                }
-            }
 
             AddToEnemyList(newEnemyObj);
             CustomEnemyNet.Register(newEnemyObj, name);

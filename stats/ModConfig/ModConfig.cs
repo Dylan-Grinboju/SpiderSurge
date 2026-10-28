@@ -13,6 +13,7 @@ namespace StatsMod
         public const string UIScaleKey = Prefix + "display.uiScale";
         public const string PositionXKey = Prefix + "display.position.xPercent";
         public const string PositionYKey = Prefix + "display.position.yPercent";
+        public const string SaveHistoryKey = Prefix + "tracking.saveHistory";
         public const float MinScale = 0.5f;
         public const float MaxScale = 3f;
         public const float MaxRevealDelay = 10f;
@@ -105,57 +106,6 @@ namespace StatsMod
         public static float BigUIOpacity => Mathf.Clamp(Settings.GetFloat(Prefix + "display.bigUIOpacity"), 0f, 100f);
         public static bool SmallUIShowBackground => Bool("display.smallUIShowBackground");
 
-        // BigUI Column settings (Player Name is always required, all others are optional)
-        public static bool BigUIShowKills => Column("kills");
-        public static bool BigUIShowDeaths => Column("deaths");
-        public static bool BigUIShowMaxKillStreak => Column("maxKillStreak");
-        public static bool BigUIShowCurrentKillStreak => Column("currentKillStreak");
-        public static bool BigUIShowMaxSoloKillStreak => Column("maxSoloKillStreak");
-        public static bool BigUIShowCurrentSoloKillStreak => Column("currentSoloKillStreak");
-        public static bool BigUIShowFriendlyKills => Column("friendlyKills");
-        public static bool BigUIShowEnemyShields => Column("enemyShields");
-        public static bool BigUIShowShieldsLost => Column("shieldsLost");
-        public static bool BigUIShowFriendlyShields => Column("friendlyShields");
-        public static bool BigUIShowAliveTime => Column("aliveTime");
-        public static bool BigUIShowWaveClutches => Column("waveClutches");
-        public static bool BigUIShowWebSwings => Column("webSwings");
-        public static bool BigUIShowWebSwingTime => Column("webSwingTime");
-        public static bool BigUIShowAirborneTime => Column("airborneTime");
-        public static bool BigUIShowLavaDeaths => Column("lavaDeaths");
-        public static bool BigUIShowAstralReturns => Column("astralReturns");
-
-        // Computed stat columns
-        public static bool BigUIShowTotalOffence => Column("totalOffence");
-        public static bool BigUIShowTotalFriendlyHits => Column("totalFriendlyHits");
-        public static bool BigUIShowTotalHitsTaken => Column("totalHitsTaken");
-
-        // Enemy kill columns
-        public static bool BigUIShowWaspKills => Column("enemyKills.wasp");
-        public static bool BigUIShowWaspCocoonKills => Column("enemyKills.waspCocoon");
-        public static bool BigUIShowPowerWaspKills => Column("enemyKills.powerWasp");
-        public static bool BigUIShowRollerKills => Column("enemyKills.roller");
-        public static bool BigUIShowWhispKills => Column("enemyKills.whisp");
-        public static bool BigUIShowPowerWhispKills => Column("enemyKills.powerWhisp");
-        public static bool BigUIShowMeleeWhispKills => Column("enemyKills.meleeWhisp");
-        public static bool BigUIShowPowerMeleeWhispKills => Column("enemyKills.powerMeleeWhisp");
-        public static bool BigUIShowKhepriKills => Column("enemyKills.khepri");
-        public static bool BigUIShowPowerKhepriKills => Column("enemyKills.powerKhepri");
-        public static bool BigUIShowHornetShamanKills => Column("enemyKills.hornetShaman");
-        public static bool BigUIShowHornetKills => Column("enemyKills.hornet");
-
-        // Weapon kill columns
-        public static bool BigUIShowShotgunKills => Column("weaponKills.shotgun");
-        public static bool BigUIShowRailShotKills => Column("weaponKills.railShot");
-        public static bool BigUIShowDeathCubeKills => Column("weaponKills.deathCube");
-        public static bool BigUIShowDeathRayKills => Column("weaponKills.deathRay");
-        public static bool BigUIShowEnergyBallKills => Column("weaponKills.energyBall");
-        public static bool BigUIShowParticleBladeKills => Column("weaponKills.particleBlade");
-        public static bool BigUIShowKhepriStaffKills => Column("weaponKills.khepriStaff");
-        public static bool BigUIShowLaserCannonKills => Column("weaponKills.laserCannon");
-        public static bool BigUIShowLaserCubeKills => Column("weaponKills.laserCube");
-        public static bool BigUIShowSawDiscKills => Column("weaponKills.sawDisc");
-        public static bool BigUIShowExplosionKills => Column("weaponKills.explosions");
-
         // Tracking settings
         public static bool SaveStatsToFile => Bool("tracking.saveStatsToFile");
 
@@ -177,7 +127,7 @@ namespace StatsMod
 
         private static bool Bool(string key) => Settings.GetBool(FullKey(_keys, Prefix, key));
 
-        private static bool Column(string key) => Settings.GetBool(FullKey(_columnKeys, ColumnsPrefix, key));
+        internal static bool Column(string key) => Settings.GetBool(FullKey(_columnKeys, ColumnsPrefix, key));
 
         // The stats windows read these every frame, so each full key is joined once
         private static string FullKey(Dictionary<string, string> keys, string prefix, string key)

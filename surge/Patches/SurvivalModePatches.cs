@@ -87,11 +87,11 @@ namespace SpiderSurge
                 }
 
                 // Initialize Custom Enemies if missing
-                if (CustomEnemies.TwinBladeMeleeWhispPrefab == null && meleeWhispPrefab != null)
+                if (meleeWhispPrefab != null)
                 {
                     CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
                 }
-                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab == null && powerMeleeWhispPrefab != null)
+                if (powerMeleeWhispPrefab != null)
                 {
                     CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
                 }
@@ -130,44 +130,23 @@ namespace SpiderSurge
                 }
 
                 // Add custom enemies to the surge config
-                if (CustomEnemies.TwinBladeMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladeMeleeWhisp", out var doubleStats))
+                var customEnemies = new (GameObject prefab, string name)[]
                 {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladeMeleeWhispPrefab, doubleStats.Cost, doubleStats.MinWave, doubleStats.MaxWave));
-                }
-
-                if (CustomEnemies.TwinBladePowerMeleeWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinBladePowerMeleeWhisp", out var twinStats))
+                    (CustomEnemies.TwinBladeMeleeWhispPrefab, "TwinBladeMeleeWhisp"),
+                    (CustomEnemies.TwinBladePowerMeleeWhispPrefab, "TwinBladePowerMeleeWhisp"),
+                    (CustomEnemies.TwinWhispPrefab, "TwinWhisp"),
+                    (CustomEnemies.MissileWhispPrefab, "MissileWhisp"),
+                    (CustomEnemies.ShieldedMissileWhispPrefab, "ShieldedMissileWhisp"),
+                    (CustomEnemies.ShieldedTwinWhispPrefab, "ShieldedTwinWhisp"),
+                    (CustomEnemies.WaspCocoonPrefab, "WaspCocoon"),
+                    (CustomEnemies.ShieldedWaspCocoonPrefab, "ShieldedWaspCocoon"),
+                };
+                foreach (var (prefab, name) in customEnemies)
                 {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinBladePowerMeleeWhispPrefab, twinStats.Cost, twinStats.MinWave, twinStats.MaxWave));
-                }
-
-                if (CustomEnemies.TwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("TwinWhisp", out var twinWhispStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.TwinWhispPrefab, twinWhispStats.Cost, twinWhispStats.MinWave, twinWhispStats.MaxWave));
-                }
-
-                if (CustomEnemies.MissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("MissileWhisp", out var missileStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.MissileWhispPrefab, missileStats.Cost, missileStats.MinWave, missileStats.MaxWave));
-                }
-
-                if (CustomEnemies.ShieldedMissileWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedMissileWhisp", out var shieldedStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedMissileWhispPrefab, shieldedStats.Cost, shieldedStats.MinWave, shieldedStats.MaxWave));
-                }
-
-                if (CustomEnemies.ShieldedTwinWhispPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedTwinWhisp", out var shieldedTwinStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedTwinWhispPrefab, shieldedTwinStats.Cost, shieldedTwinStats.MinWave, shieldedTwinStats.MaxWave));
-                }
-
-                if (CustomEnemies.WaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("WaspCocoon", out var cocoonStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.WaspCocoonPrefab, cocoonStats.Cost, cocoonStats.MinWave, cocoonStats.MaxWave));
-                }
-
-                if (CustomEnemies.ShieldedWaspCocoonPrefab != null && Consts.Values.CustomEnemyStats.TryGetValue("ShieldedWaspCocoon", out var shieldedCocoonStats))
-                {
-                    surgeConfig.enemies.Add(new SurvivalEnemy(CustomEnemies.ShieldedWaspCocoonPrefab, shieldedCocoonStats.Cost, shieldedCocoonStats.MinWave, shieldedCocoonStats.MaxWave));
+                    if (prefab != null && Consts.Values.CustomEnemyStats.TryGetValue(name, out var customStats))
+                    {
+                        surgeConfig.enemies.Add(new SurvivalEnemy(prefab, customStats.Cost, customStats.MinWave, customStats.MaxWave));
+                    }
                 }
 
                 foreach (var laser in CustomEnemies.LaserPrefabs)
@@ -260,7 +239,7 @@ namespace SpiderSurge
                     LogWaveStart(value);
                 }
 
-                if (SurgeGameModeManager.Instance != null && SurgeGameModeManager.Instance.IsActive && value > 0)
+                if (SurgeGameModeManager.IsSurgeRunActive && value > 0)
                 {
                     PlayerAbilityHandler.OnWaveStarted(value);
 

@@ -32,9 +32,7 @@ namespace SpiderSurge
             var root = new GameObject("SurgeChallenge", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(Image));
             var rect = (RectTransform)root.transform;
             rect.SetParent(hud.perkChoiceView.transform.parent, false);
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            SettingsPage.Stretch(rect, Vector2.zero, Vector2.zero);
             var canvas = root.GetComponent<Canvas>();
             canvas.overrideSorting = true;
             canvas.sortingOrder = 210;
@@ -141,9 +139,7 @@ namespace SpiderSurge
             text.fontSize = 21;
             text.enableAutoSizing = false;
             text.alignment = TextAlignmentOptions.Center;
-            text.rectTransform.anchorMin = Vector2.zero;
-            text.rectTransform.anchorMax = Vector2.one;
-            text.rectTransform.offsetMin = text.rectTransform.offsetMax = Vector2.zero;
+            SettingsPage.Stretch(text.rectTransform, Vector2.zero, Vector2.zero);
             Destroy(card);
             var rect = (RectTransform)obj.transform;
             rect.localScale = Vector3.one;

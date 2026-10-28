@@ -63,10 +63,6 @@ namespace SpiderSurge.Common
 
         public static bool IsLocal(int playerId) => IsLocal(ById(playerId));
 
-        public static ulong ClientOf(PlayerController player)
-        {
-            return player != null ? player.OwnerClientId : Net.ServerId;
-        }
 
         public static bool OwnedBy(int playerId, ulong clientId)
         {
@@ -108,22 +104,5 @@ namespace SpiderSurge.Common
         }
 
         public static string NameOf(int playerId) => NameOf(ById(playerId));
-
-        public static void CollectIds(List<int> into)
-        {
-            into.Clear();
-            var players = All;
-            if (players == null)
-            {
-                return;
-            }
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (players[i] != null)
-                {
-                    into.Add(players[i].playerID.Value);
-                }
-            }
-        }
     }
 }

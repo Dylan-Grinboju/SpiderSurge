@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SpiderSurge.Common
 {
@@ -10,7 +9,6 @@ namespace SpiderSurge.Common
         private static readonly Dictionary<string, HashSet<string>> sets = new Dictionary<string, HashSet<string>>();
         private static readonly HashSet<string> dirty = new HashSet<string>();
         private static DateTime retryAt;
-        private static string Encode(string id) => Convert.ToBase64String(Encoding.UTF8.GetBytes(id));
         public static bool Ensure(string kind, IEnumerable<string> existing)
         {
             if (!ModData.Readable) return false;
@@ -20,18 +18,18 @@ namespace SpiderSurge.Common
             if (!seen.Contains("initialized"))
             {
                 seen.Add("initialized");
-                foreach (string id in existing) seen.Add(Encode(id));
+                foreach (string id in existing) seen.Add(ModData.Encode(id));
                 dirty.Add(kind);
             }
             sets[kind] = seen;
             if (dirty.Contains(kind)) Save(kind);
             return true;
         }
-        public static bool IsNew(string kind, string id) => sets.TryGetValue(kind, out var seen) && !seen.Contains(Encode(id));
+        public static bool IsNew(string kind, string id) => sets.TryGetValue(kind, out var seen) && !seen.Contains(ModData.Encode(id));
         public static void Mark(string kind, IEnumerable<string> ids)
         {
             if (!sets.TryGetValue(kind, out var seen)) return;
-            foreach (string id in ids) seen.Add(Encode(id));
+            foreach (string id in ids) seen.Add(ModData.Encode(id));
             Save(kind);
             SettingsPage.RefreshOpen();
         }

@@ -181,26 +181,7 @@ namespace SpiderTeams
             RaiseChanged();
         }
 
-        private static void RaiseChanged()
-        {
-            Action handler = Changed;
-            if (handler == null)
-            {
-                return;
-            }
-
-            foreach (Delegate listener in handler.GetInvocationList())
-            {
-                try
-                {
-                    ((Action)listener)();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"Teams settings listener failed: {ex}");
-                }
-            }
-        }
+        private static void RaiseChanged() => Listeners.Raise(Changed, "Teams settings listener failed");
 
         private static int ReadTeamCount()
         {

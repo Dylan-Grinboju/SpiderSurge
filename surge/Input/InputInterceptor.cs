@@ -9,8 +9,6 @@ namespace SpiderSurge
 {
     public class InputInterceptor : MonoBehaviour
     {
-        private static readonly Dictionary<PlayerInput, InputInterceptor> playerInterceptors = new Dictionary<PlayerInput, InputInterceptor>();
-
         private PlayerInput playerInput;
         private readonly Dictionary<string, System.Action<InputAction.CallbackContext>> overriddenActions = new Dictionary<string, System.Action<InputAction.CallbackContext>>();
         private readonly Dictionary<string, InputAction> customActions = new Dictionary<string, InputAction>();
@@ -34,11 +32,6 @@ namespace SpiderSurge
         private void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();
-
-            if (playerInput != null)
-            {
-                playerInterceptors[playerInput] = this;
-            }
         }
 
         private void Start()
@@ -385,11 +378,6 @@ namespace SpiderSurge
             overriddenActions.Clear();
             customActions.Clear();
 
-            if (playerInput != null && playerInterceptors.ContainsKey(playerInput))
-            {
-                playerInterceptors.Remove(playerInput);
-            }
-
             if (playerInput != null && _originalActions != null)
             {
                 var currentScheme = playerInput.currentControlScheme;
@@ -415,17 +403,6 @@ namespace SpiderSurge
                 Destroy(_instantiatedActions);
                 _instantiatedActions = null;
             }
-        }
-
-        public static InputInterceptor GetPlayerInterceptor(PlayerInput playerInput)
-        {
-            playerInterceptors.TryGetValue(playerInput, out InputInterceptor interceptor);
-            return interceptor;
-        }
-
-        public static void ResetStaticState()
-        {
-            playerInterceptors.Clear();
         }
     }
 }

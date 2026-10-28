@@ -12,7 +12,7 @@ namespace SpiderSurge.Common
         {
             page.Title("Support");
             if (Parts.Surge.Running) SurgeSettingsPage.BuildTelemetrySupport(page);
-            page.Button("Open logs", () => OpenFolder(Path.Combine(Path.GetDirectoryName(Application.dataPath), "Silk", "Logs")));
+            page.Button("Open logs", () => OpenFolder(LogFolder.Root));
             page.Button("Open config folder", () => OpenFolder(Path.GetDirectoryName(Settings.FilePath)));
             page.Button("Open save folder", () => OpenFolder(ModData.Folder));
             page.Button("Copy diagnostic information", () => Run(() =>

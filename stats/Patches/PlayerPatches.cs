@@ -12,12 +12,6 @@ namespace StatsMod
     // Cache reflection field info for performance
     internal static class ReflectionCache
     {
-        public static readonly FieldInfo PrimaryColorField =
-            typeof(SpiderCustomizer).GetField("_primaryColor", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        public static readonly FieldInfo SecondaryColorField =
-            typeof(SpiderCustomizer).GetField("_secondaryColor", BindingFlags.NonPublic | BindingFlags.Instance);
-
         public static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
             AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
 
@@ -147,10 +141,9 @@ namespace StatsMod
             try
             {
                 PlayerController playerInput = __instance.GetComponentInParent<PlayerController>();
-                if (playerInput != null && ReflectionCache.PrimaryColorField != null)
+                if (playerInput != null)
                 {
-                    Color primaryColor = (Color)ReflectionCache.PrimaryColorField.GetValue(__instance);
-                    PlayerTracker.Instance.UpdatePlayerColor(playerInput, primaryColor);
+                    PlayerTracker.Instance.UpdatePlayerColor(playerInput, __instance.GetPrimaryColor());
                 }
             }
             catch (Exception ex)

@@ -84,8 +84,9 @@ namespace SpiderSurge
             {
                 float angle = progress * Mathf.PI * 2f * i / (count - 1);
                 points[i] = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f) * indicatorRadius;
-                ring.SetPosition(i, points[i]);
             }
+            // Points past positionCount are left from a longer arc; SetPositions ignores them
+            ring.SetPositions(points);
         }
 
         private void Update()
@@ -117,13 +118,6 @@ namespace SpiderSurge
                 weapon.transform.localPosition = new Vector3(indicatorRadius * 2.6f, 0f, 0f);
             }
         }
-
-        public void SetRadius(float value) { indicatorRadius = Mathf.Clamp(value, 0.5f, 10f); Resize(); }
-        public void SetOffset(Vector3 value) => offset = value;
-        public void SetAvailableColor(Color value) => availableColor = value;
-        public void SetCooldownColor(Color value) => cooldownColor = value;
-        public void SetActiveColor(Color value) => activeColor = value;
-        public void SetShowOnlyWhenReady(bool value) => showOnlyWhenReady = value;
 
         private void OnDestroy()
         {

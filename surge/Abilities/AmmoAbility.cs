@@ -16,17 +16,27 @@ namespace SpiderSurge
     {
         public static Dictionary<int, AmmoAbility> playerAmmoAbilities = new Dictionary<int, AmmoAbility>();
 
-        public static float GetWeaponAmmoFloor(Weapon weapon)
+        // Weapon.ammo is set on every shot, so the holder is only looked up while some Bottomless Clip is running
+        internal static AmmoAbility ActiveFor(Weapon weapon)
         {
-            if (weapon == null || !weapon.equipped || weapon.owner == null) return -1f;
+            if (!AnyActive || weapon == null || !weapon.equipped || weapon.owner == null) return null;
 
-            int playerId = Players.IdOf(weapon.owner);
-            if (playerId < 0) return -1f;
+            if (!playerAmmoAbilities.TryGetValue(Players.IdOf(weapon.owner), out AmmoAbility ability) || ability == null || !ability.isActive)
+                return null;
 
-            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null || !ability.isActive)
-                return -1f;
+            return ability;
+        }
 
-            return ability.GetHeldWeaponFloorAmmo(weapon);
+        private static bool AnyActive
+        {
+            get
+            {
+                foreach (AmmoAbility ability in playerAmmoAbilities.Values)
+                {
+                    if (ability != null && ability.isActive) return true;
+                }
+                return false;
+            }
         }
 
         public override string PerkName => Consts.PerkNames.AmmoAbility;
@@ -42,8 +52,6 @@ namespace SpiderSurge
 
         // Ultimate: Care Package
         public override bool HasUltimate => true;
-        public override string UltimatePerkDisplayName => "Care Package";
-        public override string UltimatePerkDescription => "Spawns weapons at half the weapon spawn points on the map.";
 
         private SpiderWeaponManager weaponManager;
         private float weaponCheckTimer = 0f;
@@ -108,7 +116,7 @@ namespace SpiderSurge
             }
         }
 
-        private float GetHeldWeaponFloorAmmo(Weapon weapon)
+        internal float GetHeldWeaponFloorAmmo(Weapon weapon)
         {
             if (weapon == null) return 0f;
 
@@ -213,13 +221,7 @@ namespace SpiderSurge
 
         protected override void OnActivate()
         {
-            if (SoundManager.Instance != null && !IsRemote)
-            {
-                SoundManager.Instance.PlaySound(
-                    Consts.SoundNames.AmmoAbility,
-                    Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
 
             trackedWeapon = null;
             trackedOriginalAmmo = 0f;
@@ -239,7 +241,7 @@ namespace SpiderSurge
                 ClipVfx.Cast(trackedWeapon != null ? trackedWeapon.transform.position : spiderHealthSystem.transform.position);
                 aura = WeaponAura.Attach(spiderHealthSystem.transform);
                 ShowAuraOn(trackedWeapon);
-                if (Net.IsHost) SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
+                SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
             }
         }
 
@@ -272,17 +274,15 @@ namespace SpiderSurge
 
         private float nextShotAccent;
 
-        public static void AccentShot(Weapon weapon)
+        internal void AccentShot(Weapon weapon)
         {
-            if (weapon == null || weapon.owner == null) return;
-            int player = Players.IdOf(weapon.owner);
-            if (!playerAmmoAbilities.TryGetValue(player, out var ability) || ability == null || !ability.isActive || ability.aura == null || Time.time < ability.nextShotAccent) return;
-            ability.nextShotAccent = Time.time + 0.08f;
+            if (aura == null || Time.time < nextShotAccent) return;
+            nextShotAccent = Time.time + 0.08f;
             Vector3 position = weapon.point != null ? weapon.point.position : weapon.transform.position;
             Vector3 direction = weapon.transform.up;
             float angle = Mathf.Atan2(direction.y, direction.x);
             WeaponVfx.Shot(position, angle);
-            if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ClipShot, player, position, angle, false);
+            SurgeNet.SendFx(SurgeFx.ClipShot, PlayerId, position, angle, false);
         }
 
         private WeaponAura aura;
@@ -302,7 +302,7 @@ namespace SpiderSurge
         protected override void OnDeactivate()
         {
             StopAura();
-            if (Net.IsHost) SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
+            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
             Weapon equippedWeapon = weaponManager?.equippedWeapon;
 
             if (equippedWeapon != null)
@@ -403,13 +403,7 @@ namespace SpiderSurge
 
         protected override void OnActivateUltimate()
         {
-            if (!IsRemote)
-            {
-                SoundManager.Instance?.PlaySound(
-                    Consts.SoundNames.AmmoAbility,
-                    Consts.SoundVolumes.AmmoAbility * Consts.SoundVolumes.MasterVolume
-                );
-            }
+            PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
 
             SpawnWeaponsAtSpawnPoints();
 

@@ -16,26 +16,7 @@ namespace StatsMod
 
         private StatsLogger()
         {
-            try
-            {
-                string gameDirectory = Path.GetDirectoryName(UnityEngine.Application.dataPath);
-                if (string.IsNullOrEmpty(gameDirectory))
-                    gameDirectory = Environment.CurrentDirectory;
-
-                logDirectory = Path.Combine(gameDirectory, "Silk", "Logs", "SpiderStats");
-
-                if (!Directory.Exists(logDirectory))
-                {
-                    Directory.CreateDirectory(logDirectory);
-                    Logger.LogInfo($"Created stats log directory: {logDirectory}");
-                }
-            }
-            catch (Exception ex)
-            {
-                logDirectory = Environment.CurrentDirectory;
-                Logger.LogError($"Failed to create Silk/Logs/SpiderStats directory, using current directory: {ex.Message}");
-            }
-
+            logDirectory = SpiderSurge.Common.LogFolder.Create("SpiderStats", "stats");
             Logger.LogInfo($"Stats logger initialized. Log directory: {logDirectory}");
         }
         public void LogGameStats(GameStatsSnapshot statsSnapshot)

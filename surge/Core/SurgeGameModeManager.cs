@@ -72,6 +72,31 @@ namespace SpiderSurge
             RunUsedSurge = false;
         }
 
+        // Survival stopping and the lobby loading both end the run; the lobby also turns the mode off
+        internal static void EndRun(bool deselectMode)
+        {
+            if (IsSurgeRunActive)
+            {
+                Instance.SetActive(false);
+
+                if (PerksManager.Instance != null)
+                {
+                    PerksManager.Instance.ResetPerks();
+                }
+            }
+
+            StoragePersistenceManager.ClearAllStoredWeapons();
+            ChaosWallet.ResetRun();
+            PerkShopPanel.Clear();
+            PerkConfirmButton.Clear();
+            PerkHint.Clear();
+
+            if (deselectMode)
+            {
+                SelectMode(false);
+            }
+        }
+
         internal void ApplyRemote(bool active, bool runUsedSurge, bool noAbilities)
         {
             IsActive = active;

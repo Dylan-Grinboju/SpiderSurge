@@ -1,7 +1,6 @@
 using System;
 using HarmonyLib;
 using SpiderSurge.Common;
-using Unity.Netcode;
 using Logger = Silk.Logger;
 
 namespace SpiderTeams
@@ -37,7 +36,7 @@ namespace SpiderTeams
             try
             {
                 var manager = TeamManager.Instance;
-                if (manager == null || !TeamManager.IsHost)
+                if (manager == null || !Net.IsHost)
                 {
                     return;
                 }
@@ -71,7 +70,7 @@ namespace SpiderTeams
         {
             try
             {
-                if (!RoundRules.Available || !TeamManager.IsHost || !TeamManager.TeamMatchActive)
+                if (!RoundRules.Available || !TeamManager.HostTeamMatch)
                 {
                     return true;
                 }
@@ -100,7 +99,7 @@ namespace SpiderTeams
             bool active;
             try
             {
-                active = RoundRules.Available && TeamManager.IsHost && TeamManager.TeamMatchActive;
+                active = RoundRules.Available && TeamManager.HostTeamMatch;
             }
             catch (Exception ex)
             {
@@ -145,7 +144,7 @@ namespace SpiderTeams
             __state = false;
             try
             {
-                __state = RoundRules.Available && TeamManager.IsHost && TeamManager.TeamMatchActive;
+                __state = RoundRules.Available && TeamManager.HostTeamMatch;
             }
             catch (Exception ex)
             {
@@ -196,8 +195,7 @@ namespace SpiderTeams
         {
             try
             {
-                var network = NetworkManager.Singleton;
-                if (network == null || !network.IsListening || network.IsHost || ReflectionCache.IsRpcSendStage(__instance))
+                if (!Net.IsRemoteClient || ReflectionCache.IsRpcSendStage(__instance))
                 {
                     return;
                 }

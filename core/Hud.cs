@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace SpiderSurge.Common
@@ -7,10 +6,8 @@ namespace SpiderSurge.Common
     public static class Hud
     {
         public const string PinkHex = "#FF0061";
-        public const string LavenderHex = "#F2D9FF";
 
         public static readonly Color Pink = Rgb(255, 0, 97);
-        public static readonly Color Lavender = Rgb(242, 217, 255);
         public static readonly Color Ink = new Color(0.035f, 0.027f, 0.063f, 0.96f);
         public static readonly Color Card = new Color(0.106f, 0.086f, 0.161f, 0.94f);
         public static readonly Color Stripe = new Color(1f, 1f, 1f, 0.045f);
@@ -23,7 +20,6 @@ namespace SpiderSurge.Common
         public static readonly Color Dimmer = new Color(0.012f, 0.008f, 0.024f, 0.93f);
 
         private const float FontRetryInterval = 3f;
-        private static readonly Dictionary<Color, Texture2D> _solids = new Dictionary<Color, Texture2D>();
         private static readonly string[] _numbers = new string[1000];
         private static Texture2D _white;
         private static Font _regular;
@@ -31,8 +27,6 @@ namespace SpiderSurge.Common
         private static float _nextFontSearch;
 
         public static int FontVersion { get; private set; }
-
-        public static string Logo => $"<color={LavenderHex}>SPIDER</color><color={PinkHex}>SURGE</color>";
 
         public static Color Rgb(int r, int g, int b) => new Color(r / 255f, g / 255f, b / 255f, 1f);
 
@@ -105,16 +99,6 @@ namespace SpiderSurge.Common
             }
         }
 
-        // A cached 1x1 texture for GUIStyle backgrounds.
-        public static Texture2D Solid(Color color)
-        {
-            if (!_solids.TryGetValue(color, out Texture2D texture) || texture == null)
-            {
-                texture = MakeTexture(color);
-                _solids[color] = texture;
-            }
-            return texture;
-        }
 
         public static void Fill(Rect rect, Color color)
         {

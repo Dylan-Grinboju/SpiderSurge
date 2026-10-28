@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SpiderTeams
 {
@@ -63,14 +64,26 @@ namespace SpiderTeams
         {
             public const int MaxPerkLevel = 2;
             public const float AnnounceDelay = 2.5f;
-            public const string Color = "#00FFFF";
+            public const string Color = SpiderSurge.Consts.Formatting.ColorCyan;
 
             // Index order matches SurgeAbility.
             public static readonly string[] AbilityConfigNames = { "immune", "ammo", "pulse", "storage", "random" };
-            public static readonly string[] AbilityPerks = { "immune", "ammo", "pulse", "storage" };
-            public static readonly string[] UltimatePerks = { "immuneUltimate", "ammoUltimate", "pulseUltimate", "storageUltimate" };
-            public static readonly string[] AbilityNames = { "Null Field", "Bottomless Clip", "Kinetic Pulse", "Pocket Dimension", "Random" };
-            public static readonly string[] UltimateNames = { "Neural Backup", "Care Package", "Thermal Detonation", "Black Hole" };
+            public static readonly string[] AbilityPerks =
+            {
+                SpiderSurge.Consts.PerkNames.ImmuneAbility,
+                SpiderSurge.Consts.PerkNames.AmmoAbility,
+                SpiderSurge.Consts.PerkNames.PulseAbility,
+                SpiderSurge.Consts.PerkNames.StorageAbility,
+            };
+            public static readonly string[] UltimatePerks =
+            {
+                SpiderSurge.Consts.PerkNames.ImmuneAbilityUltimate,
+                SpiderSurge.Consts.PerkNames.AmmoAbilityUltimate,
+                SpiderSurge.Consts.PerkNames.PulseAbilityUltimate,
+                SpiderSurge.Consts.PerkNames.StorageAbilityUltimate,
+            };
+            public static readonly string[] AbilityNames = AbilityPerks.Select(DisplayName).Append("Random").ToArray();
+            public static readonly string[] UltimateNames = UltimatePerks.Select(DisplayName).ToArray();
 
             public static readonly string[] AbilityDescriptions =
             {
@@ -89,21 +102,31 @@ namespace SpiderTeams
                 "For 3 seconds, pulls the spiders around you toward you, and any that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is ignored, and swallowed only with it set to damage.",
             };
 
-            public const string CooldownPerk = "abilityCooldown";
-            public const string DurationPerk = "abilityDuration";
-            public const string ShortTermPerk = "shortTermInvestment";
-            public const string LongTermPerk = "longTermInvestment";
-            public const string CooldownName = "Ability Cooldown";
-            public const string ShortTermName = "Short Term Investment";
-            public const string LongTermName = "Long Term Investment";
+            public const string CooldownPerk = SpiderSurge.Consts.PerkNames.AbilityCooldown;
+            public const string DurationPerk = SpiderSurge.Consts.PerkNames.AbilityDuration;
+            public const string ShortTermPerk = SpiderSurge.Consts.PerkNames.ShortTermInvestment;
+            public const string LongTermPerk = SpiderSurge.Consts.PerkNames.LongTermInvestment;
+            public static readonly string CooldownName = DisplayName(CooldownPerk);
+            public static readonly string ShortTermName = DisplayName(ShortTermPerk);
+            public static readonly string LongTermName = DisplayName(LongTermPerk);
 
             // The Duration perk is renamed for the abilities where it changes something other than time.
-            public static readonly string[] DurationNames = { "Ability Duration", "Ability Duration", "Bigger Pulse", "Faster Retrieval", "Ability Duration" };
+            public static readonly string[] DurationNames =
+            {
+                DisplayName(DurationPerk),
+                DisplayName(DurationPerk),
+                SpiderSurge.Consts.Descriptions.DURATION_NAME_WITH_PULSE,
+                SpiderSurge.Consts.Descriptions.DURATION_NAME_WITH_STORAGE,
+                DisplayName(DurationPerk),
+            };
 
             public const string CooldownDescription = "Level 1 shortens the ability's cooldown, level 2 also the ultimate's.";
             public const string DurationDescription = "Level 1 strengthens the ability, level 2 also the ultimate.";
             public const string ShortTermDescription = "Your ability becomes stronger and recharges sooner, but your ultimate becomes weaker and recharges more slowly.";
             public const string LongTermDescription = "Your ultimate becomes stronger and recharges sooner, but your ability becomes weaker and recharges more slowly.";
+
+            // Surge's own name for a perk; with no PerksManager it is a plain lookup
+            private static string DisplayName(string perk) => SpiderSurge.Consts.Descriptions.GetDisplayName(perk);
         }
 
         public static class Timing
@@ -152,15 +175,5 @@ namespace SpiderTeams
             public const string Term = "Versus/versus_battle";
             public const string TeamText = "TEAM VERSUS";
         }
-
-        public static class Formatting
-        {
-            public const string Gold = "#FFD700";
-            public const string Green = "#00FF00";
-            public const string Red = "#FF5555";
-            public const string Gray = "#AAAAAA";
-            public const string Orange = "#FFAA66";
-        }
-
     }
 }

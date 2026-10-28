@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Netcode;
 using UnityEngine;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
@@ -21,15 +21,28 @@ namespace StatsMod
 
         public static void Reset() => shots = new ConditionalWeakTable<GameObject, Shot>();
 
+        // Mono's Enum.ToString uses reflection and allocates, and it would run for every shot
+        private static readonly Dictionary<SerializationWeaponName, string> weaponNames = new Dictionary<SerializationWeaponName, string>();
+
+        private static string WeaponName(SerializationWeaponName weapon)
+        {
+            if (!weaponNames.TryGetValue(weapon, out string name))
+            {
+                name = weapon.ToString();
+                weaponNames[weapon] = name;
+            }
+            return name;
+        }
+
         public static void Fire(Weapon weapon, GameObject source)
         {
             try
             {
-                if (weapon == null || source == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost || !GameSessionManager.Instance.IsActive) return;
+                if (weapon == null || source == null || !Net.IsHost || !GameSessionManager.Instance.IsActive) return;
                 PlayerController player = HitLogic.WeaponPlayer(weapon);
                 if (player == null || !PlayerTracker.Instance.TryGetPlayer(player, out var data)) return;
 
-                string name = weapon.serializationWeaponName.ToString();
+                string name = WeaponName(weapon.serializationWeaponName);
                 if (!data.AccuracyByWeapon.TryGetValue(name, out WeaponAccuracy accuracy))
                 {
                     accuracy = new WeaponAccuracy();

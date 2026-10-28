@@ -1,8 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -35,79 +33,14 @@ namespace SpiderSurge
 
         private void LoadEmbeddedSounds()
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string[] resourceNames = assembly.GetManifestResourceNames();
-
-            foreach (string resourceName in resourceNames)
+            EmbeddedResources.Load(".wav", "SoundManager", "sound", nameof(ParseWavFile), (soundName, wavData) =>
             {
-                if (resourceName.EndsWith(".wav", System.StringComparison.OrdinalIgnoreCase))
+                AudioClip clip = ParseWavFile(wavData, soundName);
+                if (clip != null)
                 {
-                    string soundName = ExtractSoundName(resourceName);
-
-                    try
-                    {
-                        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                        {
-                            if (stream != null)
-                            {
-                                long length = stream.Length;
-                                if (length > int.MaxValue)
-                                {
-                                    Logger.LogWarning($"[SoundManager] Resource {resourceName} is too large.");
-                                    continue;
-                                }
-
-                                byte[] wavData = new byte[(int)length];
-                                int totalRead = 0;
-                                while (totalRead < wavData.Length)
-                                {
-                                    int bytesRead = stream.Read(wavData, totalRead, wavData.Length - totalRead);
-                                    if (bytesRead == 0)
-                                    {
-                                        Logger.LogWarning($"[SoundManager] Unexpected EOF while reading resource: {resourceName}. Expected {wavData.Length} bytes, got {totalRead}.");
-                                        break;
-                                    }
-                                    totalRead += bytesRead;
-                                }
-
-                                if (totalRead == wavData.Length)
-                                {
-                                    AudioClip clip = ParseWavFile(wavData, soundName);
-                                    if (clip != null)
-                                    {
-                                        _loadedClips[soundName] = clip;
-                                    }
-                                }
-                                else
-                                {
-                                    Logger.LogWarning($"[SoundManager] Incomplete read for resource: {resourceName}. Skipping ParseWavFile.");
-                                }
-                            }
-                            else
-                            {
-                                Logger.LogWarning($"[SoundManager] Could not load resource stream: {resourceName}");
-                            }
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.LogError($"[SoundManager] Failed to load embedded sound '{resourceName}': {ex.Message}");
-                    }
+                    _loadedClips[soundName] = clip;
                 }
-            }
-        }
-
-        private string ExtractSoundName(string resourceName)
-        {
-            string withoutExtension = resourceName.Substring(0, resourceName.Length - 4);
-
-            int lastDot = withoutExtension.LastIndexOf('.');
-            if (lastDot >= 0)
-            {
-                return withoutExtension.Substring(lastDot + 1);
-            }
-
-            return withoutExtension;
+            });
         }
 
         private AudioClip ParseWavFile(byte[] wavData, string clipName)
@@ -277,6 +210,11 @@ namespace SpiderSurge
             return clip;
         }
 
+        public static void Play(string soundName, float volume)
+        {
+            if (Instance != null) Instance.PlaySound(soundName, volume);
+        }
+
         public void PlaySound(string soundName, float volume = 1f)
         {
             if (_loadedClips.TryGetValue(soundName, out AudioClip clip))
@@ -299,14 +237,6 @@ namespace SpiderSurge
             else
             {
                 Logger.LogWarning($"[SoundManager] Sound not found: {soundName}. Available sounds: {string.Join(", ", _loadedClips.Keys)}");
-            }
-        }
-
-        public void StopAll()
-        {
-            if (_audioSource != null)
-            {
-                _audioSource.Stop();
             }
         }
 

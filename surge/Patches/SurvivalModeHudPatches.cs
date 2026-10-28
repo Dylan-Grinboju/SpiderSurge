@@ -2,7 +2,6 @@ using HarmonyLib;
 using TMPro;
 using I2.Loc;
 using UnityEngine;
-using System.Reflection;
 using Doozy.Engine.UI;
 using System.Collections;
 using System.Collections.Generic;
@@ -47,34 +46,10 @@ namespace SpiderSurge
             }
             MapBonusLabels.Refresh();
 
-            // Access perkChoiceView using reflection since it might be private
-            var viewField = typeof(SurvivalModeHud).GetField("perkChoiceView", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (viewField == null) return;
-
-            var view = viewField.GetValue(__instance) as Component;
+            var view = __instance.perkChoiceView;
             if (view == null) return;
 
-            // Find the Heading child
             var heading = view.transform.Find("Heading");
-            if (heading == null)
-            {
-                // Try recursive find if direct child fails, though screenshot suggests direct child
-                heading = view.transform.Find("View - PerkChoice/Heading");
-                if (heading == null)
-                {
-                    // Fallback: search children
-                    var headings = view.GetComponentsInChildren<TextMeshProUGUI>(true);
-                    foreach (var h in headings)
-                    {
-                        if (h.name == "Heading")
-                        {
-                            heading = h.transform;
-                            break;
-                        }
-                    }
-                }
-            }
-
             if (heading == null) return;
 
             var tmpro = heading.GetComponent<TextMeshProUGUI>();
@@ -144,7 +119,7 @@ namespace SpiderSurge
             var timer = ChoiceTimer(hud);
             if (timer != null)
             {
-                PerkChoiseTimer_SetTimerValue_Patch.Postfix(timer);
+                PerkChoiseTimer_SetTimerValue_Patch.Postfix(timer, false);
             }
         }
     }
@@ -216,25 +191,28 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(PerkChoiseTimer), "SetTimerValue")]
     public class PerkChoiseTimer_SetTimerValue_Patch
     {
-        private static readonly FieldInfo _timerTextField = typeof(PerkChoiseTimer).GetField("timerTextComponent", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly AccessTools.FieldRef<PerkChoiseTimer, TextMeshProUGUI> TimerText = AccessTools.FieldRefAccess<PerkChoiseTimer, TextMeshProUGUI>("timerTextComponent");
         private static readonly Regex s_trailingDigits = new Regex(@"\d+$", RegexOptions.Compiled);
 
         // The game rebuilds the text every frame while the cards show, so once it reads ∞ the rebuild is skipped
         [HarmonyPrefix]
-        public static bool Prefix(PerkChoiseTimer __instance)
+        public static bool Prefix(PerkChoiseTimer __instance, out bool __state)
         {
+            __state = false;
             if (!PerkConfirm.Active) return true;
-            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+            var timerText = TimerText(__instance);
             string text = timerText != null ? timerText.text : null;
-            return string.IsNullOrEmpty(text) || !text.EndsWith("∞", System.StringComparison.Ordinal);
+            __state = !string.IsNullOrEmpty(text) && text.EndsWith("∞", System.StringComparison.Ordinal);
+            return !__state;
         }
 
+        // Text that already ends in ∞ has no digits left to replace
         [HarmonyPostfix]
-        public static void Postfix(PerkChoiseTimer __instance)
+        public static void Postfix(PerkChoiseTimer __instance, bool __state)
         {
-            if (!PerkConfirm.Active) return;
+            if (__state || !PerkConfirm.Active) return;
 
-            var timerText = _timerTextField?.GetValue(__instance) as TextMeshProUGUI;
+            var timerText = TimerText(__instance);
             if (timerText == null || string.IsNullOrEmpty(timerText.text)) return;
 
             timerText.text = s_trailingDigits.Replace(timerText.text, "∞");

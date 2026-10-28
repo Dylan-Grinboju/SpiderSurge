@@ -21,7 +21,7 @@ namespace SpiderSurge.Common
                 page.Title("Match history");
                 page.Button("Survival", () => page.Open("history.survival"));
                 page.Button("Versus", () => page.Open("history.versus"));
-                if (Parts.Stats.Running) page.Toggle("Save match history", "stats.tracking.saveHistory");
+                if (Parts.Stats.Running) page.Toggle("Save match history", StatsMod.ModConfig.SaveHistoryKey);
                 else page.Note("Enable Stats to record new matches. Saved matches remain available here.");
                 page.Note("All recorded matches are kept on this PC. History starts with this update; older reports are available in Support > Open logs.");
                 page.Button("Refresh history", () => HistoryStore.Load(true));

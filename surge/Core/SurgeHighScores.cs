@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
@@ -61,7 +60,7 @@ namespace SpiderSurge
             if (fields.Length != 2 || !float.TryParse(fields[1], NumberStyles.Float, CultureInfo.InvariantCulture, out score)) return false;
             try
             {
-                config = Encoding.UTF8.GetString(Convert.FromBase64String(fields[0]));
+                config = ModData.Decode(fields[0]);
             }
             catch (FormatException)
             {
@@ -72,7 +71,7 @@ namespace SpiderSurge
 
         private static string Format(string config, float score)
         {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(config)) + FieldSeparator + score.ToString("R", CultureInfo.InvariantCulture);
+            return ModData.Encode(config) + FieldSeparator + score.ToString("R", CultureInfo.InvariantCulture);
         }
     }
 }

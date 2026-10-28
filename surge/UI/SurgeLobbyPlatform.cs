@@ -1,7 +1,7 @@
 using HarmonyLib;
 using I2.Loc;
 using TMPro;
-using Unity.Netcode;
+using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
 
@@ -68,7 +68,7 @@ namespace SpiderSurge
         public static void Prefix(GameModeStartButton __instance)
         {
             if (GameController.instance.gamePaused || !LobbyController.inLobby
-                || (NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsHost))
+                || Net.IsRemoteClient)
             {
                 return;
             }

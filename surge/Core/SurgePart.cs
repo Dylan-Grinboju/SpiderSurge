@@ -8,7 +8,7 @@ namespace SpiderSurge
     {
         private static readonly string[] Objects =
         {
-            "SurgeGameModeManager", "PerksManager", "SoundManager", "SoundTester", "PlayerControlSettings", "TelemetryConsentUI",
+            "SurgeGameModeManager", "PerksManager", "SoundManager", "PlayerControlSettings", "TelemetryConsentUI",
         };
 
         public override string Key => "surge";
@@ -54,7 +54,6 @@ namespace SpiderSurge
             }
 
             TelemetryConsentUI.ResetInstance();
-            InputInterceptor.ResetStaticState();
         }
 
         public override void BuildSettings(SettingsPage page)

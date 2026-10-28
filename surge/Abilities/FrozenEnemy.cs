@@ -53,6 +53,8 @@ namespace SpiderSurge
 
         public static bool IsFrozen(EnemyHealthSystem enemy) => enemy != null && FrozenEnemyIds.Contains(enemy.GetInstanceID());
 
+        public static bool AnyFrozen => FrozenEnemyIds.Count > 0;
+
         public static bool IsFrozenBrain(EnemyBrain brain) => brain != null && FrozenBrainIds.Contains(brain.GetInstanceID());
 
         public static bool IsHeld(EnemyHealthSystem enemy) => IsFrozen(enemy) || (enemy != null && PulledEnemyIds.Contains(enemy.GetInstanceID()));
@@ -370,7 +372,7 @@ namespace SpiderSurge
         {
             if (Time.unscaledTime - _lastThawSound < ThawSoundGap) return;
             _lastThawSound = Time.unscaledTime;
-            SoundManager.Instance?.PlaySound(Consts.SoundNames.Unfreeze, Consts.SoundVolumes.Unfreeze * Consts.SoundVolumes.MasterVolume);
+            SoundManager.Play(Consts.SoundNames.Unfreeze, Consts.SoundVolumes.Unfreeze);
         }
 
         private void RestoreTints()

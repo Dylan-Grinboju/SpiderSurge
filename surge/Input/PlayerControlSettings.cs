@@ -285,10 +285,7 @@ namespace SpiderSurge
             feedbackEndTimes[playerIndex] = Time.unscaledTime + FeedbackDisplayDuration;
 
             // Also play a sound if available
-            SoundManager.Instance?.PlaySound(
-                Consts.SoundNames.PowerUp,
-                Consts.SoundVolumes.PowerUp * Consts.SoundVolumes.MasterVolume
-            );
+            SoundManager.Play(Consts.SoundNames.PowerUp, Consts.SoundVolumes.PowerUp);
         }
 
         // Every joined player has a PlayerInput, in the lobby and while their spider is dead too, so the gesture works there and in any mode

@@ -66,7 +66,7 @@ try {
     $yaml = Join-Path $repo 'lib/YamlDotNet.dll'
     Add-Type -Path $yaml
     $refs = @(Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll' | Select-Object -ExpandProperty FullName) + $yaml
-    Add-Type -Path @($stubPath, (Join-Path $repo 'core/Settings.cs'), (Join-Path $repo 'core/SettingsMigration.cs')) -ReferencedAssemblies $refs
+    Add-Type -Path @($stubPath, (Join-Path $repo 'core/Settings.cs'), (Join-Path $repo 'core/SettingsMigration.cs'), (Join-Path $repo 'core/Listeners.cs')) -ReferencedAssemblies $refs
     $defaults = [Collections.Generic.Dictionary[string,object]]::new()
     @{
         'parts.fixes' = $true; 'parts.surge' = $true; 'teams.enabled' = $false

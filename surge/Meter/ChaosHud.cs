@@ -137,7 +137,7 @@ namespace SpiderSurge
         {
             if (!ChaosWallet.Enabled) return;
             _pulseRemaining = Consts.Values.Chaos.HudGainSeconds;
-            SoundManager.Instance?.PlaySound(Consts.SoundNames.LuckyUpgrade, Consts.SoundVolumes.LuckyUpgrade * Consts.SoundVolumes.MasterVolume);
+            SoundManager.Play(Consts.SoundNames.LuckyUpgrade, Consts.SoundVolumes.LuckyUpgrade);
         }
     }
 }
