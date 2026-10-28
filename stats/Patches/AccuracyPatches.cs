@@ -109,7 +109,7 @@ namespace StatsMod
         // Idle ones are reused, the gun's own first; copies live until DamageOnParticle destroys them with the gun.
         private static void PlayVolley(ParticleSystem particles, Shotgun weapon)
         {
-            if (!Net.IsHost || !GameSessionManager.Instance.IsActive)
+            if (!GameSessionManager.IsRecording)
             {
                 particles.Play();
                 return;
