@@ -142,6 +142,9 @@ Every player needs the same SpiderSurge version, and the lobby must use P2P. The
 - Off-screen enemy arrows no longer throw an error every frame after their enemy dies in lava.
 - Pain-level colour unlocks no longer throw an error on every lobby load, and every earned colour unlocks instead of only the first.
 - Starting the game no longer throws the custom-maps warning error twice.
+- When a survival perk choice times out, every offered card can be selected, including the last one.
+- Shotguns use their full set of firing and pellet-hit sounds instead of always skipping the last sound.
+- Returning to the lobby is no longer blocked by a hidden connecting screen; an active connection screen still blocks it.
 
 ## Building and releasing
 
