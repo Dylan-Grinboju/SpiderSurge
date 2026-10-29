@@ -52,12 +52,7 @@ namespace StatsMod
         {
             if (GameSessionManager.Instance.IsActive && modifier != null && modifier.data != null)
             {
-                string perkName = modifier.data.title;
-                if (string.IsNullOrEmpty(perkName))
-                {
-                    perkName = modifier.data.key;
-                }
-                GameSessionManager.Instance.RecordPerk(perkName);
+                GameSessionManager.Instance.RecordPerk(SpiderSurge.PerkShop.DisplayNameOfPerk(modifier.data.key));
             }
         }
 
