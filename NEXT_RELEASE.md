@@ -154,6 +154,7 @@ Every player needs the same SpiderSurge version, and the lobby must use P2P. The
 - When a survival perk choice times out, every offered card can be selected, including the last one.
 - Shotguns use their full set of firing and pellet-hit sounds instead of always skipping the last sound.
 - Returning to the lobby is no longer blocked by a hidden connecting screen; an active connection screen still blocks it.
+- Tiers of Heck and Parkour runs no longer count toward the pain level last played in Survival. The game kept that pain level, so a tier or Parkour wave above its best raised that level's high score, and losing the last life sent the wave to its online leaderboard.
 
 ## Building and releasing
 
