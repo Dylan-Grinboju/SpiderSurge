@@ -116,8 +116,8 @@ namespace SpiderSurge.Common
                                 status = newer ? "SpiderSurge " + found.Version + " is available." : "You are up to date (or running a newer development build).";
                                 SettingsPage.RefreshOpen();
                                 if (automatic && newer && LobbyController.inLobby)
-                                    Announcer.TwoOptionsPopup("SpiderSurge " + found.Version + " is available. Review the update?", "View update", "Later",
-                                        () => SettingsPage.Show(SettingsPage.MainPage, "settings", "advanced", "updates"), () => { }, null);
+                                    Announcer.TwoOptionsPopup("SpiderSurge " + found.Version + " is available.\nInstall it from Mods > SpiderSurge > Settings > Advanced > Updates.", "Release notes", "Later",
+                                        () => OpenUrl(found.PageUrl), () => { }, null);
                             });
                         }
                     }
