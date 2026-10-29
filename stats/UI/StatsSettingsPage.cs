@@ -133,6 +133,7 @@ namespace StatsMod
             {
                 bool earned = unlocked.TryGetValue(row.Name, out var title);
                 if ((filter == 1 && earned) || (filter >= 2 && !earned)) continue;
+                if (filter == 4 && !CollectionSeen.IsNew("titles", row.Name)) continue;
                 shown++;
                 string name = row.Name;
                 if (earned)
@@ -143,9 +144,10 @@ namespace StatsMod
                     page.Line($"<color={SettingsPage.Gray}><b><noparse>{name}</noparse></b>{how}</color>", () => page.ToggleRevealed(name));
                 }
             }
-            if (shown == 0) page.Note("No titles in this view.");
+            if (shown == 0) page.Note(filter == 4 ? "You're all caught up. New titles will appear here when you earn them." : "No titles in this view.");
             page.Spacer();
-            page.Button("Mark all seen", () => CollectionSeen.Mark("titles", unlocked.Keys));
+            if (CollectionFilters.NewCount("titles", unlocked.Keys) > 0)
+                page.Button("Mark all seen", () => CollectionSeen.Mark("titles", unlocked.Keys));
             page.ConfirmButton("Reset the title collection", TitleCollection.Reset);
             page.Note($"Saved in <noparse>{TitleCollection.FilePath}</noparse>");
         }
@@ -164,7 +166,7 @@ namespace StatsMod
         }
 
         internal static string TitlesButtonLabel =>TitleCollection.Readable
-            ? $"Titles ({TitleCatalog.All.Count(title => TitleCollection.Unlocked.ContainsKey(title.Name))} of {TitleCatalog.All.Count})"
+            ? $"Titles ({TitleCatalog.All.Count(title => TitleCollection.Unlocked.ContainsKey(title.Name))} of {TitleCatalog.All.Count})" + CollectionFilters.Summary("titles", TitleCollection.Unlocked.Keys)
             : "Titles";
 
         private static string UnlockedLine(string name, string howToEarn, UnlockedTitle title)

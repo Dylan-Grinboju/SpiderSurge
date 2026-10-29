@@ -7,11 +7,13 @@ namespace SpiderSurge
     public static class AchievementsPage
     {
         public const string Page = "surge.achievements";
+        public static string ButtonLabel => $"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})"
+            + CollectionFilters.Summary("achievements", SurgeAchievements.All.Where(a => SurgeAchievements.IsUnlocked(a.Id)).Select(a => a.Id));
 
         public static void Build(SettingsPage page)
         {
             page.Title("Surge achievements");
-            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. Click a locked achievement to see how to get it.");
+            page.Note($"{SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length} unlocked. Select a locked achievement to reveal its requirements.");
 
             if (!ModData.Readable) { page.Warning("Progress cannot be read right now. Try again shortly."); return; }
             var unlocked = SurgeAchievements.All.Where(a => SurgeAchievements.IsUnlocked(a.Id)).Select(a => a.Id).ToArray();
@@ -23,6 +25,7 @@ namespace SpiderSurge
             {
                 AchievementUnlock unlock = SurgeAchievements.UnlockOf(achievement.Id);
                 if ((filter == 1 && unlock != null) || (filter >= 2 && unlock == null)) continue;
+                if (filter == 4 && !CollectionSeen.IsNew("achievements", achievement.Id)) continue;
                 shown++;
                 if (unlock != null)
                 {
@@ -36,8 +39,9 @@ namespace SpiderSurge
                 page.Line($"<b>{achievement.Name}</b>{howTo}\n<size=85%><color={SettingsPage.Gray}>LOCKED</color></size>", () => page.ToggleRevealed(id));
             }
 
-            if (shown == 0) page.Note("No achievements in this view.");
-            page.Button("Mark all seen", () => CollectionSeen.Mark("achievements", unlocked));
+            if (shown == 0) page.Note(filter == 4 ? "You're all caught up. New achievements will appear here when you earn them." : "No achievements in this view.");
+            if (CollectionFilters.NewCount("achievements", unlocked) > 0)
+                page.Button("Mark all seen", () => CollectionSeen.Mark("achievements", unlocked));
             page.Spacer();
             page.ConfirmButton("Reset all achievements", SurgeAchievements.ResetAll);
             page.Note($"Saved in <noparse>{ModData.FilePath}</noparse>");

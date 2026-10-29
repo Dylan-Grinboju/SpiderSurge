@@ -58,7 +58,7 @@ namespace SpiderSurge.Common
 
     internal static class CollectionFilters
     {
-        public static readonly string[] Labels = { "All", "Locked", "Unlocked", "Recently earned" };
+        public static readonly string[] Labels = { "All", "Locked", "Unlocked", "Recently earned", "New" };
         private static readonly Dictionary<string, int> filters = new Dictionary<string, int>();
         public static int Add(SettingsPage page, string kind)
         {
@@ -67,5 +67,15 @@ namespace SpiderSurge.Common
             return current;
         }
         public static string Badge(string kind, string id) => CollectionSeen.IsNew(kind, id) ? " <color=#FFD24A>NEW</color>" : "";
+        public static int NewCount(string kind, IEnumerable<string> unlocked)
+        {
+            var ids = unlocked.ToArray();
+            return CollectionSeen.Ensure(kind, ids) ? ids.Count(id => CollectionSeen.IsNew(kind, id)) : 0;
+        }
+        public static string Summary(string kind, IEnumerable<string> unlocked)
+        {
+            int count = NewCount(kind, unlocked);
+            return count > 0 ? $" <color=#FFD24A>· {count} NEW</color>" : "";
+        }
     }
 }

@@ -2,6 +2,7 @@ using System.Linq;
 using SpiderSurge.Enemies;
 using SpiderSurge.Common;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SpiderSurge
 {
@@ -96,8 +97,19 @@ namespace SpiderSurge
             if (section == Page + ".controls")
             {
                 page.Title("Controls and indicators");
-                page.Line($"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}\nUltimate: {Controls.Display(Controls.UltimateKeyboard)} / {Controls.Display(Controls.UltimateController)}");
-                page.Line($"To move your controller's ability to another button, hold Select and double-tap that button. Hold Select for 3 seconds to go back to {Controls.Display(Controls.AbilityController)}. Your choice lasts until you leave.");
+                page.Line($"Default ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}\nUltimate: {Controls.Display(Controls.UltimateKeyboard)} / {Controls.Display(Controls.UltimateController)}");
+                page.Header("Current controller bindings");
+                bool anyController = false;
+                foreach (var input in PlayerInput.all)
+                {
+                    if (!input.devices.Any(device => device is Gamepad)) continue;
+                    anyController = true;
+                    var player = Players.All?.FirstOrDefault(p => Players.IsLocal(p) && p.playerInputIndex.Value == input.playerIndex);
+                    string name = player != null ? MatchHistoryPage.Text(Players.NameOf(player)) : "Controller " + (input.playerIndex + 1);
+                    page.Line($"<b>{name}</b> · Ability: {Controls.PathLabel(PlayerControlSettings.GetPlayerAbilityButton(input.playerIndex))}");
+                }
+                if (!anyController) page.Note("Join with a controller to see its current ability button here.");
+                page.Line($"To move your controller's ability to another button, hold Select and double-tap that button. Release Select after remapping. To reset, start a fresh Select hold for 3 seconds to go back to {Controls.Display(Controls.AbilityController)}. Your choice lasts until you leave.");
                 page.Line($"The ring drains as a timed ability or ultimate runs out, then fills clockwise as cooldown expires. <color={Hex(ModConfig.IndicatorAvailableColor)}>Ready</color>, <color={Hex(ModConfig.IndicatorActiveColor)}>active</color>, and <color={Hex(ModConfig.IndicatorCooldownColor)}>cooling down</color> use your chosen colors. The ready ring is complete. Active effects without a duration also keep a complete ring.");
                 page.Line("Pocket Dimension shows the stored weapon beside the ring. No weapon means an empty slot. With Only show when ready enabled, the preview stays visible during cooldown only with the rings; the compact HUD hides the whole row until the ability is ready.");
                 page.Line("Use compact ability HUD replaces the rings with a fixed panel at the bottom right. Each player has a named row: active time drains with a seconds countdown, cooldown progress fills with a seconds countdown, and Ready means the ability can be used. The same cooldown is shared with the ultimate. Both timers use game time and stop while paused.");
@@ -111,7 +123,7 @@ namespace SpiderSurge
                 page.Line($"Small stats: {Controls.Display(Controls.SmallWindow)}. Full scoreboard: {Controls.Display(Controls.BigWindow)}. Results titles: {Controls.Display(Controls.TitlesWindow)}. The small window can be dragged with the mouse; size, opacity and visible statistics live in Stats settings.");
                 page.Line($"Choose the starting scoreboard in Settings > Stats. Customize My scoreboard columns in Customize scoreboard. Combat, Enemy kills, Weapon kills, Accuracy and Movement are fixed presets; hide any you do not want in settings. Move through their pages with {Controls.Display(Controls.PreviousPresetKeyboard)} / {Controls.Display(Controls.NextPresetKeyboard)}, {Controls.Display(Controls.PreviousPresetController)} / {Controls.Display(Controls.NextPresetController)}, the arrows or the mouse wheel.");
                 page.Line("The controller window button cycles the small window and Off during a match. In the lobby it also offers the full scoreboard and titles. Tiny spiders identify players in the full scoreboard.");
-                page.Line("Titles reward outstanding and unusual performances after Survival with two or more players. Only titles shown on the results screen enter the collection. Collection > Titles explains how to earn them; All, Locked, Unlocked and Recently earned help you browse. Select an unlocked entry or use Mark all seen to clear its NEW marker. The results screen still remembers which titles were new that run.");
+                page.Line("Titles reward outstanding and unusual performances after Survival with two or more players. Only titles shown on the results screen enter the collection. Collection > Titles explains how to earn them; All, Locked, Unlocked, Recently earned and New help you browse. New shows only unseen unlocks, also counted in the Collection menu. Select an unlocked entry or use Mark all seen to clear its NEW marker. The results screen still remembers which titles were new that run.");
                 page.Line("Surge results include your final build, wave reached, completed challenges, Chaos earned and spent, and new team achievements above the title cards. The same recap is saved in Match history when recording is on.");
                 page.Line("Match history keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles. It keeps every recorded match, with pages for browsing. New matches are recorded while Keep match history is on. Saving history is independent of text reports and telemetry. Clear match history removes these records after confirmation.");
                 if (Parts.Stats.Running) page.Button("Stats settings", () => page.Open("stats"));

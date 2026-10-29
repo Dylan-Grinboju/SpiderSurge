@@ -39,7 +39,7 @@ When a run with two or more players ends, everyone gets fun titles based on how 
 
 <img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
 
-Achievements and the title collection have All, Locked, Unlocked and Recently earned views. NEW marks an unseen unlock; select it or use **Mark all seen** to clear the marker. **Match history** keeps separate Survival and Versus records with player statistics, weapon accuracy, maps, perks and titles.
+Achievements and the title collection have All, Locked, Unlocked, Recently earned and New views. The Collection menu counts unseen unlocks; select one or use **Mark all seen** to clear its marker. **Match history** keeps separate Survival and Versus records, with filters for Surge and non-Surge matches. Player summaries show kills, deaths, best streak and time alive, with detailed statistics, weapon accuracy, maps, perks and titles underneath.
 
 ### Surge
 
@@ -77,6 +77,8 @@ Team versus, team count and friendly fire are on the normal **Versus Battle** se
 These are fixed, picked to stay out of the way of the game's own controls. Only the controller ability button can be changed: hold **Select** and double-tap another button (A, B, X, Y, L1, R1, L2, R2, L3 or R3) to make it yours, or hold Select for 3 seconds to go back to L2. Each player picks their own, and the choice lasts until they leave the game. The ability button stops doing what it did in the game, so L2 no longer jumps; jump with A or L1.
 
 The big window's arrows and mouse wheel also move through its pages and presets. In the lobby, the controller window button cycles Off, the small window, the big window and Survival titles; during a match, it offers only the small window and Off.
+
+The controls guide shows each local controller's current ability binding. A successful remap survives continuing to hold Select; release it and begin a fresh three-second hold to reset to L2.
 
 ## Installation
 
