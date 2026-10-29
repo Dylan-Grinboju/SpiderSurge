@@ -18,7 +18,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Freeze Time**: Freeze enemies, other players, shots and effects inside the ice ring for 5 seconds. Walls and solid platforms block the freeze. Frozen enemies don't move, shoot or explode, but their blades, saws and poison clouds still hurt on contact. A Hornet Shaman's poison cloud freezes with its shaman when no wall separates them, or on its own when the ring reaches it with a clear path: the whole cloud stops where it is. Frozen shots, from enemies or players, hang in the air and still hit whatever touches them, then fly on when they thaw. A frozen Gravity Saw stops pulling, and one that hasn't opened yet opens that much later. The caster stays free. Other players, including teammates, cannot move, jump, shoot, swap weapons or activate abilities while frozen; their held weapons stop with them. Casting it on enemies another player already froze doesn't add time, it only keeps the longer freeze. **Deep Freeze** (Ability Duration) freezes for longer and farther away. Its Ultimate, **Rewind**, turns every nearby enemy back into a plain Wasp; shielded enemies become shielded Wasps.
 - **Custom Enemies**:
     - **Twin Whisp**: A Whisp with two cores that fires two shots at once.
-    - **Missile Whisp**: Uses the RocketTurret's body while flying and launching rockets. Near-black red like its 0.4 appearance, with yellow lights. Its pink or red shield bubble stays clearly visible.
+    - **Missile Whisp**: Uses the RocketTurret's body while flying and launching rockets. Its charcoal body and bright yellow eye and thrusters stay recognizable with or without a shield. Its pink or red shield bubble is more transparent so the body remains visible.
     - **Twin Blade Whisp**: Elite melee enemies equipped with dual-ended particle blades.
     - **Wasp Cocoon**: A stationary cocoon that starts hatching its first Wasp a second after it appears. Each hatch takes as long as an enemy's spawn warning (2.5 seconds, longer with Interference), and the next one starts 7 seconds after a Wasp comes out, until the cocoon is destroyed, with at most 3 of its Wasps alive at once. Its Wasps don't count toward the wave's limit on live enemies, but the wave still ends only once they're dead. A shielded cocoon hatches Shielded Wasps and emits purple pulses every 2 seconds within 40 units while its shield holds. The pulses gently repel spiders and loose objects without stunning spiders or breaking their shields. Freeze Time pauses the pulses; breaking the cocoon's shield stops them.
     - **Shielded versions**: The shielded Twin Whisp, Missile Whisp and Wasp Cocoon wear the game's pink shield bubble, which breaks on the first hit like every shielded enemy's. Off-screen indicators use the vanilla Whisp/Roller orange without a shield, purple with an ordinary shield, and red with a laser shield. Exploding Rollers always use red. Breaking a shield changes its indicator to orange.
@@ -27,7 +27,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
 - **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate. [Pain 8](#pain-level-8) starts with the Ultimate instead.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
-- **Achievements**: 24 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
+- **Achievements**: 25 achievements for ability and combat feats, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
@@ -48,7 +48,7 @@ Surge Survival has a Pain 8 after Pain 7. It unlocks at the same wave Pain 7 nee
 
 The Collection menu shows the number of unseen unlocks. In Surge achievements, cycle **Show** to **New** to see just those entries; select one to mark it seen, or use **Mark all seen**. Earned progress is kept.
 
-SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
+SpiderSurge has its own achievements for ability and combat feats. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
 | Achievement | How to unlock it |
 |---|---|
@@ -76,6 +76,7 @@ SpiderSurge has its own achievements for specific feats with the Surge abilities
 | Light Snack | Swallow 3 different enemy types with one Black Hole; shield and laser variants of the same type count once |
 | Overkill | Use Thermal Detonation to kill the wave's last enemy: a single plain Wasp |
 | We Brought Our Own | Have a friendly Wasp summoned by Neural Backup kill a Wasp hatched by a Cocoon |
+| Wasn't Me | Have an enemy trigger a sticky grenade and die in that same grenade's explosion |
 
 ## Chaos points, shop and challenges
 

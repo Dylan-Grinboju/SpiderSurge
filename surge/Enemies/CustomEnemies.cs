@@ -163,7 +163,7 @@ namespace SpiderSurge.Enemies
             renderer.sharedMaterial = source.sharedMaterial;
             renderer.sortingLayerID = source.sortingLayerID;
             renderer.sortingOrder = source.sortingOrder;
-            color.a = source.color.a;
+            color.a = source.color.a * (baseName == "MissileWhisp" ? Consts.Values.Colors.MissileWhispShieldOpacity : 1f);
             renderer.color = color;
         }
 
@@ -292,7 +292,7 @@ namespace SpiderSurge.Enemies
                 }
             }
 
-            // The body keeps the original dark red tint, with yellow lights and separately colored shield bubbles.
+            // Charcoal stays visible under the shield while the eye and thrusters keep their yellow contrast.
             Transform eye = enemyObj.transform.Find("CoreBase/Eye");
             foreach (var renderer in enemyObj.GetComponentsInChildren<SpriteRenderer>(true))
             {
