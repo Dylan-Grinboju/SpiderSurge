@@ -129,7 +129,8 @@ namespace SpiderSurge
                 : PerkSynergy.Describe(key, level);
             if (AbilitySelection.StartingChoiceOpen)
                 return "Shared team ability; each spider has its own cooldown.\n" +
-                    $"Use: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Ultimate choice at wave {Consts.Values.Waves.UltUpgradeWave}." +
+                    $"Use: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. " +
+                    (SurgePainLevels.SelectedEight ? "Its ultimate comes with it." : $"Ultimate choice at wave {Consts.Values.Waves.UltUpgradeWave}.") +
                     (string.IsNullOrEmpty(detail) ? "" : "\n" + detail);
             return detail ?? "Perks apply to the whole team. Chaos buys extra upgrades in the shop.";
         }

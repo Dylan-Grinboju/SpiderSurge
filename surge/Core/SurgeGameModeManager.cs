@@ -27,8 +27,11 @@ namespace SpiderSurge
 
         internal static void SelectMode(bool surge)
         {
-            IsModeEnabled = surge;
-            SurgePainLevels.Refresh(PainLevelsScreen.instance);
+            if (IsModeEnabled != surge)
+            {
+                IsModeEnabled = surge;
+                SurgePainLevels.Refresh(PainLevelsScreen.instance);
+            }
             SurgeNet.MarkDirty();
         }
 

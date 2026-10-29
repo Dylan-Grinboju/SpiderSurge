@@ -36,7 +36,7 @@ namespace SpiderSurge
                 page.Line(Section("2. Choose an ability", "Before wave 1, choose the group's shared ability. Selecting a card locks it; move down to Confirm to start. Read the ability's effect before confirming."));
                 page.Line(Section("3. Cast, then recharge", $"Ability: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. Use it to survive. Watch the ring beside your spider or the compact HUD: a full ready indicator means you can cast again. The ultimate shares that cooldown."));
                 page.Line(Section("4. Spend chaos points", "Choose marked maps and complete optional challenges to earn team chaos points. At later perk choices, move right from the last card to visit the shop. Choose an item and then Buy; unspent points carry forward."));
-                page.Line(Section("5. Build around your ability", "Choose cooldown, duration or synergy perks to strengthen your build. The ultimate is guaranteed as an option at wave 30 and can appear afterwards until unlocked. Wave 60 offers an ultimate or a switch to another ability with its ultimate."));
+                page.Line(Section("5. Build around your ability", "Choose cooldown, duration or synergy perks to strengthen your build. The ultimate is guaranteed as an option at wave 30 and can appear afterwards until unlocked; Pain 8 starts with it. Wave 60 offers an ultimate or a switch to another ability with its ultimate."));
                 page.Line(Section("6. Find help and tune the game", "Pause and open Mods > SpiderSurge. Hover or select any setting for its explanation. How to play is always available here. Surge changes effects, sound and the ability indicator. Settings save automatically."));
                 return;
             }
@@ -138,7 +138,7 @@ namespace SpiderSurge
                 return;
             }
             page.Title("Progression and records");
-            page.Line("Choose the group's shared ability before wave 1, from as many random abilities as a normal perk choice offers. The arena waits until you choose, and the first earned perk choice offers normal upgrades. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
+            page.Line("Choose the group's shared ability before wave 1, from as many random abilities as a normal perk choice offers. The arena waits until you choose, and the first earned perk choice offers normal upgrades. Its ultimate is guaranteed as an option at wave 30 and may appear in later choices until unlocked; Pain 8 starts with it. At wave 60 you can unlock the ultimate or switch to another ability with its ultimate.");
             page.Line("Play without abilities removes ability, ultimate and ability-upgrade choices for the next Surge run. Luck remains available. Unlimited time to choose perks lets everyone take their time.");
             page.Line("Surge highscores are separate from normal Survival. Achievements and the title collection live under Mods > SpiderSurge > Collection. Titles unlock when displayed after a Survival run with at least two players. NEW marks a first unlock.");
             page.Line("Match history has separate Survival and Versus pages under Mods > SpiderSurge. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. New matches are recorded while Keep match history is on.");

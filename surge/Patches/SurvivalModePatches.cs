@@ -157,10 +157,11 @@ namespace SpiderSurge
                 {
                     PlayerAbilityHandler.OnWaveStarted(value);
 
-                    // At wave 30 (Ult Upgrade), set flag for special perk selection
-                    if (value == Consts.Values.Waves.UltUpgradeWave)
+                    // At wave 30 (Ult Upgrade), set flag for special perk selection, unless the ultimate is already owned, as in Pain 8
+                    if (value == Consts.Values.Waves.UltUpgradeWave && PerksManager.Instance != null)
                     {
-                        if (PerksManager.Instance != null)
+                        string ultimate = PerksManager.Instance.GetChosenAbilityUltimate();
+                        if (ultimate != null && PerksManager.Instance.IsAvailable(ultimate))
                         {
                             PerksManager.Instance.IsUltUpgradePerkSelection = true;
                         }
