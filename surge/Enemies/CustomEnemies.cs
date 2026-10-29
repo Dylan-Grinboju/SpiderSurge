@@ -66,7 +66,7 @@ namespace SpiderSurge.Enemies
                 MissileWhispPrefab = CreateBaseEnemy(original, "MissileWhisp");
                 SetupMissileAppearance(MissileWhispPrefab, turret);
                 SetupMissileProjectile(MissileWhispPrefab, rocketProjectilePrefab);
-                SetupOffScreenIndicator(MissileWhispPrefab, Color.yellow);
+                SetupOffScreenIndicator(MissileWhispPrefab, Consts.Values.Colors.UnshieldedEnemyIndicatorColor);
             }
 
             // Create Shielded Variant if source is provided
