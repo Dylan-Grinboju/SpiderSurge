@@ -22,7 +22,13 @@ internal static class UpdaterTests
     }
     private static int Main(string[] args)
     {
-        if (args.Length == 1 && args[0] == "--wait") { Thread.Sleep(3000); return 0; }
+        if (args.Length == 1 && args[0] == "--wait")
+        {
+            // Stands in for the game: reports its creation time the way the mod does, then stays open
+            Console.WriteLine(UpdatePackage.CurrentCreationTime());
+            Thread.Sleep(3000);
+            return 0;
+        }
         string dll = Path.GetFullPath(args[0]);
         string helper = Path.GetFullPath(args[1]);
         string version = AssemblyName.GetAssemblyName(dll).Version.ToString(3);
@@ -47,14 +53,16 @@ internal static class UpdaterTests
         Reject(() => UpdatePackage.Verify(helper, UpdatePackage.Hash(helper), version), "reject wrong assembly identity");
 
         string root = Path.Combine(Path.GetTempPath(), "spidersurge-updater-tests-" + Guid.NewGuid().ToString("N"));
-        string folder = Path.Combine(root, "Disabled", "SpiderSurgeUpdate");
-        Directory.CreateDirectory(folder);
-        string target = Path.Combine(root, "SpiderSurge.dll");
-        string pending = Path.Combine(folder, "download.pending");
-        File.WriteAllText(target, "original mod fixture");
-        File.Copy(dll, pending);
+        string folder = Fixture(Path.Combine(root, "locked"), dll, out string target);
         var request = new UpdateRequest { Target = target, OriginalHash = UpdatePackage.Hash(target), Hash = hash, Version = version };
         string original = request.OriginalHash;
+        using (var game = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read))
+        using (new Timer(_ => game.Dispose(), null, 1500, Timeout.Infinite))
+            Program.Install(folder, target, request);
+        Check(UpdatePackage.Hash(target) == hash && UpdatePackage.Hash(Path.Combine(folder, "previous.dll")) == original, "install retries while the mod file is in use");
+
+        folder = Fixture(root, dll, out target);
+        request = new UpdateRequest { Target = target, OriginalHash = original, Hash = hash, Version = version };
         request.Hash = new string('0', 64);
         Reject(() => Program.Install(folder, target, request), "corrupt staged file never replaces installed mod");
         Check(UpdatePackage.Hash(target) == original, "original retained after failed verification");
@@ -63,10 +71,11 @@ internal static class UpdaterTests
         Reject(() => Program.Install(folder, target, request), "manual install change blocks replacement");
         request.OriginalHash = original;
         File.Copy(helper, Path.Combine(folder, "SpiderSurge.UpdateInstaller.exe"));
-        using (var parent = Process.Start(new ProcessStartInfo(Assembly.GetExecutingAssembly().Location, "--wait") { UseShellExecute = false, CreateNoWindow = true }))
+        using (var parent = Process.Start(new ProcessStartInfo(Assembly.GetExecutingAssembly().Location, "--wait") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true }))
         {
             request.ProcessId = parent.Id;
-            request.ProcessStart = parent.StartTime.ToUniversalTime().Ticks;
+            request.ProcessStart = long.Parse(parent.StandardOutput.ReadLine());
+            Check(request.ProcessStart == UpdatePackage.CreationTime(parent.Handle), "game and installer read the same creation time");
             UpdatePackage.Write(Path.Combine(folder, "request.json"), request);
             using (var worker = Process.Start(new ProcessStartInfo(Path.Combine(folder, "SpiderSurge.UpdateInstaller.exe")) { UseShellExecute = false, CreateNoWindow = true }))
             {
@@ -81,5 +90,16 @@ internal static class UpdaterTests
         Check(File.ReadAllText(Path.Combine(folder, "result.txt")).StartsWith("Installed "), "installation outcome persisted");
         Console.WriteLine(count + " checks passed. Fixtures: " + root);
         return 0;
+    }
+
+    // A game folder with an installed mod and a verified download staged under Disabled
+    private static string Fixture(string root, string dll, out string target)
+    {
+        string folder = Path.Combine(root, "Disabled", "SpiderSurgeUpdate");
+        Directory.CreateDirectory(folder);
+        target = Path.Combine(root, "SpiderSurge.dll");
+        File.WriteAllText(target, "original mod fixture");
+        File.Copy(dll, Path.Combine(folder, "download.pending"));
+        return folder;
     }
 }

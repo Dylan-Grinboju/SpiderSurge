@@ -64,12 +64,13 @@
     <Compile Remove="Sourcecode\**\*.cs" />
     <Compile Remove="OtherMods\**\*.cs" />
     <Compile Remove="updater\**\*.cs;tests\**\*.cs" />
-    <ProjectReference Include="updater/SpiderSurge.UpdateInstaller.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="updater/SpiderSurge.UpdateInstaller.csproj" ReferenceOutputAssembly="false" OutputItemType="UpdateInstaller" />
   </ItemGroup>
 
+  <!-- Embeds the installer this build's project reference just produced, wherever its output folder is -->
   <Target Name="EmbedUpdateInstaller" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences">
     <ItemGroup>
-      <EmbeddedResource Include="updater/bin/$(Configuration)/net472/SpiderSurge.UpdateInstaller.exe" LogicalName="SpiderSurge.UpdateInstaller.exe" />
+      <EmbeddedResource Include="@(UpdateInstaller)" LogicalName="SpiderSurge.UpdateInstaller.exe" />
     </ItemGroup>
   </Target>
 

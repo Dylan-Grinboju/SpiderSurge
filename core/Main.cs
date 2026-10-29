@@ -51,6 +51,7 @@ namespace SpiderSurge
             CollectionSeen.Tick();
             ModData.Tick();
             Net.Tick();
+            ModUpdater.Tick();
         }
 
         private void OnApplicationQuit()

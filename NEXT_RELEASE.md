@@ -86,6 +86,12 @@ The big window's arrows and mouse wheel also move through its pages and presets.
 4. Launch the game.
 5. Play Surge from its platform above and left of Wave Survival in the lobby. To play team versus, turn on **Team versus** on the versus setup page in the lobby.
 
+Later versions can be installed from the game; see [Updating](#updating).
+
+## Updating
+
+Open **Mods > SpiderSurge > Settings > Advanced > Updates** to check for a published release, read its release notes, or download it. With **Check for updates** on, the mod also checks shortly after the game starts and tells you about a new release when you are in the lobby. Downloads are optional and can be cancelled. The mod checks the download's size, SHA-256 digest and assembly identity, then a bundled Windows helper waits for SpiderHeck to close before replacing the DLL. Launch the game again after installation finishes; settings and progress are kept. The old DLL is kept at `Silk/Mods/Disabled/SpiderSurgeUpdate/previous.dll`; to go back, close the game and copy it over the installed `SpiderSurge.dll`. The next launch shows the outcome on the Updates page. A release without a verified download is installed by hand from its release page, as in [Installation](#installation). Every online player must update to the same version.
+
 ## Updating from SpiderStats or SpiderTeams
 
 1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
@@ -157,12 +163,8 @@ Every player needs the same SpiderSurge version, and the lobby must use P2P. The
 
 `dotnet build -c Release` makes `bin/Release/net472/SpiderSurge.dll`. The version comes from the latest `vX.Y.Z` git tag through [MinVer](https://github.com/adamralph/minver), so the code holds no version number to edit. A build after `v0.4.0` is `0.4.1-dev.N`, and the update check counts it as older than the release with the same number. A build without the git history (a source zip) is `0.0.0-dev`. Only GitHub Actions makes release builds: a build made anywhere else ends in `+local`, even on a release tag (`0.4.0+local`), so runs from testing can be told apart in telemetry.
 
-To release, first replace `README.md` with this file, without the note at the top, so the README describes the new release. Then publish a GitHub release with a new `vX.Y.Z` tag. The Build workflow builds `SpiderSurge.dll` from that tag and attaches it to the release. The update check reads the latest published release, so players are offered the new version from then on; drafts and pre-releases are not offered. `version.txt` is only for players on 0.4.0 or older, whose update check reads it from `main`. Set it to the first release made this way once that release is published, then leave it.
+To release, first replace `README.md` with this file, without the note at the top, so the README describes the new release. Then publish a GitHub release with a new `vX.Y.Z` tag. The Build workflow builds `SpiderSurge.dll` from that tag and attaches it to the release a few minutes later. The update check reads the latest published release, so players are offered the new version from then on; drafts and pre-releases are not offered. Until the DLL is attached, the Updates page says the release has no installable `SpiderSurge.dll` yet, and the startup check looks again every 5 minutes, up to 3 times, before telling players about the release. `version.txt` is only for players on 0.4.0 or older, whose update check reads it from `main`. Set it to the first release made this way once that release is published, then leave it.
 
 ## Other Mods
 
 - **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Raises the player limit to 32. Teams works with it.
-
-### Installing updates
-
-Open Mods > SpiderSurge > Settings > Advanced > Updates to check for a published release, read its release notes, or download it. Downloads are optional and cancellable. The mod verifies the release asset's size, SHA-256 digest and assembly identity, then a bundled Windows helper waits for SpiderHeck to close before replacing the DLL. Launch the game again after installation finishes. Settings and progress are untouched. The old DLL is retained at Silk/Mods/Disabled/SpiderSurgeUpdate/previous.dll; to recover it, close the game and copy it over the installed SpiderSurge.dll. The Updates page reports the previous installation outcome. Releases without verified asset metadata use the manual release-page route. Every online player must update to the same version.
