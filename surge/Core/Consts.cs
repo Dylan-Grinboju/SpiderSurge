@@ -313,19 +313,17 @@ namespace SpiderSurge
                 public const int Segments = 72;
                 public static readonly UnityEngine.Color Color = new UnityEngine.Color(1f, 0.09f, 0.09f, 1f);
 
-                // Base enemy name -> laser variant name; enemies left out (ExplodingRoller, shielded ones) get no ring
+                // Base enemy name -> laser variant name; Khepris, Exploding Rollers and shielded enemies get no ring.
                 public static readonly Dictionary<string, string> Variants = new Dictionary<string, string>
                 {
                     { "Wasp", "LaserWasp" },
                     { "Roller", "LaserRoller" },
                     { "Whisp", "LaserWhisp" },
                     { "MeleeWhisp", "LaserMeleeWhisp" },
-                    { "Khepri", "LaserKhepri" },
                     { "PowerWhisp Variant", "LaserPowerWhisp" },
                     { "PowerWasp Variant", "LaserPowerWasp" },
                     { "TwinBladeMeleeWhisp", "LaserTwinBladeMeleeWhisp" },
                     { "PowerRoller Variant", "LaserPowerRoller" },
-                    { "PowerKhepri Variant", "LaserPowerKhepri" },
                     { "PowerMeleeWhisp Variant", "LaserPowerMeleeWhisp" },
                     { "TwinWhisp", "LaserTwinWhisp" },
                     { "Hornet_Shaman Variant", "LaserHornetShaman" },
@@ -362,9 +360,11 @@ namespace SpiderSurge
 
             public static class Colors
             {
+                public static readonly UnityEngine.Color UnshieldedEnemyIndicatorColor = new UnityEngine.Color(1f, 0.6627451f, 0f, 1f);
                 public static readonly UnityEngine.Color ShieldedEnemyIndicatorColor = new UnityEngine.Color(0.7f, 0.25f, 1f, 1f);
-                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.2f, 0f, 0f, 1f);
-                public static readonly UnityEngine.Color MissileWhispLightColor = new UnityEngine.Color(1f, 0.8f, 0f, 1f);
+                public static readonly UnityEngine.Color MissileWhispColor = new UnityEngine.Color(0.45f, 0.45f, 0.45f, 1f);
+                public static readonly UnityEngine.Color MissileWhispLightColor = new UnityEngine.Color(1f, 0.9f, 0.05f, 1f);
+                public const float MissileWhispShieldOpacity = 0.65f;
             }
 
             public static class Waves
@@ -423,12 +423,10 @@ namespace SpiderSurge
                     { "LaserRoller", new EnemySpawnConfig(4.5f, 13, 21) },
                     { "LaserWhisp", new EnemySpawnConfig(6f, 14, 22) },
                     { "LaserMeleeWhisp", new EnemySpawnConfig(6f, 15, 22) },
-                    { "LaserKhepri", new EnemySpawnConfig(7.5f, 16, 36) },
                     { "LaserPowerWhisp", new EnemySpawnConfig(9f, 18, 0) },
                     { "LaserPowerWasp", new EnemySpawnConfig(9f, 19, 28) },
                     { "LaserTwinBladeMeleeWhisp", new EnemySpawnConfig(12f, 20, 28) },
                     { "LaserPowerRoller", new EnemySpawnConfig(12f, 21, 0) },
-                    { "LaserPowerKhepri", new EnemySpawnConfig(12f, 22, 0) },
                     { "LaserPowerMeleeWhisp", new EnemySpawnConfig(12f, 23, 32) },
                     { "LaserTwinWhisp", new EnemySpawnConfig(12f, 24, 32) },
                     { "LaserHornetShaman", new EnemySpawnConfig(18f, 26, 0) },

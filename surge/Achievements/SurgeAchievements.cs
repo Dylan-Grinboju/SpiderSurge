@@ -62,6 +62,7 @@ namespace SpiderSurge
         public const string LightSnack = "lightSnack";
         public const string Overkill = "overkill";
         public const string WeBroughtOurOwn = "weBroughtOurOwn";
+        public const string WasntMe = "wasntMe";
 
         public static readonly Achievement[] All =
         {
@@ -89,6 +90,7 @@ namespace SpiderSurge
             new Achievement(LightSnack, "Light Snack", "Swallow 3 different enemy types with one Black Hole."),
             new Achievement(Overkill, "Overkill", "Use Thermal Detonation to kill the wave's last enemy: a single plain Wasp."),
             new Achievement(WeBroughtOurOwn, "We Brought Our Own", "Have a friendly Wasp summoned by Neural Backup kill a Wasp spawned by a Cocoon."),
+            new Achievement(WasntMe, "Wasn't Me", "Have an enemy trigger a sticky grenade and die in its explosion."),
         };
 
         private static readonly ProgressSection<AchievementUnlock> _unlocks = new ProgressSection<AchievementUnlock>(Section, TryParse, Format, Earlier, AnnounceAll);

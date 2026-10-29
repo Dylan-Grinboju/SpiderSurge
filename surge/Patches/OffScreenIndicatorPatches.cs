@@ -45,7 +45,7 @@ namespace SpiderSurge
                 kind.Shield = shield;
                 kind.Laser = shield != null && shield.GetComponent<LaserRing>() != null;
             }
-            Color color = Color.yellow;
+            Color color = Consts.Values.Colors.UnshieldedEnemyIndicatorColor;
             if (kind.Roller) color = Color.red;
             else if (shield != null && shield.activeInHierarchy)
                 color = kind.Laser ? Color.red : Consts.Values.Colors.ShieldedEnemyIndicatorColor;

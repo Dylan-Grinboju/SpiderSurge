@@ -123,6 +123,7 @@ namespace SpiderSurge
             }
             if (attack is Explosion explosion)
             {
+                StickyGrenadeAchievement.EnemyKilled(enemy, explosion);
                 var missile = explosion.GetComponent<MissileAchievementOrigin>();
                 if (missile != null && missile.Shooter == enemy && missile.ReturnedBy != null)
                     SurgeAchievements.Unlock(SurgeAchievements.ReturnToSender, missile.ReturnedBy);

@@ -20,6 +20,8 @@ namespace SpiderSurge
             SpiderHits.Damage.Observe(SpiderHealthSystemPatches.RecordHit, on);
             if (on) Owners.ExplosionCreated += MissileExplosionAchievement.OnExplosionCreated;
             else Owners.ExplosionCreated -= MissileExplosionAchievement.OnExplosionCreated;
+            if (on) Owners.ExplosionCreated += StickyGrenadeAchievement.OnExplosionCreated;
+            else Owners.ExplosionCreated -= StickyGrenadeAchievement.OnExplosionCreated;
             if (on)
             {
                 GameEvents.RunStarted += SurvivalMode_StartGame_Patch.OnRunStarted;

@@ -352,7 +352,7 @@ namespace SpiderSurge.Common
 
                 _pageHelp = "Changes are saved automatically. Hover over a setting or select it with a controller to read more.";
                 _lastHelp = null;
-                _contextHelp = Current == MainPage || Current == "settings" || Current == "general" || Current == "advanced" || Current == "parts"
+                _contextHelp = Current == MainPage || Current == "settings" || Current == "general" || Current == "advanced"
                     || Current == "surge" || Current == "surge.rules" || Current == "surge.indicator" || Current == "teams"
                     || Current == "stats" || Current == "stats.appearance" || Current == "stats.presets" || Current.StartsWith("stats.columns", StringComparison.Ordinal);
                 _help.SetVisible(_contextHelp);
@@ -386,7 +386,7 @@ namespace SpiderSurge.Common
             if (Current == "general") { AddGeneral(); return; }
             if (Current == "settings") { AddSettings(); return; }
             if (Current == "advanced") { AddAdvanced(); return; }
-            if (Current == "parts") { AddParts(); return; }
+            if (Current == "fixes") { AddGameFixes(); return; }
             if (Current == "about") { AddAbout(); return; }
             if (Current == "support") { SupportPage.Build(this); return; }
             if (Current == "updates") { ModUpdater.BuildPage(this); return; }
@@ -455,36 +455,27 @@ namespace SpiderSurge.Common
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
             Note("Check for a newer SpiderSurge release at startup.");
             Button("Updates", () => Open("updates"));
-            Button("Mod parts and game fixes", () => Open("parts"));
+            Button("Base game fixes", () => Open("fixes"));
             Button("Reload the settings file", ReloadFile);
             Note($"<noparse>{Settings.FilePath}</noparse>");
         }
 
-        private void AddParts()
+        private void AddGameFixes()
         {
-            Title("Mod parts");
-            Note("Hide Stats from its settings page; choose team versus from the versus setup page in the lobby.");
-            Note("Turning Game fixes on or off takes effect after restarting the game.");
-            foreach (Part part in Parts.MenuOrder)
+            Title("Base game fixes");
+            Part part = Parts.Fixes;
+            Checkbox("Enable all fixes", part.Enabled, value => Settings.Set(part.SettingKey, value));
+            Note("Applies to all fixes below. Restart the game after changing this setting.");
+            if (part.Failed)
             {
-                Spacer();
-                Header(part.Title);
-                if (part.CanDisable) Checkbox("On", part.Enabled, value => Settings.Set(part.SettingKey, value));
-                else Line("Always on.");
-                Note(part.Description);
-                if (part.BlockedBy != null)
-                {
-                    Warning($"Off because the old {part.BlockedBy} is still in the Mods folder. Delete it and restart the game.");
-                }
-                else if (part.Failed)
-                {
-                    Warning("Failed to start. The Silk log has the error.");
-                }
-                else if (part.Enabled != part.Running)
-                {
-                    Warning(part.Enabled ? "Restart the game to turn it on." : "Restart the game to turn it off.");
-                }
+                Warning("Game fixes failed to start. The Silk log has the error.");
             }
+            else if (part.Enabled != part.Running)
+            {
+                Warning(part.Enabled ? "Restart the game to enable all fixes." : "Restart the game to disable all fixes.");
+            }
+            Spacer();
+            foreach (string line in part.Description.Split('\n')) Line(line);
         }
 
         private void AddGeneral()

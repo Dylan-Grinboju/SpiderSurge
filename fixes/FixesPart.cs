@@ -6,7 +6,7 @@ namespace SpiderSurge.Fixes
     {
         public override string Key => "fixes";
         public override string Title => "Game fixes";
-        public override string Description => "Fixes bugs in the game itself:\n• Every controller can pause, even while another is sending input.\n• Reconnecting controllers keep their original spider.\n• Whisps no longer fire the moment they spawn.\n• Off-screen arrows no longer throw errors once their target is gone.\n• Pain-level colours unlock without an error on every lobby load.\n• The game starts without the custom-maps warning error.\n• Perk timeouts can choose every offered card.\n• Shotguns use every firing and hit sound.\n• A hidden connecting screen no longer blocks returning to the lobby.\n• Tiers of Heck and Parkour no longer count toward the last pain level's high score and leaderboard.";
+        public override string Description => "Fixes bugs in the base game:\n• Every controller can pause while others are in use.\n• Reconnected controllers keep their spider.\n• Whisps wait before their first shot.\n• Off-screen arrows handle missing targets without errors.\n• Pain-level colours unlock without lobby errors.\n• Custom-map warnings no longer cause startup errors.\n• Perk timeouts can pick any offered card.\n• Shotguns use all firing and hit sounds.\n• Hidden connecting screens no longer block returning to the lobby.\n• Tiers of Heck and Parkour no longer affect pain-level scores or leaderboards.";
         public override string Namespace => "SpiderSurge.Fixes";
         public override bool OnByDefault => true;
 
