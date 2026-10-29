@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <StartupObject>UpdaterTests</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization" />
+    <Compile Include="../core/Updates/UpdatePackage.cs" Link="UpdatePackage.cs" />
+    <Compile Include="../updater/Program.cs" Link="Installer.cs" />
+  </ItemGroup>
+</Project>

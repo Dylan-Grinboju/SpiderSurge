@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Logger = SpiderSurge.Common.ThreadSafeLog;
@@ -12,188 +13,196 @@ namespace SpiderSurge.Common
     {
         public const string CheckForUpdatesKey = "general.checkForUpdates";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
-
-        // Only a published release counts, so merging to main announces nothing; version.txt on main stays for 0.4.0 and older, which read it
         private const string LatestReleaseUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases/latest";
-        private static readonly Regex TagName = new Regex("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
-        private const string DownloadUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/tag/v{0}";
-        private const int StartDelayMs = 15000;
-        private const int RequestTimeoutMs = 5000;
-
-        private static readonly HttpClient _httpClient = new HttpClient();
-        private static CancellationTokenSource _checkCancellation;
-        private static bool _watchingSettings;
-        private static bool _offLogged;
-
-        private static string CurrentVersion => SpiderSurgeMod.Version;
-
+        private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
+        private static CancellationTokenSource checkCancellation, downloadCancellation;
+        private static bool watching, checking, downloading, staged;
+        private static UpdateRelease release;
+        private static string status = "Check for a published SpiderSurge release.";
+        private static string previousResult;
+        private static string InstalledPath => typeof(SpiderSurgeMod).Assembly.Location;
+        private static string UpdateFolder => Path.Combine(Path.GetDirectoryName(InstalledPath), "Disabled", "SpiderSurgeUpdate");
         public static bool CheckForUpdates => Settings.GetBool(CheckForUpdatesKey);
-
-        public static IEnumerable<KeyValuePair<string, object>> Defaults => new[]
-        {
-            new KeyValuePair<string, object>(CheckForUpdatesKey, true),
-        };
+        public static IEnumerable<KeyValuePair<string, object>> Defaults => new[] { new KeyValuePair<string, object>(CheckForUpdatesKey, true) };
 
         public static void ScheduleCheck()
         {
-            if (!_watchingSettings)
+            if (!watching)
             {
                 Settings.Changed += OnSettingsChanged;
-                _watchingSettings = true;
+                watching = true;
+                string result = Path.Combine(UpdateFolder, "result.txt");
+                try { if (File.Exists(result)) previousResult = File.ReadAllText(result); }
+                catch (IOException error) { Logger.LogWarning("Could not read the previous update result: " + error.Message); }
             }
-            if (!CheckForUpdates)
-            {
-                CancelCheck();
-                if (!_offLogged) Logger.LogInfo("Update checking is turned off in the settings");
-                _offLogged = true;
-                return;
-            }
-            _offLogged = false;
-            if (_checkCancellation != null) return;
-
-            _checkCancellation = new CancellationTokenSource();
-            CancellationToken cancellation = _checkCancellation.Token;
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(StartDelayMs, cancellation);
-                    await CheckForUpdatesAsync(cancellation);
-                }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"Update check failed: {ex.Message}");
-                }
-            });
+            if (!CheckForUpdates) { CancelCheck(); return; }
+            if (checkCancellation != null) return;
+            checkCancellation = new CancellationTokenSource();
+            _ = CheckAsync(checkCancellation.Token, true);
         }
 
         public static void Shutdown()
         {
-            if (_watchingSettings) Settings.Changed -= OnSettingsChanged;
-            _watchingSettings = false;
+            if (watching) Settings.Changed -= OnSettingsChanged;
+            watching = false;
             CancelCheck();
+            downloadCancellation?.Cancel();
         }
-
         private static void OnSettingsChanged(string key)
         {
             if (Settings.Affects(key, CheckForUpdatesKey)) ScheduleCheck();
         }
-
         private static void CancelCheck()
         {
-            if (_checkCancellation == null) return;
-            _checkCancellation.Cancel();
-            _checkCancellation.Dispose();
-            _checkCancellation = null;
+            checkCancellation?.Cancel();
+            checkCancellation?.Dispose();
+            checkCancellation = null;
+            checking = false;
         }
 
-        private static async Task CheckForUpdatesAsync(CancellationToken cancellation)
+        public static void BuildPage(SettingsPage page)
         {
-            try
+            page.Title("SpiderSurge updates");
+            page.Line("Installed: " + SpiderSurgeMod.Version);
+            page.Paragraph("<noparse>" + status + "</noparse>");
+            if (!string.IsNullOrEmpty(previousResult)) page.Note("<noparse>Previous update: " + previousResult + "</noparse>");
+            page.Note("Updates install after you close the game. Launch it again after installation finishes. Settings and progress are kept. Everyone in an online lobby needs the same version.");
+            if (!checking && !downloading && !staged)
+                page.Button("Check now", () => { CancelCheck(); checkCancellation = new CancellationTokenSource(); _ = CheckAsync(checkCancellation.Token, false); });
+            if (release != null)
             {
-                var latestVersion = await GetLatestVersionAsync(cancellation);
-                cancellation.ThrowIfCancellationRequested();
-                Logger.LogInfo($"Latest version: {latestVersion}, current version: {CurrentVersion}");
-
-                if (IsNewerVersion(latestVersion, CurrentVersion))
-                {
-                    Logger.LogInfo("A new version of SpiderSurge is available!");
-                    MainThread.Enqueue(() =>
-                    {
-                        if (!cancellation.IsCancellationRequested) ShowUpdatePrompt(latestVersion);
-                    });
-                }
-            }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Failed to check for SpiderSurge updates: {ex.Message}");
-            }
-        }
-
-        private static async Task<string> GetLatestVersionAsync(CancellationToken cancellation)
-        {
-            using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
-            using (var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl))
-            {
-                timeout.CancelAfter(RequestTimeoutMs);
-                request.Headers.UserAgent.ParseAdd("SpiderSurge");
-                request.Headers.Accept.ParseAdd("application/vnd.github+json");
-                using (var response = await _httpClient.SendAsync(request, timeout.Token))
-                {
-                    response.EnsureSuccessStatusCode();
-                    var match = TagName.Match(await response.Content.ReadAsStringAsync());
-                    if (!match.Success) throw new FormatException("the latest release has no tag name");
-                    return match.Groups[1].Value.Trim();
-                }
-            }
-        }
-
-        // A dev build (0.4.1-dev.12) counts as older than the release with the same number
-        private static bool IsNewerVersion(string latestVersion, string currentVersion)
-        {
-            try
-            {
-                var latest = new Version(ReleaseNumber(latestVersion));
-                var current = new Version(ReleaseNumber(currentVersion));
-                return latest > current || (latest == current && IsDevBuild(currentVersion) && !IsDevBuild(latestVersion));
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Failed to compare versions: {ex.Message}");
-                return false;
-            }
-        }
-
-        private static string ReleaseNumber(string version) => version.Split('-', '+')[0];
-
-        private static bool IsDevBuild(string version) => version.Contains("-");
-
-        private static void ShowUpdatePrompt(string latestVersion)
-        {
-            if (!CheckForUpdates)
-            {
-                return;
-            }
-
-            var downloadUrl = string.Format(DownloadUrl, latestVersion);
-            Logger.LogInfo($"Download URL: {downloadUrl}");
-
-            Announcer.TwoOptionsPopup(
-                $"SpiderSurge v{latestVersion} is available!\nCurrent version: {CurrentVersion}\nWould you like to open the download page?",
-                "Yes", "No",
-                () =>
+                page.Button("Release notes", () => OpenUrl(release.PageUrl));
+                if (!downloading && !staged && IsNewerVersion(release.Version, SpiderSurgeMod.Version))
                 {
                     try
                     {
-                        Logger.LogInfo("Opening SpiderSurge download page...");
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = downloadUrl,
-                            UseShellExecute = true
-                        });
+                        release.InstallableAsset();
+                        page.Button("Download and install on exit", () => StartDownload(release));
+                    }
+                    catch (InvalidDataException error) { page.Note(error.Message); }
+                }
+            }
+            if (downloading) page.Button("Cancel download", () => downloadCancellation?.Cancel());
+            page.Button("Open releases page", () => OpenUrl(ReleasesUrl));
+        }
 
-                        Announcer.InformationPopup(
-                            "To update:\n" +
-                            "1. Download the new SpiderSurge.dll\n" +
-                            "2. Replace the old file in your <Game_Path>/Silk/Mods folder\n" +
-                            "3. Restart SpiderHeck"
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"Failed to open download page: {ex.Message}");
-                        Announcer.InformationPopup("Could not open the download page automatically. Please visit:\n" + ReleasesUrl);
-                    }
-                },
-                () =>
+        private static async Task CheckAsync(CancellationToken cancellation, bool automatic)
+        {
+            if (checking) return;
+            checking = true;
+            if (!automatic) SetStatus("Checking for updates...");
+            try
+            {
+                if (automatic) await Task.Delay(15000, cancellation);
+                using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
+                using (var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl))
                 {
-                    Logger.LogInfo("Update declined by user.");
-                },
-                null
-            );
+                    timeout.CancelAfter(10000);
+                    request.Headers.UserAgent.ParseAdd("SpiderSurge");
+                    request.Headers.Accept.ParseAdd("application/vnd.github+json");
+                    using (var response = await Client.SendAsync(request, timeout.Token))
+                    {
+                        response.EnsureSuccessStatusCode();
+                        using (var stream = await response.Content.ReadAsStreamAsync())
+                        {
+                            var found = UpdatePackage.Read<UpdateRelease>(stream);
+                            if (found.Draft || found.Prerelease || !Version.TryParse(found.Version, out _)) throw new InvalidDataException("No stable release was returned.");
+                            cancellation.ThrowIfCancellationRequested();
+                            MainThread.Enqueue(() =>
+                            {
+                                if (cancellation.IsCancellationRequested) return;
+                                release = found;
+                                bool newer = IsNewerVersion(found.Version, SpiderSurgeMod.Version);
+                                status = newer ? "SpiderSurge " + found.Version + " is available." : "You are up to date (or running a newer development build).";
+                                SettingsPage.RefreshOpen();
+                                if (automatic && newer && LobbyController.inLobby)
+                                    Announcer.TwoOptionsPopup("SpiderSurge " + found.Version + " is available. Review the update?", "View update", "Later",
+                                        () => SettingsPage.Show(SettingsPage.MainPage, "settings", "advanced", "updates"), () => { }, null);
+                            });
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception error) { SetStatus("Could not check for updates: " + error.Message + " You can try again."); }
+            finally { if (!cancellation.IsCancellationRequested) checking = false; MainThread.Enqueue(SettingsPage.RefreshOpen); }
+        }
+
+        private static void StartDownload(UpdateRelease selected)
+        {
+            if (downloading || staged) return;
+            downloading = true;
+            downloadCancellation = new CancellationTokenSource();
+            downloadCancellation.CancelAfter(TimeSpan.FromMinutes(3));
+            var cancellation = downloadCancellation.Token;
+            using var process = Process.GetCurrentProcess();
+            var request = new UpdateRequest { Target = InstalledPath, ProcessId = process.Id, ProcessStart = process.StartTime.ToUniversalTime().Ticks, Version = selected.Version };
+            _ = DownloadAsync(selected, request, cancellation);
+        }
+
+        private static async Task DownloadAsync(UpdateRelease selected, UpdateRequest install, CancellationToken cancellation)
+        {
+            SetStatus("Downloading SpiderSurge " + selected.Version + "...");
+            try
+            {
+                var asset = selected.InstallableAsset();
+                string folder = UpdateFolder;
+                Directory.CreateDirectory(folder);
+                string pending = Path.Combine(folder, "download.pending");
+                using (var lease = new FileStream(Path.Combine(folder, "update.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                {
+                    install.OriginalHash = UpdatePackage.Hash(install.Target);
+                    install.Hash = asset.Digest.Substring(7);
+                    using (var response = await Client.GetAsync(asset.Url, HttpCompletionOption.ResponseHeadersRead, cancellation))
+                    {
+                        response.EnsureSuccessStatusCode();
+                        using (var source = await response.Content.ReadAsStreamAsync())
+                        using (var file = File.Create(pending))
+                        {
+                            byte[] buffer = new byte[81920];
+                            long count = 0;
+                            int read;
+                            while ((read = await source.ReadAsync(buffer, 0, buffer.Length, cancellation)) > 0)
+                            {
+                                count += read;
+                                if (count > asset.Size || count > UpdatePackage.MaxBytes) throw new InvalidDataException("Download exceeds the expected size.");
+                                await file.WriteAsync(buffer, 0, read, cancellation);
+                            }
+                            if (count != asset.Size) throw new InvalidDataException("Download is incomplete.");
+                        }
+                    }
+                    UpdatePackage.Verify(pending, install.Hash, install.Version);
+                    string helper = Path.Combine(folder, "SpiderSurge.UpdateInstaller.exe");
+                    using (var resource = typeof(ModUpdater).Assembly.GetManifestResourceStream("SpiderSurge.UpdateInstaller.exe"))
+                    using (var output = File.Create(helper)) resource.CopyTo(output);
+                    cancellation.ThrowIfCancellationRequested();
+                    UpdatePackage.Write(Path.Combine(folder, "request.json"), install);
+                    File.Delete(Path.Combine(folder, "result.txt"));
+                    using (var worker = Process.Start(new ProcessStartInfo(helper) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden, WorkingDirectory = folder }))
+                        if (worker == null) throw new IOException("The installer could not start.");
+                    staged = true;
+                }
+                SetStatus("Download verified. Close SpiderHeck normally to install " + selected.Version + ", then launch it again. The previous DLL will be kept under Disabled/SpiderSurgeUpdate/previous.dll.");
+            }
+            catch (OperationCanceledException) { SetStatus("Download cancelled. Your installed mod has not changed."); }
+            catch (Exception error) { SetStatus("Update could not be prepared: " + error.Message + " Your installed mod has not changed. Retry or open the release page."); }
+            finally { downloading = false; downloadCancellation?.Dispose(); downloadCancellation = null; MainThread.Enqueue(SettingsPage.RefreshOpen); }
+        }
+
+        private static void SetStatus(string value)
+        {
+            Logger.LogInfo("[Updater] " + value);
+            MainThread.Enqueue(() => { status = value; SettingsPage.RefreshOpen(); });
+        }
+        internal static bool IsNewerVersion(string latest, string current)
+        {
+            if (!Version.TryParse(latest.Split('-', '+')[0], out var next) || !Version.TryParse(current.Split('-', '+')[0], out var installed)) return false;
+            return next > installed || next == installed && current.Contains("-") && !latest.Contains("-");
+        }
+        private static void OpenUrl(string url)
+        {
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception error) { SetStatus("Could not open the release page: " + error.Message); }
         }
     }
 }

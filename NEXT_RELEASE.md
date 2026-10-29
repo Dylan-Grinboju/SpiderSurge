@@ -162,3 +162,7 @@ To release, first replace `README.md` with this file, without the note at the to
 ## Other Mods
 
 - **[InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends)**: Raises the player limit to 32. Teams works with it.
+
+### Installing updates
+
+Open Mods > SpiderSurge > Settings > Advanced > Updates to check for a published release, read its release notes, or download it. Downloads are optional and cancellable. The mod verifies the release asset's size, SHA-256 digest and assembly identity, then a bundled Windows helper waits for SpiderHeck to close before replacing the DLL. Launch the game again after installation finishes. Settings and progress are untouched. The old DLL is retained at Silk/Mods/Disabled/SpiderSurgeUpdate/previous.dll; to recover it, close the game and copy it over the installed SpiderSurge.dll. The Updates page reports the previous installation outcome. Releases without verified asset metadata use the manual release-page route. Every online player must update to the same version.

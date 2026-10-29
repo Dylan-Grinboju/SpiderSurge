@@ -389,6 +389,7 @@ namespace SpiderSurge.Common
             if (Current == "parts") { AddParts(); return; }
             if (Current == "about") { AddAbout(); return; }
             if (Current == "support") { SupportPage.Build(this); return; }
+            if (Current == "updates") { ModUpdater.BuildPage(this); return; }
             if (Current == "history" || Current.StartsWith("history.", StringComparison.Ordinal)) { MatchHistoryPage.Build(this); return; }
             if (Current == AchievementsHub) { AddAchievements(); return; }
             if (Current == "confirm")
@@ -453,6 +454,7 @@ namespace SpiderSurge.Common
             Title("Advanced");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
             Note("Check for a newer SpiderSurge release at startup.");
+            Button("Updates", () => Open("updates"));
             Button("Mod parts and game fixes", () => Open("parts"));
             Button("Reload the settings file", ReloadFile);
             Note($"<noparse>{Settings.FilePath}</noparse>");
