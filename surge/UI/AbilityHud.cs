@@ -21,6 +21,7 @@ namespace SpiderSurge
         private string status;
         private int lastSeconds = -1;
         private int lastState = -1;
+        private string lastRestriction;
         private float readyAt = -10f;
 
         public static void Ready(BaseAbility tracked)
@@ -91,7 +92,8 @@ namespace SpiderSurge
             if (player == null || !unlocked) return exists;
             bool alive = exists && ability.IsPlayerAlive();
             bool active = alive && ability.IsActive();
-            bool ready = alive && !active && !ability.IsOnCooldown();
+            bool available = alive && ability.HasAvailableAction;
+            bool ready = available && !active && !ability.IsOnCooldown();
             if (ModConfig.IndicatorShowOnlyWhenReady && !ready) return true;
 
             Hud.EnsureFonts();
@@ -105,13 +107,16 @@ namespace SpiderSurge
             }
             string name = Players.NameOf(player);
             abilityName ??= PerksManager.Instance.GetDisplayName(perkName);
-            int state = !alive ? 0 : active ? 1 : ready ? 2 : 3;
+            string restriction = alive ? ability.ActionRestriction : "";
+            int state = !alive ? 0 : active ? 1 : !available ? 4 : ready ? 2 : 3;
             int seconds = !alive ? 0 : Mathf.CeilToInt(active ? ability.ActiveRemaining : ability.CooldownRemaining);
-            if (state != lastState || seconds != lastSeconds)
+            if (state != lastState || seconds != lastSeconds || restriction != lastRestriction)
             {
-                status = !alive ? "Down" : active ? "Active  " + Hud.Number(seconds) + "s" : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
+                status = !alive ? "Down" : active ? "Active  " + Hud.Number(seconds) + "s" : !available ? restriction : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
+                if (available && restriction.Length > 0) status = restriction + " · " + status;
                 lastState = state;
                 lastSeconds = seconds;
+                lastRestriction = restriction;
             }
 
             int slot = 0;
@@ -127,8 +132,8 @@ namespace SpiderSurge
             float x = Screen.width - 16f * scale - (column + 1) * (width + gap);
             float y = Screen.height - bottom - (rows - row) * (height + gap);
             var rect = new Rect(x, y, width, height);
-            Color color = !alive ? Hud.Dim : active ? activeColor : ready ? readyColor : cooldownColor;
-            float progress = !alive ? 0f : active ? ability.ActiveProgress : ability.CooldownProgress;
+            Color color = !alive || !available && !active ? Hud.Dim : active ? activeColor : ready ? readyColor : cooldownColor;
+            float progress = !alive || !available && !active ? 0f : active ? ability.ActiveProgress : ability.CooldownProgress;
             Hud.Fill(rect, Hud.Ink);
             Hud.Fill(new Rect(x, y, 3f * scale, height), Hud.Readable(player.playerColor.Value));
             Hud.Resize(titleStyle, 14, scale);

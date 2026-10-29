@@ -223,3 +223,5 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 - More abilities and ults
 - More enemies
 - Even harder mode?
+
+Ability indicators respect challenge restrictions: the compact HUD names the allowed action or shows that abilities are disabled, and blocked input plays the normal rate-limited unavailable sound.

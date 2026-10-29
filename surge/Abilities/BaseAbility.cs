@@ -295,6 +295,7 @@ namespace SpiderSurge
 
             if (!ChallengeController.CanActivate(ultimate))
             {
+                PlayAbilityNotReadySound();
                 return;
             }
 
@@ -457,6 +458,13 @@ namespace SpiderSurge
         {
             return HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
         }
+
+        public bool HasAvailableAction => ChallengeController.CanActivate(false)
+            || IsUltimateUnlocked() && ChallengeController.CanActivate(true);
+
+        public string ActionRestriction => ChallengeController.Pending ? "Choose a challenge" :
+            !ChallengeController.CanActivate(false) ? (HasAvailableAction ? "Ultimate only" : "Disabled by challenge") :
+            IsUltimateUnlocked() && !ChallengeController.CanActivate(true) ? "Regular ability only" : "";
 
         public void RegisterWithInputInterceptor()
         {
