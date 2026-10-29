@@ -23,6 +23,14 @@ jobs:
       - name: Build
         run: dotnet build SpiderSurge.csproj -c Release
 
+      - name: Test update verification and installation
+        shell: pwsh
+        run: |
+          dotnet build tests/UpdaterTests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & tests/bin/Release/net472/UpdaterTests.exe bin/Release/net472/SpiderSurge.dll updater/bin/Release/net472/SpiderSurge.UpdateInstaller.exe
+          exit $LASTEXITCODE
+
       - name: Check the version
         shell: pwsh
         env:
