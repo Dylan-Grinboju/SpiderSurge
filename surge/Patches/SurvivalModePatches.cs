@@ -219,8 +219,15 @@ namespace SpiderSurge
             var result = new List<CodeInstruction>();
             int countPatch = 0, intervalPatch = 0, pollPatch = 0, burstPatch = 0;
             int stage = 0;
+            int spawnCalls = 0;
+            MethodInfo spawn = AccessTools.Method(typeof(EnemySpawner), nameof(EnemySpawner.SpawnEnemy));
             foreach (CodeInstruction instruction in instructions)
             {
+                if (instruction.Calls(spawn) && ++spawnCalls == 1)
+                {
+                    instruction.opcode = System.Reflection.Emit.OpCodes.Call;
+                    instruction.operand = AccessTools.Method(typeof(SurgePainLevels), nameof(SurgePainLevels.SpawnWaveEnemy));
+                }
                 result.Add(instruction);
                 if (stage == 0 && instruction.Calls(enemiesAlive)) stage = 1;
                 else if (stage == 1 && instruction.IsStloc()) stage = 2;
@@ -246,7 +253,7 @@ namespace SpiderSurge
                     burstPatch++;
                 }
             }
-            if (countPatch != 1 || intervalPatch != 1 || pollPatch != 1 || burstPatch != 1)
+            if (countPatch != 1 || intervalPatch != 1 || pollPatch != 1 || burstPatch != 1 || spawnCalls != 3)
                 throw new InvalidOperationException("SurvivalMode.SpawnEnemies no longer matches Surge's capacity and pacing patch");
             return result;
         }

@@ -28,6 +28,7 @@ namespace SpiderSurge
             }
 
             alive = Mathf.Max(0, alive - Enemies.SpawnerBrain.CountHatchlingsAlive());
+            if (SurgePainLevels.ActiveEight) alive = (alive + 1) / 2;
             int threshold = Consts.Values.Enemies.WavesPerCapacityIncrease;
             int capacity = 2 + wave / threshold;
             float fraction = (wave % threshold) / (float)threshold;

@@ -28,6 +28,7 @@ namespace SpiderSurge
         internal static void SelectMode(bool surge)
         {
             IsModeEnabled = surge;
+            SurgePainLevels.Refresh(PainLevelsScreen.instance);
             SurgeNet.MarkDirty();
         }
 
@@ -63,7 +64,7 @@ namespace SpiderSurge
             if (active)
             {
                 RunUsedSurge = true;
-                NoAbilitiesThisRun = IsActive && ModConfig.NoAbilities;
+                NoAbilitiesThisRun = IsActive && ModConfig.NoAbilities && !SurgePainLevels.SelectedEight;
             }
             SurgeNet.MarkDirty();
         }

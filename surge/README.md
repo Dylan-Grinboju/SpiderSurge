@@ -221,3 +221,7 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 - More abilities and ults
 - More enemies
 - Even harder mode?
+
+## Pain Level 8
+
+Surge adds Pain 8 after Pain 7, with the same unlock-wave requirement used by Pain 7 (earned on Surge Pain 7). It retains Pain 7's modifiers, grants the chosen ability and its ultimate before wave 1, and spawns two enemies for every normal wave enemy with doubled enemy capacity. Friendly summons and Cocoon hatchlings are not duplicated. The No abilities setting does not apply to Pain 8. Scores are separate from Pain 7 and vanilla Survival; vanilla still has seven pain levels.

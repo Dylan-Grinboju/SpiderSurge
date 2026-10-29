@@ -184,6 +184,7 @@ namespace SpiderSurge
         {
             if (!IsChoosing || modifier?.data == null || !PerksManager.Instance.IsAbilityPerk(modifier.data.key)) return;
             ModifierManager.instance.SetModLevel(modifier, GameMode.Wave, 1);
+            SurgePainLevels.GrantStartingUltimate();
             PerksManager.Instance.IsFirstNormalPerkSelection = false;
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChosen(modifier));
             if (StatsMod.GameSessionManager.Instance?.IsActive == true)
