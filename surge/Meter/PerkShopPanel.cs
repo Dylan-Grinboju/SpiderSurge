@@ -23,6 +23,10 @@ namespace SpiderSurge
     {
         private const string PanelName = "SurgeShop";
         private const float HeaderHeight = 24f;
+        private const float EntryInset = 14f;
+        private const float TitleTop = 10f;
+        private const float TitleHeight = 22f;
+        private const float IconGap = 10f;
 
         private class Entry
         {
@@ -37,6 +41,7 @@ namespace SpiderSurge
 
         private readonly List<Entry> _entries = new List<Entry>();
         private TMP_Text _header;
+        private ChaosIcon _headerIcon;
         private SurvivalModeHud _hud;
         private Vector2 _viewSize;
         private Entry _selected;
@@ -210,8 +215,7 @@ namespace SpiderSurge
             PlaceTop(_header.rectTransform, 0f, HeaderHeight, 0f);
             _header.fontSize = 14f;
             _header.alignment = TextAlignmentOptions.Center;
-            ChaosIcon.Add(_header.transform, new Vector2(12, 0), 18, Hud.Warm, new Vector2(0, .5f));
-            _header.margin = new Vector4(26, 0, 0, 0);
+            _headerIcon = ChaosIcon.Add(_header.transform, Vector2.zero, 18, Hud.Warm);
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
             var note = CloneText(prefabCard.perkDescriptionText, "Shared wallet explanation");
@@ -225,8 +229,6 @@ namespace SpiderSurge
         private void Populate(float entryHeight)
         {
             float y = M.WalletBlockHeight;
-            float iconSize = Mathf.Min(entryHeight - 16f, 56f);
-            float textLeft = 8f + iconSize + 10f;
             foreach (ShopItem item in PerkShop.Offer)
             {
                 GameObject entryObject = Instantiate(_hud.perkCardPrefab, transform);
@@ -258,8 +260,6 @@ namespace SpiderSurge
                     iconRect.anchorMin = new Vector2(0f, 0.5f);
                     iconRect.anchorMax = new Vector2(0f, 0.5f);
                     iconRect.pivot = new Vector2(0f, 0.5f);
-                    iconRect.anchoredPosition = new Vector2(8f, 0f);
-                    iconRect.sizeDelta = new Vector2(iconSize, iconSize);
                     entry.Icon.sprite = IconLoader.GetIcon(PerkShop.IconOf(item));
                     entry.Icon.color = Color.white;
                     entry.Icon.preserveAspect = true;
@@ -269,7 +269,7 @@ namespace SpiderSurge
                     SettingsPage.SetText(entry.Title, "");
                     var titleRect = entry.Title.rectTransform;
                     titleRect.pivot = new Vector2(0.5f, 0.5f);
-                    SettingsPage.Stretch(titleRect, new Vector2(textLeft, entryHeight - 30f), new Vector2(-6f, -6f));
+                    SettingsPage.Stretch(titleRect, Vector2.zero, Vector2.zero);
                     entry.Currency = ChaosIcon.Add(entry.Title.transform, new Vector2(7, 0), 13, Hud.Warm, new Vector2(0, .5f));
                     entry.Title.alignment = TextAlignmentOptions.MidlineLeft;
                     entry.Title.enableWordWrapping = false;
@@ -283,7 +283,7 @@ namespace SpiderSurge
                     SettingsPage.SetText(entry.Description, "");
                     var descriptionRect = entry.Description.rectTransform;
                     descriptionRect.pivot = new Vector2(0.5f, 0.5f);
-                    SettingsPage.Stretch(descriptionRect, new Vector2(textLeft, 6f), new Vector2(-6f, -32f));
+                    SettingsPage.Stretch(descriptionRect, Vector2.zero, Vector2.zero);
                     entry.Description.enableAutoSizing = true;
                     entry.Description.fontSizeMin = M.MinLabelFontSize;
                     entry.Description.fontSizeMax = 12f;
@@ -437,6 +437,7 @@ namespace SpiderSurge
             if (_header != null)
             {
                 _header.text = $"TEAM CHAOS <color={Consts.Formatting.ColorGold}>{points}</color>";
+                ChaosIcon.CenterBefore(_headerIcon, _header);
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -479,19 +480,29 @@ namespace SpiderSurge
             RefreshBuy(selectedCan);
         }
 
+        // Centers the title and description around the middle and keeps them inside the card's frame; a bought perk shows a small icon beside its name and the description across the card
         private static void LayoutEntry(Entry entry, bool revealed)
         {
             if (entry.Button == null) return;
             float height = ((RectTransform)entry.Button.transform).rect.height;
-            float iconSize = revealed ? 24f : Mathf.Min(height - 16f, 56f);
-            float textLeft = 8f + iconSize + 10f;
+            float titleBottom = Mathf.Min(height / 2f + 1f, height - TitleTop - TitleHeight);
+            float iconSize = revealed ? TitleHeight : Mathf.Min(height - 2f * EntryInset, 52f);
+            float textLeft = EntryInset + iconSize + IconGap;
             if (entry.Icon != null)
             {
                 entry.Icon.rectTransform.sizeDelta = new Vector2(iconSize, iconSize);
-                entry.Icon.rectTransform.anchoredPosition = new Vector2(8f, revealed ? height / 2f - 18f : 0f);
+                entry.Icon.rectTransform.anchoredPosition = new Vector2(EntryInset, revealed ? titleBottom + TitleHeight / 2f - height / 2f : 0f);
             }
-            if (entry.Title != null) entry.Title.rectTransform.offsetMin = new Vector2(textLeft, height - 30f);
-            if (entry.Description != null) entry.Description.rectTransform.offsetMin = new Vector2(revealed ? 8f : textLeft, 6f);
+            if (entry.Title != null)
+            {
+                entry.Title.rectTransform.offsetMin = new Vector2(textLeft, titleBottom);
+                entry.Title.rectTransform.offsetMax = new Vector2(-EntryInset, titleBottom + TitleHeight - height);
+            }
+            if (entry.Description != null)
+            {
+                entry.Description.rectTransform.offsetMin = new Vector2(revealed ? EntryInset : textLeft, EntryInset - 4f);
+                entry.Description.rectTransform.offsetMax = new Vector2(-EntryInset, titleBottom - 2f - height);
+            }
         }
 
         private static string PurchasedDescription(Modifier perk)

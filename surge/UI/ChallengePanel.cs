@@ -187,6 +187,8 @@ namespace SpiderSurge
     public static class MapBonusLabels
     {
         private const string ObjectName = "ChaosMapBonus";
+        // The card leaves this much room between the map preview and its bottom frame
+        private const float StripHeight = 17f;
 
         public static void Refresh()
         {
@@ -197,30 +199,30 @@ namespace SpiderSurge
             for (int i = 0; i < cards.Count; i++)
             {
                 var card = cards[i];
-                var existing = card.transform.Find(ObjectName);
+                var existing = card.mapImage != null ? card.mapImage.transform.Find(ObjectName) : null;
                 bool show = i == slot;
                 if (!show && existing == null) continue;
                 if (existing == null)
                 {
-                    if (card.mapNameText == null) continue;
-                    var text = UnityEngine.Object.Instantiate(card.mapNameText.gameObject, card.transform).GetComponent<TMP_Text>();
+                    if (card.mapNameText == null || card.mapImage == null) continue;
+                    var text = UnityEngine.Object.Instantiate(card.mapNameText.gameObject, card.mapImage.transform).GetComponent<TMP_Text>();
                     text.name = ObjectName;
                     SettingsPage.SetText(text, $"<color={Consts.Formatting.ColorGold}>+1 Chaos</color>");
                     text.raycastTarget = false;
-                    ChaosIcon.Add(text.transform, new Vector2(12, 0), 16, Hud.Warm, new Vector2(0, .5f));
-                    text.margin = new Vector4(26, 0, 0, 0);
+                    var icon = ChaosIcon.Add(text.transform, Vector2.zero, 16, Hud.Warm);
                     text.color = Color.white;
-                    text.fontSize = 14;
+                    text.fontSize = 13;
                     text.enableAutoSizing = false;
                     text.alignment = TextAlignmentOptions.Center;
                     text.enableWordWrapping = false;
+                    ChaosIcon.CenterBefore(icon, text);
                     var rect = text.rectTransform;
                     rect.localScale = Vector3.one;
                     rect.anchorMin = new Vector2(0, 0);
                     rect.anchorMax = new Vector2(1, 0);
-                    rect.pivot = new Vector2(.5f, 0);
-                    rect.anchoredPosition = new Vector2(0, 8);
-                    rect.sizeDelta = new Vector2(-8, 24);
+                    rect.pivot = new Vector2(.5f, .5f);
+                    rect.anchoredPosition = new Vector2(0, -StripHeight / 2f);
+                    rect.sizeDelta = new Vector2(0, StripHeight);
                     existing = rect;
                 }
                 existing.gameObject.SetActive(show);

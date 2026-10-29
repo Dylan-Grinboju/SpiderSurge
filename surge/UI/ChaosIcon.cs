@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +16,17 @@ namespace SpiderSurge
             icon.rectTransform.sizeDelta = new Vector2(size, size);
             icon.rectTransform.anchoredPosition = position;
             return icon;
+        }
+
+        // Centers the icon and a centered text as one group; call again whenever the text changes
+        public static void CenterBefore(ChaosIcon icon, TMP_Text text, float gap = 6f)
+        {
+            float size = icon.rectTransform.sizeDelta.x;
+            text.margin = Vector4.zero;
+            float width = text.GetPreferredValues(text.text, float.PositiveInfinity, float.PositiveInfinity).x;
+            text.margin = new Vector4(size + gap, 0, 0, 0);
+            icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(.5f, .5f);
+            icon.rectTransform.anchoredPosition = new Vector2(-width / 2f - gap / 2f, 0);
         }
 
         public override void OnPopulateMesh(VertexHelper mesh)
