@@ -27,6 +27,12 @@ internal static class UpdaterTests
         string helper = Path.GetFullPath(args[1]);
         string version = AssemblyName.GetAssemblyName(dll).Version.ToString(3);
         string hash = UpdatePackage.Hash(dll);
+        using (var resource = Assembly.LoadFile(dll).GetManifestResourceStream("SpiderSurge.UpdateInstaller.exe"))
+        {
+            Check(resource != null, "single mod DLL contains the installer helper");
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+                Check(BitConverter.ToString(sha.ComputeHash(resource)).Replace("-", "").ToLowerInvariant() == UpdatePackage.Hash(helper), "embedded installer matches the tested executable");
+        }
         var asset = new UpdateAsset { Name = "SpiderSurge.dll", Size = new FileInfo(dll).Length, State = "uploaded", Digest = "sha256:" + hash,
             Url = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/download/v" + version + "/SpiderSurge.dll" };
         var release = new UpdateRelease { Tag = "v" + version, Assets = new[] { asset } };
