@@ -48,7 +48,7 @@ namespace SpiderSurge
         // Keep the selected perk, but wait for the challenge decision before loading its map.
         public static void LoadChosenMap(LevelController controller, GameLevel level, float delay, string nameOverride, string authorName)
         {
-            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing)
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing || UnityEngine.Random.value >= .5f)
             {
                 controller.LoadLevelWithTransition(level, delay, nameOverride, authorName);
                 return;
