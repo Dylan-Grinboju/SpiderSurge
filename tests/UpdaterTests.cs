@@ -89,6 +89,14 @@ internal static class UpdaterTests
             Check(UpdatePackage.Hash(target) == original, "original retained after failed verification");
             Reject(() => Program.Install(folder, target, Request(target, new string('0', 64), hash, version)), "manual install change blocks replacement");
 
+            folder = Fixture(Path.Combine(root, "removed"), dll, out target);
+            string oldBackup = Path.Combine(folder, "previous.dll");
+            File.WriteAllText(oldBackup, "backup from an earlier update");
+            string oldBackupHash = UpdatePackage.Hash(oldBackup);
+            File.Delete(target);
+            Reject(() => Program.Install(folder, target, Request(target, original, hash, version)), "removed installed mod blocks replacement");
+            Check(!File.Exists(target) && UpdatePackage.Hash(oldBackup) == oldBackupHash, "removing the mod does not restore or consume an earlier backup");
+
             folder = Fixture(Path.Combine(root, "exit"), dll, out target);
             using (var game = Stage(folder, helper, Request(target, original, hash, version)))
             using (var worker = StartInstaller(folder))

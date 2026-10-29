@@ -63,17 +63,26 @@ internal static class Program
         string backup = Path.Combine(folder, "previous.dll");
         for (int attempt = 0; ; attempt++)
         {
+            bool replacing = false;
             try
             {
                 UpdatePackage.Verify(staged, request.Hash, request.Version);
-                if (!string.Equals(UpdatePackage.Hash(target), request.OriginalHash, StringComparison.OrdinalIgnoreCase))
+                string installedHash;
+                try { installedHash = UpdatePackage.Hash(target); }
+                catch (FileNotFoundException error)
+                {
+                    throw new InvalidDataException("The installed mod was removed after the download; it was left untouched.", error);
+                }
+                if (!string.Equals(installedHash, request.OriginalHash, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The installed mod changed after the download; it was left untouched.");
+                replacing = true;
                 File.Replace(staged, target, backup);
                 return;
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                if (!File.Exists(target) && File.Exists(backup)) File.Move(backup, target);
+                if (replacing && !File.Exists(target) && File.Exists(backup)
+                    && string.Equals(UpdatePackage.Hash(backup), request.OriginalHash, StringComparison.OrdinalIgnoreCase)) File.Move(backup, target);
                 if (attempt >= 59) throw;
                 Thread.Sleep(1000);
             }

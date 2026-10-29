@@ -15,7 +15,8 @@ namespace SpiderSurge.Common
     {
         public const string CheckForUpdatesKey = "general.checkForUpdates";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
-        private const string RecentReleasesUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases?per_page=30";
+        private const string ReleasesApiUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases";
+        private const int ReleasesPerPage = 100;
         private const string IdleStatus = "Check for a published SpiderSurge release.";
         private const int StartDelayMs = 15000;
         private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10), DownloadTimeout = TimeSpan.FromMinutes(3);
@@ -153,22 +154,32 @@ namespace SpiderSurge.Common
         private static async Task<UpdateRelease> FetchLatest(CancellationToken cancellation)
         {
             using (var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
-            using (var request = new HttpRequestMessage(HttpMethod.Get, RecentReleasesUrl))
             {
                 limit.CancelAfter(CheckTimeout);
-                request.Headers.UserAgent.ParseAdd("SpiderSurge");
-                request.Headers.Accept.ParseAdd("application/vnd.github+json");
                 try
                 {
-                    using (var response = await Cancellable(Client.SendAsync(request, limit.Token), limit.Token))
+                    var releases = new List<UpdateRelease>();
+                    for (int page = 1; ; page++)
                     {
-                        response.EnsureSuccessStatusCode();
-                        using (var stream = await response.Content.ReadAsStreamAsync())
+                        using (var request = new HttpRequestMessage(HttpMethod.Get, ReleasesApiUrl + "?per_page=" + ReleasesPerPage + "&page=" + page))
                         {
-                            return UpdateRelease.Newest(UpdatePackage.Read<UpdateRelease[]>(stream), OnBeta)
-                                ?? throw new InvalidDataException(OnBeta ? "No stable or beta release was found." : "No stable release was found.");
+                            request.Headers.UserAgent.ParseAdd("SpiderSurge");
+                            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+                            using (var response = await Cancellable(Client.SendAsync(request, limit.Token), limit.Token))
+                            {
+                                response.EnsureSuccessStatusCode();
+                                using (var stream = await Cancellable(response.Content.ReadAsStreamAsync(), limit.Token))
+                                {
+                                    var batch = UpdatePackage.Read<UpdateRelease[]>(stream)
+                                        ?? throw new InvalidDataException("GitHub returned an invalid releases list.");
+                                    releases.AddRange(batch);
+                                    if (batch.Length < ReleasesPerPage) break;
+                                }
+                            }
                         }
                     }
+                    return UpdateRelease.Newest(releases, OnBeta)
+                        ?? throw new InvalidDataException(OnBeta ? "No stable or beta release was found." : "No stable release was found.");
                 }
                 catch (Exception error) when (limit.IsCancellationRequested && !(error is OperationCanceledException))
                 {
@@ -223,8 +234,10 @@ namespace SpiderSurge.Common
                     installLease = lease;
                     downloadCancellation = null;
                     downloadProblem = problem;
+                    bool cancelled = cancel.IsCancellationRequested;
                     cancel.Dispose();
-                    SetStatus(outcome);
+                    if (staged && cancelled) CancelInstall();
+                    else SetStatus(outcome);
                 });
             });
         }
