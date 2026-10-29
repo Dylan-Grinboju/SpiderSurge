@@ -88,6 +88,14 @@ The controls guide shows each local controller's current ability binding. A succ
 4. Launch the game.
 5. Play Surge from its platform above and left of Wave Survival in the lobby. To play team versus, turn on **Team versus** on the versus setup page in the lobby.
 
+Later versions can be installed from the game; see [Updating](#updating).
+
+## Updating
+
+Open **Mods > SpiderSurge > Settings > Advanced > Updates** to check for a published release, read its release notes, or download it. With **Check for updates** on, the mod also checks shortly after the game starts and offers a new release when you are in the lobby; **Install now** there downloads it without opening the settings, and the popup stays open until the download is done or cancelled. Downloads are optional. You can cancel a download, and you can cancel a downloaded update until you close the game. The mod checks the download's size, SHA-256 digest and assembly identity, then a bundled Windows helper waits for SpiderHeck to close before replacing the DLL. Launch the game again after installation finishes; settings and progress are kept. The old DLL is kept at `Silk/Mods/Disabled/SpiderSurgeUpdate/previous.dll`; to go back, close the game and copy it over the installed `SpiderSurge.dll`. The next launch shows the outcome on the Updates page. A release without a verified download is installed by hand from its release page, as in [Installation](#installation). Every online player must update to the same version.
+
+Betas are only offered to players who already run a beta. To try one, install its `SpiderSurge.dll` by hand from its pre-release on the [releases page](https://github.com/Dylan-Grinboju/SpiderSurge/releases); from then on the mod offers newer betas as well as releases. Installing a release that is newer than your beta returns you to releases only.
+
 ## Updating from SpiderStats or SpiderTeams
 
 1. Delete `StatsMod.dll` and `SpiderTeams.dll` from the `Silk/Mods` folder, and replace an older `SpiderSurge.dll` with the new one.
@@ -158,9 +166,11 @@ Every player needs the same SpiderSurge version, and the lobby must use P2P. The
 
 ## Building and releasing
 
-`dotnet build -c Release` makes `bin/Release/net472/SpiderSurge.dll`. The version comes from the latest `vX.Y.Z` git tag through [MinVer](https://github.com/adamralph/minver), so the code holds no version number to edit. A build after `v0.4.0` is `0.4.1-dev.N`, and the update check counts it as older than the release with the same number. A build without the git history (a source zip) is `0.0.0-dev`. Only GitHub Actions makes release builds: a build made anywhere else ends in `+local`, even on a release tag (`0.4.0+local`), so runs from testing can be told apart in telemetry.
+`dotnet build -c Release` makes `bin/Release/net472/SpiderSurge.dll`. The version comes from the latest `vX.Y.Z` git tag through [MinVer](https://github.com/adamralph/minver), so the code holds no version number to edit. A build after `v0.4.0` is `0.4.1-dev.N`, and the update check counts it as older than the release with the same number. A build after a beta tag such as `v1.0.0-beta.1` is `1.0.0-beta.1.N`, which the update check treats as a beta. A build without the git history (a source zip) is `0.0.0-dev`. Only GitHub Actions makes release builds: a build made anywhere else ends in `+local`, even on a release tag (`0.4.0+local`), so runs from testing can be told apart in telemetry.
 
-To release, first replace `README.md` with this file, without the note at the top, so the README describes the new release. Then publish a GitHub release with a new `vX.Y.Z` tag. The Build workflow builds `SpiderSurge.dll` from that tag and attaches it to the release. The update check reads the latest published release, so players are offered the new version from then on; drafts and pre-releases are not offered. `version.txt` is only for players on 0.4.0 or older, whose update check reads it from `main`. Set it to the first release made this way once that release is published, then leave it.
+To release, first replace `README.md` with this file, without the note at the top, so the README describes the new release. Write the release notes in a draft GitHub release for the new `vX.Y.Z` tag, without publishing it, then push that tag on the release commit. The Build workflow builds `SpiderSurge.dll` from the tag, attaches it to the draft and publishes the release; with no draft, it publishes one with GitHub's generated notes. The update check reads the recently published releases and offers the newest one, so players are offered the new version once it is published, which is only after its DLL is attached; drafts are never offered. `version.txt` is only for players on 0.4.0 or older, whose update check reads it from `main`. Set it to the first release made this way once that release is published, then leave it.
+
+A beta is released the same way with a `vX.Y.Z-beta.N` tag, such as `v1.0.0-beta.1` for the first beta of 1.0.0; README.md stays as it is. The workflow publishes it as a pre-release, and the update check offers pre-releases only to players whose installed DLL is a beta, ordered as in SemVer: `1.0.0-beta.2` follows `1.0.0-beta.1`, and `1.0.0` follows every `1.0.0` beta. Players on a release are not told about betas. Give testers the beta DLL from its release page to start.
 
 ## Other Mods
 

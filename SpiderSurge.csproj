@@ -63,7 +63,16 @@
   <ItemGroup>
     <Compile Remove="Sourcecode\**\*.cs" />
     <Compile Remove="OtherMods\**\*.cs" />
+    <Compile Remove="updater\**\*.cs;tests\**\*.cs" />
+    <ProjectReference Include="updater/SpiderSurge.UpdateInstaller.csproj" ReferenceOutputAssembly="false" OutputItemType="UpdateInstaller" />
   </ItemGroup>
+
+  <!-- Embeds the installer this build's project reference just produced, wherever its output folder is -->
+  <Target Name="EmbedUpdateInstaller" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences">
+    <ItemGroup>
+      <EmbeddedResource Include="@(UpdateInstaller)" LogicalName="SpiderSurge.UpdateInstaller.exe" />
+    </ItemGroup>
+  </Target>
 
   <!-- MinVer's AssemblyVersion is only the major number; keep the whole release number, as before -->
   <Target Name="SetAssemblyVersion" AfterTargets="MinVer">
