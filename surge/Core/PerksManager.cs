@@ -205,6 +205,8 @@ namespace SpiderSurge
             return null;
         }
 
+        public string GetUltimate(string ability) => System.Array.Find(Abilities, entry => entry.ability == ability).ultimate;
+
         public IEnumerable<string> GetAllPerkNames() => maxLevels.Keys;
 
         public string GetDisplayName(string name) => Consts.Descriptions.GetDisplayName(name, this);

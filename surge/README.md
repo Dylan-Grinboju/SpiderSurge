@@ -25,7 +25,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Laser enemies**: Red-shielded versions of most enemies (not the Exploding Roller or already shielded ones). Every 4 seconds a faint ring and the Death Ray's charge sound warn for 1 second, then a Laser Cannon ring with radius 35 units around the enemy burns for 1 second. Breaking the red shield removes the ring for good.
 - **Chaos points, shop and challenges**: Shared points come from marked map choices, optional challenges and Blood Pact. Each shop item can be purchased once per visit. Bigger Heart grants both maximum capacity and a life. There is no ability-charge meter.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Bottomless Clip + Efficiency).
-- **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate.
+- **Ultimate Upgrades**: Your ability's Ultimate is guaranteed as a choice at wave 30 and can appear in regular perk choices afterwards until unlocked. At wave 60, you can unlock it or switch to another ability with its Ultimate. [Pain 8](#pain-level-8) starts with the Ultimate instead.
 - **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
 - **Achievements**: 24 achievements for specific feats with the abilities, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
@@ -39,6 +39,10 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
 
 <img width="1280" alt="The first-run walkthrough in How to play" src="../docs/images/guide-first-run.png" />
+
+## Pain Level 8
+
+Surge Survival has a Pain 8 after Pain 7. It unlocks at the same wave Pain 7 needs, reached on Surge Pain 7. Pain 8 keeps all of Pain 7's modifiers and gives the chosen ability together with its ultimate before wave 1, so wave 30 brings a normal perk choice; wave 60 still offers a switch to another ability's ultimate. Every normal wave enemy spawns twice and the enemy capacity is doubled. Friendly summons and Cocoon hatchlings are not doubled. The No abilities setting does not apply to Pain 8. Its high scores are separate from Pain 7 and from normal Survival, which keeps its seven pain levels.
 
 ## Achievements
 
@@ -113,9 +117,9 @@ The ability and ultimate keys are fixed, so they are not in the file. An older `
 
 `surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. The starting ability choice always locks first and uses Confirm. A card keeps the controller focus while the mouse passes over a disabled Confirm or Buy button, or when a menu or click clears the selection. The host's setting applies online. Default: `true`.
 
-`surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck and the chaos economy remain available; ability challenges are excluded. Applies from the next run, and doesn't change Team Versus abilities. Default: `false`.
+`surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck and the chaos economy remain available; ability challenges are excluded. Applies from the next run, and doesn't change Team Versus abilities. Pain 8 ignores it and keeps abilities. Default: `false`.
 
-With abilities enabled, a dedicated choice screen offers as many random shared abilities as a normal perk choice has cards (3, or 2 from pain level 3, plus Picky) before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades.
+With abilities enabled, a dedicated choice screen offers as many random shared abilities as a normal perk choice has cards (3, or 2 from pain level 3, plus Picky) before wave 1. The arena is paused until an ability is selected; this does not consume an earned perk choice or change the map. The first earned perk choice offers normal upgrades. On Pain 8 the chosen ability comes with its ultimate.
 
 `surge.indicator.compactHud`: Replaces the world rings with a compact panel at the bottom right, with a named row for each player. Active effects have a draining bar and remaining seconds; cooldowns have a filling bar and remaining seconds. Both use game time. Pocket Dimension also shows its stored weapon. Change this immediately under Surge > Use compact ability HUD. The existing colors and Only show when ready setting apply to both displays; size and position settings apply to the world rings. Default: `false`.
 
@@ -215,13 +219,12 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 
 ## Notes and disclaimers
 
-- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores in `SpiderSurge\progress.dat`, and Wave Survival still shows your normal ones from the game's save.
+- This mod overrides the highscores displayed in the survival menu. This is intentional, as it allows you to see your highscores for the modded game. The global position in the leaderboards will NOT be tracked, as this requires changes to the backend. Surge Survival keeps its own highscores in `SpiderSurge\progress.dat`, and Wave Survival still shows your normal ones from the game's save. Joining an online Surge Survival game checks the pain levels you unlocked in Surge Survival.
 - Surge Mode is designed for Survival Mode. Its abilities only reach versus through the [Teams](../teams/README.md) part.
 
 ## The Future
 
 - More abilities and ults
 - More enemies
-- Even harder mode?
 
 Ability indicators respect challenge restrictions: the compact HUD names the allowed action or shows that abilities are disabled, and blocked input plays the normal rate-limited unavailable sound.

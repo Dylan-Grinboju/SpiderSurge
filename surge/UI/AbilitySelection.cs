@@ -184,10 +184,16 @@ namespace SpiderSurge
         {
             if (!IsChoosing || modifier?.data == null || !PerksManager.Instance.IsAbilityPerk(modifier.data.key)) return;
             ModifierManager.instance.SetModLevel(modifier, GameMode.Wave, 1);
+            Modifier ultimate = SurgePainLevels.StartingUltimate(modifier.data.key);
+            if (ultimate != null) ModifierManager.instance.SetModLevel(ultimate, GameMode.Wave, 1);
             PerksManager.Instance.IsFirstNormalPerkSelection = false;
             Logging.SpiderSurgeStatsManager.RunSafely("StartingAbility", stats => stats.OnPerkChosen(modifier));
-            if (StatsMod.GameSessionManager.Instance?.IsActive == true)
-                StatsMod.GameSessionManager.Instance.RecordPerk(PerksManager.Instance.GetDisplayName(modifier.data.key));
+            var session = StatsMod.GameSessionManager.Instance;
+            if (session?.IsActive == true)
+            {
+                session.RecordPerk(PerksManager.Instance.GetDisplayName(modifier.data.key));
+                if (ultimate != null) session.RecordPerk(PerksManager.Instance.GetDisplayName(ultimate.data.key));
+            }
             // The game's submit message closes the cards on every client and greys out the ones not taken
             SubmitCard.Invoke(SurvivalModeHud.instance, new object[] { index });
             closeUntil = UnityEngine.Time.unscaledTime + 3f;

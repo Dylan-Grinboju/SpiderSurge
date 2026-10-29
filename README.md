@@ -20,6 +20,7 @@ In a Surge run:
 - Every enemy type shows up much earlier, and the early ones stop coming sooner. On pain level 2 and higher, every enemy can show up from wave 1.
 - Six new enemies join the waves.
 - Choose the group's shared ability before wave 1, from 3 random abilities (2 from pain level 3, more with Picky), like a normal perk choice. The arena waits for your choice; the first earned perk choice offers normal upgrades. From wave 30 you can take its ultimate, and from wave 60 you can switch to another ability's ultimate.
+- Pain 8, unlocked on Surge Pain 7, starts with the ability's ultimate and spawns every wave enemy twice.
 - Ability and ultimate cooldowns reset at the start of every wave. Null Field's cooldown drops by 12 seconds instead.
 - The perk choice has no time limit.
 - High scores are kept apart from your normal survival scores, and Surge runs aren't sent to the online leaderboards.
