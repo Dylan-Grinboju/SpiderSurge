@@ -57,6 +57,15 @@ namespace SpiderSurge
             }
         }
 
+        internal static bool EightUnlocked
+        {
+            get
+            {
+                Refresh(PainLevelsScreen.instance);
+                return surge != null && SurgeHighScores.Get(surge.painLevels[6].survivalConfig.name) >= surge.painLevels[7].levelNeededToUnlock;
+            }
+        }
+
         internal static void GrantStartingUltimate()
         {
             if (!ActiveEight || !Net.IsAuthority) return;
@@ -70,6 +79,16 @@ namespace SpiderSurge
         {
             spawner.SpawnEnemy(enemy);
             if (Net.IsAuthority && ActiveEight) spawner.SpawnEnemy(enemy);
+        }
+    }
+
+    // Lobby discovery checks this before the host's Surge state arrives; the vanilla menu still has seven entries.
+    [HarmonyPatch(typeof(PainLevelsScreen), nameof(PainLevelsScreen.GetHighestUnlockedPainLevel))]
+    internal static class SurgePainJoinPatch
+    {
+        static void Postfix(ref int __result)
+        {
+            if (SurgePainLevels.EightUnlocked) __result = 8;
         }
     }
 
