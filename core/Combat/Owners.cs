@@ -153,7 +153,14 @@ namespace SpiderSurge.Common
             Launches.Add((launcher, player));
         }
 
-        internal static void EndLaunch() => Launches.RemoveAt(Launches.Count - 1);
+        // A scene load can clear the launches while a shot is still inside one
+        internal static void EndLaunch()
+        {
+            if (Launches.Count > 0)
+            {
+                Launches.RemoveAt(Launches.Count - 1);
+            }
+        }
 
         // Every network object spawned while a weapon fires is that shot's; a spawn outside one starts with no owner
         internal static void OnSpawned(GameObject spawned)
@@ -208,14 +215,7 @@ namespace SpiderSurge.Common
         public static void SetExplosionOwner(Explosion explosion, ulong ownerId, NetworkBehaviour source)
         {
             explosion.explosionOwnerId = ownerId;
-            try
-            {
-                ExplosionCreated?.Invoke(explosion, source);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording explosion owner: {ex.Message}");
-            }
+            Listeners.Raise(ExplosionCreated, explosion, source, "Error recording explosion owner");
         }
 
         private static Record Get(GameObject target)

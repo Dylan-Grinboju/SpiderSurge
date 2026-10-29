@@ -124,9 +124,11 @@ namespace StatsMod
                 if (!slot.PlayerFound)
                 {
                     slot.PlayerFound = true;
-                    slot.Player = slot.FindPlayer(Attacks.Source);
+                    // The lookup can open a nested attack that grows the slots, so the slot is fetched again after it
+                    PlayerController player = slot.FindPlayer(Attacks.Source);
+                    Attacks.Slot(top).Player = player;
                 }
-                return slot.Player;
+                return Attacks.Slot(top).Player;
             }
         }
 
@@ -144,9 +146,10 @@ namespace StatsMod
                 if (!slot.WeaponFound)
                 {
                     slot.WeaponFound = true;
-                    slot.WeaponObject = slot.FindWeapon?.Invoke(Attacks.Source);
+                    Weapon weapon = slot.FindWeapon?.Invoke(Attacks.Source);
+                    Attacks.Slot(top).WeaponObject = weapon;
                 }
-                return slot.WeaponObject;
+                return Attacks.Slot(top).WeaponObject;
             }
         }
 

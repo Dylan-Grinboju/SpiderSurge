@@ -522,7 +522,8 @@ namespace SpiderSurge
                 // Try to get weapons from SurvivalMode
                 if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive())
                 {
-                    return SurvivalMode.instance.GetRandomWeapon(false) ?? FallbackWeapon?.Invoke();
+                    GameObject weapon = SurvivalMode.instance.GetRandomWeapon(false);
+                    return weapon != null ? weapon : FallbackWeapon?.Invoke();
                 }
             }
             catch (System.Exception ex)

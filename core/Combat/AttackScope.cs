@@ -74,8 +74,11 @@ namespace SpiderSurge.Common
             {
                 Array.Resize(ref _slots, Math.Max(index + 1, _slots.Length * 2));
             }
-            _slots[index] = default;
-            return _open(ref _slots[index], source, info);
+            // The opener can open a nested attack that grows the slots, so it fills a copy
+            T slot = default;
+            bool open = _open(ref slot, source, info);
+            _slots[index] = slot;
+            return open;
         }
     }
 
@@ -179,6 +182,8 @@ namespace SpiderSurge.Common
             }
             Logger.LogInfo($"core scoped {Patched.Count} attacker methods");
         }
+
+        internal static void Unpatched() => Patched.Clear();
 
         // __state is the depth after the push, so 0 means nothing was pushed, as when an earlier prefix threw
         private static void Prefix(Component __instance, MethodBase __originalMethod, out int __state)

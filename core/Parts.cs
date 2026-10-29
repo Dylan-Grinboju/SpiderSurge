@@ -125,6 +125,7 @@ namespace SpiderSurge.Common
 
             _core?.UnpatchSelf();
             _core = null;
+            AttackScope.Unpatched();
         }
 
         private static void Start(Part part, Type[] types)
