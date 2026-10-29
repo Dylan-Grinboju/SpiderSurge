@@ -11,7 +11,7 @@ using Logger = SpiderSurge.Common.ThreadSafeLog;
 namespace SpiderSurge.Common
 {
     // Network, hashing and file work run on worker threads; the fields below are only read and changed on the main thread
-    public static class ModUpdater
+    public static partial class ModUpdater
     {
         public const string CheckForUpdatesKey = "general.checkForUpdates";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
@@ -59,10 +59,7 @@ namespace SpiderSurge.Common
             if (notice == null || !LobbyController.inLobby) return;
             var found = notice;
             notice = null;
-            if (downloading || staged) return;
-            string where = found.TryGetInstallableAsset(out _, out _) ? "Install it from Mods > SpiderSurge > Settings > Advanced > Updates."
-                : "To install it by hand, download SpiderSurge.dll from its release page and replace the one in SpiderHeck's Silk/Mods folder while the game is closed.";
-            Announcer.TwoOptionsPopup("SpiderSurge " + found.Version + " is available.\n" + where, "Release notes", "Later", () => OpenUrl(found.PageUrl), () => { }, null);
+            if (!downloading && !staged) ShowOffer(found);
         }
 
         private static void OnSettingsChanged(string key)
@@ -195,26 +192,36 @@ namespace SpiderSurge.Common
         {
             if (downloading || staged || resultPending) return;
             downloading = true;
+            downloadProblem = null;
             var cancel = downloadCancellation = new CancellationTokenSource();
             SetStatus("Downloading SpiderSurge " + selected.Version + "...");
             Task.Run(async () =>
             {
                 FileStream lease = null;
-                string outcome;
+                string outcome, problem = null;
                 try
                 {
                     lease = await Download(selected, cancel.Token);
                     outcome = "Download verified. Close SpiderHeck to install " + selected.Version + ", then launch it again. The previous DLL will be kept under Disabled/SpiderSurgeUpdate/previous.dll.";
                 }
                 catch (OperationCanceledException) when (cancel.IsCancellationRequested) { outcome = "Download cancelled. Your installed mod has not changed."; }
-                catch (OperationCanceledException) { outcome = "The download took longer than " + DownloadTimeout.TotalMinutes + " minutes and was stopped. Your installed mod has not changed. Retry or open the release page."; }
-                catch (Exception error) { outcome = "Update could not be prepared: " + error.Message + " Your installed mod has not changed. Retry or open the release page."; }
+                catch (OperationCanceledException)
+                {
+                    problem = "The download took longer than " + DownloadTimeout.TotalMinutes + " minutes and was stopped.";
+                    outcome = problem + " Your installed mod has not changed. Retry or open the release page.";
+                }
+                catch (Exception error)
+                {
+                    problem = error.Message;
+                    outcome = "Update could not be prepared: " + error.Message + " Your installed mod has not changed. Retry or open the release page.";
+                }
                 MainThread.Enqueue(() =>
                 {
                     downloading = false;
                     staged = lease != null;
                     installLease = lease;
                     downloadCancellation = null;
+                    downloadProblem = problem;
                     cancel.Dispose();
                     SetStatus(outcome);
                 });
@@ -328,6 +335,7 @@ namespace SpiderSurge.Common
             Logger.LogInfo("[Updater] " + value);
             status = value;
             if (SettingsPage.IsShowing("updates")) SettingsPage.RefreshOpen();
+            RefreshPopup();
         }
         private static bool IsNewerVersion(string latest, string current)
         {
