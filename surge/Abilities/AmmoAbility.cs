@@ -243,6 +243,7 @@ namespace SpiderSurge
                 ShowAuraOn(trackedWeapon);
                 SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
             }
+            UnlimitedPowerAchievement.Cast(this);
         }
 
         // Peers other than the host and the caster only see the aura; the host tells them when it starts and ends
@@ -511,6 +512,9 @@ namespace SpiderSurge
             }
         }
 
+        // Survival's weapon list is empty outside survival, so Teams hands Care Package the versus match's pool
+        public static Func<GameObject> FallbackWeapon;
+
         private GameObject GetRandomWeaponPrefab()
         {
             try
@@ -518,14 +522,15 @@ namespace SpiderSurge
                 // Try to get weapons from SurvivalMode
                 if (SurvivalMode.instance != null && SurvivalMode.instance.GameModeActive())
                 {
-                    return SurvivalMode.instance.GetRandomWeapon(false);
+                    GameObject weapon = SurvivalMode.instance.GetRandomWeapon(false);
+                    return weapon != null ? weapon : FallbackWeapon?.Invoke();
                 }
             }
             catch (System.Exception ex)
             {
                 Logger.LogWarning($"Weapon Arsenal: Failed to get random weapon: {ex.Message}");
             }
-            return null;
+            return FallbackWeapon?.Invoke();
         }
 
         protected override void OnDestroy()

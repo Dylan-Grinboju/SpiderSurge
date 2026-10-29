@@ -6,57 +6,17 @@ using UnityEngine;
 
 namespace SpiderTeams
 {
-    // The pulse knocks back and, as an ultimate, kills; its caster becomes the attacker so the friendly fire rule applies.
-    [HarmonyPatch(typeof(PulseAbility), "ApplyPulsePhysics")]
-    public static class PulseAbility_ApplyPulsePhysics_Patch
-    {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(Component __instance, out bool __state)
-        {
-            __state = PatchScopes.EnterAttack(__instance, ability => Players.IdOf(ability));
-            FriendlyFireGate.PulseDepth++;
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer(bool __state)
-        {
-            FriendlyFireGate.PulseDepth--;
-            PatchScopes.ExitAttack(__state);
-        }
-    }
-
-    // The Black Hole swallows a teammate only when friendly fire does damage.
-    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanSwallow))]
-    public static class StorageAbility_CanSwallow_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
-        {
-            if (__result && ModConfig.FriendlyFire != FriendlyFireMode.Damage && BlackHoleTeammates.Same(__instance, spider, "Black Hole friendly fire"))
-            {
-                __result = false;
-            }
-        }
-    }
-
-    // Its pull is a push toward the caster, so it pulls a teammate unless friendly fire is ignored.
-    [HarmonyPatch(typeof(StorageAbility), nameof(StorageAbility.CanPull))]
-    public static class StorageAbility_CanPull_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(StorageAbility __instance, SpiderHealthSystem spider, ref bool __result)
-        {
-            if (__result && ModConfig.FriendlyFire == FriendlyFireMode.Ignore && BlackHoleTeammates.Same(__instance, spider, "Black Hole pull"))
-            {
-                __result = false;
-            }
-        }
-    }
-
+    // The Black Hole swallows a teammate only when friendly fire does damage. Its pull is a push toward the caster,
+    // so it pulls a teammate unless friendly fire is ignored.
     internal static class BlackHoleTeammates
     {
-        public static bool Same(StorageAbility ability, SpiderHealthSystem spider, string scope)
+        public static bool Spares(StorageAbility ability, SpiderHealthSystem spider, bool pull)
+        {
+            if (pull ? ModConfig.FriendlyFire != FriendlyFireMode.Ignore : ModConfig.FriendlyFire == FriendlyFireMode.Damage) return false;
+            return Same(ability, spider, pull ? "Black Hole pull" : "Black Hole friendly fire");
+        }
+
+        private static bool Same(StorageAbility ability, SpiderHealthSystem spider, string scope)
         {
             if (!TeamManager.TeamMatchActive)
             {
@@ -79,50 +39,54 @@ namespace SpiderTeams
         }
     }
 
-    // Surge revives any dead player; in versus that could be an opponent, so only teammates come back.
-    [HarmonyPatch(typeof(ImmuneAbility), "TryRespawnDeadPlayer")]
-    public static class ImmuneAbility_TryRespawnDeadPlayer_Patch
+    // Hooks on Surge's abilities, set while Teams runs
+    internal static class SurgeHooks
     {
-        [HarmonyPrefix]
-        public static bool Prefix(Component __instance, ref PlayerController revivedPlayer, ref bool __result)
+        public static void Install()
         {
+            StorageAbility.SparesTarget = BlackHoleTeammates.Spares;
+            ImmuneAbility.OverrideRevive = ReviveTeammate;
+            AmmoAbility.FallbackWeapon = VersusWeapon;
+        }
+
+        public static void Remove()
+        {
+            StorageAbility.SparesTarget = null;
+            ImmuneAbility.OverrideRevive = null;
+            AmmoAbility.FallbackWeapon = null;
+        }
+
+        // Surge revives any dead player; in versus that could be an opponent, so only teammates come back.
+        private static bool ReviveTeammate(ImmuneAbility ability, out PlayerController revivedPlayer)
+        {
+            revivedPlayer = null;
             if (!SurgeVersus.RoundActive)
             {
-                return true;
+                return false;
             }
 
-            revivedPlayer = null;
-            __result = false;
             try
             {
-                revivedPlayer = SurgeVersus.ReviveTeammate(__instance);
-                __result = revivedPlayer != null;
+                revivedPlayer = SurgeVersus.ReviveTeammate(ability);
             }
             catch (Exception ex)
             {
                 PatchScopes.Report("Neural Backup revive", ex);
             }
-            return false;
+            return true;
         }
-    }
 
-    // Care Package only draws from survival's weapon list, so in versus it spawned nothing; it now uses the match's weapon pool.
-    [HarmonyPatch(typeof(AmmoAbility), "GetRandomWeaponPrefab")]
-    public static class AmmoAbility_GetRandomWeaponPrefab_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(ref GameObject __result)
+        // Care Package only draws from survival's weapon list, so in versus it spawned nothing; it uses the match's weapon pool.
+        private static GameObject VersusWeapon()
         {
             try
             {
-                if (__result == null && SurgeVersus.RoundActive)
-                {
-                    __result = SurgeVersus.RandomWeapon();
-                }
+                return SurgeVersus.RoundActive ? SurgeVersus.RandomWeapon() : null;
             }
             catch (Exception ex)
             {
                 PatchScopes.Report("Care Package weapon", ex);
+                return null;
             }
         }
     }

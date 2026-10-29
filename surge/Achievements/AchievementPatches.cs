@@ -19,12 +19,6 @@ namespace SpiderSurge
         public const int ThermalTeammateKills = 3;
         public const float BlastSurvivalMargin = 0.25f;
 
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-
-        public static Explosion CurrentExplosion;
-        // Whether CurrentExplosion is a Big Grenade blast, unknown until a spider it damages asks, so its name is read at most once per knockback
-        public static bool? CurrentIsBigGrenade;
-
         private static readonly Dictionary<(int caster, int revived), int> Revives = new Dictionary<(int, int), int>();
         private static readonly HashSet<ParticleBlade> FullyUpgradedBlades = new HashSet<ParticleBlade>();
 
@@ -46,7 +40,7 @@ namespace SpiderSurge
                    team == otherTeam;
         }
 
-        public static bool Gone(SpiderHealthSystem spider) => spider == null || spider.dead || spider.astralDead || SpiderDying(spider);
+        public static bool Gone(SpiderHealthSystem spider) => spider == null || spider.dead || spider.astralDead || GameFields.SpiderDying(spider);
 
         public static void Run(string what, Action action) => Run(what, static run => run(), action);
 
@@ -89,109 +83,74 @@ namespace SpiderSurge
         public static PlayerController HolderOf(Weapon weapon) => weapon != null && weapon.equipped && weapon.owner != null ? Players.Of(weapon.owner) : null;
     }
 
-    // Black Hole and I Will Keep You Safe
-    [HarmonyPatch(typeof(SwallowedTarget))]
-    public static class SwallowedTarget_Achievement_Patches
+    // Black Hole and I Will Keep You Safe, called once the Black Hole has swallowed its target
+    public static class SwallowedAchievements
     {
-        [HarmonyPatch(nameof(SwallowedTarget.BeginEnemy))]
-        [HarmonyPostfix]
-        public static void BeginEnemy_Postfix(EnemyHealthSystem enemy, PlayerController caster)
+        public static void Enemy(EnemyHealthSystem enemy, PlayerController caster)
         {
             AchievementTracker.Run("Black Hole", () =>
             {
-                if (enemy != null && enemy.GetComponent<HornetShamanBrain>() != null && SwallowedTarget.IsSwallowed(enemy.gameObject))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.BlackHole, caster);
-                }
+                if (enemy.GetComponent<HornetShamanBrain>() != null) SurgeAchievements.Unlock(SurgeAchievements.BlackHole, caster);
             });
         }
 
-        [HarmonyPatch(nameof(SwallowedTarget.BeginSpider))]
-        [HarmonyPostfix]
-        public static void BeginSpider_Postfix(SpiderHealthSystem spider, PlayerController caster)
+        public static void Spider(SpiderHealthSystem spider, PlayerController caster)
         {
             AchievementTracker.Run("Black Hole", () =>
             {
-                if (spider != null && SwallowedTarget.IsSwallowed(spider.rootObject) && AchievementTracker.AreTeammates(caster, Players.Of(spider)))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.KeepYouSafe, caster);
-                }
+                if (AchievementTracker.AreTeammates(caster, Players.Of(spider))) SurgeAchievements.Unlock(SurgeAchievements.KeepYouSafe, caster);
             });
         }
     }
 
     // Total Destruction counts the teammates one Thermal Detonation kills
-    [HarmonyPatch(typeof(PulseAbility), "ApplyPulsePhysics")]
-    public static class PulseAbility_Achievement_Patch
+    public static class TotalDestructionAchievement
     {
-        [HarmonyPrefix]
-        public static void Prefix(PulseAbility __instance, bool deadly, out List<SpiderHealthSystem> __state)
+        public static List<SpiderHealthSystem> TeammatesAtRisk(PulseAbility ability, bool deadly)
         {
-            __state = null;
-            PlayerController caster = PulseAbility.CasterOf(__instance);
-            if (!deadly || caster == null) return;
+            PlayerController caster = PulseAbility.CasterOf(ability);
+            if (!deadly || caster == null) return null;
 
             var teammates = new List<SpiderHealthSystem>();
-            AchievementTracker.Run("Thermal Detonation", () =>
-            {
-                foreach (PlayerController player in Players.All)
-                {
-                    SpiderHealthSystem spider = player != null ? player.spiderHealthSystem : null;
-                    if (AchievementTracker.AreTeammates(caster, player) && !AchievementTracker.Gone(spider)) teammates.Add(spider);
-                }
-            });
-            if (teammates.Count >= AchievementTracker.ThermalTeammateKills) __state = teammates;
+            AchievementTracker.Run("Thermal Detonation", static at => Gather(at.caster, at.teammates), (caster, teammates));
+            return teammates.Count >= AchievementTracker.ThermalTeammateKills ? teammates : null;
         }
 
-        [HarmonyFinalizer]
-        public static void Finalizer(PulseAbility __instance, List<SpiderHealthSystem> __state)
+        private static void Gather(PlayerController caster, List<SpiderHealthSystem> teammates)
         {
-            if (__state == null) return;
-
-            AchievementTracker.Run("Thermal Detonation", () =>
+            foreach (PlayerController player in Players.All)
             {
-                int killed = __state.FindAll(AchievementTracker.Gone).Count;
+                SpiderHealthSystem spider = player != null ? player.spiderHealthSystem : null;
+                if (AchievementTracker.AreTeammates(caster, player) && !AchievementTracker.Gone(spider)) teammates.Add(spider);
+            }
+        }
+
+        public static void Counted(PulseAbility ability, List<SpiderHealthSystem> teammates)
+        {
+            if (teammates == null) return;
+
+            AchievementTracker.Run("Thermal Detonation", static at =>
+            {
+                int killed = at.teammates.FindAll(AchievementTracker.Gone).Count;
                 if (killed >= AchievementTracker.ThermalTeammateKills)
                 {
-                    SurgeAchievements.Unlock(SurgeAchievements.TotalDestruction, PulseAbility.CasterOf(__instance));
+                    SurgeAchievements.Unlock(SurgeAchievements.TotalDestruction, PulseAbility.CasterOf(at.ability));
                 }
-            });
-        }
-    }
-
-    [HarmonyPatch(typeof(Explosion), "KnockBack")]
-    public static class Explosion_KnockBack_Achievement_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(Explosion __instance, out (Explosion, bool?) __state)
-        {
-            __state = (AchievementTracker.CurrentExplosion, AchievementTracker.CurrentIsBigGrenade);
-            AchievementTracker.CurrentExplosion = __instance;
-            AchievementTracker.CurrentIsBigGrenade = null;
-        }
-
-        [HarmonyFinalizer]
-        public static void Finalizer((Explosion, bool?) __state)
-        {
-            AchievementTracker.CurrentExplosion = __state.Item1;
-            AchievementTracker.CurrentIsBigGrenade = __state.Item2;
+            }, (ability, teammates));
         }
     }
 
     // An explosion only calls Damage on a spider inside its death radius, so this is a Big Grenade blast that would have killed
-    [HarmonyPatch(typeof(SpiderHealthSystem), nameof(SpiderHealthSystem.Damage))]
-    public static class SpiderHealthSystem_Damage_Achievement_Patch
+    public static class NullFieldBlastAchievement
     {
         private static readonly AccessTools.FieldRef<Explosion, float> BlastEnd = AccessTools.FieldRefAccess<Explosion, float>("_stopAt");
         private static readonly HashSet<(int spider, int blast)> Watched = new HashSet<(int, int)>();
 
-        [HarmonyPrefix]
-        public static void Prefix(SpiderHealthSystem __instance, bool __runOriginal)
+        internal static void OnDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
-            Explosion explosion = AchievementTracker.CurrentExplosion;
-            if (!__runOriginal || explosion == null || !(AchievementTracker.CurrentIsBigGrenade ??= explosion.name.StartsWith(AchievementTracker.BigGrenadeExplosion, StringComparison.Ordinal))) return;
+            if (!SurgeAttacks.IsBigGrenadeBlast(out Explosion explosion)) return;
 
-            AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider: __instance, explosion));
+            AchievementTracker.Run("Null Field", static hit => Watch(hit.spider, hit.explosion), (spider, explosion));
         }
 
         private static void Watch(SpiderHealthSystem spider, Explosion explosion)
@@ -225,13 +184,10 @@ namespace SpiderSurge
         }
     }
 
-    // Healer and You Are Not Done Yet; Teams replaces the revive in versus, and its result still reaches the postfix
-    [HarmonyPatch(typeof(ImmuneAbility), "TryRespawnDeadPlayer")]
-    public static class ImmuneAbility_Revive_Achievement_Patch
+    // Healer and You Are Not Done Yet; the ghosts are read before the revive, including one Teams makes in versus
+    public static class ReviveAchievements
     {
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(out List<PlayerController> __state)
+        public static List<PlayerController> Ghosts()
         {
             var ghosts = new List<PlayerController>();
             AchievementTracker.Run("Neural Backup", () =>
@@ -241,20 +197,16 @@ namespace SpiderSurge
                     if (ImmuneAbility.IsGhost(player)) ghosts.Add(player);
                 }
             });
-            __state = ghosts;
+            return ghosts;
         }
 
-        [HarmonyPostfix]
-        public static void Postfix(ImmuneAbility __instance, bool __result, ref PlayerController revivedPlayer, List<PlayerController> __state)
+        public static void Revived(ImmuneAbility ability, PlayerController revived, List<PlayerController> ghosts)
         {
-            PlayerController revived = revivedPlayer;
-            if (!__result || revived == null) return;
-
             AchievementTracker.Run("Neural Backup", () =>
             {
-                PlayerController caster = __instance.GetComponentInParent<PlayerController>() ?? Players.ById(__instance.PlayerId);
+                PlayerController caster = ability.GetComponentInParent<PlayerController>() ?? Players.ById(ability.PlayerId);
                 if (caster == null) return;
-                if (__state.Contains(revived))
+                if (ghosts.Contains(revived))
                 {
                     SurgeAchievements.Unlock(SurgeAchievements.NotDoneYet, caster);
                 }
@@ -266,37 +218,12 @@ namespace SpiderSurge
         }
     }
 
-    // LateUpdate keeps calling StartWave until a wave is running, so only the call that starts one counts
-    [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
-    public static class SurvivalMode_StartWave_Achievement_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress = AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance, out bool __state) => __state = WaveInProgress(__instance);
-
-        [HarmonyPostfix]
-        public static void Postfix(SurvivalMode __instance, bool __state)
-        {
-            if (!__state && WaveInProgress(__instance)) AchievementTracker.ResetRevives();
-        }
-    }
-
-    [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.StartRound))]
-    public static class VersusMode_StartRound_Achievement_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix() => AchievementTracker.ResetRevives();
-    }
-
     // Doomsday Scenario: Pocket Dimension takes a Big Grenade whose fuse is already lit
-    [HarmonyPatch(typeof(StorageAbility), "StoreWeapon")]
-    public static class StorageAbility_StoreWeapon_Achievement_Patch
+    public static class DoomsdayAchievement
     {
         private static readonly AccessTools.FieldRef<Grenade, bool> Armed = AccessTools.FieldRefAccess<Grenade, bool>("_armed");
 
-        [HarmonyPrefix]
-        public static void Prefix(StorageAbility __instance, GameObject heldWeaponObj)
+        public static void Stored(StorageAbility ability, GameObject heldWeaponObj)
         {
             if (heldWeaponObj == null) return;
             AchievementTracker.Run("Pocket Dimension", () =>
@@ -304,7 +231,7 @@ namespace SpiderSurge
                 Grenade grenade = heldWeaponObj.GetComponent<Grenade>();
                 if (grenade != null && grenade.serializationWeaponName == SerializationWeaponName.BigGrenade && Armed(grenade))
                 {
-                    SurgeAchievements.Unlock(SurgeAchievements.Doomsday, Players.ById(__instance.PlayerId));
+                    SurgeAchievements.Unlock(SurgeAchievements.Doomsday, Players.ById(ability.PlayerId));
                 }
             });
         }
@@ -326,15 +253,14 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(AmmoAbility), "OnActivate")]
-    public static class AmmoAbility_OnActivate_Achievement_Patch
+    // Unlimited Power: Bottomless Clip cast while holding a fully upgraded blade
+    public static class UnlimitedPowerAchievement
     {
-        [HarmonyPostfix]
-        public static void Postfix(AmmoAbility __instance)
+        public static void Cast(AmmoAbility ability)
         {
             AchievementTracker.Run("Bottomless Clip", () =>
             {
-                PlayerController caster = Players.ById(__instance.PlayerId);
+                PlayerController caster = Players.ById(ability.PlayerId);
                 SpiderHealthSystem spider = caster != null ? caster.spiderHealthSystem : null;
                 SpiderWeaponManager weapons = spider != null ? spider.GetComponentInChildren<SpiderWeaponManager>() : null;
                 if (weapons != null && AchievementTracker.IsFullyUpgraded(weapons.equippedWeapon))
@@ -371,7 +297,6 @@ namespace SpiderSurge
     // Not On My Watch: a laser stops on a spider inside Null Field, and the next thing on its line is a teammate it would have hit
     internal static class LaserBlock
     {
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> ImmuneTill = AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
         private static readonly RaycastHit2D[] Behind = new RaycastHit2D[16];
 
         public static bool Watching => Net.IsAuthority && ImmuneAbility.AnyImmune && !SurgeAchievements.IsUnlocked(SurgeAchievements.NotOnMyWatch);
@@ -410,7 +335,7 @@ namespace SpiderSurge
             if (next.collider == null || next.collider.gameObject == weapon || next.collider.gameObject == shooter) return;
 
             SpiderHealthSystem teammate = SpiderOf(next.collider);
-            if (teammate == null || teammate == protector || AchievementTracker.Gone(teammate) || ImmuneTill(teammate) > Time.time) return;
+            if (teammate == null || teammate == protector || AchievementTracker.Gone(teammate) || GameFields.SpiderImmuneTill(teammate) > Time.time) return;
             ImmuneAbility teammateField = ImmuneAbility.GetByHealthSystem(teammate);
             if (teammateField != null && teammateField.IsImmune) return;
 
@@ -475,34 +400,22 @@ namespace SpiderSurge
         }
     }
 
-    // The perk timer picks a card itself when it runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
-    [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
-    public static class SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch
+    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and a player picked it. The perk timer picks a card itself when it
+    // runs out, and that pick is nobody's; the submit comes 0.25 s before the choice lands
+    internal static class LuckAchievement
     {
-        public static bool TimedOut;
+        private static bool _timedOut;
 
-        [HarmonyPrefix]
-        public static void Prefix() => AchievementTracker.Run("Luck", () => TimedOut = Logging.SpiderSurgeStatsManager.PerkChoiceTimerRanOut());
-    }
+        internal static void OnPerkSubmitted() => _timedOut = Logging.SpiderSurgeStatsManager.PerkChoiceTimerRanOut();
 
-    // Yay I Guess?: Luck made the Nothing perk a Lucky Upgrade and a player picked it
-    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
-    public static class SurvivalMode_ChoosePerk_Achievement_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<bool>> WaitingForPerk = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<bool>>("_waitingForPerk");
-
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance, Modifier modifier)
+        internal static void OnPerkChoosing(Modifier modifier, GameLevel level)
         {
-            AchievementTracker.Run("Luck", () =>
+            if (SurgeGameModeManager.IsSurgeRunActive && !_timedOut &&
+                modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
+                modifier.levelInSurvival == 0 && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(AchievementTracker.NothingPerk))
             {
-                if (SurgeGameModeManager.IsSurgeRunActive && WaitingForPerk(__instance).Value && !SurvivalModeHud_PerkChoiceSubmit_Achievement_Patch.TimedOut &&
-                    modifier != null && modifier.data != null && modifier.data.key == AchievementTracker.NothingPerk &&
-                    modifier.levelInSurvival == 0 && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(AchievementTracker.NothingPerk))
-                {
-                    SurgeAchievements.Unlock(SurgeAchievements.YayIGuess, null);
-                }
-            });
+                SurgeAchievements.Unlock(SurgeAchievements.YayIGuess, null);
+            }
         }
     }
 }

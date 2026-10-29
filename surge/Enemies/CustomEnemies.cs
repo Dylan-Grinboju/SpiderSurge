@@ -452,71 +452,55 @@ namespace SpiderSurge.Enemies
         public static void InitializeFromLists(ElementLists elements)
         {
             Logger.LogInfo("[SpiderSurge] Initializing Custom Enemies from lists...");
+            EnsureCreated(elements.allEnemies?.Where(e => e != null).Select(e => e.gameObject) ?? Enumerable.Empty<GameObject>(), false);
+        }
 
-            GameObject whispPrefab = null;
-
+        // Finds the whisp templates, a shield source and the Rocket, then makes the custom enemies; missingBasesOnly (survival start) quietly skips the shielded variants of bases that already exist
+        public static void EnsureCreated(IEnumerable<GameObject> enemies, bool missingBasesOnly)
+        {
             GameObject meleeWhispPrefab = null;
             GameObject powerMeleeWhispPrefab = null;
-            GameObject rocketProjectile = null;
-
+            GameObject whispPrefab = null;
             GameObject shieldSource = null;
 
-            if (elements.allEnemies != null)
+            foreach (var enemy in enemies)
             {
-                foreach (var enemy in elements.allEnemies)
-                {
-                    if (enemy == null) continue;
-                    if (enemy.name.Contains("MeleeWhisp") && !enemy.name.Contains("Power")) meleeWhispPrefab = enemy.gameObject;
-                    else if (enemy.name.Contains("MeleeWhisp") && enemy.name.Contains("Power")) powerMeleeWhispPrefab = enemy.gameObject;
-                    else if (enemy.name.Contains("Whisp") && !enemy.name.Contains("Melee") && !enemy.name.Contains("Power") && !enemy.name.Contains("Missile")) whispPrefab = enemy.gameObject;
+                if (enemy == null) continue;
+                if (enemy.name.Contains("MeleeWhisp") && !enemy.name.Contains("Power")) meleeWhispPrefab = enemy;
+                else if (enemy.name.Contains("MeleeWhisp") && enemy.name.Contains("Power")) powerMeleeWhispPrefab = enemy;
+                else if (enemy.name.Contains("Whisp") && !enemy.name.Contains("Melee") && !enemy.name.Contains("Power") && !enemy.name.Contains("Missile")) whispPrefab = enemy;
 
-                    // Look for a shield source
-                    if (enemy.shield != null && shieldSource == null)
-                    {
-                        shieldSource = enemy.gameObject;
-                    }
+                if (shieldSource == null)
+                {
+                    var health = enemy.GetComponent<EnemyHealthSystem>();
+                    if (health != null && health.shield != null) shieldSource = enemy;
                 }
             }
 
-            // Attempt to find the Rocket projectile directly
-            var basicProjectiles = Resources.FindObjectsOfTypeAll<BasicProjectile>();
-            foreach (var bp in basicProjectiles)
+            GameObject rocketProjectile = null;
+            if (!missingBasesOnly || MissileWhispPrefab == null)
             {
-                if (bp.name == "Rocket")
-                {
-                    rocketProjectile = bp.gameObject;
-                    break;
-                }
+                rocketProjectile = Resources.FindObjectsOfTypeAll<BasicProjectile>().FirstOrDefault(p => p.name == "Rocket")?.gameObject;
+                if (rocketProjectile == null && !missingBasesOnly) Logger.LogWarning("[SpiderSurge] 'Rocket' projectile not found explicitly.");
             }
 
-            if (rocketProjectile == null)
-            {
-                Logger.LogWarning("[SpiderSurge] 'Rocket' projectile not found explicitly.");
-            }
+            if (missingBasesOnly) CreateTwinBlades(meleeWhispPrefab, powerMeleeWhispPrefab);
 
-            // Invoke Missile Whisp creation (and shielded variant if possible)
-            if (whispPrefab != null && rocketProjectile != null)
-            {
-                CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
-            }
-            else
-            {
-                Logger.LogWarning($"[SpiderSurge] Missing prefabs for MissileWhisp. Whisp: {whispPrefab != null}, RocketProjectile: {rocketProjectile != null}");
-            }
+            if (whispPrefab != null && rocketProjectile != null) CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
+            else if (!missingBasesOnly) Logger.LogWarning($"[SpiderSurge] Missing prefabs for MissileWhisp. Whisp: {whispPrefab != null}, RocketProjectile: {rocketProjectile != null}");
 
-            if (whispPrefab != null)
-            {
-                CreateTwinWhisp(whispPrefab, shieldSource);
-            }
+            if (whispPrefab != null && (!missingBasesOnly || TwinWhispPrefab == null)) CreateTwinWhisp(whispPrefab, shieldSource);
 
-            if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
-            if (powerMeleeWhispPrefab != null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
+            if (!missingBasesOnly) CreateTwinBlades(meleeWhispPrefab, powerMeleeWhispPrefab);
             CreateWaspCocoon();
 
-            if (elements.allEnemies != null)
-            {
-                CreateLaserVariants(elements.allEnemies.Where(e => e != null).Select(e => e.gameObject).Concat(CustomBasePrefabs), shieldSource);
-            }
+            CreateLaserVariants(enemies.Concat(CustomBasePrefabs), shieldSource);
+        }
+
+        private static void CreateTwinBlades(GameObject meleeWhispPrefab, GameObject powerMeleeWhispPrefab)
+        {
+            if (meleeWhispPrefab != null) CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
+            if (powerMeleeWhispPrefab != null) CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
         }
     }
 }

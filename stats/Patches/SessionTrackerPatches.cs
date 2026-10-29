@@ -29,28 +29,4 @@ namespace StatsMod
             }
         }
     }
-
-    [HarmonyPatch(typeof(SurvivalMode), "ChoosePerkAndLevel")]
-    public class SurvivalModeChoosePerkPatch
-    {
-        static void Prefix(SurvivalMode __instance, Modifier modifier)
-        {
-            try
-            {
-                if (GameSessionManager.Instance.IsActive && modifier != null && modifier.data != null)
-                {
-                    string perkName = modifier.data.title;
-                    if (string.IsNullOrEmpty(perkName))
-                    {
-                        perkName = modifier.data.key;
-                    }
-                    GameSessionManager.Instance.RecordPerk(perkName);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error tracking perk selection: {ex.Message}");
-            }
-        }
-    }
 }

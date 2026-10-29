@@ -34,44 +34,21 @@ public static class TitleCatalog
     public const string AverageJoe = "Average Joe";
     private const float HighAltitude = 1000f;
 
-    private static readonly Dictionary<string, string> Labels = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> Labels = BuildLabels();
+
+    private static Dictionary<string, string> BuildLabels()
     {
-        [Req.MostWebSwings] = "Most Web Swings",
-        [Req.LeastWebSwings] = "Least Web Swings",
-        [Req.HighestPoint] = "Highest Point",
-        [Req.LowestPoint] = "Lowest Point",
-        [Req.MostAirborneTime] = "Most Airborne Time",
-        [Req.LeastAirborneTime] = "Least Airborne Time",
-        [Req.MostKillsWhileAirborne] = "Most Kills While Airborne",
-        [Req.MostKillsWhileSolo] = "Most Kills While Solo",
-        [Req.MostWaveClutches] = "Most Wave Clutches",
-        [Req.MaxKillStreak] = "Max Kill Streak",
-        [Req.MaxKillStreakWhileSolo] = "Max Kill Streak While Solo",
-        [Req.MostAliveTime] = "Most Alive Time",
-        [Req.MostOffense] = "Most Offense",
-        [Req.LeastOffense] = "Least Offense",
-        [Req.MostDamageTaken] = "Most Damage Taken",
-        [Req.LeastDamageTaken] = "Least Damage Taken",
-        [Req.MostFriendlyFire] = "Most Friendly Fire",
-        [Req.LeastFriendlyFire] = "Least Friendly Fire",
-        [Req.MostShieldsLost] = "Most Shields Lost",
-        [Req.LeastShieldsLost] = "Least Shields Lost",
-        [Req.MostDeaths] = "Most Deaths",
-        [Req.LeastDeaths] = "Least Deaths",
-        [Req.MostLavaDeaths] = "Most Lava Deaths",
-        [Req.LeastLavaDeaths] = "Least Lava Deaths",
-        [Req.MostGunsKills] = "Most Gun Kills",
-        [Req.MostExplosionsKills] = "Most Explosive Kills",
-        [Req.MostBladeKills] = "Most Blade Kills",
-        [Req.MostHornetKills] = "Most Hornets Killed",
-        [Req.MostWhispKills] = "Most Whisps Killed",
-        [Req.MostKhepriKills] = "Most Khepris Killed",
-        [Req.MostAstralReturns] = "Most Astral Returns",
-        [Req.BestAccuracy] = "Best Accuracy",
-        [Req.BestRailvolverAccuracy] = "Best Railvolver Accuracy",
-        [Req.WorstAccuracy] = "Worst Accuracy",
-        [Req.MostShotsFired] = "Most Shots Fired",
-    };
+        var labels = new Dictionary<string, string>();
+        foreach (var stat in StatDef.All)
+        {
+            labels[stat.Requirement] = stat.Label;
+            if (stat.LeastRequirement != null) labels[stat.LeastRequirement] = stat.LeastLabel;
+        }
+        labels[Req.BestAccuracy] = "Best Accuracy";
+        labels[Req.BestRailvolverAccuracy] = "Best Railvolver Accuracy";
+        labels[Req.WorstAccuracy] = "Worst Accuracy";
+        return labels;
+    }
 
     public static string Label(string requirement) => Labels.TryGetValue(requirement, out string label) ? label : requirement;
 
@@ -89,8 +66,8 @@ public static class TitleCatalog
     public static readonly TitleDefinition[] Native =
     {
         Title("Peter Parker", Req.MostWebSwings),
-        new TitleDefinition("Sky Scraper", new[] { Req.HighestPoint }, 0, l => !IsHighAltitude(l.HighestPoint.Value.HighestPoint)),
-        new TitleDefinition("1000 Meters Club", new[] { Req.HighestPoint }, 40, l => IsHighAltitude(l.HighestPoint.Value.HighestPoint), "Reach 1000m"),
+        new TitleDefinition("Sky Scraper", new[] { Req.HighestPoint }, 0, l => !IsHighAltitude(l[Req.HighestPoint].Value.HighestPoint)),
+        new TitleDefinition("1000 Meters Club", new[] { Req.HighestPoint }, 40, l => IsHighAltitude(l[Req.HighestPoint].Value.HighestPoint), "Reach 1000m"),
         Title("Air Dancer", Req.MostAirborneTime),
         Title("Sky Hunter", Req.MostKillsWhileAirborne),
         Title("Lone Wolf", Req.MostKillsWhileSolo),
@@ -192,13 +169,13 @@ public static class TitleCatalog
         new TitleDefinition(AverageJoe, "Earn no other title in a run"),
     };
 
-    // Native titles first, then the ones other parts and mods described through StatsModApi
+    // Native titles first, then the ones other parts describe
     public static List<TitleDefinition> All
     {
         get
         {
             var all = Native.ToList();
-            foreach (var described in StatsModApi.GetDescribedTitles())
+            foreach (var described in RunReportSources.DescribedTitles)
             {
                 if (!all.Any(title => title.Name == described.Name)) all.Add(described);
             }

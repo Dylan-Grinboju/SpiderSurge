@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SpiderSurge.Common;
 using UnityEngine;
 using Logger = Silk.Logger;
@@ -15,12 +16,23 @@ namespace StatsMod
         public override bool OnByDefault => true;
         public override bool CanDisable => false;
         public override bool HasSettings => true;
+        public override bool HasCollection => true;
+        public override IEnumerable<KeyValuePair<string, object>> SettingDefaults => ModConfig.Defaults;
 
         protected internal override void OnStart()
         {
             UIManager.Initialize();
             Logger.LogInfo("UI Manager initialized");
             StatsNet.Initialize();
+            RunReportSources.Register(StatsModApi.Source);
+            GameModeHooks.Subscribe();
+            SpiderSurge.SwallowedTarget.EnemySwallowed += HitLogic.OnEnemySwallowed;
+            SpiderSurge.SwallowedTarget.SpiderKilled += HitLogic.OnPlayerSwallowed;
+            SpiderHitReceivers.Hook(true);
+            AttackTargets.Register();
+            Owners.ExplosionCreated += HitLogic.SetExplosionOwner;
+            Owners.Equipped += AccuracyTracker.Forget;
+            Owners.Reflected += AccuracyTracker.Forget;
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -31,6 +43,15 @@ namespace StatsMod
         protected internal override void OnStop()
         {
             StatsNet.Shutdown();
+            RunReportSources.Unregister(StatsModApi.Source);
+            GameModeHooks.Unsubscribe();
+            SpiderSurge.SwallowedTarget.EnemySwallowed -= HitLogic.OnEnemySwallowed;
+            SpiderSurge.SwallowedTarget.SpiderKilled -= HitLogic.OnPlayerSwallowed;
+            SpiderHitReceivers.Hook(false);
+            HitLogic.Attacks.Unregister();
+            Owners.ExplosionCreated -= HitLogic.SetExplosionOwner;
+            Owners.Equipped -= AccuracyTracker.Forget;
+            Owners.Reflected -= AccuracyTracker.Forget;
             TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)
@@ -48,6 +69,16 @@ namespace StatsMod
         public override void BuildSettings(SettingsPage page)
         {
             StatsSettingsPage.Build(page);
+        }
+
+        public override void BuildRecords(SettingsPage page)
+        {
+            StatsSettingsPage.BuildRecords(page);
+        }
+
+        public override void BuildCollection(SettingsPage page)
+        {
+            page.Button(StatsSettingsPage.TitlesButtonLabel, () => page.Open(StatsSettingsPage.TitlesPage));
         }
     }
 }

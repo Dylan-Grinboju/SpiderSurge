@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace StatsMod
 {
@@ -27,20 +27,10 @@ namespace StatsMod
         }
     }
 
-    // Runs each attack inside HitLogic.BeginAttack/EndAttack; the receivers below record its hits
-    [HarmonyPatch]
-    class AttackScopePatch
+    // Runs each attack in Stats' view of the core attack scope; the receivers below record its hits
+    internal static class AttackTargets
     {
-        private struct Attack
-        {
-            public string Weapon;
-            public Func<object, PlayerController> Owner;
-            public Func<object, Weapon> WeaponOf;
-        }
-
-        private static readonly Dictionary<MethodBase, Attack> attacks = new Dictionary<MethodBase, Attack>();
-
-        static AttackScopePatch()
+        public static void Register()
         {
             Add<DamageOnParticle>("OnParticleCollision", "Shotgun", particles => HitLogic.WeaponPlayer(particles.ignoreWeapon), particles => particles.ignoreWeapon);
             Add<RailShot>("ProcessHit", "RailShot", RailShotOwner, RailShotWeapon);
@@ -59,37 +49,20 @@ namespace StatsMod
             Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", HitLogic.PulseWeapon, SpiderSurge.PulseAbility.CasterOf);
         }
 
-        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null)
+        private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null) where T : Component
         {
             MethodInfo target = PatchTargets.Find(typeof(T), method);
             if (target != null)
             {
-                attacks[target] = new Attack
+                HitLogic.Attacks.Register(target, new HitLogic.Attack
                 {
+                    Name = $"{target.DeclaringType?.Name}.{target.Name}",
                     Weapon = weapon,
                     Owner = instance => owner((T)instance),
-                    WeaponOf = weaponOf != null ? instance => weaponOf((T)instance) : (Func<object, Weapon>)null,
-                };
+                    WeaponOf = weaponOf != null ? instance => weaponOf((T)instance) : (Func<Component, Weapon>)null,
+                });
             }
         }
-
-        static IEnumerable<MethodBase> TargetMethods() => attacks.Keys.ToList();
-
-        static void Prefix(object __instance, MethodBase __originalMethod, out HitLogic.AttackScope __state)
-        {
-            __state = default;
-            try
-            {
-                Attack attack = attacks[__originalMethod];
-                __state = HitLogic.BeginAttack(__instance, attack.Owner, attack.WeaponOf, attack.Weapon);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error tracking {__originalMethod.DeclaringType?.Name}.{__originalMethod.Name} hit: {ex.Message}");
-            }
-        }
-
-        static void Finalizer(HitLogic.AttackScope __state) => HitLogic.EndAttack(__state);
 
         private static PlayerController RailShotOwner(RailShot shot)
         {
@@ -140,7 +113,7 @@ namespace StatsMod
         {
             try
             {
-                if (__instance.IsDead() || Time.time < EnemyReflectionCache.EnemyImmuneTime(__instance)) return;
+                if (__instance.IsDead() || Time.time < GameFields.EnemyImmuneTime(__instance)) return;
                 HitLogic.OnEnemyHit(__instance, damage: false);
             }
             catch (Exception ex)
@@ -158,7 +131,7 @@ namespace StatsMod
             try
             {
                 if (__instance.IsDead() || __instance.ignoreDirectDamage ||
-                    Time.time < EnemyReflectionCache.EnemyImmuneTime(__instance)) return;
+                    Time.time < GameFields.EnemyImmuneTime(__instance)) return;
                 HitLogic.OnEnemyHit(__instance, damage: true);
             }
             catch (Exception ex)
@@ -168,36 +141,34 @@ namespace StatsMod
         }
     }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), "Impact")]
-    [HarmonyAfter("com.SpiderSurge.teams")]
-    class SpiderImpactReceiverPatch
+    // Stats records the hits on a spider that land
+    static class SpiderHitReceivers
     {
-        static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
+        public static void Hook(bool on)
+        {
+            SpiderHits.Impact.Observe(OnImpact, on);
+            SpiderHits.Damage.Observe(OnDamage, on);
+        }
+
+        private static void OnImpact(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                // Teams friendly fire on Ignore can cancel the knockback
-                if (!__runOriginal) return;
-                HitLogic.OnPlayerHit(__instance, damage: false, stun);
+                HitLogic.OnPlayerHit(spider, damage: false, stun);
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Error recording spider knockback: {ex.Message}");
             }
         }
-    }
 
-    [HarmonyPatch(typeof(SpiderHealthSystem), "Damage")]
-    [HarmonyAfter("com.SpiderSurge.surge", "com.SpiderSurge.teams")]
-    class SpiderDamageReceiverPatch
-    {
-        static void Prefix(SpiderHealthSystem __instance, bool stun, bool __runOriginal)
+        private static void OnDamage(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
             try
             {
-                // Surge immunity and Teams friendly fire can cancel the hit
-                if (!__runOriginal || Time.time < ReflectionCache.SpiderImmuneTill(__instance)) return;
-                HitLogic.OnPlayerHit(__instance, damage: true, stun);
+                // Damage returns at once while the spider is immune, so that hit doesn't count
+                if (Time.time < GameFields.SpiderImmuneTill(spider)) return;
+                HitLogic.OnPlayerHit(spider, damage: true, stun);
             }
             catch (Exception ex)
             {
@@ -282,7 +253,7 @@ namespace StatsMod
             try
             {
                 EnemyHealthSystem health = __instance.healthSystem;
-                if (____exploded || health == null || health.IsDead() || EnemyReflectionCache.EnemyExploding(health)) return;
+                if (____exploded || health == null || health.IsDead() || GameFields.EnemyExploding(health)) return;
                 HitLogic.OnRollerFuseEnded(health);
             }
             catch (Exception ex)
@@ -290,21 +261,6 @@ namespace StatsMod
                 Logger.LogError($"Error tracking roller fuse: {ex.Message}");
             }
         }
-    }
-
-    [HarmonyPatch]
-    class ExplosionOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll(
-            (typeof(Grenade), "ExplodeClientRpc"),
-            (typeof(Mine), "ExplodeClientRpc"),
-            (typeof(BoomSpear), "ExplodeClientRpc"),
-            (typeof(BasicProjectile), "DestroyProjectileClientRpc"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(Explosion), nameof(Explosion.explosionOwnerId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetExplosionOwner)));
     }
 
     // A grenade or mine dropped without being armed belongs to nobody. Firing it in hand arms it, and so does a hit
@@ -340,82 +296,6 @@ namespace StatsMod
             catch (Exception ex)
             {
                 Logger.LogError($"Error recording who armed {__instance.name}: {ex.Message}");
-            }
-        }
-    }
-
-    // A held Particle Blade that reflects an energy ball makes the ball its own owner, its hits then belong to the blade's player
-    [HarmonyPatch(typeof(EnergyBall), "Overload")]
-    class EnergyBallReflectPatch
-    {
-        static void Prefix(EnergyBall __instance, GameObject go)
-        {
-            try
-            {
-                ParticleBlade blade = go.GetComponent<ParticleBlade>();
-                if (blade != null && blade.owner != null)
-                {
-                    HitLogic.OnBallReflected(__instance, HitLogic.WeaponPlayer(blade));
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording energy ball reflection: {ex.Message}");
-            }
-        }
-    }
-
-    [HarmonyPatch]
-    class ProjectileOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll(
-            (typeof(ProjectileLauncher), "Shoot"),
-            (typeof(BurstProjectileLauncher), "LaunchProjectile"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(BasicProjectile), nameof(BasicProjectile.projectileOwnerId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetProjectileOwner)));
-    }
-
-    // A launched blade belongs to the launcher's player
-    [HarmonyPatch]
-    class LaunchedWeaponOwnerPatch
-    {
-        static IEnumerable<MethodBase> TargetMethods() => PatchTargets.FindAll((typeof(ProjectileLauncher), "Shoot"));
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original) =>
-            OwnerStoreRewriter.Rewrite(instructions, original,
-                AccessTools.Field(typeof(Weapon), nameof(Weapon.ownerWeaponClientId)),
-                AccessTools.Method(typeof(HitLogic), nameof(HitLogic.SetLaunchedWeaponOwner)));
-    }
-
-    internal static class OwnerStoreRewriter
-    {
-        // Turns "target.field = value" into "setter(target, value, this)"; the setter does the same store
-        public static IEnumerable<CodeInstruction> Rewrite(IEnumerable<CodeInstruction> instructions, MethodBase original, FieldInfo field, MethodInfo setter)
-        {
-            int replaced = 0;
-            foreach (CodeInstruction instruction in instructions)
-            {
-                if (instruction.StoresField(field))
-                {
-                    CodeInstruction loadThis = new CodeInstruction(OpCodes.Ldarg_0);
-                    loadThis.labels.AddRange(instruction.labels);
-                    loadThis.blocks.AddRange(instruction.blocks);
-                    yield return loadThis;
-                    yield return new CodeInstruction(OpCodes.Call, setter);
-                    replaced++;
-                }
-                else
-                {
-                    yield return instruction;
-                }
-            }
-
-            if (replaced == 0)
-            {
-                Logger.LogWarning($"{original.DeclaringType?.Name}.{original.Name} no longer sets {field.Name}, its owner is not tracked");
             }
         }
     }

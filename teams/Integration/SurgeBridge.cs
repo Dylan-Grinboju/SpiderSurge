@@ -19,6 +19,14 @@ namespace SpiderTeams
             return true;
         }
 
+        public static void EndRun()
+        {
+            if (Available)
+            {
+                SurgeGameModeManager.EndRun(RunEnd.Versus);
+            }
+        }
+
         public static bool ResetPerks()
         {
             PerksManager perks = Perks();

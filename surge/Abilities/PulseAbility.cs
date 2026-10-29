@@ -164,6 +164,7 @@ namespace SpiderSurge
 
             if (IsAuthority)
             {
+                deadlyPulse = deadly;
                 ApplyPulsePhysics(pulseParams, deadly);
             }
         }
@@ -215,9 +216,27 @@ namespace SpiderSurge
 
         internal static PlayerController CasterOf(PulseAbility ability) => ability.playerController;
 
+        private bool deadlyPulse;
+
+        internal static bool IsDeadly(PulseAbility ability) => ability.deadlyPulse;
+
         private readonly HashSet<int> impactAccents = new HashSet<int>();
 
+        // The attack scope wraps this whole method, so the achievement check runs inside it
         private void ApplyPulsePhysics(PulseParams p, bool deadly)
+        {
+            var teammates = TotalDestructionAchievement.TeammatesAtRisk(this, deadly);
+            try
+            {
+                Pulse(p, deadly);
+            }
+            finally
+            {
+                TotalDestructionAchievement.Counted(this, teammates);
+            }
+        }
+
+        private void Pulse(PulseParams p, bool deadly)
         {
             int playerID = playerController.playerID.Value;
 
@@ -286,8 +305,8 @@ namespace SpiderSurge
                     var component = damageable as Component;
                     if (component != null && impactAccents.Add(component.GetInstanceID()))
                     {
-                        SurgeVfx.Safely(() => AccentVfx.Impact(closestPoint, direction, deadly));
-                        if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
+                        SurgeVfx.Safely(static hit => AccentVfx.Impact(hit.closestPoint, hit.direction, hit.deadly), (closestPoint, direction, deadly));
+                        SurgeNet.SendFx(SurgeFx.PulseImpact, PlayerId, closestPoint, Mathf.Atan2(direction.y, direction.x), deadly);
                     }
                     if (!deadly && rb != null)
                     {
@@ -337,7 +356,7 @@ namespace SpiderSurge
             }
             _enemiesToLaunch.Clear();
             if (!deadly && launched >= 5)
-                AchievementTracker.Run("Personal Space", () => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, playerController));
+                AchievementTracker.Run("Personal Space", static caster => SurgeAchievements.Unlock(SurgeAchievements.PersonalSpace, caster), playerController);
         }
 
         // The activating player must never be affected by their own pulse.
@@ -516,23 +535,4 @@ namespace SpiderSurge
         internal SpiderHealthSystem Health;
     }
 
-    [HarmonyPatch(typeof(Explosion), "KnockBack")]
-    internal static class PulseExplosionScopePatch
-    {
-        internal static SpiderHealthSystem ProtectedSpider;
-
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        private static void Prefix(Explosion __instance, out SpiderHealthSystem __state)
-        {
-            __state = ProtectedSpider;
-            ProtectedSpider = __instance.GetComponent<PulseExplosionCaster>()?.Health;
-        }
-
-        [HarmonyFinalizer]
-        private static void Finalizer(SpiderHealthSystem __state)
-        {
-            ProtectedSpider = __state;
-        }
-    }
 }

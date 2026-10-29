@@ -23,6 +23,10 @@ namespace SpiderSurge
     {
         private const string PanelName = "SurgeShop";
         private const float HeaderHeight = 24f;
+        private const float EntryInset = 14f;
+        private const float TitleTop = 10f;
+        private const float TitleHeight = 22f;
+        private const float IconGap = 10f;
 
         private class Entry
         {
@@ -37,12 +41,11 @@ namespace SpiderSurge
 
         private readonly List<Entry> _entries = new List<Entry>();
         private TMP_Text _header;
+        private ChaosIcon _headerIcon;
         private SurvivalModeHud _hud;
         private Vector2 _viewSize;
         private Entry _selected;
-        private Button _buy;
-        private Image _buyBackground;
-        private TMP_Text _buyLabel;
+        private PerkActionButton _buy;
         private int _lives = -1;
         private int _maxLives = -1;
         private ModifierManager _modifiers;
@@ -191,14 +194,8 @@ namespace SpiderSurge
 
         private TMP_Text CloneText(TMP_Text source, string name)
         {
-            var text = Instantiate(source.gameObject, transform).GetComponent<TMP_Text>();
-            text.gameObject.name = name;
-            text.gameObject.SetActive(true);
-            SettingsPage.SetText(text, "");
-            text.raycastTarget = false;
+            var text = Hud.CloneText(source, transform, name, "");
             text.enableAutoSizing = false;
-            text.rectTransform.localScale = Vector3.one;
-            text.rectTransform.localRotation = Quaternion.identity;
             return text;
         }
 
@@ -218,8 +215,7 @@ namespace SpiderSurge
             PlaceTop(_header.rectTransform, 0f, HeaderHeight, 0f);
             _header.fontSize = 14f;
             _header.alignment = TextAlignmentOptions.Center;
-            ChaosIcon.Add(_header.transform, new Vector2(12, 0), 18, Hud.Warm, new Vector2(0, .5f));
-            _header.margin = new Vector4(26, 0, 0, 0);
+            _headerIcon = ChaosIcon.Add(_header.transform, Vector2.zero, 18, Hud.Warm);
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
             var note = CloneText(prefabCard.perkDescriptionText, "Shared wallet explanation");
@@ -233,8 +229,6 @@ namespace SpiderSurge
         private void Populate(float entryHeight)
         {
             float y = M.WalletBlockHeight;
-            float iconSize = Mathf.Min(entryHeight - 16f, 56f);
-            float textLeft = 8f + iconSize + 10f;
             foreach (ShopItem item in PerkShop.Offer)
             {
                 GameObject entryObject = Instantiate(_hud.perkCardPrefab, transform);
@@ -266,8 +260,6 @@ namespace SpiderSurge
                     iconRect.anchorMin = new Vector2(0f, 0.5f);
                     iconRect.anchorMax = new Vector2(0f, 0.5f);
                     iconRect.pivot = new Vector2(0f, 0.5f);
-                    iconRect.anchoredPosition = new Vector2(8f, 0f);
-                    iconRect.sizeDelta = new Vector2(iconSize, iconSize);
                     entry.Icon.sprite = IconLoader.GetIcon(PerkShop.IconOf(item));
                     entry.Icon.color = Color.white;
                     entry.Icon.preserveAspect = true;
@@ -277,7 +269,7 @@ namespace SpiderSurge
                     SettingsPage.SetText(entry.Title, "");
                     var titleRect = entry.Title.rectTransform;
                     titleRect.pivot = new Vector2(0.5f, 0.5f);
-                    SettingsPage.Stretch(titleRect, new Vector2(textLeft, entryHeight - 30f), new Vector2(-6f, -6f));
+                    SettingsPage.Stretch(titleRect, Vector2.zero, Vector2.zero);
                     entry.Currency = ChaosIcon.Add(entry.Title.transform, new Vector2(7, 0), 13, Hud.Warm, new Vector2(0, .5f));
                     entry.Title.alignment = TextAlignmentOptions.MidlineLeft;
                     entry.Title.enableWordWrapping = false;
@@ -291,7 +283,7 @@ namespace SpiderSurge
                     SettingsPage.SetText(entry.Description, "");
                     var descriptionRect = entry.Description.rectTransform;
                     descriptionRect.pivot = new Vector2(0.5f, 0.5f);
-                    SettingsPage.Stretch(descriptionRect, new Vector2(textLeft, 6f), new Vector2(-6f, -32f));
+                    SettingsPage.Stretch(descriptionRect, Vector2.zero, Vector2.zero);
                     entry.Description.enableAutoSizing = true;
                     entry.Description.fontSizeMin = M.MinLabelFontSize;
                     entry.Description.fontSizeMax = 12f;
@@ -312,41 +304,14 @@ namespace SpiderSurge
 
         private void BuildBuyButton(float y)
         {
-            GameObject buyObject = Instantiate(_hud.perkCardPrefab, transform);
-            buyObject.name = "Shop Buy";
-            buyObject.AddComponent<PerkActionButton>();
-            var card = buyObject.GetComponent<SurvivalModifierChoiceCard>();
-            _buy = buyObject.GetComponent<Button>();
-            _buyBackground = buyObject.GetComponent<Image>();
-            if (card != null)
+            _buy = PerkActionButton.Create(_hud.perkCardPrefab, transform, "Shop Buy", OnBuy, 6f);
+            PlaceTop((RectTransform)_buy.transform, y, M.BuyHeight, 0f);
+            TMP_Text label = _buy.Label;
+            if (label != null)
             {
-                _buyLabel = card.perkNameText;
-                PerkChoiceWidget.HideCardParts(card, false, false);
-                Destroy(card);
-            }
-            var rect = (RectTransform)buyObject.transform;
-            rect.localScale = Vector3.one;
-            PlaceTop(rect, y, M.BuyHeight, 0f);
-            if (_buyLabel != null)
-            {
-                SettingsPage.SetText(_buyLabel, "");
-                var labelRect = _buyLabel.rectTransform;
-                labelRect.pivot = new Vector2(0.5f, 0.5f);
-                SettingsPage.Stretch(labelRect, new Vector2(6f, 2f), new Vector2(-6f, -2f));
-                _buyLabel.alignment = TextAlignmentOptions.Center;
-                _buyLabel.enableWordWrapping = false;
-                _buyLabel.overflowMode = TextOverflowModes.Ellipsis;
-                _buyLabel.enableAutoSizing = true;
-                _buyLabel.fontSizeMin = M.MinLabelFontSize;
-                _buyLabel.fontSizeMax = 13f;
-            }
-            if (_buy != null)
-            {
-                _buy.onClick.RemoveAllListeners();
-                _buy.onClick.AddListener(OnBuy);
-                ColorBlock colors = _buy.colors;
-                colors.disabledColor = M.ConfirmDisabledTint;
-                _buy.colors = colors;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = M.MinLabelFontSize;
+                label.fontSizeMax = 13f;
             }
         }
 
@@ -374,6 +339,7 @@ namespace SpiderSurge
             Button last = cards.Count > 0 ? cards[cards.Count - 1] : null;
             Button beforeLast = cards.Count > 1 ? cards[cards.Count - 2] : null;
             Button confirm = PerkConfirmButton.Current != null ? PerkConfirmButton.Current.Button : null;
+            Button buy = _buy != null ? _buy.Button : null;
             Button first = _entries.Count > 0 ? _entries[0].Button : null;
             if (last != null && first != null)
             {
@@ -392,20 +358,20 @@ namespace SpiderSurge
                 Navigation nav = button.navigation;
                 nav.mode = Navigation.Mode.Explicit;
                 nav.selectOnUp = i > 0 ? _entries[i - 1].Button : null;
-                nav.selectOnDown = i < _entries.Count - 1 ? _entries[i + 1].Button : _buy;
+                nav.selectOnDown = i < _entries.Count - 1 ? _entries[i + 1].Button : buy;
                 nav.selectOnLeft = last;
                 nav.selectOnRight = null;
                 button.navigation = nav;
             }
-            if (_buy != null)
+            if (buy != null)
             {
-                Navigation nav = _buy.navigation;
+                Navigation nav = buy.navigation;
                 nav.mode = Navigation.Mode.Explicit;
                 nav.selectOnUp = _entries.Count > 0 ? _entries[_entries.Count - 1].Button : null;
                 nav.selectOnDown = null;
                 nav.selectOnLeft = confirm != null ? confirm : last;
                 nav.selectOnRight = null;
-                _buy.navigation = nav;
+                buy.navigation = nav;
             }
             if (confirm != null && first != null)
             {
@@ -471,6 +437,7 @@ namespace SpiderSurge
             if (_header != null)
             {
                 _header.text = $"TEAM CHAOS <color={Consts.Formatting.ColorGold}>{points}</color>";
+                ChaosIcon.CenterBefore(_headerIcon, _header);
             }
             bool selectedCan = false;
             foreach (Entry entry in _entries)
@@ -513,19 +480,29 @@ namespace SpiderSurge
             RefreshBuy(selectedCan);
         }
 
+        // Centers the title and description around the middle and keeps them inside the card's frame; a bought perk shows a small icon beside its name and the description across the card
         private static void LayoutEntry(Entry entry, bool revealed)
         {
             if (entry.Button == null) return;
             float height = ((RectTransform)entry.Button.transform).rect.height;
-            float iconSize = revealed ? 24f : Mathf.Min(height - 16f, 56f);
-            float textLeft = 8f + iconSize + 10f;
+            float titleBottom = Mathf.Min(height / 2f + 1f, height - TitleTop - TitleHeight);
+            float iconSize = revealed ? TitleHeight : Mathf.Min(height - 2f * EntryInset, 52f);
+            float textLeft = EntryInset + iconSize + IconGap;
             if (entry.Icon != null)
             {
                 entry.Icon.rectTransform.sizeDelta = new Vector2(iconSize, iconSize);
-                entry.Icon.rectTransform.anchoredPosition = new Vector2(8f, revealed ? height / 2f - 18f : 0f);
+                entry.Icon.rectTransform.anchoredPosition = new Vector2(EntryInset, revealed ? titleBottom + TitleHeight / 2f - height / 2f : 0f);
             }
-            if (entry.Title != null) entry.Title.rectTransform.offsetMin = new Vector2(textLeft, height - 30f);
-            if (entry.Description != null) entry.Description.rectTransform.offsetMin = new Vector2(revealed ? 8f : textLeft, 6f);
+            if (entry.Title != null)
+            {
+                entry.Title.rectTransform.offsetMin = new Vector2(textLeft, titleBottom);
+                entry.Title.rectTransform.offsetMax = new Vector2(-EntryInset, titleBottom + TitleHeight - height);
+            }
+            if (entry.Description != null)
+            {
+                entry.Description.rectTransform.offsetMin = new Vector2(revealed ? EntryInset : textLeft, EntryInset - 4f);
+                entry.Description.rectTransform.offsetMax = new Vector2(-EntryInset, titleBottom - 2f - height);
+            }
         }
 
         private static string PurchasedDescription(Modifier perk)
@@ -537,23 +514,15 @@ namespace SpiderSurge
 
         private void RefreshBuy(bool selectedCan)
         {
-            if (_buy == null) return;
+            if (_buy == null || _buy.Button == null) return;
             bool can = _selected != null && selectedCan;
-            PerkChoiceWidget.SetInteractable(_buy, can, _selected != null && _selected.Button != null ? _selected.Button : PerkChoiceWidget.FirstCard(_hud));
-            if (_selected != null && _selected.Button != null)
+            _buy.Show(can, _selected != null && _selected.Button != null ? _selected.Button : null, _hud);
+            if (_buy.Label != null)
             {
-                Navigation nav = _buy.navigation;
-                nav.selectOnUp = _selected.Button;
-                _buy.navigation = nav;
-            }
-            if (_buyLabel != null)
-            {
-                _buyLabel.text = _selected == null ? "Pick an item to buy"
+                _buy.Label.text = _selected == null ? "Pick an item to buy"
                     : _selected.Item == ShopItem.Perk && PerkShop.PurchasedPerk != null ? "Purchased"
                     : $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
-                _buyLabel.color = PerkChoiceWidget.Faded(_buyLabel.color, can ? 1f : 0.5f);
             }
-            if (_buyBackground != null) _buyBackground.color = PerkChoiceWidget.Faded(Color.white, can ? 1f : 0.6f);
         }
 
         // After a reroll the selected card is gone with the old cards, so the view's first card is selected again; a view that is still hidden selects its own when it opens

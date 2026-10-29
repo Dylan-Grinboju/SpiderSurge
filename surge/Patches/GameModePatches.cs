@@ -6,30 +6,6 @@ using TMPro;
 
 namespace SpiderSurge
 {
-    [HarmonyPatch(typeof(SurvivalMode), "StopGameMode")]
-    public class SurvivalMode_StopGameMode_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            SurgeGameModeManager.EndRun(false);
-        }
-    }
-
-    [HarmonyPatch(typeof(LobbyController), "OnSceneLoaded")]
-    public class LobbyController_OnSceneLoaded_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(Scene scene)
-        {
-            if (scene.name == "Lobby")
-            {
-                SurgeGameModeManager.EndRun(true);
-                SurgeLobbyPlatform.EnsureCreated();
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(LobbyController), "Start")]
     public class LobbyController_Start_Patch
     {

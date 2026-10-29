@@ -1,6 +1,5 @@
 using Logger = Silk.Logger;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 namespace StatsMod;
 
@@ -12,7 +11,8 @@ public static class StatsModApi
 {
     public const int API_VERSION = 1;
 
-    private static readonly ReaderWriterLockSlim _syncLock = new ReaderWriterLockSlim();
+    internal static readonly IRunReportSource Source = new ApiSource();
+    private static readonly object _sync = new object();
     private static readonly List<string> externalStatLines = new();
     private static readonly List<TitleEntry> externalTitles = new();
     private static readonly List<TitleDefinition> describedTitles = new();
@@ -30,15 +30,10 @@ public static class StatsModApi
     {
         if (lines == null || lines.Count == 0 || lines.Count > MAX_STATS_LINES) return false;
 
-        _syncLock.EnterWriteLock();
-        try
+        lock (_sync)
         {
             if (externalStatLines.Count + lines.Count > MAX_STATS_LINES * 5) return false; // Prevent extreme spam from multiple mods
             externalStatLines.AddRange(lines);
-        }
-        finally
-        {
-            _syncLock.ExitWriteLock();
         }
 
         Logger.LogInfo($"StatsModApi: Registered {lines.Count} external stat lines");
@@ -59,53 +54,32 @@ public static class StatsModApi
     {
         if (string.IsNullOrEmpty(titleName) || titleName.Length > MAX_TITLE_LENGTH || requirementNames == null || requirementNames.Length == 0) return false;
 
-        bonusPriority = Mathf.Clamp(bonusPriority, -MAX_TITLE_PRIORITY, MAX_TITLE_PRIORITY);
-
-        var requirements = new HashSet<string>(requirementNames);
         TitleEntry title;
 
         if (leader != null)
         {
             if (!leaderHasStat) return false;
-
-            var players = PlayerTracker.Instance.GetActivePlayers();
-            if (!players.TryGetValue(leader, out var playerData))
-            {
-                Logger.LogWarning($"StatsModApi: Could not find player data for title '{titleName}'");
-                return false;
-            }
-
-            var kvp = new KeyValuePair<PlayerController, PlayerTracker.PlayerData>(leader, playerData);
-            title = new TitleEntry(kvp)
-            {
-                TitleName = titleName,
-                Description = description,
-                Priority = requirements.Count * 10 + bonusPriority,
-                Requirements = requirements
-            };
-            Logger.LogInfo($"StatsModApi: Registered title '{titleName}' for {playerData.PlayerName}");
+            title = RunReportSources.TitleFor(leader, titleName, description, requirementNames, bonusPriority);
+            if (title == null) return false;
+            Logger.LogInfo($"StatsModApi: Registered title '{titleName}' for {title.PlayerName}");
         }
         else
         {
+            var requirements = new HashSet<string>(requirementNames);
             title = new TitleEntry()
             {
                 TitleName = titleName,
                 Description = description,
-                Priority = requirements.Count * 10 + bonusPriority,
+                Priority = requirements.Count * 10 + Mathf.Clamp(bonusPriority, -MAX_TITLE_PRIORITY, MAX_TITLE_PRIORITY),
                 Requirements = requirements
             };
             Logger.LogInfo($"StatsModApi: Registered title '{titleName}' (player will be resolved from requirements)");
         }
 
-        _syncLock.EnterWriteLock();
-        try
+        lock (_sync)
         {
             if (externalTitles.Count > 100) return false; // Prevent title spam
             externalTitles.Add(title);
-        }
-        finally
-        {
-            _syncLock.ExitWriteLock();
         }
 
         return true;
@@ -122,50 +96,41 @@ public static class StatsModApi
     {
         if (string.IsNullOrEmpty(titleName) || titleName.Length > MAX_TITLE_LENGTH || howToEarn == null || howToEarn.Length > MAX_TITLE_LENGTH * 2) return false;
 
-        _syncLock.EnterWriteLock();
-        try
+        lock (_sync)
         {
             describedTitles.RemoveAll(t => t.Name == titleName);
             if (describedTitles.Count >= MAX_STATS_LINES) return false;
             describedTitles.Add(new TitleDefinition(titleName, howToEarn));
         }
-        finally
-        {
-            _syncLock.ExitWriteLock();
-        }
         return true;
+    }
+
+    private sealed class ApiSource : IRunReportSource
+    {
+        public IEnumerable<TitleDefinition> DescribedTitles => GetDescribedTitles();
+        public IEnumerable<string> ReportLines() => GetExternalStats();
+        public IEnumerable<TitleEntry> Titles() => GetExternalTitles();
     }
 
     public static List<TitleDefinition> GetDescribedTitles()
     {
-        _syncLock.EnterReadLock();
-        try
+        lock (_sync)
         {
             return new List<TitleDefinition>(describedTitles);
-        }
-        finally
-        {
-            _syncLock.ExitReadLock();
         }
     }
 
     public static List<string> GetExternalStats()
     {
-        _syncLock.EnterReadLock();
-        try
+        lock (_sync)
         {
             return new List<string>(externalStatLines);
-        }
-        finally
-        {
-            _syncLock.ExitReadLock();
         }
     }
 
     public static List<TitleEntry> GetExternalTitles()
     {
-        _syncLock.EnterReadLock();
-        try
+        lock (_sync)
         {
             return externalTitles.ConvertAll(t => new TitleEntry
             {
@@ -180,23 +145,14 @@ public static class StatsModApi
                 Requirements = t.Requirements != null ? new HashSet<string>(t.Requirements) : new HashSet<string>()
             });
         }
-        finally
-        {
-            _syncLock.ExitReadLock();
-        }
     }
 
     public static void ClearExternalData()
     {
-        _syncLock.EnterWriteLock();
-        try
+        lock (_sync)
         {
             externalStatLines.Clear();
             externalTitles.Clear();
-        }
-        finally
-        {
-            _syncLock.ExitWriteLock();
         }
     }
 }

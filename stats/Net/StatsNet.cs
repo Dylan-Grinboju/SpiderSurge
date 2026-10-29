@@ -34,8 +34,8 @@ namespace StatsMod
                 return;
             }
             _initialized = true;
-            Net.Register(SnapshotChannel, OnSnapshot);
-            Net.Register(TitlesChannel, OnTitles);
+            Net.RegisterFromHost(SnapshotChannel, OnSnapshot);
+            Net.RegisterFromHost(TitlesChannel, OnTitles);
             Net.PeerReady += OnPeerReady;
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
@@ -72,19 +72,11 @@ namespace StatsMod
         public static void SendSnapshot(SnapshotReason reason)
         {
             _nextSnapshotAt = Time.unscaledTime + SnapshotInterval;
-            if (!Net.HasRemotePlayers)
-            {
-                return;
-            }
             Net.SendToAll(SnapshotChannel, writer => WriteSnapshot(writer, reason));
         }
 
         public static void SendTitles()
         {
-            if (!Net.HasRemotePlayers)
-            {
-                return;
-            }
             Net.SendToAll(TitlesChannel, WriteTitles);
         }
 
@@ -170,12 +162,8 @@ namespace StatsMod
             }
         }
 
-        private static void OnSnapshot(ulong sender, BinaryReader reader)
+        private static void OnSnapshot(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             try
             {
                 var reason = (SnapshotReason)reader.ReadByte();
@@ -268,12 +256,8 @@ namespace StatsMod
             }
         }
 
-        private static void OnTitles(ulong sender, BinaryReader reader)
+        private static void OnTitles(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != 0)
-            {
-                return;
-            }
             try
             {
                 var current = ReadTitleList(reader);

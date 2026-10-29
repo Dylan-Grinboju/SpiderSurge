@@ -6,20 +6,16 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SpiderHealthSystem))]
     public static class SpiderHealthSystemPatches
     {
-        [HarmonyPatch("Impact")]
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        public static bool Impact_Prefix(SpiderHealthSystem __instance)
+        // Pulse never knocks back its own caster
+        internal static bool AllowImpact(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
-            return PulseExplosionScopePatch.ProtectedSpider != __instance;
+            return SurgeAttacks.ProtectedSpider != spider;
         }
 
-        // A hit another prefix cancelled (Teams friendly fire) never reached the spider, so Null Field doesn't count it
-        [HarmonyPatch("Damage")]
-        [HarmonyPrefix]
-        public static void Damage_Prefix(SpiderHealthSystem __instance, Vector3 force, Vector3 point, bool __runOriginal)
+        // Only a hit that lands counts, so one Teams friendly fire cancelled doesn't
+        internal static void RecordHit(SpiderHealthSystem spider, Vector3 force, Vector3 point, bool stun)
         {
-            if (__runOriginal) TryRecordHit(__instance, direction: (point - __instance.transform.position).sqrMagnitude > 0.01f ? point - __instance.transform.position : -force);
+            TryRecordHit(spider, direction: (point - spider.transform.position).sqrMagnitude > 0.01f ? point - spider.transform.position : -force);
         }
 
         // Lava disintegrates a spider inside a Null Field (the Black Hole spares it); so does falling below the map, which only delays the death and isn't a hit

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -25,7 +26,6 @@ namespace SpiderSurge
         private static readonly Dictionary<Rigidbody2D, Launch> launches = new Dictionary<Rigidbody2D, Launch>();
         private static readonly Dictionary<EnemyBrain, float> pulseStuns = new Dictionary<EnemyBrain, float>();
         private static readonly Dictionary<Type, FieldInfo> stunFields = new Dictionary<Type, FieldInfo>();
-        private static readonly FieldInfo immuneTimeField = AccessTools.Field(typeof(EnemyHealthSystem), "_immuneTime");
 
         public static bool CanLaunch(EnemyHealthSystem enemy)
         {
@@ -35,7 +35,7 @@ namespace SpiderSurge
             {
                 return false;
             }
-            return immuneTimeField == null || Time.time >= (float)immuneTimeField.GetValue(enemy);
+            return GameFields.EnemyImmuneTime == null || Time.time >= GameFields.EnemyImmuneTime(enemy);
         }
 
         public static void LaunchEnemy(EnemyHealthSystem enemy, Vector2 origin, float speed)

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,10 +11,9 @@ namespace SpiderSurge
     // An enemy is removed without a death, a spider dies. On a client an enemy only shrinks, since the host moves it
     public class SwallowedTarget : MonoBehaviour
     {
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying =
-            AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> SpiderImmuneTill =
-            AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
+        // Stats credits the caster with what the Black Hole takes
+        public static event Action<EnemyHealthSystem, PlayerController> EnemySwallowed;
+        public static event Action<SpiderHealthSystem, PlayerController> SpiderKilled;
 
         public PlayerController Caster { get; private set; }
 
@@ -31,6 +32,7 @@ namespace SpiderSurge
         {
             if (enemy == null || IsSwallowed(enemy.gameObject)) return;
 
+            Listeners.Raise(EnemySwallowed, enemy, caster, "SpiderSurge Black Hole listener failed");
             SwallowedTarget swallowed = enemy.gameObject.AddComponent<SwallowedTarget>();
             swallowed._enemy = enemy;
             swallowed.Caster = caster;
@@ -38,6 +40,7 @@ namespace SpiderSurge
             swallowed.FreezeEnemy();
             swallowed.StartPull(target);
             SurgeNet.SendEnemyFx(EnemyFx.Swallowed, enemy.GetComponent<NetworkObject>(), pullTime);
+            SwallowedAchievements.Enemy(enemy, caster);
         }
 
         public static void ShowSwallowed(EnemyHealthSystem enemy, float pullTime)
@@ -61,6 +64,7 @@ namespace SpiderSurge
             swallowed._pullTime = Consts.Values.Storage.BlackHoleTakeTime;
             swallowed.FreezeSpider();
             swallowed.StartPull(target);
+            SwallowedAchievements.Spider(spider, caster);
         }
 
         public static bool IsSwallowed(GameObject root)
@@ -71,7 +75,7 @@ namespace SpiderSurge
         // Nothing protects it: alive, not respawn immune and not inside a Null Field
         public static bool CanDie(SpiderHealthSystem spider)
         {
-            if (spider == null || spider.dead || spider.astralDead || SpiderDying(spider) || Time.time < SpiderImmuneTill(spider)) return false;
+            if (spider == null || spider.dead || spider.astralDead || GameFields.SpiderDying(spider) || Time.time < GameFields.SpiderImmuneTill(spider)) return false;
 
             ImmuneAbility nullField = ImmuneAbility.GetByHealthSystem(spider);
             return nullField == null || !nullField.IsImmune;
@@ -80,6 +84,7 @@ namespace SpiderSurge
         // The Black Hole ignores shields; Stats credits the caster with this kill
         public static void KillSpider(SpiderHealthSystem spider, PlayerController caster)
         {
+            Listeners.Raise(SpiderKilled, spider, caster, "SpiderSurge Black Hole listener failed");
             spider.DisableShield();
             spider.Disintegrate();
         }
@@ -171,7 +176,7 @@ namespace SpiderSurge
             enabled = false;
             if (_enemy != null) Destroy(gameObject);
             else if (CanDie(_spider)) KillSpider(_spider, Caster);
-            else if (_spider.astralDead && Time.time >= SpiderImmuneTill(_spider)) DissolveGhost();
+            else if (_spider.astralDead && Time.time >= GameFields.SpiderImmuneTill(_spider)) DissolveGhost();
             else Release();
         }
 

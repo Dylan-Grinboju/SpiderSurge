@@ -94,83 +94,122 @@ public class TitleBuilder
 
 public static class Req
 {
-    public const string MostWebSwings = nameof(StatLeaders.MostWebSwings);
-    public const string LeastWebSwings = nameof(StatLeaders.LeastWebSwings);
-    public const string HighestPoint = nameof(StatLeaders.HighestPoint);
-    public const string LowestPoint = nameof(StatLeaders.LowestPoint);
-    public const string MostAirborneTime = nameof(StatLeaders.MostAirborneTime);
-    public const string LeastAirborneTime = nameof(StatLeaders.LeastAirborneTime);
-    public const string MostKillsWhileAirborne = nameof(StatLeaders.MostKillsWhileAirborne);
-    public const string MostKillsWhileSolo = nameof(StatLeaders.MostKillsWhileSolo);
-    public const string MostWaveClutches = nameof(StatLeaders.MostWaveClutches);
-    public const string MaxKillStreak = nameof(StatLeaders.MaxKillStreak);
-    public const string MaxKillStreakWhileSolo = nameof(StatLeaders.MaxKillStreakWhileSolo);
-    public const string MostAliveTime = nameof(StatLeaders.MostAliveTime);
-    public const string MostOffense = nameof(StatLeaders.MostOffense);
-    public const string LeastOffense = nameof(StatLeaders.LeastOffense);
-    public const string MostDamageTaken = nameof(StatLeaders.MostDamageTaken);
-    public const string LeastDamageTaken = nameof(StatLeaders.LeastDamageTaken);
-    public const string MostFriendlyFire = nameof(StatLeaders.MostFriendlyFire);
-    public const string LeastFriendlyFire = nameof(StatLeaders.LeastFriendlyFire);
-    public const string MostShieldsLost = nameof(StatLeaders.MostShieldsLost);
-    public const string LeastShieldsLost = nameof(StatLeaders.LeastShieldsLost);
-    public const string MostDeaths = nameof(StatLeaders.MostDeaths);
-    public const string LeastDeaths = nameof(StatLeaders.LeastDeaths);
-    public const string MostLavaDeaths = nameof(StatLeaders.MostLavaDeaths);
-    public const string LeastLavaDeaths = nameof(StatLeaders.LeastLavaDeaths);
-    public const string MostGunsKills = nameof(StatLeaders.MostGunsKills);
-    public const string MostExplosionsKills = nameof(StatLeaders.MostExplosionsKills);
-    public const string MostBladeKills = nameof(StatLeaders.MostBladeKills);
-    public const string MostHornetKills = nameof(StatLeaders.MostHornetKills);
-    public const string MostWhispKills = nameof(StatLeaders.MostWhispKills);
-    public const string MostKhepriKills = nameof(StatLeaders.MostKhepriKills);
-    public const string MostAstralReturns = nameof(StatLeaders.MostAstralReturns);
-    public const string BestAccuracy = nameof(StatLeaders.BestAccuracy);
-    public const string BestRailvolverAccuracy = nameof(StatLeaders.BestRailvolverAccuracy);
-    public const string WorstAccuracy = nameof(StatLeaders.WorstAccuracy);
-    public const string MostShotsFired = nameof(StatLeaders.MostShotsFired);
+    public const string MostWebSwings = nameof(MostWebSwings);
+    public const string LeastWebSwings = nameof(LeastWebSwings);
+    public const string HighestPoint = nameof(HighestPoint);
+    public const string LowestPoint = nameof(LowestPoint);
+    public const string MostAirborneTime = nameof(MostAirborneTime);
+    public const string LeastAirborneTime = nameof(LeastAirborneTime);
+    public const string MostKillsWhileAirborne = nameof(MostKillsWhileAirborne);
+    public const string MostKillsWhileSolo = nameof(MostKillsWhileSolo);
+    public const string MostWaveClutches = nameof(MostWaveClutches);
+    public const string MaxKillStreak = nameof(MaxKillStreak);
+    public const string MaxKillStreakWhileSolo = nameof(MaxKillStreakWhileSolo);
+    public const string MostAliveTime = nameof(MostAliveTime);
+    public const string MostOffense = nameof(MostOffense);
+    public const string LeastOffense = nameof(LeastOffense);
+    public const string MostDamageTaken = nameof(MostDamageTaken);
+    public const string LeastDamageTaken = nameof(LeastDamageTaken);
+    public const string MostFriendlyFire = nameof(MostFriendlyFire);
+    public const string LeastFriendlyFire = nameof(LeastFriendlyFire);
+    public const string MostShieldsLost = nameof(MostShieldsLost);
+    public const string LeastShieldsLost = nameof(LeastShieldsLost);
+    public const string MostDeaths = nameof(MostDeaths);
+    public const string LeastDeaths = nameof(LeastDeaths);
+    public const string MostLavaDeaths = nameof(MostLavaDeaths);
+    public const string LeastLavaDeaths = nameof(LeastLavaDeaths);
+    public const string MostGunsKills = nameof(MostGunsKills);
+    public const string MostExplosionsKills = nameof(MostExplosionsKills);
+    public const string MostBladeKills = nameof(MostBladeKills);
+    public const string MostHornetKills = nameof(MostHornetKills);
+    public const string MostWhispKills = nameof(MostWhispKills);
+    public const string MostKhepriKills = nameof(MostKhepriKills);
+    public const string MostAstralReturns = nameof(MostAstralReturns);
+    public const string BestAccuracy = nameof(BestAccuracy);
+    public const string BestRailvolverAccuracy = nameof(BestRailvolverAccuracy);
+    public const string WorstAccuracy = nameof(WorstAccuracy);
+    public const string MostShotsFired = nameof(MostShotsFired);
 }
 
 public class StatLeaders
 {
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWebSwings { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastWebSwings { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> HighestPoint { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LowestPoint { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAirborneTime { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastAirborneTime { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKillsWhileAirborne { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKillsWhileSolo { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWaveClutches { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MaxKillStreak { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MaxKillStreakWhileSolo { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAliveTime { get; set; }
+    private readonly Dictionary<string, KeyValuePair<PlayerController, PlayerTracker.PlayerData>> leaders = new Dictionary<string, KeyValuePair<PlayerController, PlayerTracker.PlayerData>>();
 
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostOffense { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastOffense { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostDamageTaken { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastDamageTaken { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostFriendlyFire { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastFriendlyFire { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostShieldsLost { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastShieldsLost { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostDeaths { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastDeaths { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostLavaDeaths { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> LeastLavaDeaths { get; set; }
+    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> this[string requirement]
+    {
+        get => leaders[requirement];
+        internal set => leaders[requirement] = value;
+    }
+}
 
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostGunsKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostExplosionsKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostBladeKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostHornetKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostWhispKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostKhepriKills { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostAstralReturns { get; set; }
+internal enum StatFormat { Count, Meters, Seconds }
 
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> BestAccuracy { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> BestRailvolverAccuracy { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> WorstAccuracy { get; set; }
-    public KeyValuePair<PlayerController, PlayerTracker.PlayerData> MostShotsFired { get; set; }
+internal sealed class StatDef
+{
+    private static readonly Func<PlayerTracker.PlayerData, double> AliveTime = p => p.TotalAliveTime;
+    private static readonly Func<PlayerTracker.PlayerData, double> Kills = p => p.Kills;
+
+    private static readonly string[] GunWeapons = { "Shotgun", "RailShot", "DeathRay", "EnergyBall", "Laser Cannon", "SawDisc" };
+    private static readonly string[] ExplosiveWeapons = { "Explosions", "Laser Cube", "DeathCube", "Snowball", "Pulse" };
+    private static readonly string[] BladeWeapons = { "Particle Blade", "KhepriStaff" };
+
+    // Every title stat but the accuracy ones; ranked descending by Value then TieBreak, the Least side is the last in that order
+    internal static readonly StatDef[] All =
+    {
+        new StatDef(Req.MostWebSwings, "Most Web Swings", p => p.WebSwings, AliveTime, leastReq: Req.LeastWebSwings, leastLabel: "Least Web Swings"),
+        new StatDef(Req.HighestPoint, "Highest Point", p => p.HighestPoint, AliveTime, StatFormat.Meters, Req.LowestPoint, "Lowest Point"),
+        new StatDef(Req.MostAirborneTime, "Most Airborne Time", p => p.AirborneTime, AliveTime, StatFormat.Seconds, Req.LeastAirborneTime, "Least Airborne Time"),
+        new StatDef(Req.MostKillsWhileAirborne, "Most Kills While Airborne", p => p.KillsWhileAirborne, Kills),
+        new StatDef(Req.MostKillsWhileSolo, "Most Kills While Solo", p => p.KillsWhileSolo, Kills),
+        new StatDef(Req.MostWaveClutches, "Most Wave Clutches", p => p.WaveClutches, Kills),
+        new StatDef(Req.MaxKillStreak, "Max Kill Streak", p => p.MaxKillStreak, AliveTime),
+        new StatDef(Req.MaxKillStreakWhileSolo, "Max Kill Streak While Solo", p => p.MaxKillStreakWhileSolo, AliveTime),
+        new StatDef(Req.MostAliveTime, "Most Alive Time", p => p.TotalAliveTime, null, StatFormat.Seconds),
+        new StatDef(Req.MostOffense, "Most Offense", p => p.Kills + p.EnemyShieldsTakenDown, AliveTime, leastReq: Req.LeastOffense, leastLabel: "Least Offense"),
+        new StatDef(Req.MostDamageTaken, "Most Damage Taken", p => p.Deaths + p.ShieldsLost, AliveTime, leastReq: Req.LeastDamageTaken, leastLabel: "Least Damage Taken"),
+        new StatDef(Req.MostFriendlyFire, "Most Friendly Fire", p => p.FriendlyKills + p.FriendlyShieldsHit, AliveTime, leastReq: Req.LeastFriendlyFire, leastLabel: "Least Friendly Fire"),
+        new StatDef(Req.MostShieldsLost, "Most Shields Lost", p => p.ShieldsLost, AliveTime, leastReq: Req.LeastShieldsLost, leastLabel: "Least Shields Lost"),
+        new StatDef(Req.MostDeaths, "Most Deaths", p => p.Deaths, AliveTime, leastReq: Req.LeastDeaths, leastLabel: "Least Deaths"),
+        new StatDef(Req.MostLavaDeaths, "Most Lava Deaths", p => p.LavaDeaths, AliveTime, leastReq: Req.LeastLavaDeaths, leastLabel: "Least Lava Deaths"),
+        new StatDef(Req.MostGunsKills, "Most Gun Kills", p => WeaponKills(p, GunWeapons), AliveTime),
+        new StatDef(Req.MostExplosionsKills, "Most Explosive Kills", p => WeaponKills(p, ExplosiveWeapons), AliveTime),
+        new StatDef(Req.MostBladeKills, "Most Blade Kills", p => WeaponKills(p, BladeWeapons), AliveTime),
+        new StatDef(Req.MostHornetKills, "Most Hornets Killed", p => p.EnemyKills["Hornet"], AliveTime),
+        new StatDef(Req.MostWhispKills, "Most Whisps Killed", p => p.EnemyKills["Whisp"] + p.EnemyKills["Power Whisp"], AliveTime),
+        new StatDef(Req.MostKhepriKills, "Most Khepris Killed", p => p.EnemyKills["Khepri"] + p.EnemyKills["Power Khepri"], AliveTime),
+        new StatDef(Req.MostAstralReturns, "Most Astral Returns", p => p.AstralReturns, AliveTime),
+        new StatDef(Req.MostShotsFired, "Most Shots Fired", p => p.ShootingAccuracy.ShotsFired, AliveTime),
+    };
+
+    private StatDef(string req, string label, Func<PlayerTracker.PlayerData, double> value, Func<PlayerTracker.PlayerData, double> tieBreak,
+        StatFormat format = StatFormat.Count, string leastReq = null, string leastLabel = null)
+    {
+        Requirement = req;
+        Label = label;
+        Value = value;
+        TieBreak = tieBreak;
+        Format = format;
+        LeastRequirement = leastReq;
+        LeastLabel = leastLabel;
+    }
+
+    public string Requirement { get; }
+    public string Label { get; }
+    public Func<PlayerTracker.PlayerData, double> Value { get; }
+    public Func<PlayerTracker.PlayerData, double> TieBreak { get; }
+    public StatFormat Format { get; }
+    public string LeastRequirement { get; }
+    public string LeastLabel { get; }
+
+    // Time and height stats come from floats, so they are formatted as floats again
+    public string Display(double value) => Format switch
+    {
+        StatFormat.Meters => $"{(float)value:F1}m",
+        StatFormat.Seconds => $"{(float)value:F1}s",
+        _ => ((long)value).ToString(),
+    };
+
+    private static int WeaponKills(PlayerTracker.PlayerData data, string[] weapons) => weapons.Sum(weapon => data.WeaponHits[weapon]);
 }
 
 public class TitlesManager
@@ -356,87 +395,17 @@ public class TitlesManager
     {
         var leaders = new StatLeaders();
 
-        var swingsRanked = players.OrderByDescending(p => p.Value.WebSwings).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostWebSwings = swingsRanked[0];
-        leaders.LeastWebSwings = swingsRanked[swingsRanked.Count - 1];
+        foreach (var stat in StatDef.All)
+        {
+            var ordered = players.OrderByDescending(p => stat.Value(p.Value));
+            var ranked = (stat.TieBreak == null ? ordered : ordered.ThenByDescending(p => stat.TieBreak(p.Value))).ToList();
+            leaders[stat.Requirement] = ranked[0];
+            if (stat.LeastRequirement != null) leaders[stat.LeastRequirement] = ranked[ranked.Count - 1];
+        }
 
-        var altitudeRanked = players.OrderByDescending(p => p.Value.HighestPoint).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.HighestPoint = altitudeRanked[0];
-        leaders.LowestPoint = altitudeRanked[altitudeRanked.Count - 1];
-
-        var airborneRanked = players.OrderByDescending(p => p.Value.AirborneTime).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostAirborneTime = airborneRanked[0];
-        leaders.LeastAirborneTime = airborneRanked[airborneRanked.Count - 1];
-
-        var airborneKillsRanked = players.OrderByDescending(p => p.Value.KillsWhileAirborne).ThenByDescending(p => p.Value.Kills).ToList();
-        leaders.MostKillsWhileAirborne = airborneKillsRanked[0];
-
-        var soloKillsRanked = players.OrderByDescending(p => p.Value.KillsWhileSolo).ThenByDescending(p => p.Value.Kills).ToList();
-        leaders.MostKillsWhileSolo = soloKillsRanked[0];
-
-        var waveClutchesRanked = players.OrderByDescending(p => p.Value.WaveClutches).ThenByDescending(p => p.Value.Kills).ToList();
-        leaders.MostWaveClutches = waveClutchesRanked[0];
-
-        var streakRanked = players.OrderByDescending(p => p.Value.MaxKillStreak).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MaxKillStreak = streakRanked[0];
-
-        var streakWhileSoloRanked = players.OrderByDescending(p => p.Value.MaxKillStreakWhileSolo).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MaxKillStreakWhileSolo = streakWhileSoloRanked[0];
-
-        var aliveTimeRanked = players.OrderByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostAliveTime = aliveTimeRanked[0];
-
-        var offenseRanked = players.OrderByDescending(p => p.Value.Kills + p.Value.EnemyShieldsTakenDown).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostOffense = offenseRanked[0];
-        leaders.LeastOffense = offenseRanked[offenseRanked.Count - 1];
-
-        var damageTakenRanked = players.OrderByDescending(p => p.Value.Deaths + p.Value.ShieldsLost).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostDamageTaken = damageTakenRanked[0];
-        leaders.LeastDamageTaken = damageTakenRanked[damageTakenRanked.Count - 1];
-
-        var friendlyFireRanked = players.OrderByDescending(p => p.Value.FriendlyKills + p.Value.FriendlyShieldsHit).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostFriendlyFire = friendlyFireRanked[0];
-        leaders.LeastFriendlyFire = friendlyFireRanked[friendlyFireRanked.Count - 1];
-
-        var shieldsLostRanked = players.OrderByDescending(p => p.Value.ShieldsLost).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostShieldsLost = shieldsLostRanked[0];
-        leaders.LeastShieldsLost = shieldsLostRanked[shieldsLostRanked.Count - 1];
-
-        var deathsRanked = players.OrderByDescending(p => p.Value.Deaths).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostDeaths = deathsRanked[0];
-        leaders.LeastDeaths = deathsRanked[deathsRanked.Count - 1];
-
-        var lavaDeathsRanked = players.OrderByDescending(p => p.Value.LavaDeaths).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostLavaDeaths = lavaDeathsRanked[0];
-        leaders.LeastLavaDeaths = lavaDeathsRanked[lavaDeathsRanked.Count - 1];
-
-        var gunsRanked = players.OrderByDescending(p => WeaponKills(p.Value, GunWeapons)).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostGunsKills = gunsRanked[0];
-
-        var explosionsRanked = players.OrderByDescending(p => WeaponKills(p.Value, ExplosiveWeapons)).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostExplosionsKills = explosionsRanked[0];
-
-        var bladeRanked = players.OrderByDescending(p => WeaponKills(p.Value, BladeWeapons)).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostBladeKills = bladeRanked[0];
-
-        var hornetsRanked = players.OrderByDescending(p => p.Value.EnemyKills["Hornet"]).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostHornetKills = hornetsRanked[0];
-
-        var whispsRanked = players.OrderByDescending(p => p.Value.EnemyKills["Whisp"] + p.Value.EnemyKills["Power Whisp"]).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostWhispKills = whispsRanked[0];
-
-        var kheprisRanked = players.OrderByDescending(p => p.Value.EnemyKills["Khepri"] + p.Value.EnemyKills["Power Khepri"]).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostKhepriKills = kheprisRanked[0];
-
-        var astralReturnsRanked = players.OrderByDescending(p => p.Value.AstralReturns).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostAstralReturns = astralReturnsRanked[0];
-
-        leaders.BestAccuracy = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots)[0];
-        leaders.BestRailvolverAccuracy = RankByAccuracy(players, RailvolverAccuracy, MinRailvolverShots)[0];
-        leaders.WorstAccuracy = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots, lowestFirst: true)[0];
-
-        var shotsFiredRanked = players.OrderByDescending(p => p.Value.ShootingAccuracy.ShotsFired).ThenByDescending(p => p.Value.TotalAliveTime).ToList();
-        leaders.MostShotsFired = shotsFiredRanked[0];
+        leaders[Req.BestAccuracy] = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots)[0];
+        leaders[Req.BestRailvolverAccuracy] = RankByAccuracy(players, RailvolverAccuracy, MinRailvolverShots)[0];
+        leaders[Req.WorstAccuracy] = RankByAccuracy(players, p => p.ShootingAccuracy, MinAccuracyShots, lowestFirst: true)[0];
 
         return leaders;
     }
@@ -477,15 +446,6 @@ public class TitlesManager
     }
 
     private static bool HasAccuracy(WeaponAccuracy accuracy, int minShots) => accuracy.ShotsFired >= minShots && accuracy.ShotsHit > 0;
-
-    private static readonly string[] GunWeapons = { "Shotgun", "RailShot", "DeathRay", "EnergyBall", "Laser Cannon", "SawDisc" };
-    private static readonly string[] ExplosiveWeapons = { "Explosions", "Laser Cube", "DeathCube", "Snowball", "Pulse" };
-    private static readonly string[] BladeWeapons = { "Particle Blade", "KhepriStaff" };
-
-    private static int WeaponKills(PlayerTracker.PlayerData data, string[] weapons)
-    {
-        return weapons.Sum(weapon => data.WeaponHits[weapon]);
-    }
 
     private void CapturePortraits()
     {
@@ -580,14 +540,10 @@ public class TitlesManager
         }
     }
 
-    /// <summary>
-    /// Processes titles registered by external mods, validating their native requirements against the stats mod's conditions
-    /// </summary>
+    // Titles from other parts, kept only when the leader also meets their native requirements
     private void AddExternalTitles(List<TitleEntry> titles, Dictionary<string, StatCondition> conditions)
     {
-        var externalTitles = StatsModApi.GetExternalTitles();
-        if (externalTitles == null || externalTitles.Count == 0) return;
-
+        var externalTitles = RunReportSources.Titles();
         foreach (var extTitle in externalTitles)
         {
             var (player, descriptions, valid) = ValidateExternalRequirements(extTitle, conditions);
@@ -634,7 +590,7 @@ public class TitlesManager
         // 2. All of the title's requirements were custom (so it skipped every loop iteration above).
         if (resolvedPlayer == null)
         {
-            Logger.LogWarning($"ValidateExternalRequirements: Failed to resolve player for title '{title.TitleName}'. If a title uses entirely custom requirements, you must explicitly provide the 'leader' parameter when registering it through StatsModApi.");
+            Logger.LogWarning($"ValidateExternalRequirements: Failed to resolve player for title '{title.TitleName}'. A title with only custom requirements needs a leader.");
             return (null, null, false);
         }
 
@@ -689,75 +645,30 @@ public class TitlesManager
             conditions[req] = new StatCondition(req, leader, hasStat, $"{TitleCatalog.Label(req)} ({value})");
         }
 
-        Add(Req.MostWebSwings, leaders.MostWebSwings, leaders.MostWebSwings.Value.WebSwings > 0, leaders.MostWebSwings.Value.WebSwings.ToString());
-        Add(Req.LeastWebSwings, leaders.LeastWebSwings, true, leaders.LeastWebSwings.Value.WebSwings.ToString());
-        Add(Req.HighestPoint, leaders.HighestPoint, leaders.HighestPoint.Value.HighestPoint > 0, $"{leaders.HighestPoint.Value.HighestPoint:F1}m");
-        Add(Req.LowestPoint, leaders.LowestPoint, true, $"{leaders.LowestPoint.Value.HighestPoint:F1}m");
-        Add(Req.MostAirborneTime, leaders.MostAirborneTime, leaders.MostAirborneTime.Value.AirborneTime > 0f, $"{leaders.MostAirborneTime.Value.AirborneTime:F1}s");
-        Add(Req.LeastAirborneTime, leaders.LeastAirborneTime, true, $"{leaders.LeastAirborneTime.Value.AirborneTime:F1}s");
-        Add(Req.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne, leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne > 0, leaders.MostKillsWhileAirborne.Value.KillsWhileAirborne.ToString());
-        Add(Req.MostKillsWhileSolo, leaders.MostKillsWhileSolo, leaders.MostKillsWhileSolo.Value.KillsWhileSolo > 0, leaders.MostKillsWhileSolo.Value.KillsWhileSolo.ToString());
-        Add(Req.MostWaveClutches, leaders.MostWaveClutches, leaders.MostWaveClutches.Value.WaveClutches > 0, leaders.MostWaveClutches.Value.WaveClutches.ToString());
-        Add(Req.MaxKillStreak, leaders.MaxKillStreak, leaders.MaxKillStreak.Value.MaxKillStreak > 0, leaders.MaxKillStreak.Value.MaxKillStreak.ToString());
-        Add(Req.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo, leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo > 0, leaders.MaxKillStreakWhileSolo.Value.MaxKillStreakWhileSolo.ToString());
-        Add(Req.MostAliveTime, leaders.MostAliveTime, leaders.MostAliveTime.Value.TotalAliveTime > 0f, $"{leaders.MostAliveTime.Value.TotalAliveTime:F1}s");
+        foreach (var stat in StatDef.All)
+        {
+            var most = leaders[stat.Requirement];
+            double mostValue = stat.Value(most.Value);
+            Add(stat.Requirement, most, mostValue > 0, stat.Display(mostValue));
+            if (stat.LeastRequirement != null)
+            {
+                var least = leaders[stat.LeastRequirement];
+                Add(stat.LeastRequirement, least, true, stat.Display(stat.Value(least.Value)));
+            }
+        }
 
-        long mostOffenseVal = leaders.MostOffense.Value.Kills + leaders.MostOffense.Value.EnemyShieldsTakenDown;
-        Add(Req.MostOffense, leaders.MostOffense, mostOffenseVal > 0, mostOffenseVal.ToString());
+        var bestAccuracy = leaders[Req.BestAccuracy];
+        var accuracy = bestAccuracy.Value.ShootingAccuracy;
+        Add(Req.BestAccuracy, bestAccuracy, HasAccuracy(accuracy, MinAccuracyShots), accuracy.Display);
 
-        long leastOffenseVal = leaders.LeastOffense.Value.Kills + leaders.LeastOffense.Value.EnemyShieldsTakenDown;
-        Add(Req.LeastOffense, leaders.LeastOffense, true, leastOffenseVal.ToString());
+        var bestRailvolver = leaders[Req.BestRailvolverAccuracy];
+        var railvolverAccuracy = RailvolverAccuracy(bestRailvolver.Value);
+        Add(Req.BestRailvolverAccuracy, bestRailvolver, HasAccuracy(railvolverAccuracy, MinRailvolverShots), railvolverAccuracy.Display);
 
-        long mostDamageTakenVal = leaders.MostDamageTaken.Value.Deaths + leaders.MostDamageTaken.Value.ShieldsLost;
-        Add(Req.MostDamageTaken, leaders.MostDamageTaken, mostDamageTakenVal > 0, mostDamageTakenVal.ToString());
-
-        long leastDamageTakenVal = leaders.LeastDamageTaken.Value.Deaths + leaders.LeastDamageTaken.Value.ShieldsLost;
-        Add(Req.LeastDamageTaken, leaders.LeastDamageTaken, true, leastDamageTakenVal.ToString());
-
-        long mostFriendlyFireVal = leaders.MostFriendlyFire.Value.FriendlyKills + leaders.MostFriendlyFire.Value.FriendlyShieldsHit;
-        Add(Req.MostFriendlyFire, leaders.MostFriendlyFire, mostFriendlyFireVal > 0, mostFriendlyFireVal.ToString());
-
-        long leastFriendlyFireVal = leaders.LeastFriendlyFire.Value.FriendlyKills + leaders.LeastFriendlyFire.Value.FriendlyShieldsHit;
-        Add(Req.LeastFriendlyFire, leaders.LeastFriendlyFire, true, leastFriendlyFireVal.ToString());
-
-        Add(Req.MostShieldsLost, leaders.MostShieldsLost, leaders.MostShieldsLost.Value.ShieldsLost > 0, leaders.MostShieldsLost.Value.ShieldsLost.ToString());
-        Add(Req.LeastShieldsLost, leaders.LeastShieldsLost, true, leaders.LeastShieldsLost.Value.ShieldsLost.ToString());
-        Add(Req.MostDeaths, leaders.MostDeaths, leaders.MostDeaths.Value.Deaths > 0, leaders.MostDeaths.Value.Deaths.ToString());
-        Add(Req.LeastDeaths, leaders.LeastDeaths, true, leaders.LeastDeaths.Value.Deaths.ToString());
-        Add(Req.MostLavaDeaths, leaders.MostLavaDeaths, leaders.MostLavaDeaths.Value.LavaDeaths > 0, leaders.MostLavaDeaths.Value.LavaDeaths.ToString());
-        Add(Req.LeastLavaDeaths, leaders.LeastLavaDeaths, true, leaders.LeastLavaDeaths.Value.LavaDeaths.ToString());
-
-        long gunsVal = WeaponKills(leaders.MostGunsKills.Value, GunWeapons);
-        Add(Req.MostGunsKills, leaders.MostGunsKills, gunsVal > 0, gunsVal.ToString());
-
-        long expVal = WeaponKills(leaders.MostExplosionsKills.Value, ExplosiveWeapons);
-        Add(Req.MostExplosionsKills, leaders.MostExplosionsKills, expVal > 0, expVal.ToString());
-
-        long bladeVal = WeaponKills(leaders.MostBladeKills.Value, BladeWeapons);
-        Add(Req.MostBladeKills, leaders.MostBladeKills, bladeVal > 0, bladeVal.ToString());
-
-        Add(Req.MostHornetKills, leaders.MostHornetKills, leaders.MostHornetKills.Value.EnemyKills["Hornet"] > 0, leaders.MostHornetKills.Value.EnemyKills["Hornet"].ToString());
-
-        long whispVal = leaders.MostWhispKills.Value.EnemyKills["Whisp"] + leaders.MostWhispKills.Value.EnemyKills["Power Whisp"];
-        Add(Req.MostWhispKills, leaders.MostWhispKills, whispVal > 0, whispVal.ToString());
-
-        long khepriVal = leaders.MostKhepriKills.Value.EnemyKills["Khepri"] + leaders.MostKhepriKills.Value.EnemyKills["Power Khepri"];
-        Add(Req.MostKhepriKills, leaders.MostKhepriKills, khepriVal > 0, khepriVal.ToString());
-
-        Add(Req.MostAstralReturns, leaders.MostAstralReturns, leaders.MostAstralReturns.Value.AstralReturns > 0, leaders.MostAstralReturns.Value.AstralReturns.ToString());
-
-        var accuracy = leaders.BestAccuracy.Value.ShootingAccuracy;
-        Add(Req.BestAccuracy, leaders.BestAccuracy, HasAccuracy(accuracy, MinAccuracyShots), accuracy.Display);
-
-        var railvolverAccuracy = RailvolverAccuracy(leaders.BestRailvolverAccuracy.Value);
-        Add(Req.BestRailvolverAccuracy, leaders.BestRailvolverAccuracy, HasAccuracy(railvolverAccuracy, MinRailvolverShots), railvolverAccuracy.Display);
-
-        var worstAccuracy = leaders.WorstAccuracy.Value.ShootingAccuracy;
+        var worst = leaders[Req.WorstAccuracy];
+        var worstAccuracy = worst.Value.ShootingAccuracy;
         bool hasWorstAccuracy = worstAccuracy.ShotsFired >= MinAccuracyShots && worstAccuracy.Percentage < accuracy.Percentage;
-        Add(Req.WorstAccuracy, leaders.WorstAccuracy, hasWorstAccuracy, worstAccuracy.Display);
-
-        int mostShotsFired = leaders.MostShotsFired.Value.ShootingAccuracy.ShotsFired;
-        Add(Req.MostShotsFired, leaders.MostShotsFired, mostShotsFired > 0, mostShotsFired.ToString());
+        Add(Req.WorstAccuracy, worst, hasWorstAccuracy, worstAccuracy.Display);
 
         return conditions;
     }

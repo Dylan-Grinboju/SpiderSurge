@@ -13,7 +13,6 @@ namespace SpiderSurge
 {
     public static class ChallengeController
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, NetworkVariable<int>> Lives = AccessTools.FieldRefAccess<SurvivalMode, NetworkVariable<int>>("_lives");
         public static ChallengeKind Offered { get; private set; }
         public static ChallengeKind Active { get; private set; }
         public static bool Pending { get; private set; }
@@ -92,7 +91,7 @@ namespace SpiderSurge
                 if (Active == ChallengeKind.PoisonedHeart)
                 {
                     _heldLives = Math.Max(0, SurvivalMode.instance.Lives - 1);
-                    Lives(SurvivalMode.instance).Value = 1;
+                    GameFields.Lives(SurvivalMode.instance).Value = 1;
                 }
             }
             ChaosWallet.Record($"Challenge {(accept ? "accepted" : "skipped")}: {ChaosRules.Name(Offered)}");
@@ -115,7 +114,7 @@ namespace SpiderSurge
             _heldLives = 0;
             SetActive(ChallengeKind.None);
             if (returned > 0 && SurvivalMode.instance != null && SurvivalMode.instance.Lives > 0)
-                Lives(SurvivalMode.instance).Value = Math.Min(SurvivalMode.instance.MaxLives, SurvivalMode.instance.Lives + returned);
+                GameFields.Lives(SurvivalMode.instance).Value = Math.Min(SurvivalMode.instance.MaxLives, SurvivalMode.instance.Lives + returned);
             ChaosWallet.Record($"Challenge {(reward > 0 ? "completed" : "failed")}: {ChaosRules.Name(completed)}; returned {returned} lives");
             // A failed Life Wager was announced when the life was lost
             if (reward > 0)
@@ -240,15 +239,20 @@ namespace SpiderSurge
             }
         }
 
+        internal static void OnWaveFailed(SurvivalMode survival, bool lostLife)
+        {
+            if (ChaosWallet.Enabled && lostLife) LostLife();
+        }
+
         public static float AdjustBudget(float budget) => Active == ChallengeKind.Overrun ? budget * 1.5f : budget;
     }
 
     [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
     internal static class ChallengeMapChoicePatch
     {
-        static void Prefix(Modifier modifier, GameLevel level, NetworkVariable<bool> ____waitingForPerk)
+        internal static void OnPerkChoosing(Modifier modifier, GameLevel level)
         {
-            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing || !____waitingForPerk.Value) return;
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing) return;
             PerkShop.ResolveMap(modifier, level);
         }
 
@@ -293,16 +297,6 @@ namespace SpiderSurge
         static void Prefix(SurvivalMode __instance, int ____nextPerkChoiceWave)
         {
             if (ChaosWallet.Enabled && __instance.CurrentWave == ____nextPerkChoiceWave) ChallengeController.Settle();
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalMode), "FailWave")]
-    internal static class ChallengeLostLifePatch
-    {
-        static void Prefix(SurvivalMode __instance, out int __state) => __state = __instance.Lives;
-        static void Postfix(SurvivalMode __instance, int __state)
-        {
-            if (ChaosWallet.Enabled && __instance.Lives < __state) ChallengeController.LostLife();
         }
     }
 

@@ -3,21 +3,20 @@ using Logger = Silk.Logger;
 using System;
 using UnityEngine;
 using System.Reflection;
+using SpiderSurge.Common;
 
 namespace SpiderSurge.Fixes
 {
     [HarmonyPatch(typeof(WhispBrain), "Start")]
     public class WhispCooldownStartPatch
     {
-        private static readonly FieldInfo shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
-
         static void Postfix(WhispBrain __instance)
         {
             try
             {
-                if (shotCooldownTillField != null)
+                if (GameFields.WhispShotCooldownTill != null)
                 {
-                    shotCooldownTillField.SetValue(__instance, Time.time + __instance.shotCooldown);
+                    GameFields.WhispShotCooldownTill(__instance) = Time.time + __instance.shotCooldown;
                 }
                 else
                 {

@@ -4,15 +4,14 @@ using Unity.Netcode;
 using System.Reflection;
 using System.Collections.Generic;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace SpiderSurge.Patches
 {
     [HarmonyPatch(typeof(WhispBrain), "LaunchChargeAttack")]
     public class WhispBrain_LaunchChargeAttack_Patch
     {
-        private static readonly MethodInfo _stopChargeCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
         private static readonly MethodInfo _playAttackCosmeticsRpc = AccessTools.Method(typeof(WhispBrain), "PlayAttackCosmeticsClientRpc");
-        private static readonly FieldInfo _shotCooldownTillField = AccessTools.Field(typeof(WhispBrain), "_shotCooldownTill");
         private static readonly FieldInfo _targetField = AccessTools.Field(typeof(WhispBrain), "target"); // On EnemyBrain usually
 
         [HarmonyPrefix]
@@ -21,7 +20,7 @@ namespace SpiderSurge.Patches
             if (!SurgeGameModeManager.IsSurgeRunActive) return true;
             if (!__instance.gameObject.activeSelf) return false;
 
-            _stopChargeCosmeticsRpc.Invoke(__instance, null);
+            GameFields.WhispStopChargeCosmetics.Invoke(__instance, null);
 
             var target = (Transform)_targetField.GetValue(__instance);
 
@@ -78,7 +77,7 @@ namespace SpiderSurge.Patches
                 }
 
                 // Set Cooldown
-                _shotCooldownTillField.SetValue(__instance, Time.time + __instance.shotCooldown);
+                GameFields.WhispShotCooldownTill(__instance) = Time.time + __instance.shotCooldown;
             }
 
             return false;

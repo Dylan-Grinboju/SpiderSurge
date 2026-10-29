@@ -21,9 +21,6 @@ namespace SpiderSurge
     // What the team can buy with chaos points while a perk screen is open. Purchases run on the host only.
     public static class PerkShop
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> Config = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
-        private static readonly AccessTools.FieldRef<SurvivalMode, Unity.Netcode.NetworkVariable<bool>> WaitingForPerk = AccessTools.FieldRefAccess<SurvivalMode, Unity.Netcode.NetworkVariable<bool>>("_waitingForPerk");
-        private static readonly AccessTools.FieldRef<SurvivalMode, Unity.Netcode.NetworkVariable<int>> Lives = AccessTools.FieldRefAccess<SurvivalMode, Unity.Netcode.NetworkVariable<int>>("_lives");
         private static readonly MethodInfo GetRandomModifiers = AccessTools.Method(typeof(SurvivalMode), "GetRandomModifiers");
         private static readonly MethodInfo GetRandomLevels = AccessTools.Method(typeof(SurvivalMode), "GetRandomLevels");
         private static readonly MethodInfo TryGrantExtraLife = AccessTools.Method(typeof(SurvivalMode), "TryGrantExtraLife");
@@ -200,7 +197,7 @@ namespace SpiderSurge
                 var mode = SurvivalMode.instance;
                 if (Net.IsAuthority && mode != null)
                 {
-                    var waiting = WaitingForPerk(mode);
+                    var waiting = GameFields.WaitingForPerk(mode);
                     if (waiting != null && !waiting.Value) return false;
                 }
                 return true;
@@ -278,7 +275,7 @@ namespace SpiderSurge
             var hud = SurvivalModeHud.instance;
             if (mode == null || hud == null || GetRandomModifiers == null || GetRandomLevels == null) return null;
 
-            int count = Config(mode).basePerkChoiceCount + ModifierManager.instance.GetModLevel("picky");
+            int count = GameFields.ActiveConfig(mode).basePerkChoiceCount + ModifierManager.instance.GetModLevel("picky");
             var mods = GetRandomModifiers.Invoke(mode, new object[] { count }) as List<Modifier>;
             var levels = GetRandomLevels.Invoke(mode, new object[] { count }) as List<GameLevel>;
             if (mods == null || levels == null || mods.Count == 0 || levels.Count < mods.Count) return null;
@@ -339,8 +336,7 @@ namespace SpiderSurge
                 }
                 SurgeNet.SendStateNow();
             }
-            string title = string.IsNullOrEmpty(perk.data.title) ? perk.data.key : perk.data.title;
-            StatsMod.GameSessionManager.Instance?.RecordPerk(title + " (shop)");
+            StatsMod.GameSessionManager.Instance?.RecordPerk(DisplayNameOfPerk(perk.data.key) + " (shop)");
             PurchasedPerkKey = perk.data.key;
             return perk.data.key;
         }
@@ -350,7 +346,7 @@ namespace SpiderSurge
             var mode = SurvivalMode.instance;
             if (mode == null || mode._maxlives == null) return null;
             mode._maxlives.Value++;
-            Lives(mode).Value = Math.Min(mode.MaxLives, mode.Lives + 1);
+            GameFields.Lives(mode).Value = Math.Min(mode.MaxLives, mode.Lives + 1);
             return $"{mode.Lives}/{mode.MaxLives}";
         }
 
@@ -358,7 +354,7 @@ namespace SpiderSurge
         private static string SellLife()
         {
             var mode = SurvivalMode.instance;
-            var lives = mode != null ? Lives(mode) : null;
+            var lives = mode != null ? GameFields.Lives(mode) : null;
             if (lives == null || lives.Value < Consts.Values.Chaos.SacrificeMinLives) return null;
             lives.Value -= Consts.Values.Chaos.SacrificeLives;
             ChaosWallet.GrantPoints(Consts.Values.Chaos.SacrificePoints, "Blood Pact");

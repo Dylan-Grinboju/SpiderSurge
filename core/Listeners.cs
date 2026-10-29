@@ -43,5 +43,24 @@ namespace SpiderSurge.Common
                 }
             }
         }
+
+        public static void Raise<T1, T2>(Action<T1, T2> handler, T1 first, T2 second, string failure)
+        {
+            if (handler == null)
+            {
+                return;
+            }
+            foreach (Delegate listener in handler.GetInvocationList())
+            {
+                try
+                {
+                    ((Action<T1, T2>)listener)(first, second);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"{failure}: {ex}");
+                }
+            }
+        }
     }
 }

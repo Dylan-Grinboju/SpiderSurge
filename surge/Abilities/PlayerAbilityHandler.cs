@@ -10,6 +10,7 @@ namespace SpiderSurge
     {
         public static List<SpiderController> ActiveSpiderControllers = new List<SpiderController>();
         private static readonly HashSet<int> SeenPlayerSpawns = new HashSet<int>();
+        private static readonly List<BaseAbility> AbilityBuffer = new List<BaseAbility>();
 
         public static int SpawnEpoch { get; private set; }
 
@@ -176,7 +177,8 @@ namespace SpiderSurge
                 {
                     continue;
                 }
-                foreach (var ability in controller.GetComponents<BaseAbility>())
+                controller.GetComponents(AbilityBuffer);
+                foreach (var ability in AbilityBuffer)
                 {
                     if (ability.Kind == kind)
                     {
@@ -196,7 +198,8 @@ namespace SpiderSurge
                 {
                     continue;
                 }
-                foreach (var ability in controller.GetComponents<BaseAbility>())
+                controller.GetComponents(AbilityBuffer);
+                foreach (var ability in AbilityBuffer)
                 {
                     if (ability.IsActive())
                     {

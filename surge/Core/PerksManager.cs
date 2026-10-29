@@ -243,6 +243,7 @@ namespace SpiderSurge
             _isUltSwapPerkSelection = ultSwap;
             RefreshAbilityRegistrations();
             UpdatePerkIcons();
+            PerkChoiceHud.RefreshPerks();
         }
 
         public void RefreshAbilityRegistrations()

@@ -13,7 +13,6 @@ namespace SpiderSurge
 {
     internal static class AbilitySelection
     {
-        private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
         private static readonly MethodInfo ShowCards = AccessTools.Method(typeof(SurvivalModeHud), "ShowPerkChoicesClientRpc");
         private static readonly MethodInfo SubmitCard = AccessTools.Method(typeof(SurvivalModeHud), "PerkChoiceSubmitClientRpc");
         private static readonly MethodInfo FailWave = AccessTools.Method(typeof(SurvivalMode), "FailWave");
@@ -156,7 +155,7 @@ namespace SpiderSurge
         // As many cards as a normal perk choice: the pain level's base count (2 from pain level 3) plus Picky
         private static int ChoiceCount(SurvivalMode mode)
         {
-            SurvivalConfig config = ActiveConfig(mode);
+            SurvivalConfig config = GameFields.ActiveConfig(mode);
             if (config == null) config = mode._defaultConfig;
             return Math.Max(1, config.basePerkChoiceCount + ModifierManager.instance.GetModLevel("picky"));
         }

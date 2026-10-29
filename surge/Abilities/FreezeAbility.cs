@@ -88,7 +88,7 @@ namespace SpiderSurge
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
-                    AchievementTracker.Run("Freeze Time", () => AbilityAchievementTracker.FreezeEnemy(enemy, achievementCast, firing));
+                    AchievementTracker.Run("Freeze Time", static hit => AbilityAchievementTracker.FreezeEnemy(hit.enemy, hit.achievementCast, hit.firing), (enemy, achievementCast, firing));
                 }
             }
             if (FrozenSpider.FreezeAround(origin, range, duration, PlayerId)) _frozeAny = true;
@@ -216,7 +216,7 @@ namespace SpiderSurge
                 if (shielded && prefab == wasp && health.shield != null) health.shield.SetActive(true);
                 if (frozenFor > 0f) FrozenEnemy.Freeze(health, frozenFor, frozenBy);
                 if (enemy.GetComponent<Enemies.SpawnerBrain>() != null)
-                    AchievementTracker.Run("Factory Reset", () => SurgeAchievements.Unlock(SurgeAchievements.FactoryReset, Players.ById(PlayerId)));
+                    AchievementTracker.Run("Factory Reset", static id => SurgeAchievements.Unlock(SurgeAchievements.FactoryReset, Players.ById(id)), PlayerId);
             }
 
             Destroy(enemy.gameObject);

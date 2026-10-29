@@ -15,8 +15,6 @@ namespace SpiderTeams
 
         private static readonly List<Push> _pushes = new List<Push>(8);
 
-        public static int PulseDepth { get; set; }
-
         // Returns true to let the hit run as vanilla. An unknown attacker always gets vanilla so a tracking gap never blocks a kill.
         public static bool Allow(SpiderHealthSystem victim, Vector3 force, Vector3 point, bool stun)
         {
@@ -40,7 +38,7 @@ namespace SpiderTeams
         // A blast's outer ring, a saw or a zap only knocks back and stuns, so Ignore drops that too; the Kinetic Pulse pushes everyone by design
         public static bool AllowImpact(SpiderHealthSystem victim)
         {
-            return ModConfig.FriendlyFire != FriendlyFireMode.Ignore || PulseDepth > 0 || !IsTeammateHit(victim, out _, out _, out _);
+            return ModConfig.FriendlyFire != FriendlyFireMode.Ignore || DamageContext.InPulse || !IsTeammateHit(victim, out _, out _, out _);
         }
 
         private static bool IsTeammateHit(SpiderHealthSystem victim, out int attacker, out PlayerController victimPlayer, out int attackerTeam)

@@ -9,7 +9,7 @@ namespace SpiderSurge.Vfx
     {
         private const string Channel = "surge.weapon.echo";
 
-        public static void Initialize() => Net.Register(Channel, Receive);
+        public static void Initialize() => Net.RegisterFromHost(Channel, Receive);
         public static void Shutdown() => Net.Unregister(Channel);
 
         public static void Fold(Weapon weapon, Transform hand, bool retrieve)
@@ -23,7 +23,6 @@ namespace SpiderSurge.Vfx
                 Vector3 scale = weapon.transform.lossyScale;
                 WeaponEcho.Draw(weapon, position, angle, scale, destination, hand, retrieve);
                 if (retrieve) StorageVfx.Retrieve(destination); else StorageVfx.Send(position);
-                if (!Net.HasRemotePlayers) return;
                 int player = Players.IdOf(weapon.owner);
                 Net.SendToAll(Channel, writer =>
                 {
@@ -38,9 +37,8 @@ namespace SpiderSurge.Vfx
             });
         }
 
-        private static void Receive(ulong sender, BinaryReader reader)
+        private static void Receive(BinaryReader reader)
         {
-            if (!Net.IsRemoteClient || sender != Net.ServerId) return;
             var kind = (SerializationWeaponName)reader.ReadInt32();
             int player = reader.ReadInt32();
             Vector3 position = reader.ReadVector3();

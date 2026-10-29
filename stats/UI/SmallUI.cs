@@ -69,11 +69,6 @@ namespace StatsMod
         #endregion
 
         #region Display Control
-        public void ToggleDisplay()
-        {
-            isDisplayVisible = !isDisplayVisible;
-        }
-
         public void ShowDisplay()
         {
             isDisplayVisible = true;

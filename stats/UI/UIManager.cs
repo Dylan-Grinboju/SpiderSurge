@@ -294,22 +294,6 @@ namespace StatsMod
             currentUIState = state;
         }
 
-        public void ToggleSmallUI()
-        {
-            if (smallUI != null)
-            {
-                smallUI.ToggleDisplay();
-            }
-        }
-
-        public void ToggleBigUI()
-        {
-            if (bigUI != null)
-            {
-                bigUI.ToggleDisplay();
-            }
-        }
-
         public void ShowSmallUI()
         {
             if (smallUI != null)

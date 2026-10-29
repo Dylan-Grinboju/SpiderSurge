@@ -112,6 +112,13 @@ namespace SpiderSurge.Logging
             Logger.LogInfo("SpiderSurge stats tracking started.");
         }
 
+        // The finished run's snapshot, stopping the run first if it is still tracked
+        public SpiderSurgeStatsSnapshot Finish()
+        {
+            StopTrackingAndLog();
+            return LastFinished;
+        }
+
         public void StopTrackingAndLog()
         {
             if (!_isTracking) return;
@@ -204,12 +211,7 @@ namespace SpiderSurge.Logging
 
             // A plain Survival run is only reported to telemetry; the local report and Surge's stats and titles stay with Surge runs
             LastFinished = snapshot;
-            if (_surgeRun)
-            {
-                if (ModConfig.EnableStatsLogging) SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
-                Integration.StatsModBridge.SendSurgeStats(snapshot);
-                Integration.StatsModBridge.SendSurgeTitles(snapshot);
-            }
+            if (_surgeRun && ModConfig.EnableStatsLogging) SpiderSurgeLogger.Instance.LogMatchStats(snapshot);
 
             if (ModConfig.TelemetryEnabled && ShouldUploadTelemetryFromThisClient())
             {
@@ -230,7 +232,7 @@ namespace SpiderSurge.Logging
             }
         }
 
-        // Stats works out the titles after this part's StopGameMode prefix, which registers Surge's titles first, so the report goes out once the run has fully stopped
+        // Stats works out the titles in its StopGameMode prefix, so the report goes out once the run has fully stopped
         public void SendPendingTelemetry()
         {
             var snapshot = _pendingTelemetry;
@@ -609,87 +611,6 @@ namespace SpiderSurge.Logging
 
     }
 
-    [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
-    public class SurvivalMode_StartGame_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(bool __result)
-        {
-            if (__result)
-            {
-                SpiderSurgeStatsManager.RunSafely("StartGame", stats => stats.StartTracking());
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalMode), "StopGameMode")]
-    public class SurvivalMode_StopGameMode_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance)
-        {
-            if (__instance.GameModeActive())
-            {
-                SpiderSurgeStatsManager.RunSafely("StopGameMode", stats => stats.StopTrackingAndLog());
-            }
-        }
-
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            SpiderSurgeStatsManager.RunSafely("StopGameMode", stats => stats.SendPendingTelemetry());
-        }
-    }
-
-    [HarmonyPatch]
-    public class SurvivalMode_CompleteWave_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgress =
-            AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-
-        private static System.Reflection.MethodBase TargetMethod() => AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(SurvivalMode), "CompleteWave"));
-
-        [HarmonyPrefix]
-        public static void Prefix()
-        {
-            if (!Net.IsAuthority || SurvivalMode.instance == null || !WaveInProgress(SurvivalMode.instance)) return;
-            SpiderSurgeStatsManager.RunSafely("CompleteWave", stats => stats.IncrementWave());
-        }
-    }
-
-    // The game calls StartWave every frame while a wave can't start yet (SpiderInspector's wave freeze), so a record opens only when the wave really starts
-    [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
-    public class SurvivalMode_StartWave_Patch
-    {
-        private static readonly AccessTools.FieldRef<SurvivalMode, bool> WaveInProgressRef =
-            AccessTools.FieldRefAccess<SurvivalMode, bool>("_waveInProgress");
-
-        [HarmonyPrefix]
-        public static void Prefix(SurvivalMode __instance, out bool __state)
-        {
-            __state = WaveInProgressRef(__instance);
-        }
-
-        [HarmonyPostfix]
-        public static void Postfix(SurvivalMode __instance, bool __state)
-        {
-            if (!__state && WaveInProgressRef(__instance))
-            {
-                SpiderSurgeStatsManager.RunSafely("StartWave", stats => stats.OnWaveStarted());
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalMode), "FailWave")]
-    public class SurvivalMode_FailWave_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            SpiderSurgeStatsManager.RunSafely("FailWave", stats => stats.OnWaveFailed());
-        }
-    }
-
     [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ResetWaveIntoRandomLevel))]
     public class SurvivalMode_ResetWaveIntoRandomLevel_Patch
     {
@@ -727,35 +648,6 @@ namespace SpiderSurge.Logging
         public static void Postfix(List<Modifier> modifiers)
         {
             SpiderSurgeStatsManager.RunSafely("ShowPerkChoices", stats => stats.OnPerkChoicesShown(modifiers));
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalModeHud), nameof(SurvivalModeHud.PerkChoiceSubmit))]
-    public class SurvivalModeHud_PerkChoiceSubmit_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix()
-        {
-            SpiderSurgeStatsManager.RunSafely("PerkChoiceSubmit", stats => stats.OnPerkSubmitted());
-        }
-    }
-
-    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.ChoosePerkAndLevel))]
-    public class SurvivalMode_ChoosePerkAndLevel_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(NetworkVariable<bool> ____waitingForPerk, out bool __state)
-        {
-            __state = ____waitingForPerk != null && ____waitingForPerk.Value;
-        }
-
-        [HarmonyPostfix]
-        public static void Postfix(Modifier modifier, bool __state)
-        {
-            if (__state)
-            {
-                SpiderSurgeStatsManager.RunSafely("ChoosePerkAndLevel", stats => stats.OnPerkChosen(modifier));
-            }
         }
     }
 

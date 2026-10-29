@@ -163,12 +163,6 @@ namespace StatsMod
         #endregion
 
         #region Display Control
-        public void ToggleDisplay()
-        {
-            if (!isDisplayVisible) { preset = 0; presetPage = 0; }
-            isDisplayVisible = !isDisplayVisible;
-        }
-
         public void ShowDisplay()
         {
             if (!isDisplayVisible) OpenPreferredPreset();

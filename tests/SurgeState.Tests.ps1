@@ -13,6 +13,10 @@ while ($depth -gt 0 -and $end -lt $source.Length) {
 }
 if ($depth -ne 0) { throw 'Unclosed state receiver' }
 $receiver = $source.Substring($start, $end - $start)
+$netSource = [IO.File]::ReadAllText((Join-Path $repo 'core/Net/Net.cs'))
+$gateStart = $netSource.IndexOf('public static Handler FromHost(')
+if ($gateStart -lt 0) { throw 'Host gate not found' }
+$gate = $netSource.Substring($gateStart, $netSource.IndexOf('};', $gateStart) + 2 - $gateStart)
 $stubs = @'
 using System;
 using System.IO;
@@ -20,7 +24,13 @@ using System.Collections.Generic;
 using Logger = Silk.Logger;
 namespace Silk { public static class Logger { public static int Errors; public static void LogError(string message) { Errors++; } } }
 namespace SpiderSurge {
-    public static class Net { public static bool IsRemoteClient = true; }
+    public static class Net {
+        public delegate void Handler(ulong sender, BinaryReader reader);
+        public delegate void Receiver(BinaryReader reader);
+        public const ulong ServerId = 0UL;
+        public static bool IsRemoteClient = true;
+'@ + $gate + @'
+    }
     public class SurgeGameModeManager {
         public static SurgeGameModeManager Instance = new SurgeGameModeManager();
         public static bool IsSurgeRunActive;
@@ -46,6 +56,7 @@ namespace SpiderSurge {
 '@
 Add-Type -TypeDefinition ($stubs + $receiver + '}}')
 $method = [SpiderSurge.ReceiverTest].GetMethod('OnState', [Reflection.BindingFlags]'NonPublic,Static')
+$handler = [SpiderSurge.Net]::FromHost([Delegate]::CreateDelegate([SpiderSurge.Net+Receiver], $method))
 $checks = 0
 function Assert-Equal($actual, $expected, [string]$label) {
     if ($actual -ne $expected) { throw "$label expected '$expected', got '$actual'" }
@@ -60,7 +71,7 @@ function Receive([bool]$active, [int]$wave = 0, [ulong]$sender = 0) {
     $writer.Write([int]0); $writer.Write([int]1)
     $stream.Position = 0
     $reader = [IO.BinaryReader]::new($stream)
-    [void]$method.Invoke($null, @($sender, $reader))
+    $handler.Invoke($sender, $reader)
     $reader.Dispose()
 }
 Receive $false

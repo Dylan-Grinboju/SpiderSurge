@@ -283,7 +283,7 @@ namespace SpiderTeams
             }
             _teamsAtLock = reader.ReadInt32();
             // A client keeps the host's team count in force through MatchLocked, whose TeamCount reads _matchTeamCount
-            _matchTeamCount = Mathf.Max(1, teamCount);
+            _matchTeamCount = teamCount;
             MatchLocked = locked || Net.IsRemoteClient;
             _remoteLocked = locked;
             MarkRosterChanged();

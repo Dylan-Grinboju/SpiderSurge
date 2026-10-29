@@ -145,7 +145,7 @@ namespace SpiderSurge
                     if (SwallowedTarget.IsSwallowed(enemy.gameObject))
                     {
                         if (_achievementMeal.Eat(enemy.name))
-                            AchievementTracker.Run("Light Snack", () => SurgeAchievements.Unlock(SurgeAchievements.LightSnack, _casterController));
+                            AchievementTracker.Run("Light Snack", static caster => SurgeAchievements.Unlock(SurgeAchievements.LightSnack, caster), _casterController);
                     }
                 }
                 else if (distance <= _range)

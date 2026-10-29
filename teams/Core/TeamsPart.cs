@@ -14,6 +14,7 @@ namespace SpiderTeams
         public override string Namespace => "SpiderTeams";
         public override bool OnByDefault => true;
         public override bool CanDisable => false;
+        public override IEnumerable<KeyValuePair<string, object>> SettingDefaults => ModConfig.Defaults;
         // The host's match rules apply online, so a client shows them read-only; markers and buttons stay each player's own
         public override IEnumerable<string> SharedSettings => new[]
         {
@@ -31,6 +32,12 @@ namespace SpiderTeams
             CreateManager();
             ReflectionCache.ReportMissing();
             TeamNet.Initialize();
+            GameEvents.SceneLoaded += LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
+            GameEvents.RoundStarting += VersusMode_StartRound_Patch.OnRoundStarting;
+            SurgeHooks.Install();
+            FriendlyFireHits.Hook(true);
+            TeamAttacks.Register();
+            Owners.ExplosionCreated += BlastOwners.OnExplosionCreated;
         }
 
         protected internal override void OnStop()
@@ -57,11 +64,14 @@ namespace SpiderTeams
 
             VersusTeamsPage.RemoveAll();
             TeamNet.Shutdown();
+            GameEvents.SceneLoaded -= LobbyController_OnSceneLoaded_Patch.OnSceneLoaded;
+            GameEvents.RoundStarting -= VersusMode_StartRound_Patch.OnRoundStarting;
+            SurgeHooks.Remove();
+            FriendlyFireHits.Hook(false);
+            TeamAttacks.Unregister();
+            Owners.ExplosionCreated -= BlastOwners.OnExplosionCreated;
             ModConfig.Shutdown();
-            OwnerRegistry.Clear();
-            ExplosionOwners.Clear();
-            DamageContext.Clear();
-            SpawnScope.Clear();
+            BlastOwners.Clear();
             Announcements.Clear();
             MatchSnapshot.Clear();
         }

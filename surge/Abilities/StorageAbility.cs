@@ -118,17 +118,21 @@ namespace SpiderSurge
             }
         }
 
-        // Teams spares teammates here unless friendly fire does damage
+        // Teams spares teammates by friendly fire rules; the flag says whether the Black Hole pulls rather than swallows
+        public static System.Func<StorageAbility, SpiderHealthSystem, bool, bool> SparesTarget;
+
         public bool CanSwallow(SpiderHealthSystem spider)
         {
-            return spider != null && spider != spiderHealthSystem && !SwallowedTarget.IsSwallowed(spider.rootObject) && SwallowedTarget.CanDie(spider);
+            return spider != null && spider != spiderHealthSystem && !SwallowedTarget.IsSwallowed(spider.rootObject) && SwallowedTarget.CanDie(spider) && !Spares(spider, false);
         }
 
         // Immune spiders are pulled too, they just can't be swallowed; Teams spares teammates here when friendly fire is ignored
         public bool CanPull(SpiderHealthSystem spider)
         {
-            return spider != null && spider != spiderHealthSystem && !spider.dead && !spider.astralDead && !SwallowedTarget.IsSwallowed(spider.rootObject);
+            return spider != null && spider != spiderHealthSystem && !spider.dead && !spider.astralDead && !SwallowedTarget.IsSwallowed(spider.rootObject) && !Spares(spider, true);
         }
+
+        private bool Spares(SpiderHealthSystem spider, bool pull) => SparesTarget != null && SparesTarget(this, spider, pull);
 
         private IEnumerator SwapRoutine()
         {
@@ -148,6 +152,7 @@ namespace SpiderSurge
 
         private RuntimeStoredWeapon StoreWeapon(GameObject heldWeaponObj)
         {
+            DoomsdayAchievement.Stored(this, heldWeaponObj);
             if (heldWeaponObj == null) return null;
 
             Weapon val = heldWeaponObj.GetComponent<Weapon>();
@@ -416,8 +421,7 @@ namespace SpiderSurge
 
             if (SurvivalMode.instance != null)
             {
-                // Use ReflectionHelper to get private fields safely
-                var survivalWeapons = ReflectionHelper.GetPrivateField<List<SpawnableWeapon>>(SurvivalMode.instance, "_weapons");
+                var survivalWeapons = GameFields.SurvivalWeapons?.Invoke(SurvivalMode.instance);
                 if (survivalWeapons != null)
                 {
                     AddWeaponsToMap(survivalWeapons);
@@ -449,7 +453,7 @@ namespace SpiderSurge
                     {
                         newWeapon.ammo = data.Ammo;
                         KeepRestoredAmmo(newWeapon, data.Ammo);
-                        AchievementTracker.Run("Family Heirloom", () => StoredWeaponAchievement.Restore(newWeapon, data.Journey, playerId));
+                        AchievementTracker.Run("Family Heirloom", static kept => StoredWeaponAchievement.Restore(kept.newWeapon, kept.Journey, kept.playerId), (newWeapon, data.Journey, playerId));
                     }
 
                     newWeaponObj.transform.SetParent(transform);

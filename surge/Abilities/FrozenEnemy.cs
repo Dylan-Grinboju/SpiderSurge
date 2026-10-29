@@ -20,7 +20,6 @@ namespace SpiderSurge
             AccessTools.FieldRefAccess<ExplodingRoller, bool>("_triggered");
         private static readonly AccessTools.FieldRef<ExplodingRoller, float> RollerTimeToExplode =
             AccessTools.FieldRefAccess<ExplodingRoller, float>("_timeToExplode");
-        private static readonly MethodInfo WhispStopCharge = AccessTools.Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
         private static readonly MethodInfo KhepriSwitchCharge = AccessTools.Method(typeof(KhepriBrain), "SwitchChargeAttackCosmeticsClientRpc");
         private const float RollerFuse = 2f;
         // Enemies frozen by one cast thaw together, so their sound plays once
@@ -226,7 +225,7 @@ namespace SpiderSurge
         {
             try
             {
-                if (brain is WhispBrain) WhispStopCharge?.Invoke(brain, null);
+                if (brain is WhispBrain) GameFields.WhispStopChargeCosmetics?.Invoke(brain, null);
                 else if (brain is KhepriBrain) KhepriSwitchCharge?.Invoke(brain, new object[] { false });
             }
             catch (System.Exception ex)

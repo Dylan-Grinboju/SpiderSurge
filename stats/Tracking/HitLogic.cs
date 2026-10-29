@@ -41,37 +41,38 @@ namespace StatsMod
             public float Time;
         }
 
-        // The attack running now. In an attack patch's __state, the attack it interrupted
-        public struct AttackScope
+        internal sealed class Attack
         {
-            internal bool Saved;
-            internal object Source;
-            internal Func<object, PlayerController> FindPlayer;
-            internal Func<object, Weapon> FindWeapon;
+            internal string Name;
+            internal string Weapon;
+            internal Func<Component, PlayerController> Owner;
+            internal Func<Component, Weapon> WeaponOf;
+        }
+
+        // One of Stats' attacks on the core attack stack
+        internal struct AttackSlot
+        {
+            internal Func<Component, PlayerController> FindPlayer;
+            internal Func<Component, Weapon> FindWeapon;
             internal bool PlayerFound;
             internal PlayerController Player;
             internal bool WeaponFound;
             internal Weapon WeaponObject;
             internal string Weapon;
             internal PlayerController EnclosingPlayer;
-
-            internal bool Active => FindPlayer != null;
         }
 
         private static readonly Dictionary<int, HitRecord> lastEnemyHits = new Dictionary<int, HitRecord>();
         private static readonly Dictionary<int, HitRecord> lastPlayerHits = new Dictionary<int, HitRecord>();
         private static readonly Dictionary<int, HitRecord> rollerFuses = new Dictionary<int, HitRecord>();
         private static readonly Dictionary<int, Owner> explosionOwners = new Dictionary<int, Owner>();
-        private static readonly Dictionary<int, Owner> projectileOwners = new Dictionary<int, Owner>();
-        private static readonly Dictionary<int, Owner> discOwners = new Dictionary<int, Owner>();
-        private static readonly Dictionary<int, Owner> ballReflectors = new Dictionary<int, Owner>();
-        private static readonly Dictionary<int, Owner> explosiveArmers = new Dictionary<int, Owner>();
-        private static readonly Dictionary<int, Owner>[] ownerMaps = { explosionOwners, projectileOwners, discOwners, ballReflectors, explosiveArmers };
-        private static readonly Dictionary<Weapon, PlayerController> weaponPlayers = new Dictionary<Weapon, PlayerController>();
         private static readonly Dictionary<PlayerController, PlayerTracker.KillCredit> deathCredits = new Dictionary<PlayerController, PlayerTracker.KillCredit>();
         private static float lastPruneTime = 0f;
+        private static float ownersSince = float.NegativeInfinity;
+        // Players who left no longer own the weapons they dropped
+        private static readonly HashSet<PlayerController> departed = new HashSet<PlayerController>();
 
-        private static AttackScope current;
+        internal static readonly AttackView<AttackSlot> Attacks = new AttackView<AttackSlot>(OpenAttack);
 
         private static readonly Dictionary<SerializationEnemyName, string> enemyDisplayNames = new Dictionary<SerializationEnemyName, string>
         {
@@ -97,45 +98,58 @@ namespace StatsMod
         // or knocks back counts as hit by its player, since a knockback can push the target into lava.
         // Explosions nobody owns, weapons no player holds and enemy saws run as attacks without a player.
         // The player is looked up only once the attack hits something.
-        public static AttackScope BeginAttack(object source, Func<object, PlayerController> findPlayer, Func<object, Weapon> findWeapon, string weaponName)
+        private static bool OpenAttack(ref AttackSlot slot, Component source, object info)
         {
-            PlayerController enclosing = CurrentAttacker;
-            AttackScope previous = current;
-            previous.Saved = true;
-            current = new AttackScope { Source = source, FindPlayer = findPlayer, FindWeapon = findWeapon, Weapon = weaponName, EnclosingPlayer = enclosing };
-            return previous;
-        }
-
-        public static void EndAttack(AttackScope previous)
-        {
-            if (previous.Saved) current = previous;
+            Attack attack = (Attack)info;
+            try
+            {
+                PlayerController enclosing = CurrentAttacker;
+                slot = new AttackSlot { FindPlayer = attack.Owner, FindWeapon = attack.WeaponOf, Weapon = attack.Weapon, EnclosingPlayer = enclosing };
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error tracking {attack.Name} hit: {ex.Message}");
+                return false;
+            }
         }
 
         public static PlayerController CurrentAttacker
         {
             get
             {
-                if (current.Active && !current.PlayerFound)
+                int top = Attacks.Top;
+                if (top < 0) return null;
+                ref AttackSlot slot = ref Attacks.Slot(top);
+                if (!slot.PlayerFound)
                 {
-                    current.PlayerFound = true;
-                    current.Player = current.FindPlayer(current.Source);
+                    slot.PlayerFound = true;
+                    // The lookup can open a nested attack that grows the slots, so the slot is fetched again after it
+                    PlayerController player = slot.FindPlayer(Attacks.Source);
+                    Attacks.Slot(top).Player = player;
                 }
-                return current.Player;
+                return Attacks.Slot(top).Player;
             }
         }
 
-        public static PlayerController EnclosingAttacker => current.EnclosingPlayer;
+        public static PlayerController EnclosingAttacker => Attacks.Active ? Attacks.Slot(Attacks.Top).EnclosingPlayer : null;
+
+        private static string CurrentWeaponName => Attacks.Active ? Attacks.Slot(Attacks.Top).Weapon : null;
 
         private static Weapon CurrentWeapon
         {
             get
             {
-                if (current.Active && !current.WeaponFound)
+                int top = Attacks.Top;
+                if (top < 0) return null;
+                ref AttackSlot slot = ref Attacks.Slot(top);
+                if (!slot.WeaponFound)
                 {
-                    current.WeaponFound = true;
-                    current.WeaponObject = current.FindWeapon?.Invoke(current.Source);
+                    slot.WeaponFound = true;
+                    Weapon weapon = slot.FindWeapon?.Invoke(Attacks.Source);
+                    Attacks.Slot(top).WeaponObject = weapon;
                 }
-                return current.WeaponObject;
+                return Attacks.Slot(top).WeaponObject;
             }
         }
 
@@ -147,10 +161,10 @@ namespace StatsMod
             lastEnemyHits.Clear();
             lastPlayerHits.Clear();
             rollerFuses.Clear();
-            foreach (var owners in ownerMaps) owners.Clear();
+            explosionOwners.Clear();
             deathCredits.Clear();
-            current = default;
             lastPruneTime = Time.time;
+            ownersSince = Time.time;
         }
 
         // An attack without a player, or damage from anything else (a friendly wasp, a hazard), takes the kill away
@@ -159,14 +173,14 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             if (enemy.serializationEnemyName == SerializationEnemyName.FriendlyWasp) return;
-            AccuracyTracker.EnemyHit(current.Source);
+            AccuracyTracker.EnemyHit(Attacks.Source);
 
             PlayerController attacker = CurrentAttacker;
             if (attacker != null)
             {
-                StoreHit(lastEnemyHits, enemy.GetInstanceID(), attacker, current.Weapon, CurrentWeapon);
+                StoreHit(lastEnemyHits, enemy.GetInstanceID(), attacker, CurrentWeaponName, CurrentWeapon);
             }
-            else if (current.Active || damage)
+            else if (Attacks.Active || damage)
             {
                 lastEnemyHits.Remove(enemy.GetInstanceID());
             }
@@ -212,12 +226,12 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             PlayerController victim = Players.Of(spider.rootObject);
-            if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(current.Source, victim);
+            if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(Attacks.Source, victim);
             int id = spider.GetInstanceID();
             PlayerController attacker = CurrentAttacker;
             if (attacker == null)
             {
-                if (damage || (current.Active && stun)) lastPlayerHits.Remove(id);
+                if (damage || (Attacks.Active && stun)) lastPlayerHits.Remove(id);
                 return;
             }
 
@@ -225,7 +239,7 @@ namespace StatsMod
 
             if (victim != attacker)
             {
-                StoreHit(lastPlayerHits, id, attacker, current.Weapon, null);
+                StoreHit(lastPlayerHits, id, attacker, CurrentWeaponName, null);
             }
             else if (damage || stun)
             {
@@ -282,19 +296,19 @@ namespace StatsMod
         }
 
         // The game stores an explosion's owner as a client id that is 0 both for player 0 and for explosions nobody owns
-        // (enemy explosions, weapons no player held), so the real owner is kept here, set where the game sets its own.
+        // (enemy explosions, weapons no player held), so the real owner is kept here when the game creates the explosion.
         // A grenade or mine belongs to the player who armed it, a BoomSpear to its last holder. Anything else belongs to
         // the player whose attack set it off: on the host the explode ClientRpc runs inside that attack.
-        public static void SetExplosionOwner(Explosion explosion, ulong ownerId, NetworkBehaviour source)
+        public static void SetExplosionOwner(Explosion explosion, NetworkBehaviour source)
         {
-            explosion.explosionOwnerId = ownerId;
             try
             {
                 AccuracyTracker.Transfer(source, explosion);
-                Owner owner;
-                if (source is BasicProjectile projectile) projectileOwners.TryGetValue(projectile.GetInstanceID(), out owner);
+                Owner owner = default;
+                if (source is BasicProjectile projectile) owner = ProjectileOwner(projectile);
                 else if (source is BoomSpear spear) owner = new Owner { Player = WeaponPlayer(spear), Weapon = spear };
-                else explosiveArmers.TryGetValue(source.GetInstanceID(), out owner);
+                else if (Owners.TryGet(source.gameObject, out Owners.Record record) && record.Armer != null && Fresh(record.ArmedAt))
+                    owner = new Owner { Player = record.Armer, Weapon = source as Weapon };
                 if (owner.Player == null) owner = new Owner { Player = CurrentAttacker, Weapon = CurrentWeapon };
                 if (owner.Player != null)
                 {
@@ -312,26 +326,16 @@ namespace StatsMod
             PlayerController player = byHolder ? Holder(explosive) : CurrentAttacker;
             if (player != null)
             {
-                StoreOwner(explosiveArmers, explosive.GetInstanceID(), player, explosive);
+                Owners.SetArmer(explosive, player);
             }
         }
 
-        public static void SetProjectileOwner(BasicProjectile projectile, ulong ownerId, NetworkBehaviour launcher)
+        private static Owner ProjectileOwner(BasicProjectile projectile)
         {
-            projectile.projectileOwnerId = ownerId;
-            try
-            {
-                Weapon weapon = launcher as Weapon;
-                PlayerController player = WeaponPlayer(weapon);
-                if (player != null)
-                {
-                    StoreOwner(projectileOwners, projectile.GetInstanceID(), player, weapon);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording projectile owner: {ex.Message}");
-            }
+            return Owners.TryGet(projectile.gameObject, out Owners.Record record) && record.Launcher is ProjectileLauncher &&
+                   record.LaunchedBy != null && Fresh(record.LaunchedAt)
+                ? new Owner { Player = record.LaunchedBy, Weapon = record.Launcher }
+                : default;
         }
 
         public static PlayerController GetExplosionOwner(Explosion explosion)
@@ -344,42 +348,23 @@ namespace StatsMod
             return explosionOwners.TryGetValue(explosion.GetInstanceID(), out Owner owner) ? owner.Weapon : null;
         }
 
-        public static void RegisterDiscOwner(GameObject disc, PlayerController owner, Weapon launcher)
-        {
-            if (disc != null && owner != null)
-            {
-                StoreOwner(discOwners, disc.GetInstanceID(), owner, launcher);
-            }
-        }
+        public static PlayerController GetDiscOwner(GameObject disc) => DiscRecord(disc, out Owners.Record record) ? record.LaunchedBy : null;
 
-        public static PlayerController GetDiscOwner(GameObject disc)
-        {
-            return disc != null ? GetOwner(discOwners, disc.GetInstanceID()) : null;
-        }
+        public static Weapon GetDiscWeapon(GameObject disc) => DiscRecord(disc, out Owners.Record record) ? record.Launcher : null;
 
-        public static Weapon GetDiscWeapon(GameObject disc)
+        // The launcher's holder owns the disc from the moment LaunchDisc spawns it
+        private static bool DiscRecord(GameObject disc, out Owners.Record record)
         {
-            return disc != null && discOwners.TryGetValue(disc.GetInstanceID(), out Owner owner) ? owner.Weapon : null;
-        }
-
-        public static void OnBallReflected(EnergyBall ball, PlayerController reflector)
-        {
-            AccuracyTracker.Forget(ball);
-            if (reflector != null)
-            {
-                StoreOwner(ballReflectors, ball.GetInstanceID(), reflector);
-            }
-            else
-            {
-                ballReflectors.Remove(ball.GetInstanceID());
-            }
+            return Owners.TryGet(disc, out record) && record.Launcher is DiscLauncher && record.LaunchedBy != null && Fresh(record.LaunchedAt);
         }
 
         public static PlayerController GetBallReflector(EnergyBall ball)
         {
-            return GetOwner(ballReflectors, ball.GetInstanceID());
+            return Owners.TryGet(ball.gameObject, out Owners.Record record) && record.Reflector != null && Fresh(record.ReflectedAt) ? record.Reflector : null;
         }
 
+        // The player who equips a weapon owns it until someone else equips it, also after it is thrown; a launched weapon
+        // belongs to the launcher's player. Weapons only AI spiders held have none
         public static PlayerController WeaponPlayer(Weapon weapon)
         {
             if (weapon == null) return null;
@@ -387,42 +372,15 @@ namespace StatsMod
             PlayerController holder = Holder(weapon);
             if (holder != null) return holder;
 
-            // Weapons only AI spiders held have none
-            return weaponPlayers.TryGetValue(weapon, out PlayerController player) && player != null ? player : null;
-        }
-
-        public static void SetWeaponPlayer(Weapon weapon, PlayerController player)
-        {
-            if (weapon == null) return;
-            PruneIfDue();
-            if (player != null) weaponPlayers[weapon] = player;
-            else weaponPlayers.Remove(weapon);
-        }
-
-        public static void SetLaunchedWeaponOwner(Weapon weapon, ulong ownerId, NetworkBehaviour launcher)
-        {
-            weapon.ownerWeaponClientId = ownerId;
-            try
-            {
-                PlayerController player = WeaponPlayer(launcher as Weapon);
-                SetWeaponPlayer(weapon, player);
-                // A Grenade Launcher's grenades come out armed, so they belong to the launcher's player from the start
-                if (weapon is Grenade grenade && grenade.preArmed && player != null) StoreOwner(explosiveArmers, weapon.GetInstanceID(), player, weapon);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error recording launched weapon owner: {ex.Message}");
-            }
+            return Owners.TryGet(weapon.gameObject, out Owners.Record record) && (record.Launcher == null || record.Launcher is ProjectileLauncher) &&
+                   record.Holder != null && !departed.Contains(record.Holder)
+                ? record.Holder
+                : null;
         }
 
         public static void ForgetWeaponsOf(PlayerController player)
         {
-            List<Weapon> owned = null;
-            foreach (var entry in weaponPlayers)
-            {
-                if (entry.Value == player) (owned ??= new List<Weapon>()).Add(entry.Key);
-            }
-            owned?.ForEach(weapon => weaponPlayers.Remove(weapon));
+            if (player != null) departed.Add(player);
         }
 
         // The game keeps a weapon's owner after it is dropped or thrown
@@ -433,6 +391,9 @@ namespace StatsMod
                 ? owner.healthSystem.GetComponentInParent<PlayerController>()
                 : null;
         }
+
+        // Launches, arms and reflections older than the last prune or session start were dropped with the hits
+        private static bool Fresh(float at) => at >= ownersSince;
 
         public static void OnEnemyDeath(EnemyHealthSystem enemy)
         {
@@ -532,7 +493,7 @@ namespace StatsMod
         {
             if (!GameSessionManager.IsRecording) return;
             // Lava and falling out of the map mark the spider as dying before it dies, a damage kill happens on the hit
-            float? window = ReflectionCache.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
+            float? window = GameFields.SpiderDying(spider) ? (float?)null : DirectPlayerKillCreditWindow;
             if (!TryTakeHit(lastPlayerHits, spider.GetInstanceID(), window, out HitRecord hit, out _)) return;
 
             PlayerController victim = Players.Of(spider.rootObject);
@@ -610,16 +571,9 @@ namespace StatsMod
             PruneStale(lastEnemyHits, hit => hit.Time, now);
             PruneStale(lastPlayerHits, hit => hit.Time, now);
             PruneStale(rollerFuses, hit => hit.Time, now, StaleFuseAge);
-            foreach (Dictionary<int, Owner> owners in ownerMaps)
-            {
-                PruneStale(owners, owner => owner.Time, now);
-            }
-            List<Weapon> destroyed = null;
-            foreach (Weapon weapon in weaponPlayers.Keys)
-            {
-                if (weapon == null) (destroyed ??= new List<Weapon>()).Add(weapon);
-            }
-            destroyed?.ForEach(weapon => weaponPlayers.Remove(weapon));
+            PruneStale(explosionOwners, owner => owner.Time, now);
+            ownersSince = Math.Max(ownersSince, now - StaleHitAge);
+            departed.RemoveWhere(player => player == null);
             lastPruneTime = now;
         }
 

@@ -106,9 +106,6 @@ namespace SpiderSurge
             return value;
         }
 
-        // The perk values are computed when read, so there is nothing to refresh; QA's setup_game.py still calls this after granting a perk
-        public void UpdatePerkModifiers() { }
-
         protected virtual void Awake()
         {
             playerInput = GetComponentInParent<PlayerInput>();

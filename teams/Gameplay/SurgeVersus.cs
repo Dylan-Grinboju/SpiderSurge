@@ -66,9 +66,7 @@ namespace SpiderTeams
             _touched = false;
             try
             {
-                SurgeBridge.SetRunActive(false);
-                SurgeBridge.ResetPerks();
-                SurgeBridge.ClearStoredWeapons();
+                SurgeBridge.EndRun();
             }
             catch (Exception ex)
             {

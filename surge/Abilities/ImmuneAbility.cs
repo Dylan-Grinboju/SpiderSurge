@@ -32,8 +32,6 @@ namespace SpiderSurge
 
         public override bool HasUltimate => true;
 
-        private static readonly AccessTools.FieldRef<SpiderHealthSystem, bool> SpiderDying = AccessTools.FieldRefAccess<SpiderHealthSystem, bool>("_dying");
-        private static FieldInfo immuneTimeField;
         private static MethodInfo _breakShieldMethod;
 
         private bool hadBarrierOnSessionStart = false;
@@ -59,17 +57,6 @@ namespace SpiderSurge
         protected override void Awake()
         {
             base.Awake();
-
-            if (immuneTimeField == null)
-            {
-                immuneTimeField = typeof(SpiderHealthSystem).GetField("_immuneTill",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (immuneTimeField == null)
-                {
-                    Logger.LogError("ImmuneAbility: Checked for _immuneTill field but it was null! Immunity will not work.");
-                }
-            }
 
             if (_breakShieldMethod == null)
             {
@@ -112,7 +99,7 @@ namespace SpiderSurge
                     nextHitAccent = Time.time + 0.15f;
                     if (direction.sqrMagnitude < 0.001f) direction = Vector3.down;
                     if (bubble != null) bubble.Hit(direction);
-                    if (Net.HasRemotePlayers) SurgeNet.SendFx(SurgeFx.ImmuneHit, PlayerId, spiderHealthSystem.transform.position, Mathf.Atan2(direction.y, direction.x), false);
+                    SurgeNet.SendFx(SurgeFx.ImmuneHit, PlayerId, spiderHealthSystem.transform.position, Mathf.Atan2(direction.y, direction.x), false);
                 }
             }
         }
@@ -325,9 +312,9 @@ namespace SpiderSurge
             {
                 try
                 {
-                    if (immuneTimeField != null)
+                    if (GameFields.SpiderImmuneTill != null)
                     {
-                        immuneTimeField.SetValue(spiderHealthSystem, float.MaxValue);
+                        GameFields.SpiderImmuneTill(spiderHealthSystem) = float.MaxValue;
                     }
                 }
                 catch (System.Exception ex)
@@ -339,10 +326,10 @@ namespace SpiderSurge
             {
                 try
                 {
-                    if (immuneTimeField != null)
+                    if (GameFields.SpiderImmuneTill != null)
                     {
                         // Reset immunity to current time (expired)
-                        immuneTimeField.SetValue(spiderHealthSystem, Time.time);
+                        GameFields.SpiderImmuneTill(spiderHealthSystem) = Time.time;
                     }
                 }
                 catch (System.Exception ex)
@@ -375,7 +362,19 @@ namespace SpiderSurge
             SpawnFriendlyWasps();
         }
 
+        // Teams brings back only teammates in Surge versus; it returns false to leave the revive to this ability
+        public delegate bool ReviveOverride(ImmuneAbility ability, out PlayerController revivedPlayer);
+        public static ReviveOverride OverrideRevive;
+
         private bool TryRespawnDeadPlayer(out PlayerController revivedPlayer)
+        {
+            var ghosts = ReviveAchievements.Ghosts();
+            bool revived = OverrideRevive != null && OverrideRevive(this, out revivedPlayer) ? revivedPlayer != null : ReviveAnyDead(out revivedPlayer);
+            if (revived && revivedPlayer != null) ReviveAchievements.Revived(this, revivedPlayer, ghosts);
+            return revived;
+        }
+
+        private bool ReviveAnyDead(out PlayerController revivedPlayer)
         {
             revivedPlayer = null;
 
@@ -421,7 +420,7 @@ namespace SpiderSurge
         public static bool IsGhost(PlayerController player)
         {
             SpiderHealthSystem health = player != null ? player.spiderHealthSystem : null;
-            return health != null && health.astralDead && !health.dead && !SpiderDying(health) && !SwallowedTarget.IsSwallowed(health.rootObject);
+            return health != null && health.astralDead && !health.dead && !GameFields.SpiderDying(health) && !SwallowedTarget.IsSwallowed(health.rootObject);
         }
 
         private IEnumerator ApplyShieldToRevivedPlayer(PlayerController revivedPlayer)

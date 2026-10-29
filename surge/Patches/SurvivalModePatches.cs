@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine;
 using SpiderSurge.Enemies;
 using Logger = Silk.Logger;
+using SpiderSurge.Common;
 
 namespace SpiderSurge
 {
@@ -38,80 +39,11 @@ namespace SpiderSurge
 
             if (ShouldApplySurge(survivalConfig))
             {
-                // Find templates
-                GameObject meleeWhispPrefab = null;
-                GameObject powerMeleeWhispPrefab = null;
-                GameObject whispPrefab = null;
-                GameObject shieldSource = null;
-
-                foreach (var enemy in survivalConfig.enemies)
-                {
-                    if (enemy.enemyObject != null)
-                    {
-                        if (enemy.enemyObject.name.Contains("MeleeWhisp") && !enemy.enemyObject.name.Contains("Power"))
-                        {
-                            meleeWhispPrefab = enemy.enemyObject;
-                        }
-                        else if (enemy.enemyObject.name.Contains("MeleeWhisp") && enemy.enemyObject.name.Contains("Power"))
-                        {
-                            powerMeleeWhispPrefab = enemy.enemyObject;
-                        }
-                        else if (enemy.enemyObject.name.Contains("Whisp") && !enemy.enemyObject.name.Contains("Melee") && !enemy.enemyObject.name.Contains("Power"))
-                        {
-                            whispPrefab = enemy.enemyObject;
-                        }
-
-                        if (shieldSource == null)
-                        {
-                            var ehs = enemy.enemyObject.GetComponent<EnemyHealthSystem>();
-                            if (ehs != null && ehs.shield != null)
-                            {
-                                shieldSource = enemy.enemyObject;
-                            }
-                        }
-                    }
-                }
-
-                GameObject rocketProjectile = null;
-                if (CustomEnemies.MissileWhispPrefab == null)
-                {
-                    var projectiles = Resources.FindObjectsOfTypeAll<BasicProjectile>();
-                    foreach (var p in projectiles)
-                    {
-                        if (p.name == "Rocket")
-                        {
-                            rocketProjectile = p.gameObject;
-                            break;
-                        }
-                    }
-                }
-
-                // Initialize Custom Enemies if missing
-                if (meleeWhispPrefab != null)
-                {
-                    CustomEnemies.CreateTwinBladeMeleeWhisp(meleeWhispPrefab);
-                }
-                if (powerMeleeWhispPrefab != null)
-                {
-                    CustomEnemies.CreateTwinBladePowerMeleeWhisp(powerMeleeWhispPrefab);
-                }
-                if (whispPrefab != null)
-                {
-                    if (CustomEnemies.MissileWhispPrefab == null && rocketProjectile != null)
-                    {
-                        CustomEnemies.CreateMissileWhisp(whispPrefab, rocketProjectile, shieldSource);
-                    }
-                    if (CustomEnemies.TwinWhispPrefab == null)
-                    {
-                        CustomEnemies.CreateTwinWhisp(whispPrefab, shieldSource);
-                    }
-                }
-                CustomEnemies.CreateWaspCocoon();
-
-                CustomEnemies.CreateLaserVariants(survivalConfig.enemies.Select(e => e.enemyObject).Concat(CustomEnemies.CustomBasePrefabs), shieldSource);
+                CustomEnemies.EnsureCreated(survivalConfig.enemies.Select(e => e.enemyObject), true);
 
                 SurvivalConfig surgeConfig = UnityEngine.Object.Instantiate(survivalConfig);
                 surgeConfig.name = survivalConfig.name + "_Surge";
+                SurvivalConfig_GetHighScore_Patch.RegisterSurgeConfig(surgeConfig);
 
                 surgeConfig.startingBudget *= Consts.Values.Enemies.SpawnCountMultiplier;
                 surgeConfig.budgetPerWave *= Consts.Values.Enemies.SpawnCountMultiplier;
@@ -171,57 +103,41 @@ namespace SpiderSurge
             }
         }
 
-        [HarmonyPostfix]
-        public static void Postfix(bool __result, SurvivalConfig survivalConfig)
+        internal static void OnRunStarted(SurvivalMode survival, SurvivalConfig survivalConfig)
         {
-            if (__result)
+            if (ShouldApplySurge(survivalConfig))
             {
-                if (ShouldApplySurge(survivalConfig))
+                Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
+                Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
+                Logger.LogInfo($"Budget - Start: {survivalConfig.startingBudget}, PerWave: {survivalConfig.budgetPerWave}, PerPlayer: {survivalConfig.budgetPerPlayer}");
+                Logger.LogInfo($"Enemies:");
+                foreach (var enemy in survivalConfig.enemies)
                 {
-                    Logger.LogInfo($"=== SURVIVAL CONFIG: {survivalConfig.name} ===");
-                    Logger.LogInfo($"Type: {survivalConfig.type} | Total Waves: {survivalConfig.totalWaves}");
-                    Logger.LogInfo($"Budget - Start: {survivalConfig.startingBudget}, PerWave: {survivalConfig.budgetPerWave}, PerPlayer: {survivalConfig.budgetPerPlayer}");
-                    Logger.LogInfo($"Enemies:");
-                    foreach (var enemy in survivalConfig.enemies)
-                    {
-                        var name = enemy.enemyObject != null ? enemy.enemyObject.name : "Null";
-                        Logger.LogInfo($" - {name} | Cost: {enemy.cost} | Waves: {enemy.minWave}-{enemy.maxWave}");
-                    }
-                    Logger.LogInfo($"=====================================");
+                    var name = enemy.enemyObject != null ? enemy.enemyObject.name : "Null";
+                    Logger.LogInfo($" - {name} | Cost: {enemy.cost} | Waves: {enemy.minWave}-{enemy.maxWave}");
+                }
+                Logger.LogInfo($"=====================================");
+            }
+
+            SurgeGameModeManager.EndRun(RunEnd.Starting);
+
+            if (ShouldApplySurge(survivalConfig))
+            {
+                if (SurgeGameModeManager.Instance == null) return;
+                SurgeGameModeManager.Instance.SetActive(true);
+                AbilitySelection.Arm();
+                if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
+
+                if (PlayerAbilityHandler.ActiveSpiderControllers != null)
+                {
+                    PlayerAbilityHandler.ResetSpawnTracking();
                 }
 
-                if (SurgeGameModeManager.Instance != null)
+                var eventField = AccessTools.Field(typeof(SurvivalMode), "onHighScoreUpdated");
+                if (eventField != null && SurvivalMode.instance != null)
                 {
-                    SurgeGameModeManager.Instance.ResetRun();
-                }
-                ChaosWallet.ResetRun();
-                SurgeSpawnPressure.Reset();
-
-                if (PerksManager.Instance != null)
-                {
-                    PerksManager.Instance.ResetPerks();
-                }
-
-                StoragePersistenceManager.ClearAllStoredWeapons();
-
-                if (ShouldApplySurge(survivalConfig))
-                {
-                    if (SurgeGameModeManager.Instance == null) return;
-                    SurgeGameModeManager.Instance.SetActive(true);
-                    AbilitySelection.Arm();
-                    if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave > 0) SurvivalMode_set_CurrentWave_Patch.LogWaveStart(SurvivalMode.instance.CurrentWave);
-
-                    if (PlayerAbilityHandler.ActiveSpiderControllers != null)
-                    {
-                        PlayerAbilityHandler.ResetSpawnTracking();
-                    }
-
-                    var eventField = AccessTools.Field(typeof(SurvivalMode), "onHighScoreUpdated");
-                    if (eventField != null && SurvivalMode.instance != null)
-                    {
-                        var action = (Action<int>)eventField.GetValue(null);
-                        action?.Invoke(SurvivalMode.instance.GetHighScore());
-                    }
+                    var action = (Action<int>)eventField.GetValue(null);
+                    action?.Invoke(SurvivalMode.instance.GetHighScore());
                 }
             }
         }
@@ -229,8 +145,6 @@ namespace SpiderSurge
         [HarmonyPatch(typeof(SurvivalMode), "set_CurrentWave")]
         public class SurvivalMode_set_CurrentWave_Patch
         {
-            private static readonly AccessTools.FieldRef<SurvivalMode, SurvivalConfig> ActiveConfig = AccessTools.FieldRefAccess<SurvivalMode, SurvivalConfig>("_config");
-
             [HarmonyPostfix]
             public static void Postfix(int value)
             {
@@ -268,7 +182,7 @@ namespace SpiderSurge
             // StartGame sets wave 1 before Surge turns on, so it logs that wave itself
             internal static void LogWaveStart(int value)
             {
-                var config = ActiveConfig(SurvivalMode.instance);
+                var config = GameFields.ActiveConfig(SurvivalMode.instance);
                 if (config == null) return;
 
                 float budget = config.startingBudget + (float)value * config.budgetPerWave + (float)(LobbyController.instance != null ? LobbyController.instance.GetPlayerCount() : 1) * config.budgetPerPlayer;
