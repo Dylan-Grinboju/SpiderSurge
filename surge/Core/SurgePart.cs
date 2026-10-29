@@ -82,7 +82,7 @@ namespace SpiderSurge
 
         public override void BuildCollection(SettingsPage page)
         {
-            page.Button($"Surge achievements ({SurgeAchievements.UnlockedCount} of {SurgeAchievements.All.Length})", () => page.Open(AchievementsPage.Page));
+            page.Button(AchievementsPage.ButtonLabel, () => page.Open(AchievementsPage.Page));
         }
 
         public override void BuildSupport(SettingsPage page)

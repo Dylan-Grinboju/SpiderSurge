@@ -35,6 +35,7 @@ namespace SpiderSurge
         private readonly Dictionary<int, string> feedbackMessages = new Dictionary<int, string>();
         private readonly Dictionary<int, float> feedbackEndTimes = new Dictionary<int, float>();
         private GUIStyle feedbackStyle;
+        private int guideRoster;
 
         private const float DoubleTapWindow = 0.4f;
         private const float ResetHoldDuration = 3f;
@@ -128,6 +129,8 @@ namespace SpiderSurge
             else
             {
                 selectHoldStartTime.Remove(playerIndex);
+                lastButtonPressed.Remove(playerIndex);
+                lastButtonPressTime.Remove(playerIndex);
             }
         }
 
@@ -187,6 +190,7 @@ namespace SpiderSurge
             {
                 // Double-tap detected! Set this as the new ability button
                 SetPlayerAbilityButton(playerIndex, buttonPath);
+                selectHoldStartTime.Remove(playerIndex);
                 lastButtonPressed.Remove(playerIndex);
                 lastButtonPressTime.Remove(playerIndex);
             }
@@ -200,6 +204,20 @@ namespace SpiderSurge
 
         private void Update()
         {
+            if (SettingsPage.IsShowing(SurgeGuide.Page + ".controls"))
+            {
+                int roster = 17;
+                foreach (var input in PlayerInput.all)
+                {
+                    roster = unchecked(roster * 31 + input.playerIndex);
+                    foreach (var device in input.devices) roster = unchecked(roster * 31 + device.deviceId);
+                }
+                if (roster != guideRoster)
+                {
+                    guideRoster = roster;
+                    SettingsPage.RefreshOpen();
+                }
+            }
             if (selectHoldStartTime.Count == 0) return;
 
             // Check for 3-second hold to reset
@@ -254,6 +272,7 @@ namespace SpiderSurge
         // A spider that has abilities rebinds now; in the lobby or while dead, the next spider's abilities read the new button when they are added
         private void NotifyAbilitiesOfButtonChange(int playerIndex)
         {
+            if (SettingsPage.IsShowing(SurgeGuide.Page + ".controls")) SettingsPage.RefreshOpen();
             foreach (var input in PlayerInput.all)
             {
                 if (input == null || input.playerIndex != playerIndex) continue;
