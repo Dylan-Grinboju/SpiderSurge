@@ -96,13 +96,14 @@ namespace SpiderSurge
             transform.position = target.position + offset;
             bool alive = ability.IsPlayerAlive() && ability.IsUnlocked();
             bool active = ability.IsActive();
-            bool ready = !active && !ability.IsOnCooldown();
+            bool available = ability.HasAvailableAction;
+            bool ready = available && !active && !ability.IsOnCooldown();
             bool shown = !ModConfig.IndicatorCompactHud && alive && (!showOnlyWhenReady || ready);
-            float progress = active ? ability.ActiveProgress : ability.CooldownProgress;
+            float progress = active ? ability.ActiveProgress : available ? ability.CooldownProgress : 0f;
             if (track.enabled != shown) track.enabled = shown;
             bool fillShown = shown && progress > 0f;
             if (fill.enabled != fillShown) fill.enabled = fillShown;
-            Color color = active ? activeColor : ready ? availableColor : cooldownColor;
+            Color color = active ? activeColor : !available ? Color.gray : ready ? availableColor : cooldownColor;
             if (!drawnColor.HasValue || !drawnColor.Value.Equals(color))
             {
                 track.startColor = track.endColor = new Color(color.r, color.g, color.b, 0.2f);

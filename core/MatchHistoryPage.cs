@@ -8,6 +8,7 @@ namespace SpiderSurge.Common
     internal static class MatchHistoryPage
     {
         private static readonly Dictionary<string, int> pages = new Dictionary<string, int>();
+        private static readonly Dictionary<string, int> filters = new Dictionary<string, int>();
         private static HistoryMatch selected;
         private static string loading;
         public static string Text(string value) => (value ?? "").Replace("<", "‹").Replace(">", "›");
@@ -34,13 +35,21 @@ namespace SpiderSurge.Common
             {
                 string mode = page.Current.Substring("history.".Length);
                 page.Title(mode == "survival" ? "Survival history" : "Versus history");
-                var matches = HistoryStore.Entries.Where(m => m.Mode == mode).ToList();
+                int filter = filters.TryGetValue(mode, out int f) ? f : 0;
+                string[] views = { "All", "Surge", "Without Surge" };
+                page.Button("Show: " + views[filter], () =>
+                {
+                    filters[mode] = (filter + 1) % views.Length;
+                    pages[mode] = 0;
+                    SettingsPage.RefreshOpen();
+                });
+                var matches = HistoryStore.Entries.Where(m => m.Mode == mode && (filter == 0 || m.Surge == (filter == 1))).ToList();
                 int number = pages.TryGetValue(mode, out int n) ? n : 0;
                 number = Math.Min(number, Math.Max(0, (matches.Count - 1) / 20));
                 pages[mode] = number;
-                page.Note($"{matches.Count} matches · Page {number + 1} of {Math.Max(1, (matches.Count + 19) / 20)}");
+                page.Note($"{matches.Count} matches · Newest first · Page {number + 1} of {Math.Max(1, (matches.Count + 19) / 20)}");
                 if (HistoryStore.Busy) page.Note("Loading history…");
-                else if (matches.Count == 0) page.Note("No matches recorded yet.");
+                else if (matches.Count == 0) page.Note(filter == 0 ? "No matches recorded yet. Finish a match with Save match history enabled to keep its results here." : "No matches in this view. Choose Show: All to see your other results.");
                 foreach (var match in matches.Skip(number * 20).Take(20))
                 {
                     string extra = mode == "survival" ? $" · Wave {match.Wave} · Pain {match.Pain}" : "";
@@ -82,8 +91,10 @@ namespace SpiderSurge.Common
             {
                 page.Title("Maps and perks");
                 page.Header("Maps");
+                if (selected.Maps.Count == 0) page.Note("No maps recorded.");
                 foreach (string map in selected.Maps) page.Line(Text(map));
                 page.Header("Perks");
+                if (selected.Perks.Count == 0) page.Note("No perks recorded.");
                 foreach (string perk in selected.Perks) page.Line(Text(perk));
                 if (selected.SurgeStats != null)
                 {
@@ -126,7 +137,8 @@ namespace SpiderSurge.Common
             {
                 int index = i;
                 var player = selected.Players[i];
-                page.Button(Text(player.Name) + (player.LeftEarly ? " (left early)" : "") + (s.Mode == "versus" ? $" · {Points(player.Score)}" : ""), () => page.Open("history.player." + index));
+                page.Line("<b>" + Text(player.Name) + "</b>" + (player.LeftEarly ? " (left early)" : "") + (s.Mode == "versus" ? $" · {Points(player.Score)}" : "")
+                    + "\n" + PlayerSummary(player), () => page.Open("history.player." + index));
             }
             page.Button("Maps and perks", () => page.Open("history.perks"));
             page.Button("Earned titles", () => page.Open("history.titles"));
@@ -137,6 +149,7 @@ namespace SpiderSurge.Common
             if (category == "overview")
             {
                 if (player.Team >= 0) page.Note("Team: " + Text(selected.Teams.FirstOrDefault(t => t.Id == player.Team)?.Name));
+                page.Line(PlayerSummary(player));
                 foreach (string group in new[] { "stats", "enemies", "weapons", "accuracy", "maps" })
                 {
                     string target = group;
@@ -148,13 +161,36 @@ namespace SpiderSurge.Common
             }
             if (category == "accuracy")
             {
-                foreach (var accuracy in player.Accuracy)
+                page.Note("Shots that hit an enemy or versus opponent. Each shot counts once; friendly fire does not count.");
+                var overall = player.Accuracy.FirstOrDefault(a => a.Weapon == "Overall");
+                long fired = overall?.Fired ?? player.Accuracy.Sum(a => (long)a.Fired);
+                long hit = overall?.Hit ?? player.Accuracy.Sum(a => (long)a.Hit);
+                if (fired > 0) page.Line($"<b>Overall: {100.0 * hit / fired:0.#}%</b> · {hit}/{fired} shots hit");
+                else page.Note("No tracked shots fired in this match.");
+                foreach (var accuracy in player.Accuracy.Where(a => a.Weapon != "Overall"))
                     page.Line($"{Text(accuracy.Weapon)}: {(accuracy.Fired > 0 ? (100.0 * accuracy.Hit / accuracy.Fired).ToString("0.#") + "%" : "--")} ({accuracy.Hit}/{accuracy.Fired})");
                 return;
             }
             var rows = category == "enemies" ? player.Enemies : category == "weapons" ? player.Weapons : category == "maps" ? player.DeathsPerMap : player.Stats;
             if (rows.Count == 0) page.Note("None recorded.");
-            foreach (var row in rows) page.Line(Text(Words(row.Name)) + ": " + row.Value.ToString("0.##"));
+            foreach (var row in rows)
+            {
+                bool seconds = category == "stats" && row.Name.EndsWith(" seconds", StringComparison.Ordinal);
+                string label = seconds ? row.Name.Substring(0, row.Name.Length - 8) + " time" : Words(row.Name);
+                page.Line(Text(label) + ": " + (seconds ? Duration(row.Value) : row.Value.ToString("0.##")));
+            }
+        }
+        private static string PlayerSummary(HistoryPlayer player)
+        {
+            var values = new List<string>();
+            foreach (var stat in new[] { ("Kills", "Kills"), ("Deaths", "Deaths"), ("MaxKillStreak", "Best streak") })
+            {
+                var value = player.Stats.FirstOrDefault(s => s.Name == stat.Item1);
+                if (value != null) values.Add(stat.Item2 + ": " + value.Value.ToString("0"));
+            }
+            var alive = player.Stats.FirstOrDefault(s => s.Name == "Alive seconds");
+            if (alive != null) values.Add("Alive: " + Duration(alive.Value));
+            return values.Count > 0 ? string.Join(" · ", values) : "Select to view player details";
         }
         private static string Points(int count) => count + (count == 1 ? " point" : " points");
         private static string Words(string value) => System.Text.RegularExpressions.Regex.Replace(value ?? "", "([a-z])([A-Z])", "$1 $2");

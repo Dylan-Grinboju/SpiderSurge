@@ -32,7 +32,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
     - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
-    - **Reset**: Hold **Select** for 3 seconds to go back to L2.
+    - **Reset**: Release Select after remapping, then hold it for 3 seconds to go back to L2. Keeping Select held after a successful remap does not undo it. The controls guide lists each local controller's current ability button.
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: Everyone can get the same Surge ability in versus, set up with [Teams](../teams/README.md).
 
@@ -41,6 +41,8 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 <img width="1280" alt="The first-run walkthrough in How to play" src="../docs/images/guide-first-run.png" />
 
 ## Achievements
+
+The Collection menu shows the number of unseen unlocks. In Surge achievements, cycle **Show** to **New** to see just those entries; select one to mark it seen, or use **Mark all seen**. Earned progress is kept.
 
 SpiderSurge has its own achievements for specific feats with the Surge abilities. See them, with the date each one was unlocked and who did it, in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. A locked achievement shows only its name there; click it (or press A on it) to see how to get it. They are saved on your PC in `SpiderSurge\progress.dat` in the game's own save folder (`%USERPROFILE%\AppData\LocalLow\Neverjam Studio\SpiderHeckApp` for Steam), next to the Stats title collection and the Surge highscores, and a popup announces each new one. Older versions kept them in the game's save file; they move on the first launch. "Teammate" means any other player in Survival, and a player of your team in [Team Versus](../teams/README.md).
 
@@ -221,3 +223,5 @@ The last five combine Surge data with Stats requirements, creating **cross-part 
 - More abilities and ults
 - More enemies
 - Even harder mode?
+
+Ability indicators respect challenge restrictions: the compact HUD names the allowed action or shows that abilities are disabled, and blocked input plays the normal rate-limited unavailable sound.
