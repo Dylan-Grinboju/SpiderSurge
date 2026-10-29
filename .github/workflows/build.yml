@@ -1,11 +1,11 @@
-# Builds SpiderSurge.dll for every pull request and push to main; pushing a vX.Y.Z tag builds it with that version and publishes the tag's release with the DLL attached
+# Builds SpiderSurge.dll for every pull request and push to main; pushing a vX.Y.Z tag (or vX.Y.Z-beta.N for a pre-release) builds it with that version and publishes the tag's release with the DLL attached
 name: Build
 
 on:
   pull_request:
   push:
     branches: [main]
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+']
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
           $version = ((Get-Item bin/Release/net472/SpiderSurge.dll).VersionInfo.ProductVersion -split '\+')[0]
           "SpiderSurge.dll is version $version" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
           if ($env:TAG -and $version -ne $env:TAG.TrimStart('v')) {
-            "::error title=Version mismatch::The release tag $env:TAG built version $version. A release tag must look like v1.2.3 and be on the released commit."
+            "::error title=Version mismatch::The release tag $env:TAG built version $version. A release tag must look like v1.2.3 (or v1.2.3-beta.1) and be on the released commit."
             exit 1
           }
 
@@ -60,22 +60,23 @@ jobs:
         with:
           name: SpiderSurge
 
-      # The mod's update check reads the latest published release, so a release is only published once its DLL is attached
+      # The mod's update check reads published releases, so a release is only published once its DLL is attached; a beta tag is a pre-release, which only beta DLLs are offered
       - name: Attach SpiderSurge.dll and publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
+          prerelease=$([[ "$TAG" == *-beta.* ]] && echo true || echo false)
           state=$(gh release view "$TAG" --json isDraft,assets --jq 'if .isDraft then "draft" elif any(.assets[]; .name == "SpiderSurge.dll") then "attached" else "published" end' 2>/dev/null || echo missing)
           case "$state" in
             draft)
               gh release upload "$TAG" SpiderSurge.dll --clobber
-              gh release edit "$TAG" --draft=false ;;
+              gh release edit "$TAG" --draft=false --prerelease="$prerelease" ;;
             published)
               gh release upload "$TAG" SpiderSurge.dll ;;
             attached)
               echo "::notice::$TAG is already published with SpiderSurge.dll, which was left as it is." ;;
             missing)
-              gh release create "$TAG" SpiderSurge.dll --verify-tag --title "$TAG" --generate-notes ;;
+              gh release create "$TAG" SpiderSurge.dll --verify-tag --title "$TAG" --generate-notes --prerelease="$prerelease" ;;
           esac

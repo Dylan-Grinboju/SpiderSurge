@@ -15,7 +15,7 @@ namespace SpiderSurge.Common
     {
         public const string CheckForUpdatesKey = "general.checkForUpdates";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
-        private const string LatestReleaseUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases/latest";
+        private const string RecentReleasesUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases?per_page=30";
         private const string IdleStatus = "Check for a published SpiderSurge release.";
         private const int StartDelayMs = 15000;
         private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10), DownloadTimeout = TimeSpan.FromMinutes(3);
@@ -27,6 +27,7 @@ namespace SpiderSurge.Common
         private static string status = IdleStatus;
         private static string previousResult;
         private static string InstalledPath => typeof(SpiderSurgeMod).Assembly.Location;
+        private static bool OnBeta => ReleaseVersion.Parse(SpiderSurgeMod.Version)?.IsBeta == true;
         private static string UpdateFolder => Path.Combine(Path.GetDirectoryName(InstalledPath), "Disabled", "SpiderSurgeUpdate");
         public static bool CheckForUpdates => Settings.GetBool(CheckForUpdatesKey);
         public static IEnumerable<KeyValuePair<string, object>> Defaults => new[] { new KeyValuePair<string, object>(CheckForUpdatesKey, true) };
@@ -105,6 +106,7 @@ namespace SpiderSurge.Common
             if (resultPending) ReadPreviousResult();
             page.Title("SpiderSurge updates");
             page.Line("Installed: " + SpiderSurgeMod.Version);
+            if (OnBeta) page.Note("This is a beta, so newer betas are offered as well as releases. Installing a release returns you to releases only.");
             page.Paragraph("<noparse>" + status + "</noparse>");
             if (resultPending) page.Note("The installer from your last session is still running. Open this page again in a minute to see its result.");
             else if (!string.IsNullOrEmpty(previousResult)) page.Note("<noparse>Previous update: " + previousResult + "</noparse>");
@@ -112,7 +114,7 @@ namespace SpiderSurge.Common
             // Download, Cancel download and Cancel install share one row, so a controller stays on it when the button changes
             if (downloading) page.Button("Cancel download", () => downloadCancellation?.Cancel());
             else if (staged) page.Button("Cancel install", CancelInstall);
-            else if (release != null && !resultPending && IsNewerVersion(release.Version, SpiderSurgeMod.Version))
+            else if (release != null && !resultPending && ReleaseVersion.IsNewer(release.Version, SpiderSurgeMod.Version))
             {
                 if (release.TryGetInstallableAsset(out _, out string problem)) page.Button("Download and install on exit", () => StartDownload(release));
                 else page.Note(problem);
@@ -151,7 +153,7 @@ namespace SpiderSurge.Common
         private static async Task<UpdateRelease> FetchLatest(CancellationToken cancellation)
         {
             using (var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
-            using (var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, RecentReleasesUrl))
             {
                 limit.CancelAfter(CheckTimeout);
                 request.Headers.UserAgent.ParseAdd("SpiderSurge");
@@ -163,9 +165,8 @@ namespace SpiderSurge.Common
                         response.EnsureSuccessStatusCode();
                         using (var stream = await response.Content.ReadAsStreamAsync())
                         {
-                            var found = UpdatePackage.Read<UpdateRelease>(stream);
-                            if (!found.IsStable) throw new InvalidDataException("No stable release was returned.");
-                            return found;
+                            return UpdateRelease.Newest(UpdatePackage.Read<UpdateRelease[]>(stream), OnBeta)
+                                ?? throw new InvalidDataException(OnBeta ? "No stable or beta release was found." : "No stable release was found.");
                         }
                     }
                 }
@@ -183,7 +184,7 @@ namespace SpiderSurge.Common
             if (downloading || staged) return;
             if (problem != null) { SetStatus("Could not check for updates: " + problem + " You can try again."); return; }
             release = found;
-            bool newer = IsNewerVersion(found.Version, SpiderSurgeMod.Version);
+            bool newer = ReleaseVersion.IsNewer(found.Version, SpiderSurgeMod.Version);
             SetStatus(newer ? "SpiderSurge " + found.Version + " is available." : "You are up to date (or running a newer development build).");
             if (automatic && newer) notice = found;
         }
@@ -336,11 +337,6 @@ namespace SpiderSurge.Common
             status = value;
             if (SettingsPage.IsShowing("updates")) SettingsPage.RefreshOpen();
             RefreshPopup();
-        }
-        private static bool IsNewerVersion(string latest, string current)
-        {
-            if (!Version.TryParse(latest.Split('-', '+')[0], out var next) || !Version.TryParse(current.Split('-', '+')[0], out var installed)) return false;
-            return next > installed || next == installed && current.Contains("-") && !latest.Contains("-");
         }
         // Application.OpenURL fails silently, so the address is shown when the browser can't be opened
         private static void OpenUrl(string url)

@@ -42,7 +42,28 @@ internal static class UpdaterTests
         string url = asset.Url; asset.Url = "https://example.org/SpiderSurge.dll"; Refuse(release, "reject unrelated download URL"); asset.Url = url;
         asset.Digest = null; Refuse(release, "reject missing checksum"); asset.Digest = "sha256:" + hash;
         release.Assets = new[] { asset, asset }; Refuse(release, "reject duplicate DLL assets"); release.Assets = new[] { asset };
+        string betaVersion = version + "-beta.1";
+        var betaAsset = new UpdateAsset { Name = asset.Name, Size = asset.Size, State = asset.State, Digest = asset.Digest,
+            Url = "https://github.com/Dylan-Grinboju/SpiderSurge/releases/download/v" + betaVersion + "/SpiderSurge.dll" };
+        var betaRelease = new UpdateRelease { Tag = "v" + betaVersion, Prerelease = true, Assets = new[] { betaAsset } };
+        Check(betaRelease.TryGetInstallableAsset(out accepted, out _) && accepted == betaAsset, "accept beta pre-release asset");
+        betaRelease.Prerelease = false; Refuse(betaRelease, "reject a beta tag published as a release");
+
+        Check(ReleaseVersion.IsNewer("1.0.0-beta.2", "1.0.0-beta.1") && ReleaseVersion.IsNewer("1.0.0-beta.10", "1.0.0-beta.2")
+            && ReleaseVersion.IsNewer("1.0.0", "1.0.0-beta.10") && ReleaseVersion.IsNewer("1.0.0-beta.2", "1.0.0-beta.1.12")
+            && ReleaseVersion.IsNewer("0.4.1", "0.4.1-dev.12") && ReleaseVersion.IsNewer("0.4.1-beta.1", "0.4.0"), "order betas and releases as in SemVer");
+        Check(!ReleaseVersion.IsNewer("1.0.0-beta.1", "1.0.0") && !ReleaseVersion.IsNewer("1.0.0", "1.0.0+local") && !ReleaseVersion.IsNewer("0.4.0", "0.4.1-dev.3")
+            && !ReleaseVersion.IsNewer("1.0", "0.4.0") && !ReleaseVersion.IsNewer("1.0.0-", "0.4.0") && !ReleaseVersion.IsNewer("1.0.0.1", "0.4.0"), "never offer an older, equal or malformed version");
+        Check(ReleaseVersion.Parse("1.0.0-beta.1.12").IsBeta && !ReleaseVersion.Parse("0.4.1-dev.12").IsBeta && !ReleaseVersion.Parse("1.0.0").IsBeta, "only a beta build is on the beta channel");
+        UpdateRelease stable = Listed("v0.4.0", false), beta1 = Listed("v1.0.0-beta.1", true), beta2 = Listed("v1.0.0-beta.2", true), final = Listed("v1.0.0", false);
+        UpdateRelease draft = Listed("v1.0.0-beta.3", true), unflagged = Listed("v1.0.0-beta.4", false), flagged = Listed("v0.5.0", true);
+        draft.Draft = true;
+        var listed = new[] { beta2, unflagged, draft, flagged, beta1, stable };
+        Check(UpdateRelease.Newest(listed, false) == stable, "release DLLs are not offered betas");
+        Check(UpdateRelease.Newest(listed, true) == beta2, "beta DLLs are offered the newest published beta");
+        Check(UpdateRelease.Newest(new[] { beta2, final, beta1 }, true) == final, "beta DLLs are offered the release that follows their betas");
         UpdatePackage.Verify(dll, hash, version); Check(true, "verify actual merged mod assembly");
+        UpdatePackage.Verify(dll, hash, betaVersion); Check(true, "verify a beta by its release number");
         Reject(() => UpdatePackage.Verify(dll, new string('0', 64), version), "reject corrupt checksum");
         Reject(() => UpdatePackage.Verify(dll, hash, "99.99.99"), "reject wrong release version");
         Reject(() => UpdatePackage.Verify(helper, UpdatePackage.Hash(helper), version), "reject wrong assembly identity");
@@ -109,6 +130,8 @@ internal static class UpdaterTests
         Console.WriteLine(count + " checks passed.");
         return 0;
     }
+
+    private static UpdateRelease Listed(string tag, bool prerelease) => new UpdateRelease { Tag = tag, Prerelease = prerelease };
 
     private static UpdateRequest Request(string target, string originalHash, string hash, string version) =>
         new UpdateRequest { Target = target, OriginalHash = originalHash, Hash = hash, Version = version };
