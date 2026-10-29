@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,14 +18,11 @@ namespace SpiderSurge.Common
         private const string LatestReleaseUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases/latest";
         private const string IdleStatus = "Check for a published SpiderSurge release.";
         private const int StartDelayMs = 15000;
-        // The release workflow attaches SpiderSurge.dll a few minutes after the release is published
-        private const int AssetRetryDelayMs = 5 * 60 * 1000;
-        private const int AssetRetries = 3;
         private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10), DownloadTimeout = TimeSpan.FromMinutes(3);
         private static readonly HttpClient Client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         private static CancellationTokenSource checkCancellation, downloadCancellation;
-        private static bool watching, checking, downloading, staged, resultPending;
-        private static int assetRetries;
+        private static bool watching, checking, automaticCheck, downloading, staged, resultPending;
+        private static FileStream installLease;
         private static UpdateRelease release, notice;
         private static string status = IdleStatus;
         private static string previousResult;
@@ -33,6 +31,7 @@ namespace SpiderSurge.Common
         public static bool CheckForUpdates => Settings.GetBool(CheckForUpdatesKey);
         public static IEnumerable<KeyValuePair<string, object>> Defaults => new[] { new KeyValuePair<string, object>(CheckForUpdatesKey, true) };
 
+        // Turning the startup check off only stops that check, never one the player started
         public static void ScheduleCheck()
         {
             if (!watching)
@@ -41,8 +40,8 @@ namespace SpiderSurge.Common
                 watching = true;
                 ReadPreviousResult();
             }
-            if (!CheckForUpdates) { CancelCheck(); notice = null; return; }
-            if (checkCancellation == null) CheckLater(StartDelayMs);
+            if (!CheckForUpdates) { if (automaticCheck) CancelCheck(); notice = null; return; }
+            if (checkCancellation == null && !downloading && !staged) CheckLater(StartDelayMs);
         }
 
         public static void Shutdown()
@@ -60,7 +59,9 @@ namespace SpiderSurge.Common
             if (notice == null || !LobbyController.inLobby) return;
             var found = notice;
             notice = null;
-            string where = InstallProblem(found) == null ? "Install it from Mods > SpiderSurge > Settings > Advanced > Updates." : "Download it from its release page.";
+            if (downloading || staged) return;
+            string where = found.TryGetInstallableAsset(out _, out _) ? "Install it from Mods > SpiderSurge > Settings > Advanced > Updates."
+                : "To install it by hand, download SpiderSurge.dll from its release page and replace the one in SpiderHeck's Silk/Mods folder while the game is closed.";
             Announcer.TwoOptionsPopup("SpiderSurge " + found.Version + " is available.\n" + where, "Release notes", "Later", () => OpenUrl(found.PageUrl), () => { }, null);
         }
 
@@ -74,11 +75,12 @@ namespace SpiderSurge.Common
             checkCancellation.Cancel();
             checkCancellation.Dispose();
             checkCancellation = null;
-            if (checking) { checking = false; SetStatus(IdleStatus); }
+            checking = false;
         }
-        private static CancellationTokenSource NewCheck()
+        private static CancellationTokenSource NewCheck(bool automatic)
         {
             CancelCheck();
+            automaticCheck = automatic;
             return checkCancellation = new CancellationTokenSource();
         }
 
@@ -90,9 +92,8 @@ namespace SpiderSurge.Common
             {
                 string folder = UpdateFolder, path = Path.Combine(folder, "result.txt");
                 if (!File.Exists(path)) return;
-                FileStream lease;
-                try { lease = new FileStream(Path.Combine(folder, "update.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
-                catch (IOException) { resultPending = true; return; } // The last session's installer is still running
+                var lease = UpdatePackage.TryLock(folder);
+                if (lease == null) { resultPending = true; return; }
                 using (lease)
                 {
                     previousResult = File.ReadAllText(path);
@@ -111,26 +112,24 @@ namespace SpiderSurge.Common
             if (resultPending) page.Note("The installer from your last session is still running. Open this page again in a minute to see its result.");
             else if (!string.IsNullOrEmpty(previousResult)) page.Note("<noparse>Previous update: " + previousResult + "</noparse>");
             page.Note("Updates install after you close the game. Launch it again after installation finishes. Settings and progress are kept. Everyone in an online lobby needs the same version.");
-            if (!checking && !downloading && !staged)
-                page.Button("Check now", () => Check(NewCheck(), false));
-            if (release != null)
-            {
-                page.Button("Release notes", () => OpenUrl(release.PageUrl));
-                if (!downloading && !staged && IsNewerVersion(release.Version, SpiderSurgeMod.Version))
-                {
-                    string problem = InstallProblem(release);
-                    if (problem == null) page.Button("Download and install on exit", () => StartDownload(release));
-                    else page.Note(problem);
-                }
-            }
+            // Download, Cancel download and Cancel install share one row, so a controller stays on it when the button changes
             if (downloading) page.Button("Cancel download", () => downloadCancellation?.Cancel());
+            else if (staged) page.Button("Cancel install", CancelInstall);
+            else if (release != null && !resultPending && IsNewerVersion(release.Version, SpiderSurgeMod.Version))
+            {
+                if (release.TryGetInstallableAsset(out _, out string problem)) page.Button("Download and install on exit", () => StartDownload(release));
+                else page.Note(problem);
+            }
+            if (!checking && !downloading && !staged)
+                page.Button("Check now", () => Check(NewCheck(false), false));
+            if (release != null) page.Button("Release notes", () => OpenUrl(release.PageUrl));
             page.Button("Open releases page", () => OpenUrl(ReleasesUrl));
         }
 
         // An automatic check waits so it doesn't compete with the game's startup
         private static void CheckLater(int delayMs)
         {
-            var cancel = NewCheck();
+            var cancel = NewCheck(true);
             Task.Delay(delayMs, cancel.Token).ContinueWith(_ => MainThread.Enqueue(() => { if (checkCancellation == cancel) Check(cancel, true); }),
                 TaskContinuationOptions.OnlyOnRanToCompletion);
         }
@@ -160,53 +159,52 @@ namespace SpiderSurge.Common
                 limit.CancelAfter(CheckTimeout);
                 request.Headers.UserAgent.ParseAdd("SpiderSurge");
                 request.Headers.Accept.ParseAdd("application/vnd.github+json");
-                using (var response = await Client.SendAsync(request, limit.Token))
+                try
                 {
-                    response.EnsureSuccessStatusCode();
-                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var response = await Cancellable(Client.SendAsync(request, limit.Token), limit.Token))
                     {
-                        var found = UpdatePackage.Read<UpdateRelease>(stream);
-                        if (found.Draft || found.Prerelease || !Version.TryParse(found.Version, out _)) throw new InvalidDataException("No stable release was returned.");
-                        return found;
+                        response.EnsureSuccessStatusCode();
+                        using (var stream = await response.Content.ReadAsStreamAsync())
+                        {
+                            var found = UpdatePackage.Read<UpdateRelease>(stream);
+                            if (!found.IsStable) throw new InvalidDataException("No stable release was returned.");
+                            return found;
+                        }
                     }
+                }
+                catch (Exception error) when (limit.IsCancellationRequested && !(error is OperationCanceledException))
+                {
+                    throw new OperationCanceledException(error.Message, error, limit.Token);
                 }
             }
         }
 
+        // A download the player already started keeps its status, and the lobby notice is only for a release they haven't acted on
         private static void Checked(UpdateRelease found, string problem, bool automatic)
         {
             checking = false;
+            if (downloading || staged) return;
             if (problem != null) { SetStatus("Could not check for updates: " + problem + " You can try again."); return; }
             release = found;
             bool newer = IsNewerVersion(found.Version, SpiderSurgeMod.Version);
             SetStatus(newer ? "SpiderSurge " + found.Version + " is available." : "You are up to date (or running a newer development build).");
-            if (!automatic || !newer) return;
-            // Announce the release once its DLL is attached, or anyway once the retries run out
-            if (InstallProblem(found) != null && assetRetries++ < AssetRetries) CheckLater(AssetRetryDelayMs);
-            else notice = found;
-        }
-
-        private static string InstallProblem(UpdateRelease candidate)
-        {
-            try { candidate.InstallableAsset(); return null; }
-            catch (InvalidDataException error) { return error.Message; }
+            if (automatic && newer) notice = found;
         }
 
         private static void StartDownload(UpdateRelease selected)
         {
-            if (downloading || staged) return;
+            if (downloading || staged || resultPending) return;
             downloading = true;
             var cancel = downloadCancellation = new CancellationTokenSource();
             SetStatus("Downloading SpiderSurge " + selected.Version + "...");
             Task.Run(async () =>
             {
-                bool done = false;
+                FileStream lease = null;
                 string outcome;
                 try
                 {
-                    await Download(selected, cancel.Token);
-                    done = true;
-                    outcome = "Download verified. Close SpiderHeck normally to install " + selected.Version + ", then launch it again. The previous DLL will be kept under Disabled/SpiderSurgeUpdate/previous.dll.";
+                    lease = await Download(selected, cancel.Token);
+                    outcome = "Download verified. Close SpiderHeck to install " + selected.Version + ", then launch it again. The previous DLL will be kept under Disabled/SpiderSurgeUpdate/previous.dll.";
                 }
                 catch (OperationCanceledException) when (cancel.IsCancellationRequested) { outcome = "Download cancelled. Your installed mod has not changed."; }
                 catch (OperationCanceledException) { outcome = "The download took longer than " + DownloadTimeout.TotalMinutes + " minutes and was stopped. Your installed mod has not changed. Retry or open the release page."; }
@@ -214,7 +212,8 @@ namespace SpiderSurge.Common
                 MainThread.Enqueue(() =>
                 {
                     downloading = false;
-                    staged = done;
+                    staged = lease != null;
+                    installLease = lease;
                     downloadCancellation = null;
                     cancel.Dispose();
                     SetStatus(outcome);
@@ -222,30 +221,30 @@ namespace SpiderSurge.Common
             });
         }
 
-        private static async Task Download(UpdateRelease selected, CancellationToken cancellation)
+        // Returns the update lock still held: the installer waits for it, so it installs once the game exits, even after a crash
+        private static async Task<FileStream> Download(UpdateRelease selected, CancellationToken cancellation)
         {
-            var asset = selected.InstallableAsset();
+            if (!selected.TryGetInstallableAsset(out var asset, out string problem)) throw new InvalidDataException(problem);
             string folder = UpdateFolder, pending = Path.Combine(folder, "download.pending"), result = Path.Combine(folder, "result.txt");
-            var install = new UpdateRequest { Target = InstalledPath, Hash = asset.Digest.Substring(7), Version = selected.Version, ProcessStart = UpdatePackage.CurrentCreationTime() };
-            using (var process = Process.GetCurrentProcess()) install.ProcessId = process.Id;
+            var install = new UpdateRequest { Target = InstalledPath, Hash = asset.Digest.Substring(7), Version = selected.Version };
             Directory.CreateDirectory(folder);
+            var lease = UpdatePackage.TryLock(folder) ?? throw new IOException("Another SpiderSurge installer is still running. Try again in a minute.");
             using (var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
-            using (var lease = new FileStream(Path.Combine(folder, "update.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
             {
                 limit.CancelAfter(DownloadTimeout);
                 try
                 {
                     install.OriginalHash = UpdatePackage.Hash(install.Target);
-                    using (var response = await Client.GetAsync(asset.Url, HttpCompletionOption.ResponseHeadersRead, limit.Token))
+                    using (var response = await Cancellable(Client.GetAsync(asset.Url, HttpCompletionOption.ResponseHeadersRead, limit.Token), limit.Token))
                     {
                         response.EnsureSuccessStatusCode();
-                        using (var source = await response.Content.ReadAsStreamAsync())
+                        using (var source = await Cancellable(response.Content.ReadAsStreamAsync(), limit.Token))
                         using (var file = File.Create(pending))
                         {
                             byte[] buffer = new byte[81920];
                             long count = 0;
                             int read;
-                            while ((read = await source.ReadAsync(buffer, 0, buffer.Length, limit.Token)) > 0)
+                            while ((read = await Cancellable(source.ReadAsync(buffer, 0, buffer.Length, limit.Token), limit.Token)) > 0)
                             {
                                 count += read;
                                 if (count > asset.Size) throw new InvalidDataException("Download exceeds the expected size.");
@@ -256,21 +255,66 @@ namespace SpiderSurge.Common
                     }
                     UpdatePackage.Verify(pending, install.Hash, install.Version);
                     string helper = Path.Combine(folder, "SpiderSurge.UpdateInstaller.exe");
-                    using (var resource = typeof(ModUpdater).Assembly.GetManifestResourceStream("SpiderSurge.UpdateInstaller.exe"))
-                    using (var output = File.Create(helper)) resource.CopyTo(output);
+                    WriteInstaller(helper);
                     limit.Token.ThrowIfCancellationRequested();
                     UpdatePackage.Write(Path.Combine(folder, "request.json"), install);
                     // The installer replaces this with its outcome; if it is stopped before then, the next launch still says so
                     File.WriteAllText(result, "Downloaded " + install.Version + ", but the installer did not finish. If Installed still shows the old version, download the update again or use the release page.");
                     using (Process.Start(new ProcessStartInfo(helper) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = folder })) { }
+                    return lease;
                 }
-                catch
+                catch (Exception error)
                 {
                     TryDelete(pending);
                     TryDelete(result);
+                    lease.Dispose();
+                    // A request aborted by the cancellation fails with a network error instead
+                    if (limit.IsCancellationRequested && !(error is OperationCanceledException)) throw new OperationCanceledException(error.Message, error, limit.Token);
                     throw;
                 }
             }
+        }
+
+        // An installer left waiting by a cancelled install may still be running from this file, and it is the same program
+        private static void WriteInstaller(string path)
+        {
+            byte[] bytes;
+            using (var resource = typeof(ModUpdater).Assembly.GetManifestResourceStream("SpiderSurge.UpdateInstaller.exe"))
+            using (var copy = new MemoryStream())
+            {
+                resource.CopyTo(copy);
+                bytes = copy.ToArray();
+            }
+            if (!File.Exists(path) || !File.ReadAllBytes(path).SequenceEqual(bytes)) File.WriteAllBytes(path, bytes);
+        }
+
+        // With nothing staged, the installer exits without installing once it gets the lock
+        private static void CancelInstall()
+        {
+            if (!staged) return;
+            string folder = UpdateFolder;
+            try { File.Delete(Path.Combine(folder, "download.pending")); }
+            catch (Exception error) { SetStatus("The install could not be cancelled: " + error.Message); return; }
+            TryDelete(Path.Combine(folder, "request.json"));
+            TryDelete(Path.Combine(folder, "result.txt"));
+            installLease.Dispose();
+            installLease = null;
+            staged = false;
+            SetStatus("Install cancelled. Your installed mod has not changed.");
+        }
+
+        // Mono's network reads don't stop for a cancellation token, so a stalled one is abandoned and cleaned up whenever it ends
+        private static async Task<T> Cancellable<T>(Task<T> work, CancellationToken token)
+        {
+            var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (token.Register(() => cancelled.TrySetResult(true)))
+                if (await Task.WhenAny(work, cancelled.Task) == work) return await work;
+            _ = work.ContinueWith(late =>
+            {
+                if (late.IsFaulted) _ = late.Exception;
+                else if (!late.IsCanceled) (late.Result as IDisposable)?.Dispose();
+            });
+            throw new OperationCanceledException(token);
         }
 
         private static void TryDelete(string path)
@@ -285,15 +329,16 @@ namespace SpiderSurge.Common
             status = value;
             if (SettingsPage.IsShowing("updates")) SettingsPage.RefreshOpen();
         }
-        internal static bool IsNewerVersion(string latest, string current)
+        private static bool IsNewerVersion(string latest, string current)
         {
             if (!Version.TryParse(latest.Split('-', '+')[0], out var next) || !Version.TryParse(current.Split('-', '+')[0], out var installed)) return false;
             return next > installed || next == installed && current.Contains("-") && !latest.Contains("-");
         }
+        // Application.OpenURL fails silently, so the address is shown when the browser can't be opened
         private static void OpenUrl(string url)
         {
-            try { UnityEngine.Application.OpenURL(url); }
-            catch (Exception error) { Announcer.InformationPopup("Could not open " + url + ": " + error.Message); }
+            try { using (Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })) { } }
+            catch (Exception error) { Announcer.InformationPopup("Could not open your browser (" + error.Message + "). Visit:\n" + url); }
         }
     }
 }

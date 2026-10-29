@@ -1,12 +1,11 @@
-# Builds SpiderSurge.dll for every pull request and push to main; publishing a release builds it from the release's tag, with that version, and attaches it to the release
+# Builds SpiderSurge.dll for every pull request and push to main; pushing a vX.Y.Z tag builds it with that version and publishes the tag's release with the DLL attached
 name: Build
 
 on:
   pull_request:
   push:
     branches: [main]
-  release:
-    types: [published]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
 
 permissions:
   contents: read
@@ -34,7 +33,7 @@ jobs:
       - name: Check the version
         shell: pwsh
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           $version = ((Get-Item bin/Release/net472/SpiderSurge.dll).VersionInfo.ProductVersion -split '\+')[0]
           "SpiderSurge.dll is version $version" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
@@ -49,9 +48,9 @@ jobs:
           path: bin/Release/net472/SpiderSurge.dll
           if-no-files-found: error
 
-  attach:
-    name: Attach to the release
-    if: github.event_name == 'release'
+  release:
+    name: Publish the release
+    if: github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -61,8 +60,22 @@ jobs:
         with:
           name: SpiderSurge
 
-      - name: Upload SpiderSurge.dll
+      # The mod's update check reads the latest published release, so a release is only published once its DLL is attached
+      - name: Attach SpiderSurge.dll and publish
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" SpiderSurge.dll --clobber --repo "$GITHUB_REPOSITORY"
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          state=$(gh release view "$TAG" --json isDraft,assets --jq 'if .isDraft then "draft" elif any(.assets[]; .name == "SpiderSurge.dll") then "attached" else "published" end' 2>/dev/null || echo missing)
+          case "$state" in
+            draft)
+              gh release upload "$TAG" SpiderSurge.dll --clobber
+              gh release edit "$TAG" --draft=false ;;
+            published)
+              gh release upload "$TAG" SpiderSurge.dll ;;
+            attached)
+              echo "::notice::$TAG is already published with SpiderSurge.dll, which was left as it is." ;;
+            missing)
+              gh release create "$TAG" SpiderSurge.dll --verify-tag --title "$TAG" --generate-notes ;;
+          esac
