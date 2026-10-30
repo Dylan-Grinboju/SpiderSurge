@@ -127,9 +127,7 @@ With abilities enabled, a shared screen offers as many random abilities as a nor
 The world ring drains in the active color over a timed ability or ultimate's duration, then fills clockwise in the cooldown color until ready. Active effects without a duration keep a full ring. Both timers stop while game time is paused.
 
 ### Sound:
-`surge.abilityVolume`: The volume of abilities, ultimates and the existing perk-choice sounds, from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
-
-`surge.feedbackVolume`: Shop purchases, choice confirmation and undo, challenge offers and failures, achievements and title-reveal sounds. Set **Feedback volume** under Surge settings, from 0 to 100; 0 mutes these cues. It also follows the game's SFX volume and is independent of Ability volume. Default: `50`. Source audio and license details are in [Sound credits](../docs/SOUND_CREDITS.md).
+`surge.abilityVolume`: **Surge sound effects volume** controls abilities, ultimates, perks, shop purchases, choices, challenges, achievements and title reveals together, from 0 to 100, on top of the game's SFX volume. Set it to 0 to mute all Surge sounds. 80 is the original volume and 100 is a quarter louder. Default: `50`. The existing config key is retained. Source audio and license details are in [Sound credits](../docs/SOUND_CREDITS.md).
 
 ### UI:
 The guide is available from **How to play** in settings. The old `surge.showTutorial` and `controls.surgeGuide.keyboard` values are no longer used.

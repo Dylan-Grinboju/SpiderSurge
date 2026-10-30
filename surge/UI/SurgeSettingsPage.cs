@@ -29,10 +29,8 @@ namespace SpiderSurge
 
             page.Spacer();
             page.Header("Sound");
-            page.Slider("Ability volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%", ModConfig.AbilityVolume * ModConfig.OriginalAbilityVolume);
-            page.Note("Abilities, ultimates and the existing perk-choice sounds. The default is 50%; 80% plays them at their original volume.");
-            page.Slider("Feedback volume", ModConfig.FeedbackVolumeKey, 0f, 100f, 5f, "%", ModConfig.FeedbackVolume * 100f);
-            page.Note("Shop purchases, choices, challenges, achievements and title reveals.");
+            page.Slider("Surge sound effects volume", ModConfig.AbilityVolumeKey, 0f, ModConfig.MaxAbilityVolume, 5f, "%", ModConfig.AbilityVolume * ModConfig.OriginalAbilityVolume);
+            page.Note("Abilities, ultimates, perks, shop purchases, choices, challenges, achievements and title reveals. The default is 50%; 80% plays them at their original volume.");
 
             page.Spacer();
             page.Button("Ability display: " + (ModConfig.IndicatorCompactHud ? "Corner panel" : "Beside spider"),

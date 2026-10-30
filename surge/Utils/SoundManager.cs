@@ -42,7 +42,7 @@ namespace SpiderSurge
 
         internal void PlayFeedback(FeedbackCue cue)
         {
-            if (ModConfig.FeedbackVolume <= 0f || SfxVolume <= 0f) return;
+            if (ModConfig.AbilityVolume <= 0f || SfxVolume <= 0f) return;
             if (_lastFeedback.TryGetValue(cue, out float last) && Time.unscaledTime - last < .1f) return;
             _lastFeedback[cue] = Time.unscaledTime;
             if (FeedbackSounds.Clip(cue).queued)
@@ -87,9 +87,9 @@ namespace SpiderSurge
                 Logger.LogWarning($"[SoundManager] Feedback sound not found: {name}");
                 return;
             }
+            source.Stop();
             source.clip = clip;
-            source.volume = ModConfig.FeedbackVolume * SfxVolume;
-            source.Play();
+            source.PlayOneShot(clip, ModConfig.AbilityVolume * SfxVolume);
         }
 
         private void LoadEmbeddedSounds()
