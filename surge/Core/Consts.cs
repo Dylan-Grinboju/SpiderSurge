@@ -87,7 +87,6 @@ namespace SpiderSurge
             public const string ColorRed = "#FF0000";
 
             public const string TextLuckyUpgrade = "<color=" + ColorGold + ">Lucky Upgrade</color>";
-            public const string TextSwapAbility = "<color=" + ColorGreen + ">Swap Ability!</color>";
             public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
         }
 
@@ -370,7 +369,6 @@ namespace SpiderSurge
             public static class Waves
             {
                 public const int UltUpgradeWave = 30;
-                public const int UltSwapWave = 60;
             }
 
             //ORIGINAL SPAWN CONFIGS, DO NOT DELETE
@@ -485,7 +483,7 @@ namespace SpiderSurge
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
                 [PerkNames.FreezeAbility] = "Freeze enemies, other players and shots in an area for a few seconds",
                 [PerkNames.AbilityCooldown] = "Reduces ability cooldown",
-                [PerkNames.AbilityDuration] = "Increases ability duration",
+                [PerkNames.AbilityDuration] = "Improves each player's ability: duration, range or retrieval speed",
                 [PerkNames.ShortTermInvestment] = "Your ability becomes stronger and recharges sooner, but your ultimate becomes weaker and recharges more slowly",
                 [PerkNames.LongTermInvestment] = "Your ultimate becomes stronger and recharges sooner, but your ability becomes weaker and recharges more slowly",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
@@ -499,7 +497,7 @@ namespace SpiderSurge
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>
             {
                 [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
-                [PerkNames.AbilityDuration] = "Increases ultimate duration",
+                [PerkNames.AbilityDuration] = "Improves each player's ultimate: cast time, range or weapon drops",
                 [PerkNames.PerkLuck] = "Increases chance to see level 2 perks."
             };
 
@@ -545,7 +543,7 @@ namespace SpiderSurge
 
             private static string DurationText(string name, PerksManager perksManager, System.Func<(string ability, string displayName, string description, string upgradeDescription), string> pick)
             {
-                if (perksManager == null || name != PerkNames.AbilityDuration) return null;
+                if (perksManager == null || perksManager.HasPersonalLoadouts || name != PerkNames.AbilityDuration) return null;
                 foreach (var texts in DurationTexts)
                 {
                     string text = pick(texts);

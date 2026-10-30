@@ -32,7 +32,7 @@ namespace SpiderSurge
         // A dead player's spider is destroyed with its ability, so the row stays and shows Down until the next spider's ability takes it over
         public static void Track(BaseAbility tracked)
         {
-            if (tracked == null || tracked.PlayerId < 0) return;
+            if (tracked == null || tracked.PlayerId < 0 || !tracked.IsRegularUnlocked()) return;
             if (!Rows.TryGetValue(tracked.PlayerId, out AbilityHud row))
             {
                 row = new AbilityHud();
@@ -88,12 +88,13 @@ namespace SpiderSurge
         {
             bool exists = ability != null;
             var player = Players.ById(playerId);
-            bool unlocked = PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(perkName) > 0;
+            bool unlocked = PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(perkName, playerId) > 0;
             if (player == null || !unlocked) return exists;
             bool alive = exists && ability.IsPlayerAlive();
-            bool active = alive && ability.IsActive();
+            var source = exists ? ability.StatusSource : null;
+            bool active = alive && source.IsActive();
             bool available = alive && ability.HasAvailableAction;
-            bool ready = available && !active && !ability.IsOnCooldown();
+            bool ready = available && !active && !source.IsOnCooldown();
             if (ModConfig.IndicatorShowOnlyWhenReady && !ready) return true;
 
             Hud.EnsureFonts();
@@ -106,10 +107,11 @@ namespace SpiderSurge
                 fontVersion = Hud.FontVersion;
             }
             string name = Players.NameOf(player);
-            abilityName ??= PerksManager.Instance.GetDisplayName(perkName);
+            string ultimate = PerksManager.Instance.Loadouts.Get(playerId, true);
+            abilityName = PerksManager.Instance.GetDisplayName(perkName) + (ultimate != null ? " / " + PerksManager.Instance.GetDisplayName(ultimate) : "");
             string restriction = alive ? ability.ActionRestriction : "";
             int state = !alive ? 0 : active ? 1 : !available ? 4 : ready ? 2 : 3;
-            int seconds = !alive ? 0 : Mathf.CeilToInt(active ? ability.ActiveRemaining : ability.CooldownRemaining);
+            int seconds = !alive ? 0 : Mathf.CeilToInt(active ? source.ActiveRemaining : source.CooldownRemaining);
             if (state != lastState || seconds != lastSeconds || restriction != lastRestriction)
             {
                 status = !alive ? "Down" : active ? "Active  " + Hud.Number(seconds) + "s" : !available ? restriction : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
@@ -122,7 +124,7 @@ namespace SpiderSurge
             int slot = 0;
             foreach (var entry in players)
                 if (entry != null && entry.playerID.Value < playerId) slot++;
-            float width = 268f * scale;
+            float width = 340f * scale;
             float height = 76f * scale;
             float gap = 5f * scale;
             int columns = Mathf.Min(Mathf.CeilToInt(players.Count / 6f), Mathf.Max(1, Mathf.FloorToInt((Screen.width - 24f * scale) / (width + gap))));
@@ -133,7 +135,7 @@ namespace SpiderSurge
             float y = Screen.height - bottom - (rows - row) * (height + gap);
             var rect = new Rect(x, y, width, height);
             Color color = !alive || !available && !active ? Hud.Dim : active ? activeColor : ready ? readyColor : cooldownColor;
-            float progress = !alive || !available && !active ? 0f : active ? ability.ActiveProgress : ability.CooldownProgress;
+            float progress = !alive || !available && !active ? 0f : active ? source.ActiveProgress : source.CooldownProgress;
             Hud.Fill(rect, Hud.Ink);
             Hud.Fill(new Rect(x, y, 3f * scale, height), Hud.Readable(player.playerColor.Value));
             Hud.Resize(titleStyle, 14, scale);

@@ -12,7 +12,7 @@ namespace SpiderSurge.Common
         {
             get
             {
-                if (ChallengeController.Pending) return true;
+                if (ChallengeController.Pending || AbilitySelection.IsChoosing) return true;
                 if (HudController.instance != null && HudController.instance.paused) return true;
                 if (GameController.instance != null && GameController.instance.gamePaused) return true;
                 return PerkChoiceOpen;
@@ -45,6 +45,6 @@ namespace SpiderSurge.Common
         public static bool AcceptPlayerInput => !Open && (GameController.instance == null || GameController.instance.acceptingInputs);
 
         // A client checked its request against its own menus; on the host only the shared pause and input state can refuse it
-        public static bool AcceptRemotePlayerInput => !ChallengeController.Pending && (GameController.instance == null || (!GameController.instance.gamePaused && GameController.instance.acceptingInputs));
+        public static bool AcceptRemotePlayerInput => !ChallengeController.Pending && !AbilitySelection.IsChoosing && (GameController.instance == null || (!GameController.instance.gamePaused && GameController.instance.acceptingInputs));
     }
 }

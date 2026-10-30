@@ -85,6 +85,7 @@ namespace SpiderSurge
             Net.JoinedHost += OnJoinedHost;
             Net.LeftHost += OnLeftHost;
             ChaosNet.Initialize();
+            AbilitySelection.Initialize();
             Vfx.WeaponVfx.Initialize();
         }
 
@@ -105,6 +106,7 @@ namespace SpiderSurge
             Net.JoinedHost -= OnJoinedHost;
             Net.LeftHost -= OnLeftHost;
             ChaosNet.Shutdown();
+            AbilitySelection.Shutdown();
         }
 
         public static void MarkDirty()
@@ -273,7 +275,6 @@ namespace SpiderSurge
             writer.Write(wave);
             writer.Write(perks != null && perks.IsFirstNormalPerkSelection);
             writer.Write(perks != null && perks.IsUltUpgradePerkSelection);
-            writer.Write(perks != null && perks.IsUltSwapPerkSelection);
 
             var levels = new List<KeyValuePair<string, int>>();
             if (perks != null)
@@ -301,6 +302,7 @@ namespace SpiderSurge
                 writer.Write(key);
             }
             writer.Write(PlayerAbilityHandler.SpawnEpoch);
+            AbilitySelection.Write(writer);
         }
 
         private static void OnState(BinaryReader reader)
@@ -314,7 +316,6 @@ namespace SpiderSurge
                 int wave = reader.ReadInt32();
                 bool first = reader.ReadBoolean();
                 bool ultUpgrade = reader.ReadBoolean();
-                bool ultSwap = reader.ReadBoolean();
 
                 var levels = new Dictionary<string, int>();
                 int count = reader.ReadInt32();
@@ -336,7 +337,8 @@ namespace SpiderSurge
                 bool becameActive = active && !SurgeGameModeManager.IsSurgeRunActive;
                 SurgeGameModeManager.SelectMode(modeEnabled);
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
-                PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade, ultSwap);
+                PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade);
+                AbilitySelection.Read(reader);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
                 // A spider may spawn before the first active snapshot, including after an inactive waiting-room snapshot.

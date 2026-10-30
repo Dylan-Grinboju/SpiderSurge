@@ -317,7 +317,6 @@ namespace SpiderSurge
             var luckyBefore = new List<string>(lucky);
             bool first = perks != null && perks.IsFirstNormalPerkSelection;
             bool ultUpgrade = perks != null && perks.IsUltUpgradePerkSelection;
-            bool ultSwap = perks != null && perks.IsUltSwapPerkSelection;
 
             lucky.Clear();
             try
@@ -332,7 +331,6 @@ namespace SpiderSurge
                 {
                     perks.IsFirstNormalPerkSelection = first;
                     perks.IsUltUpgradePerkSelection = ultUpgrade;
-                    perks.IsUltSwapPerkSelection = ultSwap;
                 }
                 SurgeNet.SendStateNow();
             }

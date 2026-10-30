@@ -64,6 +64,7 @@ namespace SpiderSurge
         [HarmonyPrefix]
         public static bool Prefix(SurvivalModifierChoiceCard __instance)
         {
+            if (AbilitySelection.IsChoosing) return false;
             if (!PerkConfirm.Active) return true;
             PerkConfirm.Lock(__instance);
             return false;

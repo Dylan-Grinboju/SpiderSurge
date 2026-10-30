@@ -91,13 +91,12 @@ namespace SpiderSurge.Integration
                 [MostUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: true, "Ultimate Activations"),
                 [LeastUltText] = GetLeader(snapshot, ps => ps.UltimateActivationCount, descending: false, "Ultimate Activations"),
             };
-            string abilityType = GetActiveType(ultimate: false);
-            string ultType = GetActiveType(ultimate: true);
 
             var titles = new List<TitleEntry>();
             foreach (var title in SurgeTitles)
             {
-                if (title.Type != null && title.Type != (title.Ultimate ? ultType : abilityType)) continue;
+                var winner = leaders[title.Leaders[0].Leader].Player;
+                if (title.Type != null && (winner == null || title.Type != GetActiveType(winner.playerID.Value, title.Ultimate))) continue;
                 titles.Add(TitleFor(title.Name, title.Bonus, title.Leaders.Select(l => (leaders[l.Leader], l.Req)).ToArray(), title.StatsReq));
             }
             return titles;
@@ -110,12 +109,12 @@ namespace SpiderSurge.Integration
             return snapshot != null && snapshot.SurgeMode ? snapshot : null;
         }
 
-        private static string GetActiveType(bool ultimate)
+        private static string GetActiveType(int playerId, bool ultimate)
         {
             if (PerksManager.Instance == null) return null;
             foreach (var (type, ability, ultimatePerk) in AbilityPerks)
             {
-                if (PerksManager.Instance.GetPerkLevel(ultimate ? ultimatePerk : ability) > 0) return type;
+                if (PerksManager.Instance.GetPerkLevel(ultimate ? ultimatePerk : ability, playerId) > 0) return type;
             }
             return null;
         }

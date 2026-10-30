@@ -85,6 +85,7 @@ namespace SpiderSurge.Logging
 
     public class PerkChoiceRecord
     {
+        public int? PlayerId { get; set; }
         public int Wave { get; set; }
         public string Kind { get; set; }
         public List<string> Offered { get; set; } = new List<string>();

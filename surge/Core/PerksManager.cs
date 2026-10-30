@@ -11,7 +11,8 @@ namespace SpiderSurge
 
         private bool _isFirstNormalPerkSelection = true;
         private bool _isUltUpgradePerkSelection;
-        private bool _isUltSwapPerkSelection;
+        internal readonly PersonalLoadouts Loadouts = new PersonalLoadouts();
+        public bool HasPersonalLoadouts => Loadouts.Any;
 
         public bool IsFirstNormalPerkSelection
         {
@@ -25,13 +26,7 @@ namespace SpiderSurge
             set { _isUltUpgradePerkSelection = value; SurgeNet.MarkDirty(); }
         }
 
-        public bool IsUltSwapPerkSelection
-        {
-            get => _isUltSwapPerkSelection && !SurgeGameModeManager.AbilitiesDisabled;
-            set { _isUltSwapPerkSelection = value; SurgeNet.MarkDirty(); }
-        }
-
-        // Each ability with its ultimate and component, in the order GetChosenAbilityUltimate checks them
+        // The component implementing each regular action and ultimate.
         private static readonly (string ability, string ultimate, System.Type type)[] Abilities =
         {
             (Consts.PerkNames.ImmuneAbility, Consts.PerkNames.ImmuneAbilityUltimate, typeof(ImmuneAbility)),
@@ -41,7 +36,6 @@ namespace SpiderSurge
             (Consts.PerkNames.FreezeAbility, Consts.PerkNames.FreezeAbilityUltimate, typeof(FreezeAbility))
         };
 
-        // Ultimate perks require the base ability to be unlocked
         private static readonly Dictionary<string, string> BaseAbilities = Abilities.ToDictionary(entry => entry.ultimate, entry => entry.ability);
 
         // Ability perks - shown in special ability selection screen
@@ -50,7 +44,7 @@ namespace SpiderSurge
         // Upgrade perks - shown in normal perk selection
         private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
 
-        // Ability Ultimate perks - Ultimate versions of abilities (requires base ability)
+        // Ultimates can be selected independently of regular abilities.
         private readonly HashSet<string> abilityUltimatePerks = new HashSet<string>(Abilities.Select(entry => entry.ultimate));
 
         private readonly Dictionary<string, int> maxLevels = new Dictionary<string, int>
@@ -107,7 +101,7 @@ namespace SpiderSurge
         public static void EnableStorageUltimate() => Enable(Consts.PerkNames.StorageAbilityUltimate);
         public static void EnableFreezeUltimate() => Enable(Consts.PerkNames.FreezeAbilityUltimate);
 
-        // An ultimate also unlocks its base ability
+        // Shared grants are used by Team Versus and test setup.
         private static void Enable(string perkName)
         {
             var (ability, ultimate, type) = System.Array.Find(Abilities, entry => entry.ability == perkName || entry.ultimate == perkName);
@@ -119,7 +113,6 @@ namespace SpiderSurge
             bool isUltimate = perkName == ultimate;
             try
             {
-                if (isUltimate) Instance.SetPerkLevel(ability, 1);
                 Instance.SetPerkLevel(perkName, 1);
 
                 // Register abilities with input interceptor now that they're unlocked
@@ -162,7 +155,27 @@ namespace SpiderSurge
 
         public int GetPerkLevel(string perkName)
         {
+            if (Loadouts.Contains(perkName)) return 1;
             return perkLevels.TryGetValue(perkName, out int level) ? level : 0;
+        }
+
+        public int GetPerkLevel(string key, int playerId)
+        {
+            if (IsAbilityPerk(key) || BaseAbilities.ContainsKey(key))
+            {
+                bool ultimate = BaseAbilities.ContainsKey(key);
+                string selected = Loadouts.Get(playerId, ultimate);
+                if (selected != null) return selected == key ? 1 : 0;
+                if (HasPersonalLoadouts) return 0;
+            }
+            return perkLevels.TryGetValue(key, out int level) ? level : 0;
+        }
+
+        internal void ChooseForPlayer(int playerId, string key, bool ultimate)
+        {
+            if (ultimate ? !BaseAbilities.ContainsKey(key) : !IsAbilityPerk(key)) return;
+            Loadouts.Set(playerId, key, ultimate);
+            SurgeNet.MarkDirty();
         }
 
         public bool IsAvailable(string perkName)
@@ -172,7 +185,6 @@ namespace SpiderSurge
             if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck) return false;
             int level = GetPerkLevel(perkName);
             if (level >= maxLevel) return false;
-            if (BaseAbilities.TryGetValue(perkName, out string baseAbility) && GetPerkLevel(baseAbility) == 0) return false;
 
             if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
             {
@@ -194,15 +206,6 @@ namespace SpiderSurge
                 if (GetPerkLevel(entry.ultimate) > 0) return true;
             }
             return false;
-        }
-
-        public string GetChosenAbilityUltimate()
-        {
-            foreach (var entry in Abilities)
-            {
-                if (GetPerkLevel(entry.ability) > 0) return entry.ultimate;
-            }
-            return null;
         }
 
         public string GetUltimate(string ability) => System.Array.Find(Abilities, entry => entry.ability == ability).ultimate;
@@ -233,7 +236,7 @@ namespace SpiderSurge
         }
 
         // A client takes the host's perk table as is and re-registers its local abilities against it
-        public void ApplyRemote(Dictionary<string, int> levels, bool firstSelection, bool ultUpgrade, bool ultSwap)
+        public void ApplyRemote(Dictionary<string, int> levels, bool firstSelection, bool ultUpgrade)
         {
             perkLevels.Clear();
             foreach (var pair in levels)
@@ -242,8 +245,6 @@ namespace SpiderSurge
             }
             _isFirstNormalPerkSelection = firstSelection;
             _isUltUpgradePerkSelection = ultUpgrade;
-            _isUltSwapPerkSelection = ultSwap;
-            RefreshAbilityRegistrations();
             UpdatePerkIcons();
             PerkChoiceHud.RefreshPerks();
         }
@@ -262,30 +263,15 @@ namespace SpiderSurge
 
         public void OnSelected(string name)
         {
-            if (BaseAbilities.ContainsKey(name)) HandleUltimateSelection(name);
-            else if (IsAbilityPerk(name)) Enable(name);
-        }
-
-        private void HandleUltimateSelection(string newUltName)
-        {
-            string currentUltPath = GetChosenAbilityUltimate();
-
-            if (currentUltPath != null && currentUltPath != newUltName && BaseAbilities.TryGetValue(currentUltPath, out string oldAbilityName))
-            {
-                Logger.LogInfo($"[Perk Swap] Swapping from {oldAbilityName}/{currentUltPath} to {newUltName}");
-
-                SetPerkLevel(currentUltPath, 0);
-                SetPerkLevel(oldAbilityName, 0);
-            }
-            Enable(newUltName);
+            if (BaseAbilities.ContainsKey(name) || IsAbilityPerk(name)) Enable(name);
         }
 
         public void ResetPerks()
         {
             perkLevels.Clear();
+            Loadouts.Clear();
             _isFirstNormalPerkSelection = true;
             _isUltUpgradePerkSelection = false;
-            _isUltSwapPerkSelection = false;
             SurgeNet.MarkDirty();
             UpdatePerkIcons();
         }
@@ -309,7 +295,7 @@ namespace SpiderSurge
             if (durationMod == null || durationMod.data == null) return;
 
             Sprite newIcon;
-            if (GetPerkLevel(Consts.PerkNames.PulseAbility) > 0)
+            if (!HasPersonalLoadouts && GetPerkLevel(Consts.PerkNames.PulseAbility) > 0)
             {
                 newIcon = IconLoader.GetIcon("pulse_duration_perk");
             }

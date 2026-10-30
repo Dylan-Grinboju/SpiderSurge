@@ -305,6 +305,7 @@ namespace SpiderSurge.Logging
         private static string BuildPerkChoiceJson(PerkChoiceRecord choice)
         {
             return "{" +
+                "\"playerId\":" + JsonNumber(choice.PlayerId) + "," +
                 "\"wave\":" + choice.Wave + "," +
                 "\"kind\":\"" + EscapeJson(choice.Kind) + "\"," +
                 "\"offered\":" + JsonStringArray(choice.Offered) + "," +

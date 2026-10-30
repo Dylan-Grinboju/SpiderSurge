@@ -103,7 +103,7 @@ namespace SpiderSurge
                 }
 
                 var immuneAbility = spiderController.GetComponent<ImmuneAbility>();
-                if (isRespawn && immuneAbility != null && immuneAbility.IsUnlocked())
+                if (isRespawn && immuneAbility != null && immuneAbility.IsRegularUnlocked())
                 {
                     immuneAbility.ForceStartCooldown();
                 }

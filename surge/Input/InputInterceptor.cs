@@ -134,6 +134,8 @@ namespace SpiderSurge
                     registeredAbilities.Remove(bindingPath);
                 }
 
+                else return;
+
                 RestoreBindingsForPath(bindingPath);
 
                 string actionName = GetActionNameFromBindingPath(bindingPath);

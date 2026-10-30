@@ -40,7 +40,7 @@ namespace SpiderSurge {
     public class PerksManager {
         public static PerksManager Instance = new PerksManager();
         public Dictionary<string,int> Levels;
-        public void ApplyRemote(Dictionary<string,int> levels, bool first, bool upgrade, bool swap) { Levels = levels; }
+        public void ApplyRemote(Dictionary<string,int> levels, bool first, bool upgrade) { Levels = levels; }
     }
     public static class ModifierManager_GetNonMaxedSurvivalMods_Patch { public static HashSet<string> LuckyPerkKeys = new HashSet<string>(); }
     public static class PlayerAbilityHandler {
@@ -49,6 +49,7 @@ namespace SpiderSurge {
         public static void AttachToExistingSpiders() { Attachments++; }
         public static void OnWaveStarted(int wave) { WaveRefunds++; }
     }
+    public static class AbilitySelection { public static void Read(BinaryReader reader) { reader.ReadInt32(); } }
     public static class PerkChoiceRefresh { public static void Refresh() { } }
     public static class ReceiverTest {
         private static bool _awaitingFirstState = true;
@@ -66,9 +67,9 @@ function Receive([bool]$active, [int]$wave = 0, [ulong]$sender = 0) {
     $stream = [IO.MemoryStream]::new()
     $writer = [IO.BinaryWriter]::new($stream)
     $writer.Write($false); $writer.Write($active); $writer.Write($active); $writer.Write($false)
-    $writer.Write($wave); $writer.Write($false); $writer.Write($false); $writer.Write($false)
+    $writer.Write($wave); $writer.Write($false); $writer.Write($false)
     $writer.Write([int]1); $writer.Write('pulse'); $writer.Write([int]1)
-    $writer.Write([int]0); $writer.Write([int]1)
+    $writer.Write([int]0); $writer.Write([int]1); $writer.Write([int]0)
     $stream.Position = 0
     $reader = [IO.BinaryReader]::new($stream)
     $handler.Invoke($sender, $reader)

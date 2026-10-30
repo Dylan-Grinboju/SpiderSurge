@@ -97,18 +97,6 @@ namespace SpiderSurge
             return value == "1";
         }
 
-        // Pain 8 starts with the chosen ability's ultimate
-        internal static Modifier StartingUltimate(string ability)
-        {
-            if (!ActiveEight) return null;
-            var manager = ModifierManager.instance;
-            string key = PerksManager.Instance.GetUltimate(ability);
-            int id = key != null ? manager.GetModId(key) : -1;
-            if (id >= 0) return manager.GetModById(id);
-            Logger.LogError($"Surge Pain {Level} could not find the ultimate of {ability}");
-            return null;
-        }
-
         internal static void SpawnWaveEnemy(EnemySpawner spawner, GameObject enemy)
         {
             spawner.SpawnEnemy(enemy);

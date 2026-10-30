@@ -85,7 +85,7 @@ namespace SpiderSurge
                 Restore();
                 return;
             }
-            KeepFocus();
+            if (!AbilitySelection.IsChoosing) KeepFocus();
 
             Canvas choice = _hud.perkChoiceView.GetComponent<Canvas>();
             if (choice == null) return;

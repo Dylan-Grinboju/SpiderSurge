@@ -80,16 +80,7 @@ namespace SpiderSurge
                     }
                 }
 
-                // Any pick ends the wave 30/60 ultimate screen, also a vanilla perk; the ultimate then returns in regular choices
-                if (PerksManager.Instance.IsUltUpgradePerkSelection)
-                {
-                    PerksManager.Instance.IsUltUpgradePerkSelection = false;
-                }
 
-                if (PerksManager.Instance.IsUltSwapPerkSelection)
-                {
-                    PerksManager.Instance.IsUltSwapPerkSelection = false;
-                }
             }
 
             // Reset the PowerUp sound flag after selection is complete
@@ -157,11 +148,6 @@ namespace SpiderSurge
                         description += "\n" + Consts.Formatting.TextLuckyUpgrade;
                     }
 
-                    if (PerksManager.Instance.GetAbilityUltimatePerkNames().Contains(key) && PerksManager.Instance.IsUltSwapPerkSelection)
-                    {
-                        description += "\n" + Consts.Formatting.TextSwapAbility;
-                    }
-
                     perkDescriptionText.text = description;
                 }
             }
@@ -221,21 +207,8 @@ namespace SpiderSurge
                 // Custom Availability Check (Dependencies, etc)
                 if (perksManager.GetAllPerkNames().Contains(key))
                 {
-                    // Special exception: In Post-60 phase, allow Ultimate perks to appear
-                    // even if their base ability is not unlocked (to allow swapping).
-                    // We knowingly bypass IsAvailable's dependency check here.
-                    bool isUlt = perksManager.GetAbilityUltimatePerkNames().Contains(key);
-                    bool isSwapPhase = perksManager.IsUltSwapPerkSelection;
-
-                    if (isSwapPhase && isUlt)
-                    {
-                        // Specifically check max level, since we are bypassing IsAvailable
-                        if (perksManager.GetPerkLevel(key) >= perksManager.GetMaxLevel(key)) continue;
-                    }
-                    else
-                    {
-                        if (!perksManager.IsAvailable(key)) continue;
-                    }
+                    if (perksManager.IsAbilityPerk(key) || perksManager.GetAbilityUltimatePerkNames().Contains(key)) continue;
+                    if (!perksManager.IsAvailable(key)) continue;
                 }
 
                 // Add to the valid list (Vanilla perks pass through here)
@@ -261,129 +234,15 @@ namespace SpiderSurge
 
             if (!SurgeGameModeManager.IsSurgeRunActive) return true;
 
-            // --- SURGE MODE SELECTION LOGIC ---
             var perksManager = PerksManager.Instance;
-
-            // 1. Categorize
-            ClassifyModifiers(availableModifiers, perksManager, out var selectedAbilityUlt, out var otherAbilityUlts, out var abilities, out var modPerks, out var vanillaPerks);
-
-            // 2. Shuffle sub-lists
-            vanillaPerks = vanillaPerks.OrderBy(_ => UnityEngine.Random.value).ToList();
-            modPerks = modPerks.OrderBy(_ => UnityEngine.Random.value).ToList();
-            abilities = abilities.OrderBy(_ => UnityEngine.Random.value).ToList();
-            selectedAbilityUlt = selectedAbilityUlt.OrderBy(_ => UnityEngine.Random.value).ToList();
-            otherAbilityUlts = otherAbilityUlts.OrderBy(_ => UnityEngine.Random.value).ToList();
-
-            // 3. Select based on phase
-            List<Modifier> finalSelection = new List<Modifier>();
-            SelectPhasePerks(perksManager, count, finalSelection, selectedAbilityUlt, otherAbilityUlts, abilities, modPerks, vanillaPerks);
-
-            // 4. Apply Perk Luck
-            ApplyPerkLuck(perksManager, finalSelection);
-
-            __result = finalSelection;
+            var selected = availableModifiers.Where(mod => mod?.data != null
+                && !perksManager.IsAbilityPerk(mod.data.key)
+                && !perksManager.GetAbilityUltimatePerkNames().Contains(mod.data.key))
+                .GroupBy(mod => mod.data.key).Select(group => group.First())
+                .OrderBy(_ => UnityEngine.Random.value).Take(Math.Max(0, count)).ToList();
+            ApplyPerkLuck(perksManager, selected);
+            __result = selected;
             return false;
-        }
-
-        private static void ClassifyModifiers(
-            List<Modifier> source,
-            PerksManager pm,
-            out List<Modifier> selectedAbilityUlt,
-            out List<Modifier> otherAbilityUlts,
-            out List<Modifier> abilities,
-            out List<Modifier> modPerks,
-            out List<Modifier> vanillaPerks)
-        {
-            selectedAbilityUlt = new List<Modifier>();
-            otherAbilityUlts = new List<Modifier>();
-            abilities = new List<Modifier>();
-            modPerks = new List<Modifier>();
-            vanillaPerks = new List<Modifier>();
-
-            string currentUlt = pm.GetChosenAbilityUltimate();
-
-            foreach (var mod in source)
-            {
-                string key = mod.data.key;
-
-                if (pm.IsAbilityPerk(key))
-                {
-                    abilities.Add(mod);
-                }
-                else if (pm.GetAbilityUltimatePerkNames().Contains(key))
-                {
-                    if (key == currentUlt) selectedAbilityUlt.Add(mod);
-                    else otherAbilityUlts.Add(mod);
-                }
-                else if (pm.IsUpgradePerk(key))
-                {
-                    modPerks.Add(mod);
-                }
-                else
-                {
-                    vanillaPerks.Add(mod);
-                }
-            }
-        }
-
-        private static void SelectPhasePerks(PerksManager pm, int targetCount, List<Modifier> finalSelection, List<Modifier> selectedAbilityUlt, List<Modifier> otherAbilityUlts, List<Modifier> abilities, List<Modifier> modPerks, List<Modifier> vanillaPerks)
-        {
-            if (pm.IsUltSwapPerkSelection)
-            {
-                // Phase 1: Post 60 - Other Ults (Swap) -> Current Ult (if avail) -> Mods -> Vanilla
-                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
-                AddUpTo(finalSelection, otherAbilityUlts, Math.Max(0, targetCount - 1));
-                AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
-                AddUpTo(finalSelection, modPerks, targetCount);
-                AddUpTo(finalSelection, vanillaPerks, targetCount);
-            }
-            else if (pm.IsUltUpgradePerkSelection)
-            {
-                // Phase 2: Post 30 - Current Ult -> Mods -> Vanilla
-                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
-                AddUpTo(finalSelection, selectedAbilityUlt, targetCount);
-                AddUpTo(finalSelection, modPerks, targetCount);
-                AddUpTo(finalSelection, vanillaPerks, targetCount);
-            }
-            else if (pm.IsFirstNormalPerkSelection)
-            {
-                // Phase 3: First Selection - Abilities Only
-                ModifierManager_SetModLevel_Patch.PlayPowerUpSound();
-                AddUpTo(finalSelection, abilities, targetCount);
-            }
-            else
-            {
-                // Phase 4: Standard - Mix
-                List<Modifier> mixedPerks = new List<Modifier>();
-                if (SurvivalMode.instance != null && SurvivalMode.instance.CurrentWave >= Consts.Values.Waves.UltUpgradeWave)
-                {
-                    mixedPerks.AddRange(selectedAbilityUlt);
-                }
-                mixedPerks.AddRange(modPerks);
-                mixedPerks.AddRange(vanillaPerks);
-
-                mixedPerks = mixedPerks.OrderBy(_ => UnityEngine.Random.value).ToList();
-                AddUpTo(finalSelection, mixedPerks, targetCount);
-            }
-        }
-
-        private static void AddUpTo(List<Modifier> targetList, List<Modifier> sourceList, int limit)
-        {
-            int needed = limit - targetList.Count;
-            if (needed <= 0) return;
-
-            // Ensure uniqueness in targetList
-            var existingKeys = new HashSet<string>(targetList.Select(m => m.data.key));
-
-            foreach (var mod in sourceList)
-            {
-                if (targetList.Count >= limit) break;
-                if (!existingKeys.Contains(mod.data.key))
-                {
-                    targetList.Add(mod);
-                    existingKeys.Add(mod.data.key);
-                }
-            }
         }
 
         private static void ApplyPerkLuck(PerksManager perksManager, List<Modifier> perks)
