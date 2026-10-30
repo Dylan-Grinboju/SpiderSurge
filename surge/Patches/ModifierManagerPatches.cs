@@ -111,7 +111,7 @@ namespace SpiderSurge
             bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
             bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 
-            bool isSynergized = PerkSynergy.Describe(key, m.levelInSurvival + 1) != null;
+            bool isSynergized = PerkSynergy.Improves(key, m.levelInSurvival, isLucky ? 2 : m.levelInSurvival + 1);
 
             if (!isSurgePerk && !isLucky && !isSynergized) return;
 

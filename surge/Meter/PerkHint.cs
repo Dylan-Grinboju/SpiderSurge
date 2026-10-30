@@ -128,9 +128,10 @@ namespace SpiderSurge
                 ? "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a 25% / 50% salvage chance."
                 : PerkSynergy.Describe(key, level);
             if (AbilitySelection.StartingChoiceOpen)
-                return "Shared team ability; each spider has its own cooldown.\n" +
-                    $"Use: {Controls.Display(Controls.AbilityKeyboard)} / {Controls.Display(Controls.AbilityController)}. " +
-                    (SurgePainLevels.SelectedEight ? "Its ultimate comes with it." : $"Ultimate choice at wave {Consts.Values.Waves.UltUpgradeWave}.") +
+                return "Each player chooses independently; duplicate picks are allowed.\n" +
+                    (AbilitySelection.Round.Ultimate ? "Your ultimate shares a cooldown with your regular ability."
+                        : SurgePainLevels.SelectedEight ? "A separate ultimate choice follows."
+                        : $"Choose an independent ultimate after wave {Consts.Values.Waves.UltUpgradeWave}.") +
                     (string.IsNullOrEmpty(detail) ? "" : "\n" + detail);
             return detail ?? "Perks apply to the whole team. Chaos buys extra upgrades in the shop.";
         }
