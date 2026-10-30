@@ -111,10 +111,6 @@ namespace SpiderSurge
             bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
             bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
 
-            bool isSynergized = PerkSynergy.Improves(key, m.levelInSurvival, isLucky ? 2 : m.levelInSurvival + 1);
-
-            if (!isSurgePerk && !isLucky && !isSynergized) return;
-
             TMP_Text perkNameText = __instance.perkNameText;
             TMP_Text perkDescriptionText = __instance.perkDescriptionText;
 
@@ -156,14 +152,8 @@ namespace SpiderSurge
                 // Vanilla Modifier Handling
                 if (perkDescriptionText != null)
                 {
-                    if (isLucky)
-                    {
-                        perkDescriptionText.text += "\n" + Consts.Formatting.TextLuckyUpgrade;
-                    }
-                    if (isSynergized)
-                    {
-                        perkDescriptionText.text += "\n" + Consts.Formatting.TextSynergized;
-                    }
+                    perkDescriptionText.text = PerkSynergy.Decorate(perkDescriptionText.text, key,
+                        m.levelInSurvival, isLucky ? 2 : m.levelInSurvival + 1, isLucky);
                 }
             }
         }

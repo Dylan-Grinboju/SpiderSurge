@@ -87,7 +87,6 @@ namespace SpiderSurge
             public const string ColorRed = "#FF0000";
 
             public const string TextLuckyUpgrade = "<color=" + ColorGold + ">Lucky Upgrade</color>";
-            public const string TextSynergized = "<color=" + ColorCyan + ">Synergized</color>";
         }
 
         public static class Telemetry

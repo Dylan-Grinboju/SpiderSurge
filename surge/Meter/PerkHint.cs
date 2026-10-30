@@ -22,6 +22,8 @@ namespace SpiderSurge
         private TMP_Text _text;
         private string _shownKey;
         private int _shownLevel = -1;
+        private int _shownCurrentLevel = -1;
+        private int _selectionStamp = -1;
 
         public static PerkHint Current { get; private set; }
 
@@ -105,12 +107,20 @@ namespace SpiderSurge
             if (_text == null) return;
             var card = FocusedCard();
             string key = card?.modifier?.data?.key;
-            int level = (card?.modifier?.levelInSurvival ?? 0) + 1;
+            int currentLevel = card?.modifier?.levelInSurvival ?? 0;
+            int level = currentLevel + 1;
             if (key != null && ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key)) level = 2;
-            if (key == _shownKey && level == _shownLevel) return;
+            int selection = PerkSynergy.SelectionStamp;
+            if (selection != _selectionStamp && !AbilitySelection.IsChoosing)
+                foreach (var choice in PerkChoiceWidget.Cards(_hud))
+                    if (choice.modifier?.data != null)
+                        SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(choice, choice.modifier, choice.level, GameFields.CardIndex(choice), false);
+            if (key == _shownKey && level == _shownLevel && currentLevel == _shownCurrentLevel && selection == _selectionStamp) return;
             _shownKey = key;
             _shownLevel = level;
-            _text.text = Compose(key, level);
+            _shownCurrentLevel = currentLevel;
+            _selectionStamp = selection;
+            _text.text = Compose(key, level, currentLevel);
         }
 
         // The card under the controller's focus, else the locked one
@@ -122,11 +132,11 @@ namespace SpiderSurge
             return card;
         }
 
-        private static string Compose(string key, int level)
+        private static string Compose(string key, int level, int currentLevel)
         {
             string detail = key == Consts.PerkNames.AmmoAbility
-                ? "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a 25% / 50% salvage chance."
-                : PerkSynergy.Describe(key, level);
+                ? "Overcharge uses the held weapon without spending ammo for a short burst, then burns it out."
+                : PerkSynergy.Describe(key, level, currentLevel);
             if (AbilitySelection.StartingChoiceOpen)
                 return "Each player chooses independently; duplicate picks are allowed.\n" +
                     (AbilitySelection.Round.Ultimate ? "Your ultimate shares a cooldown with your regular ability."
