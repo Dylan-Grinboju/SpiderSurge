@@ -131,10 +131,9 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityBaseCooldown = 20f;
                 public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityBaseDuration = 5f;
-                public const float AbilityDurationIncreasePerLevel = 2.5f;
+                public const float RechargeReduction = 5f;
                 public const float UltimateBaseCooldown = 30f;
                 public const float UltimateCooldownReductionPerLevel = 10f;
                 public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
@@ -460,7 +459,7 @@ namespace SpiderSurge
             private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
                 [PerkNames.ImmuneAbility] = "Null Field",
-                [PerkNames.AmmoAbility] = "Bottomless Clip",
+                [PerkNames.AmmoAbility] = "Overcharge",
                 [PerkNames.PulseAbility] = "Kinetic Pulse",
                 [PerkNames.StorageAbility] = "Pocket Dimension",
                 [PerkNames.FreezeAbility] = "Freeze Time",
@@ -480,7 +479,7 @@ namespace SpiderSurge
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
                 [PerkNames.ImmuneAbility] = "Become immune to all damage for a short duration",
-                [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
+                [PerkNames.AmmoAbility] = "Instantly refill your held weapon to full ammo",
                 [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
                 [PerkNames.FreezeAbility] = "Freeze enemies, other players and shots in an area for a few seconds",
@@ -506,6 +505,7 @@ namespace SpiderSurge
             // Custom display names for Duration perk based on active ability
             internal const string DURATION_NAME_WITH_PULSE = "Bigger Pulse";
             internal const string DURATION_NAME_WITH_STORAGE = "Faster Retrieval";
+            internal const string DURATION_NAME_WITH_AMMO = "Faster Recharge";
             private const string DURATION_NAME_WITH_FREEZE = "Deep Freeze";
 
             // Custom descriptions for Duration perk based on active ability
@@ -524,7 +524,7 @@ namespace SpiderSurge
                 (PerkNames.PulseAbility, DURATION_NAME_WITH_PULSE, DURATION_DESC_WITH_PULSE, DURATION_UPGRADE_DESC_WITH_PULSE),
                 (PerkNames.StorageAbility, DURATION_NAME_WITH_STORAGE, DURATION_DESC_WITH_STORAGE, DURATION_UPGRADE_DESC_WITH_STORAGE),
                 (PerkNames.FreezeAbility, DURATION_NAME_WITH_FREEZE, DURATION_DESC_WITH_FREEZE, DURATION_UPGRADE_DESC_WITH_FREEZE),
-                (PerkNames.AmmoAbility, null, null, DURATION_UPGRADE_DESC_WITH_AMMO),
+                (PerkNames.AmmoAbility, DURATION_NAME_WITH_AMMO, "Overcharge recharges 5 seconds faster", DURATION_UPGRADE_DESC_WITH_AMMO),
                 (PerkNames.ImmuneAbility, null, null, DURATION_UPGRADE_DESC_WITH_IMMUNE)
             };
 

@@ -14,8 +14,8 @@ namespace SpiderSurge
                 return "Null Field keeps your shield if it blocks no hits. Starting Neural Backup shielded can shield the revived player or summon an extra Wasp.";
             if (perks.GetPerkLevel(P.AmmoAbility) > 0 && key == M.Efficiency)
                 return offeredLevel >= 2
-                    ? "Bottomless Clip keeps dropped weapons with their original ammo and refills your held weapon to at least half capacity when it ends."
-                    : "Bottomless Clip keeps weapons with their original ammo when it ends or you drop them.";
+                    ? "Overcharge instantly refills your held weapon to 150% of its capacity. Extra ammo stays until spent."
+                    : "Overcharge instantly refills your held weapon to 125% of its capacity. Level 2 raises this to 150%.";
             if (perks.GetPerkLevel(P.PulseAbility) > 0)
             {
                 if (key == M.BiggerBoom) return offeredLevel >= 2

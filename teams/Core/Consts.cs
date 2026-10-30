@@ -88,7 +88,7 @@ namespace SpiderTeams
             public static readonly string[] AbilityDescriptions =
             {
                 "Become immune to all damage for a short time.",
-                "Shooting uses no ammo for a short time.",
+                "Instantly refills the held weapon to full ammo, or 125% / 150% with Efficiency.",
                 "Release a pulse that knocks back everyone nearby.",
                 "Store your weapon and swap it back later.",
                 "A new ability every round, the same for everyone.",
@@ -97,7 +97,7 @@ namespace SpiderTeams
             public static readonly string[] UltimateDescriptions =
             {
                 "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
-                "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
+                "Spawns weapons at half of the map's weapon spawners, or all of them with Faster Recharge level 2.",
                 "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
                 "For 3 seconds, pulls the spiders around you toward you, and any that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is ignored, and swallowed only with it set to damage.",
             };
@@ -114,7 +114,7 @@ namespace SpiderTeams
             public static readonly string[] DurationNames =
             {
                 DisplayName(DurationPerk),
-                DisplayName(DurationPerk),
+                SpiderSurge.Consts.Descriptions.DURATION_NAME_WITH_AMMO,
                 SpiderSurge.Consts.Descriptions.DURATION_NAME_WITH_PULSE,
                 SpiderSurge.Consts.Descriptions.DURATION_NAME_WITH_STORAGE,
                 DisplayName(DurationPerk),

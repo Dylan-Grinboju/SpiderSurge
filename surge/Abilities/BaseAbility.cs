@@ -305,7 +305,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (isActive)
+            if (isActive || !CanActivate(ultimate))
             {
                 return;
             }
@@ -523,6 +523,7 @@ namespace SpiderSurge
             }
         }
 
+        protected virtual bool CanActivate(bool ultimate) => true;
         protected abstract void OnActivate();
         protected virtual void OnDeactivate() { }
         protected virtual void OnActivateUltimate() { OnActivate(); }

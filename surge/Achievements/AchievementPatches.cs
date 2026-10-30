@@ -253,12 +253,12 @@ namespace SpiderSurge
         }
     }
 
-    // Unlimited Power: Bottomless Clip cast while holding a fully upgraded blade
+    // Unlimited Power: Overcharge cast while holding a fully upgraded blade
     public static class UnlimitedPowerAchievement
     {
         public static void Cast(AmmoAbility ability)
         {
-            AchievementTracker.Run("Bottomless Clip", () =>
+            AchievementTracker.Run("Overcharge", () =>
             {
                 PlayerController caster = Players.ById(ability.PlayerId);
                 SpiderHealthSystem spider = caster != null ? caster.spiderHealthSystem : null;

@@ -28,7 +28,6 @@ namespace SpiderSurge
         CareDrop = 5,
         PulseImpact = 6,
         ImmuneHit = 7,
-        ClipShot = 8,
     }
 
     public enum EnemyFx : byte
@@ -407,14 +406,13 @@ namespace SpiderSurge
                 return;
             }
 
-            if (fx == SurgeFx.PulseImpact || fx == SurgeFx.ImmuneHit || fx == SurgeFx.ClipShot)
+            if (fx == SurgeFx.PulseImpact || fx == SurgeFx.ImmuneHit)
             {
                 Vfx.SurgeVfx.Safely(() =>
                 {
                     Vector3 direction = new Vector3(Mathf.Cos(radius), Mathf.Sin(radius), 0f);
                     if (fx == SurgeFx.PulseImpact) Vfx.AccentVfx.Impact(position, direction, flag);
-                    else if (fx == SurgeFx.ImmuneHit) ImmuneAbility.ShowRemoteHit(playerId, direction);
-                    else Vfx.WeaponVfx.Shot(position, radius);
+                    else ImmuneAbility.ShowRemoteHit(playerId, direction);
                 });
                 return;
             }
@@ -440,7 +438,7 @@ namespace SpiderSurge
                     StorageAbility.DrawRemoteBlackHole(playerId, radius);
                     break;
                 case SurgeFx.Clip:
-                    AmmoAbility.ShowRemoteClip(playerId, position, flag);
+                    Vfx.ClipVfx.Cast(position);
                     break;
             }
         }

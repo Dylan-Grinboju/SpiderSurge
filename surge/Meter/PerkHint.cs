@@ -124,8 +124,8 @@ namespace SpiderSurge
 
         private static string Compose(string key, int level)
         {
-            string detail = key == Consts.PerkNames.AmmoAbility && !HasEfficiency()
-                ? "Without Efficiency, most weapons disintegrate when Bottomless Clip ends or you drop them."
+            string detail = key == Consts.PerkNames.AmmoAbility
+                ? "Instant refill: 100% capacity, or 125% / 150% with Efficiency. Extra ammo stays until spent."
                 : PerkSynergy.Describe(key, level);
             if (AbilitySelection.StartingChoiceOpen)
                 return "Shared team ability; each spider has its own cooldown.\n" +
@@ -134,7 +134,5 @@ namespace SpiderSurge
                     (string.IsNullOrEmpty(detail) ? "" : "\n" + detail);
             return detail ?? "Perks apply to the whole team. Chaos buys extra upgrades in the shop.";
         }
-
-        private static bool HasEfficiency() => ModifierManager.instance != null && ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency) > 0;
     }
 }

@@ -55,18 +55,6 @@ namespace SpiderSurge.Vfx
                 if (retrieve) StorageVfx.Retrieve(destination); else StorageVfx.Send(position);
             });
         }
-
-        public static void Shot(Vector3 position, float angle)
-        {
-            SurgeVfx.Safely(() =>
-            {
-                Color color = Consts.Values.Vfx.ClipColor;
-                Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
-                ArcFlash.Draw(position, direction, color, 2.5f, 1.2f, 0.09f);
-                AccentVfx.Shards(position, color, 5, 22f, 0.5f, 0.18f);
-                SurgeVfx.Flash(position, color, 0.7f, 9f, 0.08f);
-            });
-        }
     }
 
 }

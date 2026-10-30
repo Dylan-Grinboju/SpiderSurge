@@ -183,60 +183,6 @@ namespace SpiderSurge.Vfx
         }
     }
 
-    public class WeaponAura : MonoBehaviour
-    {
-        private ParticleSystem embers;
-        private LightFade glow;
-        private Follow follow;
-        private bool shown;
-
-        public static WeaponAura Attach(Transform weapon)
-        {
-            return SurgeVfx.Safely(() => SurgeVfx.Create<WeaponAura>("WeaponAura", weapon.position, aura =>
-            {
-                GameObject holder = aura.gameObject;
-                aura.follow = holder.AddComponent<Follow>();
-                aura.follow.Target = weapon;
-                aura.follow.DestroyWithTarget = false;
-                Color color = Consts.Values.Vfx.ClipColor;
-                aura.embers = SurgeVfx.Stream(holder.transform, color, color, 12f, 1f, 4f, 0.4f, 0.7f, 0.35f, 1.5f, gravity: -0.3f);
-                aura.glow = SurgeVfx.Flash(weapon.position, color, 0.65f, 8f, float.MaxValue);
-                aura.glow.transform.SetParent(holder.transform, true);
-                aura.shown = true;
-            }));
-        }
-
-        public void Retarget(Transform weapon)
-        {
-            SurgeVfx.Safely(() => Show(weapon));
-        }
-
-        private void Show(Transform weapon)
-        {
-            shown = weapon != null;
-            if (follow != null) follow.Target = weapon != null ? (weapon.GetComponent<Weapon>()?.grip ?? weapon) : null;
-            if (embers != null)
-            {
-                ParticleSystem.EmissionModule emission = embers.emission;
-                emission.enabled = shown;
-                if (!shown) embers.Clear();
-            }
-            if (glow != null) glow.gameObject.SetActive(shown);
-        }
-
-        // A weapon destroyed in the hand, like a grenade going off, is never unequipped, so the aura hides once its weapon is gone
-        private void LateUpdate()
-        {
-            if (shown && (follow == null || follow.Target == null)) Retarget(null);
-        }
-
-        public void Stop()
-        {
-            SurgeVfx.Safely(() => SurgeVfx.Fade(embers));
-            Destroy(gameObject);
-        }
-    }
-
     public class NullFieldBubble : MonoBehaviour
     {
         private const float Radius = 7f;

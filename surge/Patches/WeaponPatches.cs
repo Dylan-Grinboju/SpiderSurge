@@ -32,19 +32,6 @@ namespace SpiderSurge
         }
     }
 
-    internal static class AmmoAbilityPatchUtils
-    {
-        internal static void TryHandleWeaponRemoved(SpiderWeaponManager manager)
-        {
-            if (manager == null || manager.equippedWeapon == null)
-            {
-                return;
-            }
-
-            AmmoAbility.HandleWeaponRemoved(manager, manager.equippedWeapon);
-        }
-    }
-
     [HarmonyPatch(typeof(Weapon), nameof(Weapon.CanEquip))]
     public class Weapon_CanEquip_Patch
     {
@@ -60,57 +47,4 @@ namespace SpiderSurge
         }
     }
 
-    [HarmonyPatch(typeof(SpiderWeaponManager), "OnEquipWeapon")]
-    public class SpiderWeaponManager_OnEquipWeapon_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix(SpiderWeaponManager __instance, Weapon weapon)
-        {
-            if (weapon != null)
-            {
-                AmmoAbility.HandleWeaponEquipped(__instance, weapon);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(SpiderWeaponManager), nameof(SpiderWeaponManager.UnEquipWeapon))]
-    public class SpiderWeaponManager_UnEquipWeapon_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(SpiderWeaponManager __instance)
-        {
-            AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
-        }
-    }
-
-    [HarmonyPatch(typeof(SpiderWeaponManager), "ThrowWeapon")]
-    public class SpiderWeaponManager_ThrowWeapon_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(SpiderWeaponManager __instance)
-        {
-            AmmoAbilityPatchUtils.TryHandleWeaponRemoved(__instance);
-        }
-    }
-
-    [HarmonyPatch(typeof(Weapon), nameof(Weapon.ammo), MethodType.Setter)]
-    public class Weapon_AmmoSetter_Patch
-    {
-        [HarmonyPrefix]
-        public static void Prefix(Weapon __instance, ref float value)
-        {
-            AmmoAbility clip = AmmoAbility.ActiveFor(__instance);
-            if (clip == null) return;
-
-            if (SpiderSurge.Common.Net.IsAuthority && value < __instance.ammo)
-            {
-                Vfx.SurgeVfx.Safely(static shot => shot.clip.AccentShot(shot.weapon), (clip, weapon: __instance));
-            }
-            float floor = clip.GetHeldWeaponFloorAmmo(__instance);
-            if (floor >= 0f && value < floor)
-            {
-                value = floor;
-            }
-        }
-    }
 }
