@@ -88,7 +88,7 @@ namespace SpiderTeams
             public static readonly string[] AbilityDescriptions =
             {
                 "Become immune to all damage for a short time.",
-                "Shooting uses no ammo for a short time.",
+                "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a 25% / 50% salvage chance.",
                 "Release a pulse that knocks back everyone nearby.",
                 "Store your weapon and swap it back later.",
                 "A new ability every round, the same for everyone.",

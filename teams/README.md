@@ -59,7 +59,7 @@ Versus can use the abilities of the [Surge](../surge/README.md) part. Turn on **
 | Ability | What it does | Ultimate |
 |---|---|---|
 | Null Field | Become immune to all damage for a short time | **Neural Backup**: After a cast time, revive a dead teammate at the map spawn point nearest you. With nobody to revive, it summons friendly wasps, which only chase AI enemies |
-| Bottomless Clip | Shooting uses no ammo for a short time | **Care Package**: Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2 |
+| Overcharge | Unlimited ammo for a short burst; Efficiency gives a 25% / 50% chance to salvage the weapon afterwards | **Care Package**: Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2 |
 | Kinetic Pulse | Release a pulse that knocks back everyone nearby | **Thermal Detonation**: The pulse kills anyone close to you. Teammates follow the friendly fire rule |
 | Pocket Dimension | Store your weapon and swap it back later | **Black Hole**: For 3 seconds a pull around you drags spiders toward you, and any spider that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is set to ignore, and swallowed only with it set to damage |
 
@@ -119,7 +119,7 @@ These only matter while the Surge part runs. See [Surge Abilities](#surge-abilit
 
 `teams.surge.enabled`: Gives every spider the same Surge ability in versus. Default: `false`.
 
-`teams.surge.ability`: The ability everyone gets: `immune` (Null Field), `ammo` (Bottomless Clip), `pulse` (Kinetic Pulse), `storage` (Pocket Dimension), or `random` for a new one every round. The ability's name works too, such as `Null Field`. Default: `pulse`.
+`teams.surge.ability`: The ability everyone gets: `immune` (Null Field), `ammo` (Overcharge), `pulse` (Kinetic Pulse), `storage` (Pocket Dimension), or `random` for a new one every round. The ability's name works too, such as `Null Field`. Default: `pulse`.
 
 `teams.surge.ultimate`: Also gives everyone the ability's ultimate. Default: `false`.
 

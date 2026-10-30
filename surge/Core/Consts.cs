@@ -131,10 +131,12 @@ namespace SpiderSurge
 
             public static class Ammo
             {
-                public const float AbilityBaseCooldown = 12f;
+                public const float AbilityBaseCooldown = 20f;
                 public const float AbilityCooldownReductionPerLevel = 4f;
-                public const float AbilityBaseDuration = 5f;
+                public const float AbilityBaseDuration = 7f;
                 public const float AbilityDurationIncreasePerLevel = 2.5f;
+                public const float SalvageChancePerLevel = 0.25f;
+                public const float SalvageBladeFraction = 0.1f;
                 public const float UltimateBaseCooldown = 30f;
                 public const float UltimateCooldownReductionPerLevel = 10f;
                 public const float UltimateBaseDuration = 0f; // Instant ultimate, no duration coroutine
@@ -460,7 +462,7 @@ namespace SpiderSurge
             private static readonly Dictionary<string, string> displayNames = new Dictionary<string, string>
             {
                 [PerkNames.ImmuneAbility] = "Null Field",
-                [PerkNames.AmmoAbility] = "Bottomless Clip",
+                [PerkNames.AmmoAbility] = "Overcharge",
                 [PerkNames.PulseAbility] = "Kinetic Pulse",
                 [PerkNames.StorageAbility] = "Pocket Dimension",
                 [PerkNames.FreezeAbility] = "Freeze Time",
@@ -480,7 +482,7 @@ namespace SpiderSurge
             private static readonly Dictionary<string, string> descriptions = new Dictionary<string, string>
             {
                 [PerkNames.ImmuneAbility] = "Become immune to all damage for a short duration",
-                [PerkNames.AmmoAbility] = "Shooting will not consume ammo for a short duration",
+                [PerkNames.AmmoAbility] = "Use your held weapon without spending ammo, then burn it out",
                 [PerkNames.PulseAbility] = "Release a pulse that knocks back nearby enemies",
                 [PerkNames.StorageAbility] = "Store a weapon for later use",
                 [PerkNames.FreezeAbility] = "Freeze enemies, other players and shots in an area for a few seconds",

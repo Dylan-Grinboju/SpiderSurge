@@ -1,185 +1,18 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using System.Reflection;
 using Unity.Netcode;
 using SpiderSurge.Common;
 using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 using UnityEngine.SceneManagement;
 
-
 namespace SpiderSurge
 {
     public class AmmoAbility : BaseAbility
     {
-        public static Dictionary<int, AmmoAbility> playerAmmoAbilities = new Dictionary<int, AmmoAbility>();
-
-        // Weapon.ammo is set on every shot, so the holder is only looked up while some Bottomless Clip is running
-        internal static AmmoAbility ActiveFor(Weapon weapon)
-        {
-            if (!AnyActive || weapon == null || !weapon.equipped || weapon.owner == null) return null;
-
-            if (!playerAmmoAbilities.TryGetValue(Players.IdOf(weapon.owner), out AmmoAbility ability) || ability == null || !ability.isActive)
-                return null;
-
-            return ability;
-        }
-
-        private static bool AnyActive
-        {
-            get
-            {
-                foreach (AmmoAbility ability in playerAmmoAbilities.Values)
-                {
-                    if (ability != null && ability.isActive) return true;
-                }
-                return false;
-            }
-        }
-
-        public override string PerkName => Consts.PerkNames.AmmoAbility;
-        public override AbilityKind Kind => AbilityKind.Ammo;
-
-        public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
-        public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown;
-        public override float UltimateBaseCooldown => Consts.Values.Ammo.UltimateBaseCooldown;
-        public override float AbilityDurationPerPerkLevel => Consts.Values.Ammo.AbilityDurationIncreasePerLevel;
-        public override float AbilityCooldownPerPerkLevel => Consts.Values.Ammo.AbilityCooldownReductionPerLevel;
-        public override float UltimateCooldownPerPerkLevel => Consts.Values.Ammo.UltimateCooldownReductionPerLevel;
-        public override float UltimateBaseDuration => Consts.Values.Ammo.UltimateBaseDuration;
-
-        // Ultimate: Care Package
-        public override bool HasUltimate => true;
-
-        private SpiderWeaponManager weaponManager;
-        private float weaponCheckTimer = 0f;
-        private static FieldInfo networkAmmoField;
-        private Weapon trackedWeapon;
-        private float trackedOriginalAmmo = 0f;
-        private Weapon lastResolvedWeapon;
-        private int lastResolvedFrame = -1;
-        private bool showingRemote;
-        private static WeaponSpawner[] cachedWeaponSpawners;
-        private static string cachedSceneName;
-
-        internal static void ForgetWeaponSpawners()
-        {
-            cachedWeaponSpawners = null;
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            if (networkAmmoField == null)
-            {
-                networkAmmoField = typeof(Weapon).GetField("networkAmmo",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (networkAmmoField == null)
-                {
-                    Logger.LogError("AmmoAbility: Could not find networkAmmo field!");
-                }
-            }
-        }
-
-        protected override void Start()
-        {
-            base.Start();
-            if (PlayerId >= 0)
-            {
-                playerAmmoAbilities[PlayerId] = this;
-            }
-            weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-            if (weaponManager == null && playerController != null)
-            {
-                weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
-            }
-        }
-
-        protected void Update()
-        {
-            if (weaponManager == null)
-            {
-                weaponCheckTimer -= Time.deltaTime;
-                if (weaponCheckTimer <= 0)
-                {
-                    weaponCheckTimer = Consts.Values.Ammo.CheckInterval;
-                    weaponManager = GetComponentInChildren<SpiderWeaponManager>();
-                    if (weaponManager == null && playerController != null)
-                    {
-                        weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
-                    }
-                }
-            }
-        }
-
-        internal float GetHeldWeaponFloorAmmo(Weapon weapon)
-        {
-            if (weapon == null) return 0f;
-
-            float originalAmmo = GetTrackedOriginalAmmo(weapon);
-            int efficiencyLevel = GetEfficiencyLevel();
-
-            if (efficiencyLevel >= 2)
-            {
-                float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
-                return Mathf.Max(originalAmmo, halfMax);
-            }
-
-            return originalAmmo;
-        }
-
-        private int GetEfficiencyLevel()
-        {
-            if (ModifierManager.instance == null) return 0;
-            return ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency);
-        }
-
-        private void EnsureTrackedWeapon(Weapon weapon)
-        {
-            if (weapon == null)
-            {
-                return;
-            }
-
-            if (trackedWeapon != weapon)
-            {
-                trackedWeapon = weapon;
-                trackedOriginalAmmo = weapon.ammo;
-            }
-        }
-
-        private float GetTrackedOriginalAmmo(Weapon weapon)
-        {
-            if (weapon == null) return 0f;
-            return weapon == trackedWeapon ? trackedOriginalAmmo : 0f;
-        }
-
-        private float GetRemovalAmmoTarget(Weapon weapon, bool duringActiveUnequip, int efficiencyLevel)
-        {
-            if (weapon == null) return 0f;
-
-            float originalAmmo = GetTrackedOriginalAmmo(weapon);
-
-            if (efficiencyLevel == 1)
-            {
-                return originalAmmo;
-            }
-
-            if (duringActiveUnequip)
-            {
-                return originalAmmo;
-            }
-
-            //efficiency is 2
-            float halfMax = Mathf.Ceil(weapon.maxAmmo * 0.5f);
-            return Mathf.Max(originalAmmo, halfMax);
-        }
-
-        private static readonly HashSet<SerializationWeaponName> nonDisintegrateWeapons = new HashSet<SerializationWeaponName>
+        private static readonly Dictionary<Weapon, AmmoAbility> overchargedWeapons = new Dictionary<Weapon, AmmoAbility>();
+        private static readonly HashSet<SerializationWeaponName> normalBurnoutWeapons = new HashSet<SerializationWeaponName>
         {
             SerializationWeaponName.Grenade,
             SerializationWeaponName.BigGrenade,
@@ -191,74 +24,164 @@ namespace SpiderSurge
             SerializationWeaponName.DeathCube
         };
 
-        private bool ShouldDisintegrateOnRemoval(Weapon weapon)
+        public override string PerkName => Consts.PerkNames.AmmoAbility;
+        public override AbilityKind Kind => AbilityKind.Ammo;
+        public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Ammo.AbilityDurationIncreasePerLevel;
+        public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown;
+        public override float UltimateBaseCooldown => Consts.Values.Ammo.UltimateBaseCooldown;
+        public override float AbilityCooldownPerPerkLevel => Consts.Values.Ammo.AbilityCooldownReductionPerLevel;
+        public override float UltimateCooldownPerPerkLevel => Consts.Values.Ammo.UltimateCooldownReductionPerLevel;
+        public override float UltimateBaseDuration => Consts.Values.Ammo.UltimateBaseDuration;
+        public override bool HasUltimate => true;
+
+        private SpiderWeaponManager weaponManager;
+        private float weaponCheckTimer;
+        private Weapon trackedWeapon;
+        private float trackedAmmo;
+        private bool burstInterrupted;
+        private WeaponAura aura;
+        private static WeaponSpawner[] cachedWeaponSpawners;
+        private static string cachedSceneName;
+
+        internal static void ForgetWeaponSpawners()
         {
-            if (weapon == null) return false;
-            return !nonDisintegrateWeapons.Contains(weapon.serializationWeaponName);
+            cachedWeaponSpawners = null;
         }
 
-        private void SetWeaponAmmo(Weapon weapon, float value)
+        internal static float AmmoFloorFor(Weapon weapon)
         {
-            if (weapon == null || !IsAuthority) return;
+            if (weapon == null || !weapon.equipped) return -1f;
+            return overchargedWeapons.TryGetValue(weapon, out AmmoAbility ability) && ability != null && ability.isActive
+                ? ability.trackedAmmo : -1f;
+        }
 
-            weapon.ammo = value;
+        internal static void MarkUnequipped(Weapon weapon)
+        {
+            if (overchargedWeapons.TryGetValue(weapon, out AmmoAbility ability) && ability != null)
+                ability.burstInterrupted = true;
+        }
 
-            if (!Mathf.Approximately(weapon.ammo, value) && networkAmmoField != null)
+        protected override void Start()
+        {
+            base.Start();
+            FindWeaponManager();
+        }
+
+        private void FindWeaponManager()
+        {
+            weaponManager = GetComponentInChildren<SpiderWeaponManager>();
+            if (weaponManager == null && playerController != null)
+                weaponManager = playerController.spiderHealthSystem?.GetComponentInChildren<SpiderWeaponManager>();
+        }
+
+        protected void Update()
+        {
+            if (weaponManager != null) return;
+            weaponCheckTimer -= Time.deltaTime;
+            if (weaponCheckTimer > 0f) return;
+            weaponCheckTimer = Consts.Values.Ammo.CheckInterval;
+            FindWeaponManager();
+        }
+
+        protected void LateUpdate()
+        {
+            if (!isActive || isUltimateActive) return;
+            if (!burstInterrupted && trackedWeapon != null && weaponManager != null && weaponManager.equippedWeapon == trackedWeapon
+                && trackedWeapon.equipped && IsPlayerAlive()) return;
+            if (durationCoroutine != null)
             {
-                try
-                {
-                    if (networkAmmoField.GetValue(weapon) is NetworkVariable<float> networkAmmo)
-                    {
-                        networkAmmo.Value = value;
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Logger.LogError($"AmmoAbility: Failed to set ammo via reflection: {ex.Message}");
-                }
+                StopCoroutine(durationCoroutine);
+                durationCoroutine = null;
             }
+            Deactivate();
+            if (!IsRemote && ShouldPlayAbilityEndedSound(false)) PlayAbilityEndedSound(false);
+            StartCooldown();
+        }
+
+        protected override bool CanActivate(bool ultimate)
+        {
+            if (ultimate) return true;
+            if (weaponManager == null) FindWeaponManager();
+            return weaponManager != null && weaponManager.equippedWeapon != null
+                && weaponManager.equippedWeapon.maxAmmo > 0f && weaponManager.equippedWeapon.ammo > 0f;
         }
 
         protected override void OnActivate()
         {
+            trackedWeapon = weaponManager.equippedWeapon;
+            trackedAmmo = trackedWeapon.ammo;
+            burstInterrupted = false;
+            overchargedWeapons[trackedWeapon] = this;
             PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
-
-            trackedWeapon = null;
-            trackedOriginalAmmo = 0f;
-            lastResolvedWeapon = null;
-            lastResolvedFrame = -1;
-
-            if (weaponManager != null && weaponManager.equippedWeapon != null)
-            {
-                trackedWeapon = weaponManager.equippedWeapon;
-                trackedOriginalAmmo = trackedWeapon.ammo;
-                float currentAmmoFloor = GetHeldWeaponFloorAmmo(trackedWeapon);
-                SetWeaponAmmo(trackedWeapon, currentAmmoFloor);
-            }
-
-            if (spiderHealthSystem != null)
-            {
-                ClipVfx.Cast(trackedWeapon != null ? trackedWeapon.transform.position : spiderHealthSystem.transform.position);
-                aura = WeaponAura.Attach(spiderHealthSystem.transform);
-                ShowAuraOn(trackedWeapon);
-                SurgeNet.SendFx(SurgeFx.Clip, PlayerId, spiderHealthSystem.transform.position, 0f, true);
-            }
+            ClipVfx.Cast(trackedWeapon.transform.position);
+            ShowAura(trackedWeapon.transform);
+            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, trackedWeapon.transform.position, 0f, true);
             UnlimitedPowerAchievement.Cast(this);
         }
 
-        // Peers other than the host and the caster only see the aura; the host tells them when it starts and ends
-        public static void ShowRemoteClip(int playerId, Vector3 position, bool on)
+        private void ShowAura(Transform weapon)
         {
-            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility clip) || clip == null) return;
-            clip.StopAura();
-            clip.showingRemote = on && clip.spiderHealthSystem != null;
-            if (!clip.showingRemote) return;
-            ClipVfx.Cast(clip.weaponManager != null && clip.weaponManager.equippedWeapon != null ? clip.weaponManager.equippedWeapon.transform.position : position);
-            clip.aura = WeaponAura.Attach(clip.spiderHealthSystem.transform);
-            clip.ShowAuraOn(clip.weaponManager != null ? clip.weaponManager.equippedWeapon : null);
+            StopAura();
+            aura = WeaponAura.Attach(weapon);
         }
 
-        // Only the host spawns the weapons, so it tells every client where they land
+        private void StopAura()
+        {
+            if (aura == null) return;
+            aura.Stop();
+            aura = null;
+        }
+
+        public static void ShowRemoteClip(int playerId, Vector3 position, bool on)
+        {
+            AmmoAbility ability = PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Ammo) as AmmoAbility;
+            if (ability == null) return;
+            ability.StopAura();
+            if (!on) return;
+            ClipVfx.Cast(position);
+            Weapon weapon = ability.weaponManager != null ? ability.weaponManager.equippedWeapon : null;
+            if (weapon != null) ability.ShowAura(weapon.transform);
+        }
+
+        internal static bool CanSalvage(int efficiencyLevel, float roll)
+        {
+            return efficiencyLevel > 0 && roll < Mathf.Min(efficiencyLevel, 2) * Consts.Values.Ammo.SalvageChancePerLevel;
+        }
+
+        protected override void OnDeactivate()
+        {
+            StopAura();
+            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
+            Weapon weapon = trackedWeapon;
+            float originalAmmo = trackedAmmo;
+            trackedWeapon = null;
+            trackedAmmo = 0f;
+            if (!ReferenceEquals(weapon, null)) overchargedWeapons.Remove(weapon);
+            if (!IsAuthority || weapon == null || normalBurnoutWeapons.Contains(weapon.serializationWeaponName)) return;
+
+            int efficiency = ModifierManager.instance != null
+                ? ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency) : 0;
+            if (efficiency <= 0 || !CanSalvage(efficiency, UnityEngine.Random.value))
+            {
+                weapon.Disintegrate();
+                return;
+            }
+
+            float reserve = weapon is ParticleBlade ? weapon.maxAmmo * Consts.Values.Ammo.SalvageBladeFraction : 1f;
+            weapon.ammo = Mathf.Min(originalAmmo, reserve);
+            ClipVfx.Salvage(weapon.transform.position);
+            SurgeNet.SendFx(SurgeFx.Salvage, PlayerId, weapon.transform.position, 0f, true);
+        }
+
+        protected override void OnDestroy()
+        {
+            StopAura();
+            if (!ReferenceEquals(trackedWeapon, null)) overchargedWeapons.Remove(trackedWeapon);
+            trackedWeapon = null;
+            base.OnDestroy();
+        }
+
         public static void ShowRemoteDrop(Vector3 position)
         {
             WeaponSpawner nearest = null;
@@ -271,135 +194,6 @@ namespace SpiderSurge
                 nearestDistance = distance;
             }
             if (nearest != null) ClipVfx.Drop(nearest);
-        }
-
-        private float nextShotAccent;
-
-        internal void AccentShot(Weapon weapon)
-        {
-            if (aura == null || Time.time < nextShotAccent) return;
-            nextShotAccent = Time.time + 0.08f;
-            Vector3 position = weapon.point != null ? weapon.point.position : weapon.transform.position;
-            Vector3 direction = weapon.transform.up;
-            float angle = Mathf.Atan2(direction.y, direction.x);
-            WeaponVfx.Shot(position, angle);
-            SurgeNet.SendFx(SurgeFx.ClipShot, PlayerId, position, angle, false);
-        }
-
-        private WeaponAura aura;
-
-        private void ShowAuraOn(Weapon weapon)
-        {
-            if (aura != null) aura.Retarget(weapon != null ? weapon.transform : null);
-        }
-
-        private void StopAura()
-        {
-            if (aura == null) return;
-            aura.Stop();
-            aura = null;
-        }
-
-        protected override void OnDeactivate()
-        {
-            StopAura();
-            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
-            Weapon equippedWeapon = weaponManager?.equippedWeapon;
-
-            if (equippedWeapon != null)
-            {
-                ResolveWeaponAmmoOnAbilityRemoval(equippedWeapon, false);
-            }
-
-            if (trackedWeapon != null && trackedWeapon != equippedWeapon)
-            {
-                ResolveWeaponAmmoOnAbilityRemoval(trackedWeapon, false);
-            }
-
-            trackedWeapon = null;
-            trackedOriginalAmmo = 0f;
-            lastResolvedWeapon = null;
-            lastResolvedFrame = -1;
-        }
-
-        public static void HandleWeaponEquipped(SpiderWeaponManager manager, Weapon weapon)
-        {
-            if (manager == null || weapon == null) return;
-
-            int playerId = Players.IdOf(manager);
-            if (playerId < 0) return;
-
-            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null)
-                return;
-
-            if (!ability.isActive)
-            {
-                if (ability.showingRemote) ability.ShowAuraOn(weapon);
-                return;
-            }
-
-            ability.EnsureTrackedWeapon(weapon);
-            ability.ShowAuraOn(weapon);
-        }
-
-        public static void HandleWeaponRemoved(SpiderWeaponManager manager, Weapon weapon)
-        {
-            if (manager == null || weapon == null) return;
-
-            int playerId = Players.IdOf(manager);
-            if (playerId < 0) return;
-
-            if (!playerAmmoAbilities.TryGetValue(playerId, out AmmoAbility ability) || ability == null)
-            {
-                return;
-            }
-
-            if (!ability.isActive)
-            {
-                if (ability.showingRemote) ability.ShowAuraOn(null);
-                return;
-            }
-
-            ability.ShowAuraOn(null);
-            ability.ResolveWeaponAmmoOnAbilityRemoval(weapon, true);
-        }
-
-        private void ResolveWeaponAmmoOnAbilityRemoval(Weapon weapon, bool duringActiveUnequip)
-        {
-            if (weapon == null) return;
-            if (weapon == lastResolvedWeapon && Time.frameCount == lastResolvedFrame) return;
-
-            int efficiencyLevel = GetEfficiencyLevel();
-
-            if (efficiencyLevel <= 0)
-            {
-                lastResolvedWeapon = weapon;
-                lastResolvedFrame = Time.frameCount;
-
-                if (IsAuthority && ShouldDisintegrateOnRemoval(weapon))
-                {
-                    weapon.Disintegrate();
-                }
-
-                if (weapon == trackedWeapon)
-                {
-                    trackedWeapon = null;
-                    trackedOriginalAmmo = 0f;
-                }
-
-                return;
-            }
-
-            float targetAmmo = GetRemovalAmmoTarget(weapon, duringActiveUnequip, efficiencyLevel);
-            SetWeaponAmmo(weapon, targetAmmo);
-            lastResolvedWeapon = weapon;
-            lastResolvedFrame = Time.frameCount;
-
-            if (weapon == trackedWeapon)
-            {
-                trackedWeapon = null;
-                trackedOriginalAmmo = 0f;
-            }
         }
 
         protected override void OnActivateUltimate()
@@ -533,16 +327,5 @@ namespace SpiderSurge
             return FallbackWeapon?.Invoke();
         }
 
-        protected override void OnDestroy()
-        {
-            showingRemote = false;
-            StopAura();
-            base.OnDestroy();
-
-            if (playerAmmoAbilities.TryGetValue(PlayerId, out var registered) && registered == this)
-            {
-                playerAmmoAbilities.Remove(PlayerId);
-            }
-        }
     }
 }
