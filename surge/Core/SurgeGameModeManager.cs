@@ -129,6 +129,8 @@ namespace SpiderSurge
 
         private void LateUpdate()
         {
+            AbilitySelection.Tick();
+            if (AbilitySelection.IsChoosing) PersonalChoicePanel.Show();
             SurgeNet.Flush();
             ChaosNet.Flush();
             ChallengeController.Tick();

@@ -387,6 +387,15 @@ namespace SpiderSurge.Logging
             }
         }
 
+        internal void OnPersonalChoice(int playerId, int wave, bool ultimate, IEnumerable<string> offered, string picked, float seconds)
+        {
+            if (!_isTracking) return;
+            _perkChoices.Add(new PerkChoiceRecord {
+                PlayerId = playerId, Wave = wave, Kind = ultimate ? PerkChoiceKinds.Ultimate : PerkChoiceKinds.Ability,
+                Offered = offered.ToList(), Picked = picked, Level = 1, DecisionSeconds = seconds
+            });
+        }
+
         public void OnPerkChoicesShown(List<Modifier> modifiers)
         {
             if (!_isTracking || modifiers == null) return;
@@ -495,7 +504,6 @@ namespace SpiderSurge.Logging
         private static string GetPerkChoiceKind(PerksManager perksManager)
         {
             if (perksManager == null) return PerkChoiceKinds.Perk;
-            if (perksManager.IsUltSwapPerkSelection) return PerkChoiceKinds.Swap;
             if (perksManager.IsUltUpgradePerkSelection) return PerkChoiceKinds.Ultimate;
             if (perksManager.IsFirstNormalPerkSelection) return PerkChoiceKinds.Ability;
             return PerkChoiceKinds.Perk;
@@ -645,8 +653,9 @@ namespace SpiderSurge.Logging
     public class SurvivalModeHud_ShowPerkChoices_Patch
     {
         [HarmonyPostfix]
-        public static void Postfix(List<Modifier> modifiers)
+        public static void Postfix(List<Modifier> modifiers, bool __runOriginal)
         {
+            if (!__runOriginal) return;
             SpiderSurgeStatsManager.RunSafely("ShowPerkChoices", stats => stats.OnPerkChoicesShown(modifiers));
         }
     }

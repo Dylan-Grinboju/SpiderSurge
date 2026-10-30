@@ -24,7 +24,7 @@ namespace SpiderSurge
         protected bool IsRemote => playerController != null && !playerController.IsOwner;
         protected bool IsAuthority => Net.IsAuthority;
         private bool fromNetwork;
-        public int PlayerId => playerController != null ? playerController.playerID.Value : -1;
+        public int PlayerId => playerController != null ? playerController.playerID.Value : Players.IdOf(this);
 
         protected bool isActive = false;
         protected bool onCooldown = false;
@@ -148,7 +148,7 @@ namespace SpiderSurge
             // Perform delayed initialization
             CreateAbilityIndicator();
 
-            if (inputInterceptor != null && IsUnlocked())
+            if (inputInterceptor != null && IsRegularUnlocked())
             {
                 RegisterWithInputInterceptor();
             }
@@ -262,7 +262,7 @@ namespace SpiderSurge
 
         protected void CreateAbilityIndicator()
         {
-            if (!IsUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
+            if (!IsRegularUnlocked() || abilityIndicator != null || spiderHealthSystem == null)
             {
                 return;
             }
@@ -278,7 +278,7 @@ namespace SpiderSurge
 
         private void TryActivate(bool ultimate)
         {
-            if (!IsUnlocked() || !AcceptsInput)
+            if (!(ultimate ? IsUltimateUnlocked() : IsRegularUnlocked()) || !AcceptsInput)
             {
                 return;
             }
@@ -299,13 +299,13 @@ namespace SpiderSurge
                 return;
             }
 
-            if (onCooldown)
+            if (StatusSource.onCooldown)
             {
                 PlayAbilityNotReadySound();
                 return;
             }
 
-            if (isActive || !CanActivate(ultimate))
+            if (StatusSource.isActive || !CanActivate(ultimate))
             {
                 return;
             }
@@ -451,25 +451,44 @@ namespace SpiderSurge
 
         public bool IsUnlocked()
         {
-            return PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName) > 0;
+            return IsRegularUnlocked() || IsUltimateUnlocked();
         }
 
         public bool IsUltimateUnlocked()
         {
-            return HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName) > 0;
+            return HasUltimate && PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(UltimatePerkName, PlayerId) > 0;
         }
 
-        public bool HasAvailableAction => ChallengeController.CanActivate(false)
-            || IsUltimateUnlocked() && ChallengeController.CanActivate(true);
+        public bool IsRegularUnlocked() => PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(PerkName, PlayerId) > 0;
+
+        // The two actions retain one shared cooldown, even when different components implement them.
+        public BaseAbility StatusSource
+        {
+            get
+            {
+                BaseAbility result = this;
+                foreach (var action in GetComponents<BaseAbility>())
+                {
+                    if (!action.IsUnlocked()) continue;
+                    if (action.isActive) return action;
+                    if (action.onCooldown && (!result.onCooldown || action.cooldownEndTime > result.cooldownEndTime)) result = action;
+                }
+                return result;
+            }
+        }
+
+        public bool HasAvailableAction => GetComponents<BaseAbility>().Any(action =>
+            action.IsRegularUnlocked() && ChallengeController.CanActivate(false) || action.IsUltimateUnlocked() && ChallengeController.CanActivate(true));
 
         public string ActionRestriction => ChallengeController.Pending ? "Choose a challenge" :
             !ChallengeController.CanActivate(false) ? (HasAvailableAction ? "Ultimate only" : "Disabled by challenge") :
-            IsUltimateUnlocked() && !ChallengeController.CanActivate(true) ? "Regular ability only" : "";
+            !ChallengeController.CanActivate(true) ? "Regular ability only" : "";
 
         public void RegisterWithInputInterceptor()
         {
             CreateAbilityIndicator();
-            if (inputInterceptor != null && IsUnlocked())
+            if (!IsRegularUnlocked()) { UnregisterButtons(); return; }
+            if (inputInterceptor != null && IsRegularUnlocked())
             {
                 _cachedActivationButtons = ActivationButtons;
                 Logger.LogDebug($"[{GetType().Name}] Registering buttons: {string.Join(", ", _cachedActivationButtons)}");
@@ -499,8 +518,8 @@ namespace SpiderSurge
 
             UnregisterButtons();
 
-            // Re-register with new bindings if ability is still unlocked
-            if (IsUnlocked())
+            // Re-register only the selected regular action.
+            if (IsRegularUnlocked())
             {
                 RegisterWithInputInterceptor();
             }
@@ -521,6 +540,7 @@ namespace SpiderSurge
                     inputInterceptor.UnregisterAbility(this, button);
                 }
             }
+            _cachedActivationButtons = null;
         }
 
         protected virtual bool CanActivate(bool ultimate) => true;
@@ -610,9 +630,10 @@ namespace SpiderSurge
 
             if (IsUnlocked() && spiderHealthSystem != null && IsPlayerAlive())
             {
-                if (ModConfig.IndicatorCompactHud) AbilityHud.Ready(this);
-                else if (abilityIndicator != null)
-                    ReadyVfx.Pulse(abilityIndicator.transform.position, abilityIndicator.availableColor);
+                var feedback = GetComponents<BaseAbility>().FirstOrDefault(ability => ability.IsRegularUnlocked()) ?? this;
+                if (ModConfig.IndicatorCompactHud) AbilityHud.Ready(feedback);
+                else if (feedback.abilityIndicator != null)
+                    ReadyVfx.Pulse(feedback.abilityIndicator.transform.position, feedback.abilityIndicator.availableColor);
             }
 
             if (IsUnlocked()) PlayCasterSound(Consts.SoundNames.AbilityReady, Consts.SoundVolumes.AbilityReady);

@@ -95,11 +95,12 @@ namespace SpiderSurge
             if (target == null || ability == null || track == null) return;
             transform.position = target.position + offset;
             bool alive = ability.IsPlayerAlive() && ability.IsUnlocked();
-            bool active = ability.IsActive();
+            var state = ability.StatusSource;
+            bool active = state.IsActive();
             bool available = ability.HasAvailableAction;
-            bool ready = available && !active && !ability.IsOnCooldown();
+            bool ready = available && !active && !state.IsOnCooldown();
             bool shown = !ModConfig.IndicatorCompactHud && alive && (!showOnlyWhenReady || ready);
-            float progress = active ? ability.ActiveProgress : available ? ability.CooldownProgress : 0f;
+            float progress = active ? state.ActiveProgress : available ? state.CooldownProgress : 0f;
             if (track.enabled != shown) track.enabled = shown;
             bool fillShown = shown && progress > 0f;
             if (fill.enabled != fillShown) fill.enabled = fillShown;

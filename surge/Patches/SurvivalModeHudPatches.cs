@@ -24,6 +24,7 @@ namespace SpiderSurge
         // The host runs this twice per show (Netcode runs its own copy of the RPC inside the send) and every machine runs it for a resend aimed at a joining player, so the widgets are only built for new cards
         internal static void Apply(SurvivalModeHud __instance, bool rebuild)
         {
+            if (AbilitySelection.IsChoosing) return;
             PerkChoiceMenu.Attach(__instance);
             if (!SurgeGameModeManager.IsSurgeRunActive) return;
             PerkChoiceHud.Attach(__instance);
@@ -66,11 +67,6 @@ namespace SpiderSurge
                 isSpecialRound = true;
                 specialTitle = "CHOOSE YOUR ABILITY";
             }
-            else if (PerksManager.Instance.IsUltSwapPerkSelection)
-            {
-                isSpecialRound = true;
-                specialTitle = "SWITCH ULTIMATE";
-            }
             else if (PerksManager.Instance.IsUltUpgradePerkSelection)
             {
                 isSpecialRound = true;
@@ -102,6 +98,7 @@ namespace SpiderSurge
 
         public static void Refresh()
         {
+            if (AbilitySelection.IsChoosing) { PersonalChoicePanel.Show(); return; }
             var hud = SurvivalModeHud.instance;
             if (hud == null || hud.perkChoiceView == null || !(hud.perkChoiceView.IsVisible || hud.perkChoiceView.IsShowing))
             {

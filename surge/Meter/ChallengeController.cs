@@ -287,7 +287,7 @@ namespace SpiderSurge
     {
         static void Postfix(GameController __instance, ref bool __result)
         {
-            if (!__result && (ChallengeController.Pending || PerkChoiceMenu.Choosing) && !__instance.tempPauseBan) __result = true;
+            if (!__result && (ChallengeController.Pending || AbilitySelection.IsChoosing || PerkChoiceMenu.Choosing) && !__instance.tempPauseBan) __result = true;
         }
     }
 
