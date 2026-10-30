@@ -125,7 +125,7 @@ namespace SpiderSurge
         private static string Compose(string key, int level)
         {
             string detail = key == Consts.PerkNames.AmmoAbility
-                ? "Instant refill: 100% capacity, or 125% / 150% with Efficiency. Extra ammo stays until spent."
+                ? "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a 25% / 50% salvage chance."
                 : PerkSynergy.Describe(key, level);
             if (AbilitySelection.StartingChoiceOpen)
                 return "Shared team ability; each spider has its own cooldown.\n" +

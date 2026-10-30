@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.Netcode;
+using SpiderSurge.Common;
 using SpiderSurge.Vfx;
 using Logger = Silk.Logger;
 using UnityEngine.SceneManagement;
@@ -10,13 +11,24 @@ namespace SpiderSurge
 {
     public class AmmoAbility : BaseAbility
     {
+        private static readonly Dictionary<Weapon, AmmoAbility> overchargedWeapons = new Dictionary<Weapon, AmmoAbility>();
+        private static readonly HashSet<SerializationWeaponName> normalBurnoutWeapons = new HashSet<SerializationWeaponName>
+        {
+            SerializationWeaponName.Grenade,
+            SerializationWeaponName.BigGrenade,
+            SerializationWeaponName.PerArmedGrenade,
+            SerializationWeaponName.GravityGrenade,
+            SerializationWeaponName.Mine,
+            SerializationWeaponName.BoomStick,
+            SerializationWeaponName.LaserCube,
+            SerializationWeaponName.DeathCube
+        };
+
         public override string PerkName => Consts.PerkNames.AmmoAbility;
         public override AbilityKind Kind => AbilityKind.Ammo;
-
-        public override float AbilityBaseDuration => 0f;
-        public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown
-            - ((PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.AbilityDuration) ?? 0) >= 1
-                ? Consts.Values.Ammo.RechargeReduction : 0f);
+        public override float AbilityBaseDuration => Consts.Values.Ammo.AbilityBaseDuration;
+        public override float AbilityDurationPerPerkLevel => Consts.Values.Ammo.AbilityDurationIncreasePerLevel;
+        public override float AbilityBaseCooldown => Consts.Values.Ammo.AbilityBaseCooldown;
         public override float UltimateBaseCooldown => Consts.Values.Ammo.UltimateBaseCooldown;
         public override float AbilityCooldownPerPerkLevel => Consts.Values.Ammo.AbilityCooldownReductionPerLevel;
         public override float UltimateCooldownPerPerkLevel => Consts.Values.Ammo.UltimateCooldownReductionPerLevel;
@@ -25,12 +37,29 @@ namespace SpiderSurge
 
         private SpiderWeaponManager weaponManager;
         private float weaponCheckTimer;
+        private Weapon trackedWeapon;
+        private float trackedAmmo;
+        private bool burstInterrupted;
+        private WeaponAura aura;
         private static WeaponSpawner[] cachedWeaponSpawners;
         private static string cachedSceneName;
 
         internal static void ForgetWeaponSpawners()
         {
             cachedWeaponSpawners = null;
+        }
+
+        internal static float AmmoFloorFor(Weapon weapon)
+        {
+            if (weapon == null || !weapon.equipped) return -1f;
+            return overchargedWeapons.TryGetValue(weapon, out AmmoAbility ability) && ability != null && ability.isActive
+                ? ability.trackedAmmo : -1f;
+        }
+
+        internal static void MarkUnequipped(Weapon weapon)
+        {
+            if (overchargedWeapons.TryGetValue(weapon, out AmmoAbility ability) && ability != null)
+                ability.burstInterrupted = true;
         }
 
         protected override void Start()
@@ -55,31 +84,102 @@ namespace SpiderSurge
             FindWeaponManager();
         }
 
+        protected void LateUpdate()
+        {
+            if (!isActive || isUltimateActive) return;
+            if (!burstInterrupted && trackedWeapon != null && weaponManager != null && weaponManager.equippedWeapon == trackedWeapon
+                && trackedWeapon.equipped && IsPlayerAlive()) return;
+            if (durationCoroutine != null)
+            {
+                StopCoroutine(durationCoroutine);
+                durationCoroutine = null;
+            }
+            Deactivate();
+            if (!IsRemote && ShouldPlayAbilityEndedSound(false)) PlayAbilityEndedSound(false);
+            StartCooldown();
+        }
+
         protected override bool CanActivate(bool ultimate)
         {
             if (ultimate) return true;
             if (weaponManager == null) FindWeaponManager();
             return weaponManager != null && weaponManager.equippedWeapon != null
-                && weaponManager.equippedWeapon.maxAmmo > 0f;
+                && weaponManager.equippedWeapon.maxAmmo > 0f && weaponManager.equippedWeapon.ammo > 0f;
         }
 
         protected override void OnActivate()
         {
-            Weapon weapon = weaponManager.equippedWeapon;
-            if (IsAuthority)
+            trackedWeapon = weaponManager.equippedWeapon;
+            trackedAmmo = trackedWeapon.ammo;
+            burstInterrupted = false;
+            overchargedWeapons[trackedWeapon] = this;
+            PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
+            ClipVfx.Cast(trackedWeapon.transform.position);
+            ShowAura(trackedWeapon.transform);
+            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, trackedWeapon.transform.position, 0f, true);
+            UnlimitedPowerAchievement.Cast(this);
+        }
+
+        private void ShowAura(Transform weapon)
+        {
+            StopAura();
+            aura = WeaponAura.Attach(weapon);
+        }
+
+        private void StopAura()
+        {
+            if (aura == null) return;
+            aura.Stop();
+            aura = null;
+        }
+
+        public static void ShowRemoteClip(int playerId, Vector3 position, bool on)
+        {
+            AmmoAbility ability = PlayerAbilityHandler.FindAbility(playerId, AbilityKind.Ammo) as AmmoAbility;
+            if (ability == null) return;
+            ability.StopAura();
+            if (!on) return;
+            ClipVfx.Cast(position);
+            Weapon weapon = ability.weaponManager != null ? ability.weaponManager.equippedWeapon : null;
+            if (weapon != null) ability.ShowAura(weapon.transform);
+        }
+
+        internal static bool CanSalvage(int efficiencyLevel, float roll)
+        {
+            return efficiencyLevel > 0 && roll < Mathf.Min(efficiencyLevel, 2) * Consts.Values.Ammo.SalvageChancePerLevel;
+        }
+
+        protected override void OnDeactivate()
+        {
+            StopAura();
+            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
+            Weapon weapon = trackedWeapon;
+            float originalAmmo = trackedAmmo;
+            trackedWeapon = null;
+            trackedAmmo = 0f;
+            if (!ReferenceEquals(weapon, null)) overchargedWeapons.Remove(weapon);
+            if (!IsAuthority || weapon == null || normalBurnoutWeapons.Contains(weapon.serializationWeaponName)) return;
+
+            int efficiency = ModifierManager.instance != null
+                ? ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency) : 0;
+            if (efficiency <= 0 || !CanSalvage(efficiency, UnityEngine.Random.value))
             {
-                int efficiency = ModifierManager.instance != null
-                    ? Mathf.Clamp(ModifierManager.instance.GetModLevel(Consts.ModifierNames.Efficiency), 0, 2) : 0;
-                float target = weapon.maxAmmo * (1f + 0.25f * efficiency);
-                weapon.ammo = Mathf.Max(weapon.ammo, target);
+                weapon.Disintegrate();
+                return;
             }
 
-            PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
-            ClipVfx.Cast(weapon.transform.position);
-            SurgeNet.SendFx(SurgeFx.Clip, PlayerId, weapon.transform.position, 0f, true);
-            UnlimitedPowerAchievement.Cast(this);
-            isActive = false;
-            StartCooldown();
+            float reserve = weapon is ParticleBlade ? weapon.maxAmmo * Consts.Values.Ammo.SalvageBladeFraction : 1f;
+            weapon.ammo = Mathf.Min(originalAmmo, reserve);
+            ClipVfx.Salvage(weapon.transform.position);
+            SurgeNet.SendFx(SurgeFx.Salvage, PlayerId, weapon.transform.position, 0f, true);
+        }
+
+        protected override void OnDestroy()
+        {
+            StopAura();
+            if (!ReferenceEquals(trackedWeapon, null)) overchargedWeapons.Remove(trackedWeapon);
+            trackedWeapon = null;
+            base.OnDestroy();
         }
 
         public static void ShowRemoteDrop(Vector3 position)

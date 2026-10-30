@@ -28,6 +28,7 @@ namespace SpiderSurge
         CareDrop = 5,
         PulseImpact = 6,
         ImmuneHit = 7,
+        Salvage = 8,
     }
 
     public enum EnemyFx : byte
@@ -417,6 +418,12 @@ namespace SpiderSurge
                 return;
             }
 
+            if (fx == SurgeFx.Salvage)
+            {
+                Vfx.ClipVfx.Salvage(position);
+                return;
+            }
+
             // A local caster already drew its own effect when it pressed the button
             if (Players.IsLocal(playerId))
             {
@@ -438,7 +445,7 @@ namespace SpiderSurge
                     StorageAbility.DrawRemoteBlackHole(playerId, radius);
                     break;
                 case SurgeFx.Clip:
-                    Vfx.ClipVfx.Cast(position);
+                    AmmoAbility.ShowRemoteClip(playerId, position, flag);
                     break;
             }
         }

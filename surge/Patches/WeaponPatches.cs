@@ -47,4 +47,22 @@ namespace SpiderSurge
         }
     }
 
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.UnEquip))]
+    internal static class Overcharge_UnEquip_Patch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(Weapon __instance) => AmmoAbility.MarkUnequipped(__instance);
+    }
+
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.ammo), MethodType.Setter)]
+    internal static class Overcharge_AmmoSetter_Patch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(Weapon __instance, ref float value)
+        {
+            float floor = AmmoAbility.AmmoFloorFor(__instance);
+            if (floor >= 0f && value < floor) value = floor;
+        }
+    }
+
 }
