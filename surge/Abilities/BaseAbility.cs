@@ -305,7 +305,7 @@ namespace SpiderSurge
                 return;
             }
 
-            if (StatusSource.isActive)
+            if (StatusSource.isActive || !CanActivate(ultimate))
             {
                 return;
             }
@@ -543,6 +543,7 @@ namespace SpiderSurge
             _cachedActivationButtons = null;
         }
 
+        protected virtual bool CanActivate(bool ultimate) => true;
         protected abstract void OnActivate();
         protected virtual void OnDeactivate() { }
         protected virtual void OnActivateUltimate() { OnActivate(); }

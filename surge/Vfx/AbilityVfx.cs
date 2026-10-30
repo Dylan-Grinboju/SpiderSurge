@@ -170,6 +170,16 @@ namespace SpiderSurge.Vfx
             });
         }
 
+        public static void Salvage(Vector3 position)
+        {
+            SurgeVfx.Safely(() =>
+            {
+                Color color = Color.green;
+                SurgeVfx.Flash(position, color, 1f, 12f, 0.3f);
+                AccentVfx.Shards(position, color, 10, 18f, 2f, 0.4f);
+            });
+        }
+
         // Care Package: each spawner shows the game's incoming-weapon particles and a white puff where the weapon lands
         public static void Drop(WeaponSpawner spawner)
         {

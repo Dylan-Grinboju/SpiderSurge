@@ -99,6 +99,11 @@ namespace SpiderTeams
         public static bool TryParseSurgeAbility(string raw, out SurgeAbility ability)
         {
             string name = (raw ?? string.Empty).Trim();
+            if (name.Equals("Bottomless Clip", StringComparison.OrdinalIgnoreCase))
+            {
+                ability = SurgeAbility.Ammo;
+                return true;
+            }
             for (int i = 0; i < Consts.Surge.AbilityConfigNames.Length; i++)
             {
                 if (name.Equals(Consts.Surge.AbilityConfigNames[i], StringComparison.OrdinalIgnoreCase) ||
