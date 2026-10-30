@@ -14,6 +14,7 @@ namespace SpiderSurge
         private Button _skip;
         private Canvas _canvas;
         private GraphicRaycaster _raycaster;
+        private bool _offerSoundPlayed;
 
         public static bool IsShown => _current != null;
 
@@ -75,6 +76,11 @@ namespace SpiderSurge
         // A hidden button still takes Submit while it is selected, and the menu's navigation can reach it, so it stops being interactable too
         private void SetVisible(bool visible)
         {
+            if (visible && !_offerSoundPlayed)
+            {
+                _offerSoundPlayed = true;
+                FeedbackSounds.Play(FeedbackCue.Challenge);
+            }
             if (_canvas.enabled == visible) return;
             _canvas.enabled = visible;
             _raycaster.enabled = visible;

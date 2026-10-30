@@ -56,9 +56,14 @@ Assert-Equal ($hold.Tick(12, $true, $false, $true)) $false 'Another held input p
 Assert-Equal ($hold.Tick(14, $true, $false, $true)) $false 'Repeated frame does not advance progress'
 Assert-Equal ($hold.Tick(16, $true, $false, $true)) $true 'Elapsed real time completes the hold'
 
-$skip = [SpiderSurge.HoldConfirmation]::new(0)
+$skip = [SpiderSurge.HoldConfirmation]::new()
 Assert-Equal ($skip.Tick(0, $true, $false, $true)) $false 'Skip rejects the previous screen press'
 [void]$skip.Tick(1, $false, $true, $true)
-Assert-Equal ($skip.Tick(2, $true, $false, $true)) $true 'Skip responds to a fresh press immediately'
-Assert-Equal ($skip.Tick(3, $true, $false, $true)) $false 'Skip responds once'
+Assert-Equal ($skip.Tick(2, $true, $false, $true)) $false 'Clicking Skip starts a hold without confirming'
+Assert-Equal ($skip.Tick(2.2, $false, $true, $true)) $false 'Releasing Skip early cancels'
+Assert-Equal $skip.Progress 0 'Cancelled Skip clears progress'
+[void]$skip.Tick(3, $true, $false, $true)
+Assert-Equal ($skip.Tick(3.79, $true, $false, $true)) $false 'Skip waits for the full duration'
+Assert-Equal ($skip.Tick(3.81, $true, $false, $true)) $true 'Holding Skip for 0.8 seconds confirms'
+Assert-Equal ($skip.Tick(4, $true, $false, $true)) $false 'Skip responds once per hold'
 Write-Output "PASS: $checks hold confirmation checks"

@@ -400,6 +400,7 @@ namespace SpiderSurge
         // A popup on this machine only; the host sends every client the same purchase
         public static void ShowBought(ShopItem item, int buyerId, string detail)
         {
+            FeedbackSounds.Play(item == ShopItem.Reroll ? FeedbackCue.Reroll : FeedbackCue.Purchase);
             if (item == ShopItem.Sacrifice) return;
             if (item == ShopItem.Perk) PerkChoiceHud.RefreshPerks();
             string who = buyerId >= 0 ? Players.NameOf(buyerId) : "The team";

@@ -14,6 +14,7 @@ namespace SpiderSurge
         public const string ReducedEffectsKey = "surge.reducedEffects";
         public static bool ReducedEffects => Settings.GetBool(ReducedEffectsKey);
         public const string AbilityVolumeKey = "surge.abilityVolume";
+        public const string FeedbackVolumeKey = "surge.feedbackVolume";
         public const string ShowTelemetryPromptKey = "surge.showTelemetryPrompt";
         public const string StatsLoggingKey = "surge.statsLogging";
         public const string TelemetryKey = "surge.telemetry";
@@ -37,6 +38,7 @@ namespace SpiderSurge
             new KeyValuePair<string, object>(UnlimitedPerkTimeKey, true),
             new KeyValuePair<string, object>(NoAbilitiesKey, false),
             new KeyValuePair<string, object>(AbilityVolumeKey, DefaultAbilityVolume),
+            new KeyValuePair<string, object>(FeedbackVolumeKey, 50),
             new KeyValuePair<string, object>(ReducedEffectsKey, false),
             new KeyValuePair<string, object>(ShowTelemetryPromptKey, true),
             new KeyValuePair<string, object>(StatsLoggingKey, true),
@@ -68,8 +70,9 @@ namespace SpiderSurge
 
         public static bool NoAbilities => Settings.GetBool(NoAbilitiesKey);
 
-        // The slider's 80 plays every Surge sound at its original volume
+        // The slider's 80 plays abilities and existing perk sounds at their original volume
         public static float AbilityVolume => Mathf.Clamp(Settings.GetInt(AbilityVolumeKey), 0, MaxAbilityVolume) / (float)OriginalAbilityVolume;
+        public static float FeedbackVolume => Mathf.Clamp(Settings.GetInt(FeedbackVolumeKey), 0, 100) / 100f;
 
         public static bool EnableStatsLogging => Settings.GetBool(StatsLoggingKey);
         public static bool TelemetryEnabled => Settings.GetBool(TelemetryKey);

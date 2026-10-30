@@ -199,8 +199,10 @@ namespace SpiderSurge
         {
             if (!IsChoosing || !Players.IsLocal(player) || !Round.Picks.TryGetValue(player, out var pick)) return;
             int revision = pick.Revision + 1;
+            bool wasReady = pick.Ready;
             if (Net.IsRemoteClient) Round.Choose(Round.Epoch, player, index, ready, revision);
             Net.SendToServer(ChoiceChannel, writer => { writer.Write(Round.Epoch); writer.Write(player); writer.Write(index); writer.Write(ready); writer.Write(revision); writer.Write(Players.ById(player).NetworkObjectId); });
+            if (pick.Ready != wasReady) FeedbackSounds.Play(pick.Ready ? FeedbackCue.Confirm : FeedbackCue.Cancel);
         }
 
         private static void OnChoice(ulong sender, BinaryReader reader)

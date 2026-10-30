@@ -84,7 +84,7 @@ The team shares a chaos-point balance, shown with a gold spark inside a broken r
 
 The shop offers two items per visit: Reroll (1 point), Healing (2), Mystery Perk (3), Bigger Heart (5; +1 maximum life and +1 current life), or Blood Pact (one life for one point, leaving at least one life). Each item can be bought once by the whole team per visit, including rerolls and Blood Pact. Sold-out items remain visible. Buying Mystery Perk replaces its shop slot with the acquired perk's icon, name and description for everyone until the next visit. Rebuilds, rerolls and reconnects do not restock them. Press right from the last perk card to enter the shop, select an item and then Buy. Any player can purchase.
 
-After choosing a map, the team has a 50% chance of seeing one optional challenge before the map loads. The host rolls this chance once for the team; otherwise the map loads immediately. The host holds Accept for 0.8 seconds or presses Skip immediately; a bar shows acceptance progress. Recent challenge offers are avoided when alternatives are eligible. Release the previous button press before starting a hold. Releasing early, moving away, switching buttons, opening the pause menu or losing focus cancels the hold. Remote players see that the host is deciding; only the host can accept or skip. The game waits without a countdown, and the pause menu stays usable meanwhile. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
+After choosing a map, the team has a 50% chance of seeing one optional challenge before the map loads. The host rolls this chance once for the team; otherwise the map loads immediately. The host holds either Accept or Skip for 0.8 seconds; a bar shows hold progress on both buttons. Recent challenge offers are avoided when alternatives are eligible. Release the previous button press before starting a hold. Releasing early, moving away, switching buttons, opening the pause menu or losing focus cancels the hold. Remote players see that the host is deciding; only the host can accept or skip. The game waits without a countdown, and the pause menu stays usable meanwhile. There is no challenge after the starting ability pick. Restrictions last through wave retries until the next map-choice boundary, where rewards and borrowed lives return before shopping. Game over or quitting pays nothing.
 
 | Challenge | Effect | Reward |
 |---|---|---:|
@@ -127,7 +127,9 @@ With abilities enabled, a shared screen offers as many random abilities as a nor
 The world ring drains in the active color over a timed ability or ultimate's duration, then fills clockwise in the cooldown color until ready. Active effects without a duration keep a full ring. Both timers stop while game time is paused.
 
 ### Sound:
-`surge.abilityVolume`: The volume of every Surge sound (abilities, ultimates and the perk choice sounds), from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
+`surge.abilityVolume`: The volume of abilities, ultimates and the existing perk-choice sounds, from 0 to 100, on top of the game's SFX volume. 80 is the original volume and 100 is a quarter louder. Default: `50`.
+
+`surge.feedbackVolume`: Shop purchases, choice confirmation and undo, challenge offers and failures, achievements and title-reveal sounds. Set **Feedback volume** under Surge settings, from 0 to 100; 0 mutes these cues. It also follows the game's SFX volume and is independent of Ability volume. Default: `50`. Source audio and license details are in [Sound credits](../docs/SOUND_CREDITS.md).
 
 ### UI:
 The guide is available from **How to play** in settings. The old `surge.showTutorial` and `controls.surgeGuide.keyboard` values are no longer used.

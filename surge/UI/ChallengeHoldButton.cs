@@ -23,9 +23,9 @@ namespace SpiderSurge
         {
             _button = button;
             _accept = accept;
-            _hold = new HoldConfirmation(accept ? HoldConfirmation.Duration : 0f);
+            _hold = new HoldConfirmation();
             _canvas = GetComponentInParent<Canvas>();
-            SettingsPage.SetText(label, accept ? "Hold to accept" : "Skip challenge");
+            SettingsPage.SetText(label, accept ? "Hold to accept" : "Hold to skip");
             var bar = new GameObject("Hold progress", typeof(RectTransform), typeof(Image));
             _progress = (RectTransform)bar.transform;
             _progress.SetParent(transform, false);
@@ -70,7 +70,6 @@ namespace SpiderSurge
             if (!Available || eventData.button != PointerEventData.InputButton.Left) return;
             _control = Mouse.current?.leftButton;
             _pointer = true;
-            TrySkip();
         }
 
         public void OnPointerUp(PointerEventData eventData)
@@ -88,12 +87,6 @@ namespace SpiderSurge
             if (!Available) return;
             _control = InputModule?.submit?.action?.activeControl as ButtonControl;
             _pointer = false;
-            TrySkip();
-        }
-
-        private void TrySkip()
-        {
-            if (!_accept && _hold.Tick(Time.unscaledTime, true, false, Available)) ChaosNet.SendChallenge(false);
         }
 
         public void OnDeselect(BaseEventData eventData) => Cancel();

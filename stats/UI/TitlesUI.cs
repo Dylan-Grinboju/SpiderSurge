@@ -56,6 +56,7 @@ namespace StatsMod
         private int titlesToShow = 0;
         private float animationTimer = 0f;
         private bool hasAnimationPlayed = false;
+        private bool unlockSoundPlayed;
         private float[] revealedAt;
         #endregion
 
@@ -122,6 +123,7 @@ namespace StatsMod
             _cachedTitles = TitlesManager.Instance.CurrentTitles;
             titlesVersion++;
             hasAnimationPlayed = false;
+            unlockSoundPlayed = false;
         }
         #endregion
 
@@ -177,6 +179,7 @@ namespace StatsMod
         {
             if (isAnimating)
             {
+                FeedbackSounds.Cancel(FeedbackCue.Title);
                 titlesToShow = TitlesManager.Instance.TitleCount;
                 isAnimating = false;
                 ShowAllCards();
@@ -200,6 +203,7 @@ namespace StatsMod
         private void StopAnimation()
         {
             isAnimating = false;
+            FeedbackSounds.Cancel(FeedbackCue.Title);
         }
 
         private void ShowAllCards()
@@ -228,12 +232,20 @@ namespace StatsMod
             if (shouldShow > titlesToShow)
             {
                 titlesToShow = Mathf.Min(shouldShow, TitlesManager.Instance.TitleCount);
+                if (!UIManager.TitlesBlockedByMenu) FeedbackSounds.Play(FeedbackCue.Title);
             }
 
             if (titlesToShow >= TitlesManager.Instance.TitleCount)
             {
                 isAnimating = false;
             }
+        }
+
+        private void PlayNewTitleSound()
+        {
+            if (unlockSoundPlayed || !TitlesManager.Instance.HasGameEndedTitles || _cachedTitles == null || !_cachedTitles.Exists(title => title.IsNew)) return;
+            unlockSoundPlayed = true;
+            FeedbackSounds.Play(FeedbackCue.Unlock);
         }
 
         // 0 when the card is first drawn, 1 once its fade-in is done.
@@ -280,6 +292,7 @@ namespace StatsMod
         private void OnGUI()
         {
             if (!isDisplayVisible || !UIManager.CanShowTitles || Event.current.type != EventType.Repaint || UIManager.TitlesBlockedByMenu) return;
+            PlayNewTitleSound();
 
             InitializeStyles();
 

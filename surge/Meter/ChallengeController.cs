@@ -84,6 +84,7 @@ namespace SpiderSurge
         public static void Decide(ulong sender, int visit, bool accept)
         {
             if (!Net.IsAuthority || sender != Net.ServerId || !Pending || visit != PerkShop.VisitId) return;
+            FeedbackSounds.Broadcast(accept ? FeedbackCue.Confirm : FeedbackCue.Cancel);
             if (accept)
             {
                 SetActive(Offered);
@@ -134,6 +135,7 @@ namespace SpiderSurge
             if (WagerFailed) return harm;
             WagerFailed = true;
             ChaosWallet.Record("Clean Hands failed: teammate killed or shield broken");
+            FeedbackSounds.Broadcast(FeedbackCue.Failure);
             ChaosWallet.Notify();
             ChaosNet.Announce("Clean Hands lost · no reward this map");
             return harm;
@@ -155,6 +157,7 @@ namespace SpiderSurge
             if (Active == ChallengeKind.LifeWager && !WagerFailed)
             {
                 WagerFailed = true;
+                FeedbackSounds.Broadcast(FeedbackCue.Failure);
                 int lost = ChaosWallet.Penalize("Life Wager failed");
                 if (SurvivalMode.instance.Lives > 0) ChaosNet.Announce($"Life Wager lost: {(lost > 0 ? ChaosRules.Points(-lost, signed: true) + ", " : "")}no reward this map");
             }

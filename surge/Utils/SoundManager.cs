@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using Logger = Silk.Logger;
 
 namespace SpiderSurge
@@ -13,6 +14,10 @@ namespace SpiderSurge
 
         private readonly Dictionary<string, AudioClip> _loadedClips = new Dictionary<string, AudioClip>();
         private AudioSource _audioSource;
+        private AudioSource _feedbackSource;
+        private AudioSource _notificationSource;
+        private readonly Queue<FeedbackCue> _notifications = new Queue<FeedbackCue>();
+        private readonly Dictionary<FeedbackCue, float> _lastFeedback = new Dictionary<FeedbackCue, float>();
 
         private void Awake()
         {
@@ -28,7 +33,63 @@ namespace SpiderSurge
             _audioSource = gameObject.AddComponent<AudioSource>();
             _audioSource.playOnAwake = false;
             _audioSource.spatialBlend = 0f;
+            _feedbackSource = gameObject.AddComponent<AudioSource>();
+            _notificationSource = gameObject.AddComponent<AudioSource>();
+            _feedbackSource.playOnAwake = _notificationSource.playOnAwake = false;
+            _feedbackSource.spatialBlend = _notificationSource.spatialBlend = 0f;
             LoadEmbeddedSounds();
+        }
+
+        internal void PlayFeedback(FeedbackCue cue)
+        {
+            if (ModConfig.FeedbackVolume <= 0f || SfxVolume <= 0f) return;
+            if (_lastFeedback.TryGetValue(cue, out float last) && Time.unscaledTime - last < .1f) return;
+            _lastFeedback[cue] = Time.unscaledTime;
+            if (FeedbackSounds.Clip(cue).queued)
+            {
+                if (_notifications.Count < 8 && !_notifications.Contains(cue)) _notifications.Enqueue(cue);
+            }
+            else PlayFeedbackClip(cue, _feedbackSource);
+        }
+
+        private void Update()
+        {
+            if (!_notificationSource.isPlaying && _notifications.Count > 0)
+                PlayFeedbackClip(_notifications.Dequeue(), _notificationSource);
+        }
+
+        internal void CancelFeedback(FeedbackCue cue)
+        {
+            int pending = _notifications.Count;
+            for (int i = 0; i < pending; i++)
+            {
+                var next = _notifications.Dequeue();
+                if (next != cue) _notifications.Enqueue(next);
+            }
+            if (_notificationSource.clip != null && _notificationSource.clip.name == FeedbackSounds.Clip(cue).name)
+                _notificationSource.Stop();
+        }
+
+        private static float SfxVolume
+        {
+            get
+            {
+                try { return GameSettings.GetFloat("SFX VOL", 1f); }
+                catch { return 1f; }
+            }
+        }
+
+        private void PlayFeedbackClip(FeedbackCue cue, AudioSource source)
+        {
+            string name = FeedbackSounds.Clip(cue).name;
+            if (!_loadedClips.TryGetValue(name, out var clip))
+            {
+                Logger.LogWarning($"[SoundManager] Feedback sound not found: {name}");
+                return;
+            }
+            source.clip = clip;
+            source.volume = ModConfig.FeedbackVolume * SfxVolume;
+            source.Play();
         }
 
         private void LoadEmbeddedSounds()
@@ -219,17 +280,8 @@ namespace SpiderSurge
         {
             if (_loadedClips.TryGetValue(soundName, out AudioClip clip))
             {
-                float sfxVolume = 1f;
-                try
-                {
-                    sfxVolume = GameSettings.GetFloat("SFX VOL", 1f);
-                }
-                catch
-                {
-                    // Fallback if GameSettings is not ready
-                }
-
                 float abilityVolume = ModConfig.AbilityVolume;
+                float sfxVolume = SfxVolume;
                 if (sfxVolume <= 0f || abilityVolume <= 0f) return;
 
                 _audioSource.PlayOneShot(clip, volume * sfxVolume * abilityVolume);
