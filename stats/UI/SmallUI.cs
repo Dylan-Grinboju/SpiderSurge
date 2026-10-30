@@ -17,12 +17,12 @@ namespace StatsMod
         #endregion
 
         #region Column Widths
-        public float COL_WIDTH_KILL = 62f;
+        public float COL_WIDTH_OFFENCE = 86f;
         public float COL_WIDTH_DEATH = 72f;
         #endregion
 
         #region Text Labels
-        public string LABEL_KILL = "KILLS";
+        public string LABEL_OFFENCE = "OFFENCE";
         public string LABEL_DEATH = "DEATHS";
         public string LABEL_NO_PLAYERS = "NO PLAYERS";
         #endregion
@@ -152,19 +152,19 @@ namespace StatsMod
                 }
 
                 bool shadow = !background;
-                float killX = Padding + Scaled(BASE_BAR_WIDTH + BASE_BAR_GAP);
-                float killWidth = Scaled(COL_WIDTH_KILL);
-                float deathX = killX + killWidth;
+                float offenceX = Padding + Scaled(BASE_BAR_WIDTH + BASE_BAR_GAP);
+                float offenceWidth = Scaled(COL_WIDTH_OFFENCE);
+                float deathX = offenceX + offenceWidth;
                 float deathWidth = Scaled(COL_WIDTH_DEATH);
                 float y = Padding;
 
-                Hud.Label(new Rect(killX, y, killWidth, HeaderHeight), LABEL_KILL, headerStyle, Hud.Pink, shadow);
+                Hud.Label(new Rect(offenceX, y, offenceWidth, HeaderHeight), LABEL_OFFENCE, headerStyle, Hud.Pink, shadow);
                 Hud.Label(new Rect(deathX, y, deathWidth, HeaderHeight), LABEL_DEATH, headerStyle, Hud.Pink, shadow);
                 y += HeaderHeight;
 
                 if (statsSnapshot?.ActivePlayers == null || statsSnapshot.ActivePlayers.Count == 0)
                 {
-                    Hud.Label(new Rect(killX, y, killWidth + deathWidth, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
+                    Hud.Label(new Rect(offenceX, y, offenceWidth + deathWidth, PlayerRowHeight), LABEL_NO_PLAYERS, noPlayersStyle, Hud.Muted, shadow);
                 }
                 else
                 {
@@ -176,7 +176,8 @@ namespace StatsMod
                         float alpha = sessionActive && !playerData.IsAlive ? DEAD_PLAYER_ALPHA : 1f;
 
                         Hud.Fill(new Rect(Padding, y + barInset, Scaled(BASE_BAR_WIDTH), PlayerRowHeight - barInset * 2), Hud.WithAlpha(Hud.Readable(playerData.PlayerColor), alpha));
-                        Hud.Label(new Rect(killX, y, killWidth, PlayerRowHeight), Hud.Number(playerData.Kills), valueStyle, Hud.WithAlpha(playerData.Kills > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
+                        int offence = playerData.Kills + playerData.EnemyShieldsTakenDown;
+                        Hud.Label(new Rect(offenceX, y, offenceWidth, PlayerRowHeight), Hud.Number(offence), valueStyle, Hud.WithAlpha(offence > 0 ? Hud.Text : Hud.Muted, alpha), shadow);
                         Hud.Label(new Rect(deathX, y, deathWidth, PlayerRowHeight), Hud.Number(playerData.Deaths), valueStyle, Hud.WithAlpha(playerData.Deaths > 0 ? Hud.Pink : Hud.Muted, alpha), shadow);
                         y += PlayerRowHeight;
                     }
@@ -195,7 +196,7 @@ namespace StatsMod
         // Many players shrink the whole window so every row fits on screen
         private void UpdateWindowSize(int rows)
         {
-            float baseWidth = BASE_PADDING * 2 + BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_KILL + COL_WIDTH_DEATH;
+            float baseWidth = BASE_PADDING * 2 + BASE_BAR_WIDTH + BASE_BAR_GAP + COL_WIDTH_OFFENCE + COL_WIDTH_DEATH;
             float baseHeight = BASE_PADDING * 2 + BASE_HEADER_HEIGHT + Mathf.Max(rows, 1) * BASE_PLAYER_ROW_HEIGHT;
             scale = Hud.FitScale(UIManager.UIScaleFactor, baseWidth, baseHeight, 1f, MAX_HEIGHT_PERCENT);
             windowRect.width = baseWidth * scale;

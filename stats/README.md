@@ -23,7 +23,7 @@ Stats always loads with SpiderSurge, because Surge depends on its tracking. To h
 
 
 ### Small window (F1)
-Each spider's kills and deaths, next to its color. A dead spider's row fades until it respawns. Turn on `stats.display.smallUIShowBackground` for a dark panel behind it.
+Each spider's offence (kills plus enemy shield breaks) and deaths, next to its color. A dead spider's row fades until it respawns. Size, position and background are configurable; the two displayed stats are fixed. Turn on `stats.display.smallUIShowBackground` for a dark panel behind it.
 
 <img width="680" alt="The small stats window next to the game's HUD" src="../docs/images/stats-small-window-closeup.png" />
 
