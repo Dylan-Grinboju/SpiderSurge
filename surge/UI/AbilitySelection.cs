@@ -84,20 +84,26 @@ namespace SpiderSurge
 
         private static IEnumerator FinishLoading(LevelController controller, int scene)
         {
-            yield return new WaitForSecondsRealtime(1f);
-            while (Net.IsRemoteClient && StartingChoiceOpen && !IsChoosing)
+            try
             {
-                if (controller == null || SceneManager.GetActiveScene().handle != scene) yield break;
-                yield return null;
+                yield return new WaitForSecondsRealtime(1f);
+                while (Net.IsRemoteClient && StartingChoiceOpen && !IsChoosing)
+                {
+                    if (controller == null || SceneManager.GetActiveScene().handle != scene) yield break;
+                    yield return null;
+                }
+                if (controller != null && SceneManager.GetActiveScene().handle == scene)
+                {
+                    ReEnableInputs.Invoke(controller, null);
+                    if (Net.IsAuthority) BeforeWave();
+                    if (IsChoosing) GameController.instance?.DisableInputs();
+                }
             }
-            if (controller != null && SceneManager.GetActiveScene().handle == scene)
+            finally
             {
-                ReEnableInputs.Invoke(controller, null);
-                if (Net.IsAuthority) BeforeWave();
-                if (IsChoosing) GameController.instance?.DisableInputs();
+                loading = null;
+                loadingController = null;
             }
-            loading = null;
-            loadingController = null;
         }
 
         // New arrivals choose at the next wave boundary; existing players keep their loadouts.

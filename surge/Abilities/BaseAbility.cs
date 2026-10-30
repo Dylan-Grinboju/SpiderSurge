@@ -630,9 +630,10 @@ namespace SpiderSurge
 
             if (IsUnlocked() && spiderHealthSystem != null && IsPlayerAlive())
             {
-                if (ModConfig.IndicatorCompactHud) AbilityHud.Ready(this);
-                else if (abilityIndicator != null)
-                    ReadyVfx.Pulse(abilityIndicator.transform.position, abilityIndicator.availableColor);
+                var feedback = GetComponents<BaseAbility>().FirstOrDefault(ability => ability.IsRegularUnlocked()) ?? this;
+                if (ModConfig.IndicatorCompactHud) AbilityHud.Ready(feedback);
+                else if (feedback.abilityIndicator != null)
+                    ReadyVfx.Pulse(feedback.abilityIndicator.transform.position, feedback.abilityIndicator.availableColor);
             }
 
             if (IsUnlocked()) PlayCasterSound(Consts.SoundNames.AbilityReady, Consts.SoundVolumes.AbilityReady);

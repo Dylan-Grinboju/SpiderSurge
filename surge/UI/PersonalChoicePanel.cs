@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace SpiderSurge
@@ -38,7 +39,16 @@ namespace SpiderSurge
         internal static void Show()
         {
             if (!AbilitySelection.IsChoosing || LevelController.IsLoading) return;
-            if (current != null && current.epoch == AbilitySelection.Round.Epoch) return;
+            var level = LevelController.instance;
+            string scene = SceneManager.GetActiveScene().name;
+            if (level != null && (scene == level.lobby.name || scene == level.waitingRoom.name)) return;
+            if (HudController.instance != null && HudController.instance.paused) return;
+            if (current != null && current.epoch == AbilitySelection.Round.Epoch)
+            {
+                if (!current.hud.perkChoiceView.IsVisible || current.hud.perkChoiceView.IsHiding)
+                    current.hud.perkChoiceView.InstantShow();
+                return;
+            }
             var hud = SurvivalModeHud.instance;
             if (hud == null || hud.perkChoiceView == null || hud.perkCardPrefab == null || SurvivalMode.instance == null) return;
             Hide();
@@ -77,7 +87,7 @@ namespace SpiderSurge
             cards.Clear();
             PerkChoiceWidget.ResetChoice();
             int count = AbilitySelection.Round.Offers.Length;
-            float scale = Mathf.Max(.55f, 1.45f - count * .15f);
+            float scale = Mathf.Clamp(1.45f - count * .15f, .55f, 1f);
             for (int i = 0; i < count; i++)
             {
                 var card = Instantiate(hud.perkCardPrefab, hud.perkCardsRoot).GetComponent<SurvivalModifierChoiceCard>();
