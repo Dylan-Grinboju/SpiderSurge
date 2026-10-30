@@ -217,6 +217,7 @@ namespace SpiderSurge
                     if (label != null) label.color = Hud.Warm;
                 }
                 UIPopupManager.ShowPopup(popup, true, false);
+                FeedbackSounds.Play(FeedbackCue.Unlock);
             }
             catch (Exception ex)
             {

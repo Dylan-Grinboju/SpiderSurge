@@ -27,6 +27,7 @@ namespace SpiderSurge
         {
             Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();
             SurgeNet.Initialize();
+            FeedbackSounds.Initialize();
             SurgeAttacks.Register();
 
             new GameObject("SurgeGameModeManager").AddComponent<SurgeGameModeManager>();
@@ -47,6 +48,7 @@ namespace SpiderSurge
             StatsMod.RunReportSources.Unregister(Integration.SurgeReportSource.Instance);
             SurgeLifecycle.Unsubscribe();
             SurgeNet.Shutdown();
+            FeedbackSounds.Shutdown();
             SurgeAttacks.Unregister();
             SurgeLobbyPlatform.Remove();
             SurgeGameModeManager.SelectMode(false);

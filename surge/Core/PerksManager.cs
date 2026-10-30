@@ -175,6 +175,7 @@ namespace SpiderSurge
         {
             if (ultimate ? !BaseAbilities.ContainsKey(key) : !IsAbilityPerk(key)) return;
             Loadouts.Set(playerId, key, ultimate);
+            PerkChoiceHud.RefreshPerks();
             SurgeNet.MarkDirty();
         }
 

@@ -144,7 +144,7 @@ namespace SpiderSurge
             switch (item)
             {
                 case ShopItem.Reroll: return "Reroll";
-                case ShopItem.Life: return "Extra Life";
+                case ShopItem.Life: return "Healing";
                 case ShopItem.Perk: return "Mystery Perk";
                 case ShopItem.Sacrifice: return "Blood Pact";
                 default: return "Bigger Heart";
@@ -400,6 +400,7 @@ namespace SpiderSurge
         // A popup on this machine only; the host sends every client the same purchase
         public static void ShowBought(ShopItem item, int buyerId, string detail)
         {
+            FeedbackSounds.Play(item == ShopItem.Reroll ? FeedbackCue.Reroll : FeedbackCue.Purchase);
             if (item == ShopItem.Sacrifice) return;
             if (item == ShopItem.Perk) PerkChoiceHud.RefreshPerks();
             string who = buyerId >= 0 ? Players.NameOf(buyerId) : "The team";
@@ -407,7 +408,7 @@ namespace SpiderSurge
             switch (item)
             {
                 case ShopItem.Reroll: what = "rerolled the perks"; break;
-                case ShopItem.Life: what = "bought an extra life"; break;
+                case ShopItem.Life: what = $"bought {NameOf(item)}"; break;
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
                 default: what = "raised the max lives"; break;
             }

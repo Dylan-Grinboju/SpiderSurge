@@ -28,6 +28,7 @@ namespace SpiderSurge
             var background = card.GetComponent<Image>();
             if (background != null) background.color = Consts.Values.Chaos.LockedCardTint;
             LockedChanged?.Invoke();
+            FeedbackSounds.Play(FeedbackCue.Confirm);
         }
 
         public static void Reset()
@@ -55,6 +56,7 @@ namespace SpiderSurge
             if (card == null || card.modifier == null || hud == null) return;
             Picked(card) = true;
             hud.PerkChoiceSubmit(card.modifier, card.level, GameFields.CardIndex(card));
+            FeedbackSounds.Play(FeedbackCue.Confirm);
         }
     }
 
