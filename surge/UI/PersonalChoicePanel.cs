@@ -253,7 +253,7 @@ namespace SpiderSurge
         private void Refresh()
         {
             var round = AbilitySelection.Round;
-            readyCount.text = $"{round.Picks.Values.Count(pick => pick.Ready)} / {round.Picks.Count} LOCKED IN\nD-pad / stick: choose   A: lock   B: undo   |   Arrows / Enter / Backspace   |   Click: lock / undo";
+            readyCount.text = $"{round.Picks.Values.Count(pick => pick.Ready)} / {round.Picks.Count} LOCKED IN";
             foreach (int id in markers.Keys.Except(round.Picks.Keys).ToArray())
             {
                 Destroy(markers[id].Image.gameObject);
