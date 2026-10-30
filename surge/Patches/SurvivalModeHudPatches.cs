@@ -26,10 +26,7 @@ namespace SpiderSurge
         {
             if (AbilitySelection.IsChoosing) return;
             PerkChoiceMenu.Attach(__instance);
-            if (!SurgeGameModeManager.IsSurgeRunActive) return;
             PerkChoiceHud.Attach(__instance);
-            if (PerksManager.Instance == null) return;
-
             PerkChoiceWidget.HideStaleCards(__instance);
             var cards = PerkChoiceWidget.Cards(__instance);
             var first = cards.Count > 0 ? cards[0] : null;
@@ -42,6 +39,12 @@ namespace SpiderSurge
             if (rebuild)
             {
                 PerkConfirmButton.Build(__instance);
+                PerkChoiceMenu.LinkNavigation(__instance);
+            }
+            if (!SurgeGameModeManager.IsSurgeRunActive) return;
+            if (PerksManager.Instance == null) return;
+            if (rebuild)
+            {
                 PerkShopPanel.Build(__instance);
                 PerkHint.Build(__instance);
                 PerkChoiceMenu.LinkNavigation(__instance);
@@ -138,7 +141,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix()
         {
-            if (SurgeGameModeManager.IsSurgeRunActive) PerkChoiceWidget.MarkChoiceMade();
+            PerkChoiceWidget.MarkChoiceMade();
         }
     }
 
@@ -148,7 +151,7 @@ namespace SpiderSurge
         [HarmonyPostfix]
         public static void Postfix(ref IEnumerator __result) => __result = PauseWithMenu(__result);
 
-        // Preserve the real-time countdown while a player uses the pause menu.
+        // Keep the remaining countdown while a pause menu or unlimited perk time holds it.
         private static IEnumerator PauseWithMenu(IEnumerator timer)
         {
             while (timer.MoveNext())
@@ -159,7 +162,8 @@ namespace SpiderSurge
                     while (remaining > 0f)
                     {
                         yield return null;
-                        if (HudController.instance == null || !HudController.instance.paused) remaining -= Time.unscaledDeltaTime;
+                        if (PerkChoiceWidget.ChoiceMade || SurvivalMode.instance == null || !GameFields.WaitingForPerk(SurvivalMode.instance).Value) yield break;
+                        if (!ModConfig.UnlimitedPerkChoosingTime && (HudController.instance == null || !HudController.instance.paused)) remaining -= Time.unscaledDeltaTime;
                     }
                 }
                 else yield return timer.Current;
@@ -171,7 +175,7 @@ namespace SpiderSurge
         public static bool Prefix(SurvivalModeHud __instance, ref IEnumerator __result)
         {
             // A reroll re-shows the cards while the first countdown still runs, so it must not start a second one
-            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || ModConfig.UnlimitedPerkChoosingTime || PerkShop.RerollInProgress))
+            if (SurgeGameModeManager.IsSurgeRunActive && (AbilitySelection.IsChoosing || PerkShop.RerollInProgress))
             {
                 __result = EmptyEnumerator();
                 return false;

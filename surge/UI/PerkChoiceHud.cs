@@ -78,7 +78,7 @@ namespace SpiderSurge
                 _indicator.UpdateActiveMods();
             }
 
-            bool choosing = SurgeGameModeManager.IsSurgeRunActive && (HudController.instance == null || !HudController.instance.paused)
+            bool choosing = (HudController.instance == null || !HudController.instance.paused)
                 && (_hud.perkChoiceView.IsVisible || _hud.perkChoiceView.IsShowing);
             if (!choosing)
             {
@@ -86,6 +86,11 @@ namespace SpiderSurge
                 return;
             }
             if (!AbilitySelection.IsChoosing) KeepFocus();
+            if (!SurgeGameModeManager.IsSurgeRunActive)
+            {
+                Restore();
+                return;
+            }
 
             Canvas choice = _hud.perkChoiceView.GetComponent<Canvas>();
             if (choice == null) return;

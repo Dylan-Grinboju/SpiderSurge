@@ -60,6 +60,14 @@ namespace SpiderSurge
             return lost;
         }
 
+        internal static void RefundPenalty(int amount, string source)
+        {
+            if (!Net.IsAuthority || amount <= 0) return;
+            Points += amount;
+            Record($"{source}: refunded {ChaosRules.Points(amount)}; balance {Points}");
+            Notify();
+        }
+
         public static void Record(string text)
         {
             Events.Add(new ChaosEventRecord { Wave = SurvivalMode.instance?.CurrentWave ?? 0, Text = text });

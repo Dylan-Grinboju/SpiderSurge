@@ -94,6 +94,7 @@ namespace SpiderSurge
 
         private static void OnSettingsChanged(string key)
         {
+            if (Settings.Affects(key, ModConfig.UnlimitedPerkTimeKey)) PerkChoiceRefresh.Refresh();
             if (key == null)
             {
                 ModConfig.ForgetColors();
