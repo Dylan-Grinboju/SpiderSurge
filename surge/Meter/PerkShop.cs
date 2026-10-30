@@ -144,7 +144,7 @@ namespace SpiderSurge
             switch (item)
             {
                 case ShopItem.Reroll: return "Reroll";
-                case ShopItem.Life: return "Extra Life";
+                case ShopItem.Life: return "Healing";
                 case ShopItem.Perk: return "Mystery Perk";
                 case ShopItem.Sacrifice: return "Blood Pact";
                 default: return "Bigger Heart";
@@ -407,7 +407,7 @@ namespace SpiderSurge
             switch (item)
             {
                 case ShopItem.Reroll: what = "rerolled the perks"; break;
-                case ShopItem.Life: what = "bought an extra life"; break;
+                case ShopItem.Life: what = $"bought {NameOf(item)}"; break;
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
                 default: what = "raised the max lives"; break;
             }
