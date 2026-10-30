@@ -143,7 +143,7 @@ namespace SpiderSurge
                         : SurgePainLevels.SelectedEight ? "A separate ultimate choice follows."
                         : $"Choose an independent ultimate after wave {Consts.Values.Waves.UltUpgradeWave}.") +
                     (string.IsNullOrEmpty(detail) ? "" : "\n" + detail);
-            return detail ?? "Perks apply to the whole team. Chaos buys extra upgrades in the shop.";
+            return detail ?? "";
         }
     }
 }

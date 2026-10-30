@@ -218,12 +218,6 @@ namespace SpiderSurge
             _headerIcon = ChaosIcon.Add(_header.transform, Vector2.zero, 18, Hud.Warm);
             _header.enableWordWrapping = false;
             _header.overflowMode = TextOverflowModes.Overflow;
-            var note = CloneText(prefabCard.perkDescriptionText, "Shared wallet explanation");
-            PlaceTop(note.rectTransform, 25f, 28f, 0f);
-            note.fontSize = 10f;
-            note.alignment = TextAlignmentOptions.Center;
-            note.enableWordWrapping = true;
-            note.text = "Shared by the team\nEach item once per visit";
         }
 
         private void Populate(float entryHeight)

@@ -265,7 +265,7 @@ namespace SpiderSurge
                 public const float SideMargin = 27f;
                 public const float BottomMargin = 6f;
                 public const float MinCardFactor = 0.5f;
-                public const float WalletBlockHeight = 60f;
+                public const float WalletBlockHeight = 32f;
                 public const float MinEntryHeight = 56f;
                 public const float MaxEntryHeight = 96f;
                 public const float EntrySpacing = 5f;
