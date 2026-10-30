@@ -29,7 +29,7 @@ namespace SpiderSurge
                 var view = hud != null ? hud.perkChoiceView : null;
                 return view != null && view.gameObject.activeInHierarchy && !view.IsHiding
                     && (view.IsVisible || view.IsShowing) && !LevelController.IsLoading
-                    && (!SurgeGameModeManager.IsSurgeRunActive || !PerkChoiceWidget.ChoiceMade);
+                    && !PerkChoiceWidget.ChoiceMade;
             }
         }
 

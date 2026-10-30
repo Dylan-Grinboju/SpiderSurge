@@ -35,7 +35,7 @@ namespace SpiderSurge
                 case ChallengeKind.LifeWager: return "Lose no team lives. Failure costs 1 chaos point.";
                 case ChallengeKind.NoUltimate: return "Survive without ultimates.";
                 case ChallengeKind.Overrun: return "Survive larger enemy waves. Enemies arrive at their usual pace.";
-                case ChallengeKind.CleanHands: return "Finish without killing a teammate or breaking a teammate's shield.";
+                case ChallengeKind.CleanHands: return "Finish without killing a teammate or breaking a teammate's shield. Failure costs 1 chaos point.";
                 default: return "";
             }
         }

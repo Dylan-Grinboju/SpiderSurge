@@ -17,7 +17,7 @@ namespace SpiderSurge
         public static event Action LockedChanged;
 
         // The unlimited-time setting is shared, so a client reads the host's; the starting ability choice has no timer either
-        public static bool Active => SurgeGameModeManager.IsSurgeRunActive && (ModConfig.UnlimitedPerkChoosingTime || AbilitySelection.StartingChoiceOpen);
+        public static bool Active => ModConfig.UnlimitedPerkChoosingTime || (SurgeGameModeManager.IsSurgeRunActive && AbilitySelection.StartingChoiceOpen);
 
         public static void Lock(SurvivalModifierChoiceCard card)
         {

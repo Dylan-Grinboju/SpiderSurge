@@ -437,6 +437,13 @@ namespace SpiderSurge.Common
         private void AddSettings()
         {
             Title("Settings");
+            Header("Display");
+            Slider("Brightness", Brightness.SettingKey, Brightness.Min, Brightness.Max, 5f, "%", Brightness.Value);
+            Note("Adjust game brightness on this device. 100% is the original brightness. Changes apply immediately and are saved automatically.");
+            Header("Survival");
+            Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
+            Note("Applies to normal Wave Survival and Surge, including an open perk choice. Choose a card, then move down to Confirm. Turning this off resumes the countdown. Online, the host decides for the group.");
+            Header("More settings");
             foreach (Part part in Parts.MenuOrder)
                 if (part.Running && part.HasSettings)
                 {

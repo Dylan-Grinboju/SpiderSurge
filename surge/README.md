@@ -94,7 +94,7 @@ After choosing a map, the team has a 50% chance of seeing one optional challenge
 | Life Wager | First lost team life costs one point, floored at zero, and forfeits the reward. Further losses cost no points. | 1 if no life lost |
 | No Ultimate | Ultimates disabled; regular abilities work. Only offered with an unlocked ultimate. | 1 |
 | Overrun | Larger enemy waves: 50% more budget, with unchanged spawn pacing and simultaneous-enemy limits. | 2 |
-| Clean Hands | With two or more players, finish without a teammate kill or teammate shield break credited to a player. Failure forfeits the reward without taking existing points. | 1 |
+| Clean Hands | With two or more players, finish without a teammate kill or teammate shield break credited to a player. Failure costs 1 Chaos point once, floored at zero, and forfeits the reward. Reversing all friendly-fire credit refunds the points taken without counting them as earnings. | 1 |
 
 The HUD uses a small currency icon and balance beneath the lives display, with a quieter challenge status line. First encounters with laser enemies and cocoons show a brief local hint without pausing; the guide remains available afterward. Surge results add a compact recap above the existing titles and retain the full scoreboard separately. Map bonuses, completed challenges, purchases and penalties are logged. The economy also works with abilities disabled; inapplicable challenges are excluded. Existing perk-synergy hints remain below the cards.
 
@@ -102,7 +102,9 @@ The HUD uses a small currency icon and balance beneath the lives display, with a
 
 ### From the Mods menu:
 
-Open the pause menu and pick **Mods** > **SpiderSurge** > **Settings** > **Surge**. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Choose Beside spider or Corner panel on the Surge page; detailed controls are in Customize ability display. Advanced run rules contains the timer and no-abilities options. Changes apply right away, except **Play without abilities**, which applies from the next run. **Reset Surge settings to defaults** at the bottom leaves the telemetry settings alone; they are on the **Settings** > **Records and privacy** page, since plain Survival runs use them too.
+Open the pause menu and pick **Mods** > **SpiderSurge** > **Settings**. Brightness is under Display, and **Unlimited time to choose perks** is under Survival; it applies immediately to both normal Wave Survival and Surge, including an open perk choice. Select **Surge** for ability settings and **Advanced run rules** for **Play without abilities**, which applies from the next run. Hover over a setting or select it with a controller to read its explanation in the side panel. Use the right stick or mouse wheel to scroll that explanation. Choose Beside spider or Corner panel on the Surge page; detailed controls are in Customize ability display. **Reset Surge settings to defaults** leaves the shared perk timer and telemetry settings alone; telemetry is on **Settings** > **Records and privacy**.
+
+**Brightness** adjusts the local game's brightness from 50% to 200%, with 100% preserving the original appearance. Changes apply immediately and persist across restarts under `display.brightness`. Each online player controls their own brightness.
 
 ### Using the Yaml file:
 
@@ -116,7 +118,7 @@ The lobby platform selects the mode for each run. Older `surge.surgeMode` and `p
 
 The ability and ultimate keys are fixed, so they are not in the file. An older `surge.dpadUltimate` is ignored.
 
-`surge.unlimitedPerkTime`: Disables the timer on the perk selection screen. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. Personal ability and ultimate choices always wait for every player to lock their own card. A card keeps the controller focus while the mouse passes over a disabled Confirm or Buy button, or when a menu or click clears the selection. The host's setting applies online. Default: `true`.
+`surge.unlimitedPerkTime`: Disables the timer on perk selection screens in normal Wave Survival and Surge, including an open choice. Turning it off resumes the countdown. Its toggle is on the main Settings page, separate from Surge's no-abilities rule. The existing config key and saved preference are retained. With it on, clicking a card only locks it, and a **Confirm** button under the cards (press down from a card) makes the pick, so a stray press can't choose a perk. With the timer on, a click picks at once as in the normal game. Personal ability and ultimate choices always wait for every player to lock their own card. A card keeps the controller focus while the mouse passes over a disabled Confirm or Buy button, or when a menu or click clears the selection. The host's setting applies online. Default: `true`.
 
 `surge.noAbilities`: If true, Surge Survival runs have no abilities, ultimates or ability perks (Ability Cooldown, Ability Duration, Short and Long Term Investment). The first perk choice is a normal one, waves 30 and 60 bring no ultimate choice, and the ability keys keep their normal game actions. Luck and the chaos economy remain available; ability challenges are excluded. Applies from the next run, and doesn't change Team Versus abilities. Pain 8 ignores it and keeps abilities. Default: `false`.
 

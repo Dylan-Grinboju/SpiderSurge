@@ -109,6 +109,8 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 
 ![The optional Clean Hands challenge and Chaos currency icon](docs/images/challenge-clean-hands.png)
 
+Clean Hands failure costs 1 Chaos point once per challenge, floored at zero, and forfeits the reward. If every credited teammate kill is later reversed and no teammate shield break remains, the points taken are refunded and the reward becomes available again. Refunds do not count as Chaos earned.
+
 ## Settings
 
 ### From the Mods menu:
@@ -116,12 +118,14 @@ If `StatsMod.dll` or `SpiderTeams.dll` is still in the Mods folder, its part sta
 Open the pause menu and pick **Mods** > **SpiderSurge**. The main page has:
 
 - **How to play**: a first-run guide and reference for abilities, enemies, Chaos, controls and multiplayer.
-- **Settings**: Stats, Surge, Records and privacy, and Advanced. Changes save automatically. Team rules stay in the versus setup page.
+- **Settings**: Brightness, shared Survival rules, Stats, Surge, Records and privacy, and Advanced. Changes save automatically. Team rules stay in the versus setup page.
 - **Collection**: Surge achievements and the Stats title collection.
 - **Match history**: saved Survival and Versus results, including the compact Surge recap.
 - **About SpiderSurge**: version, credits and Support. Report diagnostics and the anonymous report ID live in Support.
 
-Stats offers a starting scoreboard and a single Customize scoreboard page; My scoreboard has editable columns, while fixed presets can be hidden. Resolution scaling is automatic, with a Size control. Secondary display controls are in Display and reveal options. Surge offers Beside spider or Corner panel for the ability display; ring placement is shown only for the ring display. Advanced run rules contains the perk timer and no-abilities mode. Versus ability tuning is folded under Advanced ability rules.
+The Settings page has a **Brightness** slider from 50% to 200%, with 100% restoring the original brightness. Changes apply immediately, are saved under `display.brightness`, and affect only this player's display online. **Unlimited time to choose perks** is under Survival, separate from Surge's **Play without abilities** rule. It applies immediately to normal Wave Survival and Surge, including an open choice; choose a card, then press Confirm. Turning it off resumes the countdown. The host's timer preference applies online. The existing `surge.unlimitedPerkTime` config key and saved preference are retained.
+
+Stats offers a starting scoreboard and a single Customize scoreboard page; My scoreboard has editable columns, while fixed presets can be hidden. Resolution scaling is automatic, with a Size control. Secondary display controls are in Display and reveal options. Surge offers Beside spider or Corner panel for the ability display; ring placement is shown only for the ring display. Advanced run rules contains no-abilities mode. Versus ability tuning is folded under Advanced ability rules.
 
 Records and privacy separates Keep match history, Export detailed reports, and Share anonymous run reports. Sharing can prepare a report without writing a local text export. Advanced holds update checks, game fixes and manual config reload. Every reset asks for confirmation.
 

@@ -29,12 +29,14 @@ namespace SpiderSurge
 
             Settings.Define(Parts.Defaults);
             Settings.Define(ModUpdater.Defaults);
+            Settings.Define(Brightness.Defaults);
             Settings.Define(Parts.SettingDefaults);
 
             OldMods.Check();
             Settings.Load();
             Net.Initialize();
             Parts.StartAll();
+            Brightness.Attach(CameraEffects.instance);
             ModUpdater.ScheduleCheck();
         }
 
@@ -75,6 +77,7 @@ namespace SpiderSurge
             ModUpdater.Shutdown();
             CollectionSeen.Flush();
             Parts.StopAll();
+            Brightness.Shutdown();
             HistoryStore.FinishWrites();
             ModData.FinishWrites();
             Net.Shutdown();

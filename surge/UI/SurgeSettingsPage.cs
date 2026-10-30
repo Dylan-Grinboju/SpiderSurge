@@ -21,7 +21,7 @@ namespace SpiderSurge
             page.Note("Start with a guided first run, then explore abilities, synergies, enemies, chaos points and challenges, and multiplayer.");
 
             page.Button("Advanced run rules", () => page.Open("surge.rules"));
-            page.Note("Perk-choice timer and playing without abilities. Gameplay rules are shared; the host chooses them online.");
+            page.Note("Play without abilities. The host chooses this rule online. The perk-choice timer is on the main Settings page for both survival modes.");
             page.Spacer();
             page.Header("Effects");
             page.Toggle("Reduced visual effects", ModConfig.ReducedEffectsKey);
@@ -38,7 +38,7 @@ namespace SpiderSurge
             page.Note("Beside spider keeps readiness near the action. Corner panel shows named players and their remaining cooldowns. This changes only your display.");
             page.Button("Customize ability display", () => page.Open("surge.indicator"));
             page.Spacer();
-            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.StatsLoggingKey, ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
+            page.ConfirmButton("Reset Surge settings to defaults", () => Settings.Reset("surge", ModConfig.UnlimitedPerkTimeKey, ModConfig.StatsLoggingKey, ModConfig.TelemetryKey, ModConfig.ShowTelemetryPromptKey));
         }
 
         private static void BuildIndicator(SettingsPage page, bool standalone = true)
@@ -79,8 +79,6 @@ namespace SpiderSurge
         {
             page.Title("Advanced run rules");
             page.Note("Shared gameplay rules. Online, the host decides for the group.");
-            page.Toggle("Unlimited time to choose perks", ModConfig.UnlimitedPerkTimeKey);
-            page.Note("Choose a card, then move down to Confirm. The starting ability choice always waits for confirmation.");
             page.Toggle("Play without abilities", ModConfig.NoAbilitiesKey);
             page.Note("Keep Surge enemies, Luck, Chaos and challenges, but remove abilities and their upgrades. Applies from the next run; versus abilities are separate.");
         }
