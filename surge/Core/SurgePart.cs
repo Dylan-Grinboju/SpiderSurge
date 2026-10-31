@@ -27,6 +27,7 @@ namespace SpiderSurge
         {
             Logging.SpiderSurgeTelemetryUploader.Instance.FlushQueuedPayloads();
             SurgeNet.Initialize();
+            Maps.SurgeMaps.Initialize();
             FeedbackSounds.Initialize();
             SurgeAttacks.Register();
 
@@ -48,6 +49,7 @@ namespace SpiderSurge
             StatsMod.RunReportSources.Unregister(Integration.SurgeReportSource.Instance);
             SurgeLifecycle.Unsubscribe();
             SurgeNet.Shutdown();
+            Maps.SurgeMaps.Shutdown();
             FeedbackSounds.Shutdown();
             SurgeAttacks.Unregister();
             SurgeLobbyPlatform.Remove();

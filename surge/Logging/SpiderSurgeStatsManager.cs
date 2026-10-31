@@ -353,7 +353,7 @@ namespace SpiderSurge.Logging
             _currentWaveRecord = new WaveRecord
             {
                 Wave = SurvivalMode.instance.CurrentWave,
-                Map = SceneManager.GetActiveScene().name,
+                Map = Maps.SurgeMaps.MapKey(SceneManager.GetActiveScene().name),
                 LivesAtStart = SurvivalMode.instance.Lives,
                 Deaths = _countingDeaths ? 0 : -1
             };
