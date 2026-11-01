@@ -382,7 +382,8 @@ namespace StatsMod
                 Hud.Label(new Rect(left, header.y + 154f * scale, width, 30f * scale), recap.Summary, captionStyle, Hud.Warm);
                 string unlocks = recap.Achievements;
                 if (unlocks.Length > 100) unlocks = unlocks.Substring(0, 97) + "…";
-                string titles = TitlesManager.Instance.LastNewlyUnlocked > 0 ? $"{TitlesManager.Instance.LastNewlyUnlocked} new titles" : "";
+                int newTitles = TitlesManager.Instance.LastNewlyUnlocked ?? 0;
+                string titles = newTitles > 0 ? $"{newTitles} new title{(newTitles == 1 ? "" : "s")}" : "";
                 string collection = (unlocks.Length > 0 ? "New team achievements: " + unlocks : "") + (titles.Length > 0 ? (unlocks.Length > 0 ? "  ·  " : "") + titles : "");
                 Hud.Label(new Rect(left, header.y + 190f * scale, width, 30f * scale), collection, captionStyle, Hud.Pink);
             }
