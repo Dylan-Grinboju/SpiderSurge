@@ -30,6 +30,7 @@ namespace SpiderSurge.Common
         private static bool loaded;
         private static List<HistorySummary> entries = new List<HistorySummary>();
         private static float retryAt;
+        private static RunRecapData savedRecap;
         public static string Error { get; private set; }
         public static bool Busy => !worker.IsCompleted;
         public static IReadOnlyList<HistorySummary> Entries => entries;
@@ -43,10 +44,13 @@ namespace SpiderSurge.Common
         {
             MainThread.Run(() => { Error = message; ThreadSafeLog.LogWarning(message); SettingsPage.RefreshOpen(); });
         }
+        // The results screen points to Match history only for the run recorded here, until the history is cleared
+        public static bool Holds(RunRecapData recap) => recap != null && recap == savedRecap;
         public static void Save(HistoryMatch match)
         {
             string path = Folder;
             byte[] bytes = Serialize(match);
+            savedRecap = match.Recap;
             Schedule(() => { pending[match.Summary.Id] = new PendingWrite { Summary = match.Summary, Bytes = bytes }; Flush(path); });
         }
         public static void ResolveTitleUnlocks(Dictionary<string, long> firstEarned, Action<bool> complete)
@@ -223,6 +227,7 @@ namespace SpiderSurge.Common
         public static void Clear()
         {
             string path = Folder;
+            savedRecap = null;
             Schedule(() =>
             {
                 try

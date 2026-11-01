@@ -322,7 +322,8 @@ namespace StatsMod
             {
                 float lineHeight = EMPTY_FONT_SIZE * 2f * scale;
                 Hud.Label(new Rect(0f, gridTop, Screen.width, lineHeight), RunRecap.Last != null ? "Another run. Another build." : LABEL_NO_TITLES, emptyStyle, Hud.Text);
-                Hud.Label(new Rect(Screen.width * 0.15f, gridTop + lineHeight, Screen.width * 0.7f, lineHeight * 2f), RunRecap.Last != null ? "Switch to the scoreboard for full stats. Revisit this run in Match history." : LABEL_NO_TITLES_NOTE, emptyNoteStyle, Hud.Muted);
+                Hud.Label(new Rect(Screen.width * 0.15f, gridTop + lineHeight, Screen.width * 0.7f, lineHeight * 2f), RunRecap.Last == null ? LABEL_NO_TITLES_NOTE
+                    : HistoryStore.Holds(RunRecap.Last) ? "Switch to the scoreboard for full stats. Revisit this run in Match history." : "Switch to the scoreboard for full stats.", emptyNoteStyle, Hud.Muted);
             }
             else
             {
