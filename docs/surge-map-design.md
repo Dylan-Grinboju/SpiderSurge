@@ -2,30 +2,39 @@
 
 The base game's black silhouettes, thin illuminated edges, subdued backgrounds and bright interactive objects are the reference. Its arenas usually have a strong overall shape with generous gaps for webs, thrown weapons and flying enemies. Symmetry is common, but it is not a requirement: the additions should offer useful movement choices rather than resemble detailed models of real structures.
 
-The original 16 maps already use native materials and backgrounds. Aqueduct, Zigzag, Stairwell, Thin Ice, Cactus Garden, Caldera, Trampoline, Geysers, Colonnade, Jaws and Satellite keep their identities. Five layouts needed a clearer movement structure:
+The selection contains 14 arenas. Each earns its place through a recognizable silhouette or movement mechanic, rather than another arrangement of detached platforms.
 
-| Arena | Revision | Reason |
-|---|---|---|
-| Fallen Blocks | Seven irregular slabs and rocks replace the tetromino assemblies. | Removes the visual reference to another game and reduces small seams. |
-| Truss Bridge | Two broken abutments, an upper span and a lower recovery ledge. | Removes closed triangular compartments; the center is a crossing instead of a wall. |
-| Crossbeams | Four separated arms frame an open center. | Allows travel between quadrants without circling the entire X. |
-| Ladders | Broken single spines and alternating ledges replace two enclosed rung grids. | Preserves vertical climbing while opening side exits. |
-| Pipeworks | A gap in the bottom and suspended inner pipes; single continuous straight segments. | Opens an escape below each pocket and removes repeated joins. |
+| Arena | Distinct role |
+|---|---|
+| Aqueduct | Repeated arches support a broken upper deck, with cover underneath. |
+| Zigzag | A continuous W of ramps creates alternating valleys and peaks. |
+| Thin Ice | Breakable shelves disappear above a permanent recovery floor. |
+| Cactus Garden | Exposed islands with lethal cacti make low footing hazardous. |
+| Caldera | Outer slopes surround a central lava crater. |
+| Trampoline | A deep bowl funnels players toward jump pads at its base. |
+| Geysers | Air vents beneath floating shelves provide recovery from below. |
+| Colonnade | A broad floor and uneven ruins offer grounded fighting and cover. |
+| Jaws | Opposing toothed surfaces frame a horizontal arena with lava above and below. |
+| Crossbeams | Four separated diagonal arms leave an open central crossing. |
+| Ladders | Broken climbing spines and alternating ledges allow vertical travel and side exits. |
+| Pipeworks | Interrupted pipes form pockets with multiple exits. |
+| Satellite | Long wings divide upper and lower routes around a central body and dish. |
+| Crescent | A large curved wall shelters one side while detached islands expose the other. |
 
-The four additions complement the base catalog as well as the original PR. They reuse existing mechanics; their contribution is the arrangement and the choices it creates.
+Six overlapping layouts were removed from the previous 20-map selection:
 
-| Addition | Closest base-game reference | Distinct role |
-|---|---|---|
-| Crescent | Core / Rock Loop's curved silhouettes | A one-sided crescent under normal gravity, with an open mouth facing detached islands. Shelter and open air occupy different halves. |
-| Faultline | Smash's separated footholds / Ant Domain's angular rocks | Unequal rock banks and diagonal upper ledges frame an exposed ravine. The rare weapon sits on a lower recovery shelf. |
-| Causeway | Float / Floating Nightmare's fragile footing | A breakable direct crossing between durable spawn islands, with permanent upper ledges after the shortcut is destroyed. Only the optional rare weapon sits on the fragile route. |
-| Slingshot | Bouncer's jump pads | Two exposed launch islands at different heights, with staggered upper footholds and a low central recovery platform. Spawns are beside the pads, not directly over them. |
+| Removed | Reason |
+|---|---|
+| Fallen Blocks, Faultline, Slingshot | These and Crescent repeated the scattered-island arrangement. Crescent remains as the strongest silhouette; Trampoline already supplies jump-pad play. |
+| Stairwell | Another sequence of detached footholds; Ladders gives climbing a clearer structure. |
+| Truss Bridge | Its split bridge and upper crossing overlap the stronger architectural identity of Aqueduct. |
+| Causeway | Its breakable crossing overlaps Thin Ice, which makes destruction the defining feature across several shelves. |
 
 Base-game arenas remain in Surge's pool. These maps do not replace their geometry or change their behavior; normal Wave Survival and Versus keep their original pools.
 
-![Geometry previews of Crescent, Faultline, Causeway and Slingshot](images/surge-map-additions.png)
+![Geometry previews of the 14 retained Surge maps](images/surge-map-roster.png)
 
-All 20 cards use consistent geometry previews: native collider silhouettes, subdued biome colors, orange hazards, cyan ice and pad/vent markers. These are diagrams, not gameplay captures; they omit scenery, weapons and players. Regenerating them from the layouts keeps the card's shape accurate after an edit.
+All 14 cards use consistent geometry previews: native collider silhouettes, subdued biome colors, orange hazards, cyan ice and pad/vent markers. These are diagrams, not gameplay captures; they omit scenery, weapons and players. Regenerating them from the layouts keeps the card's shape accurate after an edit.
 
 ## Authoring and validation
 

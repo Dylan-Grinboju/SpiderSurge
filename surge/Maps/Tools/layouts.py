@@ -147,19 +147,6 @@ surge_map(
     rare=[(0, 140)],
 )
 
-# One long staircase climbing from the bottom left to the top right
-surge_map(
-    "stairwell", "Stairwell", CAVE, LAVA_BOTTOM,
-    elements=[el("Platform", -300 + 100 * k, -130 + 60 * k, 0, 1.3) for k in range(7)] + [
-        el("Pancake", -260, 190, 0, 1.2), el("Pancake", 270, -110, 0, 1.2),
-        el("Ballish", -330, 40, 0, 0.8), el("Ballish", 340, 90, 0, 0.8),
-    ],
-    players=[(-200, -35), (-100, 25), (0, 85), (100, 145)],
-    enemies=[(-420, 180), (420, 220), (-150, 300), (0, 330), (150, -60), (-60, -170), (300, 340), (-410, -80)],
-    weapons=[(-300, -101), (300, 259), (-260, 220)],
-    rare=[(270, -80)],
-)
-
 # Shelves of breakable ice over one solid floor; every shot thins them out
 surge_map(
     "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM,
@@ -203,36 +190,6 @@ surge_map(
     enemies=[(-430, -50), (430, -50), (-300, 280), (300, 280), (0, 330), (0, 60), (-180, -120), (180, -120)],
     weapons=[(-200, 178), (200, 178)],
     rare=[(0, 227)],
-)
-
-# Broken slabs with staggered edges and open routes between the rubble
-surge_map(
-    "fallen_blocks", "Fallen Blocks", MULTIVERSE, LAVA_BOTTOM,
-    elements=[
-        el("Big Block", -40, -110, -12, 1.6, 0.8), el("Platform", 75, -95, 8, 1.5),
-        el("Pentagon", -260, 5, 18, 1.1), el("Big Block", 250, 35, -22, 1.7, 0.9),
-        el("Platform", -110, 180, -28, 1.7), el("Pentagon", 135, 205, 12, 1.1),
-        el("Platform", -335, 190, 10, 0.9),
-    ],
-    players=[(-55, -65), (-20, -70), (60, -60), (90, -55)],
-    enemies=[(-430, 100), (430, 120), (0, 80), (-300, 300), (330, 300), (0, 330), (-200, -150), (200, -140)],
-    weapons=[(-260, 80), (250, 80)],
-    rare=[(135, 280)],
-)
-
-# A broken truss: two abutments, an upper span, and a clear central crossing
-surge_map(
-    "truss_bridge", "Truss Bridge", DESOLATION, LAVA_BOTTOM,
-    elements=[
-        el("Loooong Boi", -230, -50, 0, 1.1), el("Loooong Boi", 230, -50, 0, 1.1),
-        bar(-310, -50, -220, 120), bar(310, -50, 220, 120),
-        el("Platform", -220, 140, 0, 1.4), el("Platform", 220, 140, 0, 1.4),
-        el("Loooong Boi", 0, 190, 0, 1.1), el("Platform", 0, -95, 0, 1.3),
-    ],
-    players=[(-220, -18), (-160, -18), (160, -18), (220, -18)],
-    enemies=[(-430, 120), (430, 120), (-150, -150), (150, -150), (0, 330), (-300, 280), (300, 280), (0, 50)],
-    weapons=[(-220, 173), (220, 173), (0, 223)],
-    rare=[(0, -60)],
 )
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
@@ -375,51 +332,6 @@ surge_map(
     enemies=[(-380, 65), (-330, 290), (0, 330), (400, 250), (410, 0), (220, -160), (0, 65)],
     weapons=[(-50, -60), (20, 270)],
     rare=[(255, 200)],
-)
-
-# A diagonal ravine: sheltered lower shelves and exposed high crossing points
-surge_map(
-    "faultline", "Faultline", CAVE, LAVA_BOTTOM,
-    elements=[
-        el("Pentagon", -240, -90, -15, 1.9), el("Pentagon", 225, -35, 20, 1.8),
-        el("Platform", -120, 100, -12, 1.7), el("Platform", 100, 175, 12, 1.7),
-        el("Platform", -310, 210, 0, 1.2), el("Platform", 315, 260, 0, 1.2),
-        el("Platform", -35, -125, 0, 1.1),
-    ],
-    players=[(-260, 8), (-220, 22), (205, 72), (245, 55)],
-    enemies=[(-430, 70), (430, 120), (-170, 300), (0, 320), (180, 315), (0, 0), (380, -150)],
-    weapons=[(-120, 140), (100, 215)],
-    rare=[(-35, -90)],
-)
-
-# A fragile direct crossing with durable islands and a permanent overhead detour
-surge_map(
-    "causeway", "Causeway", FROSTY, LAVA_BOTTOM,
-    elements=[
-        el("Pentagon", -270, -90, -8, 1.5), el("Pentagon", 270, -90, 8, 1.5),
-        honeycomb(-125, -30, 1.4), honeycomb(15, -30, 1.4), honeycomb(155, -30, 1.1),
-        el("Platform", -225, 95, 0, 1.3), el("Platform", 220, 95, 0, 1.3),
-        el("Loooong Boi", 0, 195, 0, 1.0),
-    ],
-    players=[(-290, -5), (-250, -5), (250, -5), (290, -5)],
-    enemies=[(-430, 80), (430, 80), (-300, 300), (300, 300), (0, 325), (0, 75), (0, -155)],
-    weapons=[(-225, 130), (220, 130)],
-    rare=[(15, 12)],
-)
-
-# Offset launch islands: pads feed an open upper lane, with a lower recovery ledge
-surge_map(
-    "slingshot", "Slingshot", DESERT, LAVA_BOTTOM,
-    elements=[
-        el("Platform", -285, -100, 0, 2.0), el("Platform", 275, -20, 0, 2.0),
-        el("Jump Pad", -285, -78, 0, 1.5), el("Jump Pad", 275, 2, 0, 1.5),
-        el("Platform", -100, 100, -10, 1.4), el("Platform", 100, 190, 10, 1.4),
-        el("Pancake", 0, -115, 0, 1.2), el("Ballish", -290, 245, 0, 0.8),
-    ],
-    players=[(-325, -62), (-245, -62), (235, 18), (315, 18)],
-    enemies=[(-430, 70), (430, 140), (-160, 300), (250, 315), (0, 325), (0, 20), (180, -150)],
-    weapons=[(-100, 135), (100, 225)],
-    rare=[(0, -80)],
 )
 
 
