@@ -141,4 +141,20 @@ namespace SpiderSurge.Weapons
             __instance.GetComponent<BayonetBlade>()?.Wear();
         }
     }
+
+    // The game's overload expects a Particle Blade behind every energy field; a held Bayonet turns the ball as one would.
+    // Runs after the core prefix, which records who turned it
+    [HarmonyPatch(typeof(EnergyBall), "Overload", new[] { typeof(GameObject) })]
+    internal static class Bayonet_Overload_Patch
+    {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.Low)]
+        private static bool Prefix(EnergyBall __instance, GameObject go)
+        {
+            BayonetBlade blade = go != null && go.GetComponent<ParticleBlade>() == null ? go.GetComponent<BayonetBlade>() : null;
+            if (blade == null) return true;
+            if (go.GetComponent<Weapon>().owner != null) __instance.ChangeOwner(__instance.gameObject, blade.field.GetColor());
+            return false;
+        }
+    }
 }

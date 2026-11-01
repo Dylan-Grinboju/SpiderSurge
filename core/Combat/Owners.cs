@@ -183,10 +183,10 @@ namespace SpiderSurge.Common
             Store(record);
         }
 
-        // A held Particle Blade that overloads an energy ball makes the ball its own owner, so the blade's player turned it
+        // A held blade (a Particle Blade or the Bayonet) that overloads an energy ball makes the ball its own owner, so the blade's player turned it
         internal static void OnOverloaded(EnergyBall ball, GameObject by)
         {
-            ParticleBlade blade = by != null ? by.GetComponent<ParticleBlade>() : null;
+            Weapon blade = by != null ? by.GetComponent<Weapon>() : null;
             if (blade == null)
             {
                 return;
