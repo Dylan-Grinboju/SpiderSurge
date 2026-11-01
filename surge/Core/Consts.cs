@@ -23,6 +23,8 @@ namespace SpiderSurge
             public const string ShortTermInvestment = "shortTermInvestment";
             public const string LongTermInvestment = "longTermInvestment";
             public const string PerkLuck = "perkLuck";
+            public const string ChaosCartographer = "chaosCartographer";
+            public const string ChallengeSeeker = "challengeSeeker";
         }
 
         public static class ModifierNames
@@ -468,6 +470,8 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "Short Term Investment",
                 [PerkNames.LongTermInvestment] = "Long Term Investment",
                 [PerkNames.PerkLuck] = "Lucky",
+                [PerkNames.ChaosCartographer] = "Chaos Cartographer",
+                [PerkNames.ChallengeSeeker] = "Challenge Seeker",
                 // Ultimate perks - dynamic names based on which ability is active
                 [PerkNames.ImmuneAbilityUltimate] = "Neural Backup",
                 [PerkNames.AmmoAbilityUltimate] = "Care Package",
@@ -488,6 +492,8 @@ namespace SpiderSurge
                 [PerkNames.ShortTermInvestment] = "Your ability becomes stronger and recharges sooner, but your ultimate becomes weaker and recharges more slowly",
                 [PerkNames.LongTermInvestment] = "Your ultimate becomes stronger and recharges sooner, but your ability becomes weaker and recharges more slowly",
                 [PerkNames.PerkLuck] = "Chance to see level 2 perks even without level 1",
+                [PerkNames.ChaosCartographer] = "Every map choice offers a map worth +1 Chaos",
+                [PerkNames.ChallengeSeeker] = "Challenges appear more often after choosing a map",
                 [PerkNames.ImmuneAbilityUltimate] = "<color=" + Formatting.ColorRed + ">After a cast time, revive one dead player or summon 3 friendly wasps</color>",
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Kills nearby enemies; the wider pulse knocks the rest back</color>",
@@ -499,7 +505,9 @@ namespace SpiderSurge
             {
                 [PerkNames.AbilityCooldown] = "Reduces ultimate cooldown",
                 [PerkNames.AbilityDuration] = "Improves each player's ultimate: cast time, range or weapon drops",
-                [PerkNames.PerkLuck] = "Increases chance to see level 2 perks."
+                [PerkNames.PerkLuck] = "Increases chance to see level 2 perks.",
+                [PerkNames.ChaosCartographer] = "Every map choice offers a map worth +1 Chaos, sometimes a second",
+                [PerkNames.ChallengeSeeker] = "Challenges appear more often and sometimes reward +1 extra Chaos"
             };
 
             // Custom display names for Duration perk based on active ability

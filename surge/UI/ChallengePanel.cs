@@ -52,7 +52,7 @@ namespace SpiderSurge
             _current.Text(template.perkNameText, "Name", ChaosRules.Name(offered).ToUpperInvariant(), new Vector2(0, 115), new Vector2(width - 180, 46), 29);
             _current.Text(template.perkDescriptionText, "Flavor", ChaosRules.Flavor(offered), new Vector2(0, 70), new Vector2(width - 60, 28), 16).color = Hud.Muted;
             _current.Text(template.perkDescriptionText, "Description", ChaosRules.Description(offered), new Vector2(0, 10), new Vector2(width - 65, 75), 23);
-            var reward = _current.Text(template.perkNameText, "Reward", $"+{ChaosRules.Reward(offered)} TEAM CHAOS", new Vector2(0, -58), new Vector2(width - 60, 36), 23);
+            var reward = _current.Text(template.perkNameText, "Reward", $"+{ChallengeController.OfferedReward} TEAM CHAOS", new Vector2(0, -58), new Vector2(width - 60, 36), 23);
             reward.color = Hud.Warm;
             ChaosIcon.CenterBefore(ChaosIcon.Add(reward.transform, Vector2.zero, 30, Hud.Warm), reward);
             if (Net.IsRemoteClient)
@@ -200,13 +200,13 @@ namespace SpiderSurge
         {
             var hud = SurvivalModeHud.instance;
             if (hud == null) return;
-            int slot = ChaosWallet.Enabled && !AbilitySelection.StartingChoiceOpen ? PerkShop.BonusSlot : -1;
+            bool bonusesEnabled = ChaosWallet.Enabled && !AbilitySelection.StartingChoiceOpen;
             var cards = PerkChoiceWidget.Cards(hud);
             for (int i = 0; i < cards.Count; i++)
             {
                 var card = cards[i];
                 var existing = card.mapImage != null ? card.mapImage.transform.Find(ObjectName) : null;
-                bool show = i == slot;
+                bool show = bonusesEnabled && PerkShop.HasMapBonus(i);
                 if (!show && existing == null) continue;
                 if (existing == null)
                 {
