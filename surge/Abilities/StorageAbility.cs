@@ -432,6 +432,12 @@ namespace SpiderSurge
                 }
             }
 
+            // The Bayonet is in no spawn list, it replaces some Baby Shotgun spawns
+            if (Weapons.Bayonet.Prefab != null)
+            {
+                weaponPrefabMap[Consts.Values.Bayonet.Id.ToString()] = Weapons.Bayonet.Prefab;
+            }
+
             foreach (var data in dataList)
             {
                 if (weaponPrefabMap.TryGetValue(data.WeaponName.ToString(), out GameObject prefab))

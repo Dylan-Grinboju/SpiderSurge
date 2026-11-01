@@ -97,6 +97,7 @@
   <ItemGroup>
     <EmbeddedResource Include="surge\Sounds\*.wav" />
     <EmbeddedResource Include="surge\Icons\*.png" />
+    <EmbeddedResource Include="surge\Weapons\bayonet.png" LogicalName="SpiderSurge.BayonetSprite" />
   </ItemGroup>
 
   <!-- Assembly References -->

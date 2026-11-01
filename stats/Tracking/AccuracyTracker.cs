@@ -27,7 +27,7 @@ namespace StatsMod
         {
             if (!weaponNames.TryGetValue(weapon, out string name))
             {
-                name = weapon.ToString();
+                name = weapon == SpiderSurge.Consts.Values.Bayonet.Id ? SpiderSurge.Consts.Values.Bayonet.Name : weapon.ToString();
                 weaponNames[weapon] = name;
             }
             return name;

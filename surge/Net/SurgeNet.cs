@@ -226,7 +226,8 @@ namespace SpiderSurge
 
         private static void OnPeerReady(ulong clientId)
         {
-            Enemies.CustomEnemyNet.RegisterHandlers();
+            Weapons.Bayonet.EnsureCreated();
+            CustomPrefabNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
 
             // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.
@@ -248,7 +249,8 @@ namespace SpiderSurge
         {
             _lastRemoteWave = 0;
             _awaitingFirstState = true;
-            Enemies.CustomEnemyNet.RegisterHandlers();
+            Weapons.Bayonet.EnsureCreated();
+            CustomPrefabNet.RegisterHandlers();
         }
 
         private static void OnLeftHost()

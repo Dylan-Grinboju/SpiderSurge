@@ -333,6 +333,20 @@ namespace SpiderSurge
                 };
             }
 
+            public static class Bayonet
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)100;
+                public const string Name = "Bayonet";
+                // Share of Baby Shotgun spawns that come as a Bayonet instead
+                public const float SpawnShare = 1f / 3f;
+                // Half the Particle Blade's length, with its force
+                public static readonly UnityEngine.Vector2 BladeSize = new UnityEngine.Vector2(1f, 12f);
+                public const float BladeForce = 400f;
+                // Emitter crown in the sprite, in the weapon's local units
+                public static readonly UnityEngine.Vector2 BladeOrigin = new UnityEngine.Vector2(1.75f, 5.1f);
+                public const float SpritePixelsPerUnit = 20f;
+            }
+
             public static class ShieldBubbles
             {
                 // Base enemy name -> the shield bubble's height and scale on the enemy's root; Wasp, Hornet and Whisp values are the game's own shielded versions'

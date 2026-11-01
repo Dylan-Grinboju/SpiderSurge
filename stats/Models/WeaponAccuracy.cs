@@ -21,6 +21,7 @@ namespace StatsMod
             ("BurstLauncher", "Burst Launcher"),
             ("FireworkLauncher", "Firework Launcher"),
             ("ParticleBladeLauncher", "Particle Blade Launcher"),
+            ("Bayonet", "Bayonet"),
         };
 
         public int ShotsFired { get; private set; }
