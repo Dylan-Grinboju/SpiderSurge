@@ -241,4 +241,63 @@ namespace SpiderSurge
             if (button != null) button.UpdateStartScale();
         }
     }
+
+    // A synergy or Lucky Upgrade line makes a description tall enough to grow up into a two-line title, so it moves down into the space above the map picture and shrinks only when that runs out
+    public class PerkCardText : MonoBehaviour
+    {
+        private const float Gap = 2f;
+        private const float MinFontScale = 0.75f;
+
+        private Vector2 _position;
+        private Vector2 _size;
+        private float _fontSize;
+
+        public static void Fit(SurvivalModifierChoiceCard card)
+        {
+            TMP_Text title = card.perkNameText, description = card.perkDescriptionText;
+            if (title == null || description == null) return;
+            var text = description.GetComponent<PerkCardText>();
+            if (text == null)
+            {
+                text = description.gameObject.AddComponent<PerkCardText>();
+                text._position = description.rectTransform.anchoredPosition;
+                text._size = description.rectTransform.sizeDelta;
+                text._fontSize = description.fontSize;
+            }
+            RectTransform rect = description.rectTransform;
+            rect.anchoredPosition = text._position;
+            rect.sizeDelta = text._size;
+            description.enableAutoSizing = false;
+            description.fontSize = text._fontSize;
+            if (string.IsNullOrEmpty(title.text) || string.IsNullOrEmpty(description.text)) return;
+
+            title.ForceMeshUpdate(true);
+            description.ForceMeshUpdate(true);
+            float ceiling = title.rectTransform.localPosition.y + title.textBounds.min.y - Gap;
+            float top = rect.localPosition.y + description.textBounds.max.y;
+            if (top <= ceiling) return;
+
+            float floor = float.MinValue;
+            if (card.mapImage != null && card.mapImage.gameObject.activeSelf)
+                floor = card.mapImage.rectTransform.localPosition.y + card.mapImage.rectTransform.rect.yMax + Gap;
+            if (card.mapNameText != null && card.mapNameText.gameObject.activeSelf && !string.IsNullOrEmpty(card.mapNameText.text))
+            {
+                card.mapNameText.ForceMeshUpdate(true);
+                floor = Mathf.Max(floor, card.mapNameText.rectTransform.localPosition.y + card.mapNameText.textBounds.max.y + Gap);
+            }
+            if (ceiling - description.textBounds.size.y >= floor)
+            {
+                rect.anchoredPosition -= new Vector2(0f, top - ceiling);
+                return;
+            }
+
+            // The room between the title and the map picture holds the shrunken description, centred like the original
+            rect.anchoredPosition += new Vector2(0f, (ceiling + floor) / 2f - rect.localPosition.y);
+            rect.sizeDelta += new Vector2(0f, ceiling - floor - rect.rect.height);
+            description.fontSizeMax = text._fontSize;
+            description.fontSizeMin = text._fontSize * MinFontScale;
+            description.enableAutoSizing = true;
+            description.ForceMeshUpdate(true);
+        }
+    }
 }
