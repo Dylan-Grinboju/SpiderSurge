@@ -8,6 +8,8 @@ namespace SpiderSurge
         {
             public SerializationWeaponName WeaponName;
             public float Ammo;
+            // A Bayonet's blade durability, -1 for other weapons
+            public float Blade;
             internal StoredWeaponJourney Journey;
         }
 

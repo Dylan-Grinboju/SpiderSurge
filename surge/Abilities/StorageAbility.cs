@@ -338,6 +338,7 @@ namespace SpiderSurge
                 {
                     WeaponName = weaponData.Name,
                     Ammo = weaponData.Ammo,
+                    Blade = Weapons.BayonetBlade.LeftOn(weaponData.WeaponRef),
                     Journey = weaponData.Journey
                 });
             }
@@ -432,12 +433,6 @@ namespace SpiderSurge
                 }
             }
 
-            // The Bayonet is in no spawn list, it replaces some Baby Shotgun spawns
-            if (Weapons.Bayonet.Prefab != null)
-            {
-                weaponPrefabMap[Consts.Values.Bayonet.Id.ToString()] = Weapons.Bayonet.Prefab;
-            }
-
             foreach (var data in dataList)
             {
                 if (weaponPrefabMap.TryGetValue(data.WeaponName.ToString(), out GameObject prefab))
@@ -459,6 +454,7 @@ namespace SpiderSurge
                     {
                         newWeapon.ammo = data.Ammo;
                         KeepRestoredAmmo(newWeapon, data.Ammo);
+                        Weapons.BayonetBlade.Restore(newWeapon, data.Blade);
                         AchievementTracker.Run("Family Heirloom", static kept => StoredWeaponAchievement.Restore(kept.newWeapon, kept.Journey, kept.playerId), (newWeapon, data.Journey, playerId));
                     }
 

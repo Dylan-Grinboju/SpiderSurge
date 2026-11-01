@@ -40,6 +40,10 @@ namespace SpiderSurge
             public const string Adrenaline = "adrenaline";
             public const string Blademaster = "blademaster";
             public const string CoolExplosions = "coolexplosions";
+            public const string SizeMatters = "sizematters";
+            public const string ThickBlades = "thickblades";
+            public const string AmmoOverride = "ammoOverride";
+            public const string HalvedAmmo = "halvedAmmo";
         }
 
         // Sound file names (without extension) - must match embedded .wav filenames
@@ -337,10 +341,11 @@ namespace SpiderSurge
             {
                 public const SerializationWeaponName Id = (SerializationWeaponName)100;
                 public const string Name = "Bayonet";
-                // Share of Baby Shotgun spawns that come as a Bayonet instead
-                public const float SpawnShare = 1f / 3f;
-                // Half the Particle Blade's length, with its force
+                // Half the Particle Blade's length, with its force; Size Matters and Thick Blades grow it the same way
                 public static readonly UnityEngine.Vector2 BladeSize = new UnityEngine.Vector2(1f, 12f);
+                public const float SizeMattersLengthPerLevel = 0.5f;
+                public const float ThickBladesMinExtraWidth = 3f;
+                public const float ThickBladesMaxExtraWidth = 100f;
                 public const float BladeForce = 400f;
                 // Emitter crown in the sprite, in the weapon's local units
                 public static readonly UnityEngine.Vector2 BladeOrigin = new UnityEngine.Vector2(1.75f, 5.1f);

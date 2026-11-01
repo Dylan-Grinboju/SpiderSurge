@@ -87,6 +87,7 @@ namespace SpiderSurge
             ChaosNet.Initialize();
             AbilitySelection.Initialize();
             Vfx.WeaponVfx.Initialize();
+            Weapons.BayonetBlade.Initialize();
         }
 
         public static void Shutdown()
@@ -97,6 +98,7 @@ namespace SpiderSurge
             }
             _initialized = false;
             Vfx.WeaponVfx.Shutdown();
+            Weapons.BayonetBlade.Shutdown();
             foreach (var (channel, _) in HostChannels)
             {
                 Net.Unregister(channel);
@@ -229,6 +231,7 @@ namespace SpiderSurge
             Weapons.Bayonet.EnsureCreated();
             CustomPrefabNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
+            Weapons.BayonetBlade.SendAllTo(clientId);
 
             // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.
             SendFrozenTo<FrozenSpider>(clientId, EnemyFx.SpiderFrozen, frozen => frozen.TimeLeft);
@@ -249,6 +252,7 @@ namespace SpiderSurge
         {
             _lastRemoteWave = 0;
             _awaitingFirstState = true;
+            Weapons.BayonetBlade.Forget();
             Weapons.Bayonet.EnsureCreated();
             CustomPrefabNet.RegisterHandlers();
         }
