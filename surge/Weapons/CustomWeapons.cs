@@ -74,6 +74,16 @@ namespace SpiderSurge.Weapons
                 PoisonDart.EnsureCreated();
                 return PoisonDart.Prefab;
             }),
+            new CustomWeapon(Consts.Values.Repulsor.Id, Consts.Values.Repulsor.Name, "repulsor", SerializationWeaponName.MiniShotgun, () =>
+            {
+                Repulsor.EnsureCreated();
+                return Repulsor.Prefab;
+            }),
+            new CustomWeapon(Consts.Values.PoisonGrenade.Id, Consts.Values.PoisonGrenade.Name, "poisongrenade", SerializationWeaponName.Grenade, () =>
+            {
+                PoisonGrenade.EnsureCreated();
+                return PoisonGrenade.Prefab;
+            }),
         };
 
         private static Transform _holder;
@@ -82,6 +92,8 @@ namespace SpiderSurge.Weapons
         {
             Bayonet.EnsureCreated();
             PoisonDart.EnsureCreated();
+            Repulsor.EnsureCreated();
+            PoisonGrenade.EnsureCreated();
         }
 
         // Prefabs stay active under an inactive holder, so the spawner's plain Instantiate gives a live weapon
@@ -122,8 +134,8 @@ namespace SpiderSurge.Weapons
             return Resources.FindObjectsOfTypeAll<T>().FirstOrDefault(w => w.name == name && !w.gameObject.scene.IsValid());
         }
 
-        // Same pivot as the sprite it replaces, so grips, muzzles and shots line up
-        internal static Sprite LoadSprite(string resource, string name, Sprite source, float pixelsPerUnit)
+        // Same pivot as the sprite it replaces, so grips, muzzles and shots line up. An optional sprite not in the build is null without a warning
+        internal static Sprite LoadSprite(string resource, string name, Sprite source, float pixelsPerUnit, bool optional = false)
         {
             try
             {
@@ -131,7 +143,7 @@ namespace SpiderSurge.Weapons
                 {
                     if (stream == null)
                     {
-                        Logger.LogWarning($"[SpiderSurge] The {name} sprite is missing from the build.");
+                        if (!optional) Logger.LogWarning($"[SpiderSurge] The {name} sprite is missing from the build.");
                         return null;
                     }
                     var data = new byte[stream.Length];

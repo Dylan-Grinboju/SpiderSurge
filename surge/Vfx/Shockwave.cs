@@ -25,6 +25,9 @@ namespace SpiderSurge.Vfx
         private bool holding;
         private Transform follow;
         private System.Action<Vector3> onComplete;
+        // A full ring unless an arc is set: its middle and half its sweep, in radians
+        private float arcMiddle;
+        private float arcHalf = Mathf.PI;
 
         public static Shockwave Expand(Vector3 position, float radius, Color color, float speed, float width = 2f, float linger = 0.15f)
         {
@@ -32,6 +35,21 @@ namespace SpiderSurge.Vfx
             wave.maxRadius = radius;
             wave.speed = speed;
             wave.linger = linger;
+            wave.Draw(1f, 1f);
+            return wave;
+        }
+
+        // Only the arc around a direction, like a ring through a cone
+        public static Shockwave ExpandArc(Vector3 position, float radius, Color color, float speed, float middle, float half, float width = 2f, float linger = 0.15f)
+        {
+            Shockwave wave = Create(position, color, width);
+            wave.maxRadius = radius;
+            wave.speed = speed;
+            wave.linger = linger;
+            wave.arcMiddle = middle;
+            wave.arcHalf = half;
+            wave.core.loop = false;
+            wave.halo.loop = false;
             wave.Draw(1f, 1f);
             return wave;
         }
@@ -150,10 +168,12 @@ namespace SpiderSurge.Vfx
 
         private void Draw(float alpha, float widthScale)
         {
-            float step = Mathf.PI * 2f / Segments;
+            bool ring = arcHalf >= Mathf.PI;
+            float step = ring ? Mathf.PI * 2f / Segments : arcHalf * 2f / (Segments - 1);
+            float start = ring ? 0f : arcMiddle - arcHalf;
             for (int i = 0; i < Segments; i++)
             {
-                float angle = i * step;
+                float angle = start + i * step;
                 points[i] = new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f);
             }
             core.SetPositions(points);

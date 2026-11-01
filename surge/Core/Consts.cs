@@ -379,6 +379,33 @@ namespace SpiderSurge
                 public const float SpiderInputInterval = 0.05f;
             }
 
+            public static class Repulsor
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)102;
+                public const string Name = "Repulsor";
+                public const float PixelsPerUnit = 30f;
+                public const float Charges = 3f;
+                // The Baby Shotgun's pellet cone: a 120 degree arc of pellets at 250 units a second for 0.3 seconds
+                public const float ConeHalfAngle = 60f;
+                public const float Range = 75f;
+            }
+
+            public static class PoisonGrenade
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)103;
+                public const string Name = "Poison Grenade";
+                public const string CloudName = "Poison Grenade Cloud";
+                public const float PixelsPerUnit = 30f;
+                public const float CloudDuration = 5f;
+                // The Hornet Shaman's cloud: zaps reach 50 units, and 0.2 seconds within 20 units kills
+                public const float ZapRadius = 50f;
+                public const float KillRadius = 20f;
+                public const float KillTime = 0.2f;
+                public const float FadeTime = 1f;
+                public const float Hue = 0.6f;
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.25f, 0.55f, 1f, 1f);
+            }
+
             public static class ShieldBubbles
             {
                 // Base enemy name -> the shield bubble's height and scale on the enemy's root; Wasp, Hornet and Whisp values are the game's own shielded versions'

@@ -29,6 +29,7 @@ namespace SpiderSurge
         PulseImpact = 6,
         ImmuneHit = 7,
         Salvage = 8,
+        RepulsorBlast = 9,
     }
 
     public enum EnemyFx : byte
@@ -433,6 +434,13 @@ namespace SpiderSurge
             if (fx == SurgeFx.Salvage)
             {
                 Vfx.ClipVfx.Salvage(position);
+                return;
+            }
+
+            // The host fires every Repulsor, so the radius carries the blast's direction
+            if (fx == SurgeFx.RepulsorBlast)
+            {
+                Vfx.RepulsorVfx.Draw(position, radius);
                 return;
             }
 
