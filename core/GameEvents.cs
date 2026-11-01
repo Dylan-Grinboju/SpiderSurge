@@ -14,7 +14,10 @@ namespace SpiderSurge.Common
         public static event Action<SurvivalMode> RunStarting;
         // StartGame started a run, with the config the run really uses
         public static event Action<SurvivalMode, SurvivalConfig> RunStarted;
-        // StopGameMode is ending an active run: every part reads its run state here, before any part resets it
+        // An online run opens in the waiting room and is played once StartRound leaves it, before the first level loads
+        public static bool RunInWaitingRoom { get; private set; }
+        public static event Action<SurvivalMode> RunLeavingWaitingRoom;
+        // StopGameMode is ending a run that left its waiting room: every part reads its run state here, before any part resets it
         public static event Action<SurvivalMode> RunStopping;
         public static event Action RunStopped;
         // StartWave really started a wave; the game calls it every frame while a wave can't start yet
@@ -36,9 +39,11 @@ namespace SpiderSurge.Common
         [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
         private static class StartGamePatch
         {
-            static void Prefix(SurvivalMode __instance, SurvivalConfig survivalConfig)
+            static void Prefix(SurvivalMode __instance, SurvivalConfig survivalConfig, bool waitingRoom)
             {
-                if (survivalConfig != null && !__instance.GameModeActive()) Raise(RunStarting, __instance, nameof(RunStarting));
+                if (survivalConfig == null || __instance.GameModeActive()) return;
+                RunInWaitingRoom = waitingRoom;
+                Raise(RunStarting, __instance, nameof(RunStarting));
             }
 
             static void Postfix(SurvivalMode __instance, bool __result, SurvivalConfig survivalConfig)
@@ -52,10 +57,25 @@ namespace SpiderSurge.Common
         {
             static void Prefix(SurvivalMode __instance)
             {
-                if (__instance.GameModeActive()) Raise(RunStopping, __instance, nameof(RunStopping));
+                if (__instance.GameModeActive() && !RunInWaitingRoom) Raise(RunStopping, __instance, nameof(RunStopping));
             }
 
-            static void Postfix() => Listeners.Raise(RunStopped, Failure(nameof(RunStopped)));
+            static void Postfix()
+            {
+                RunInWaitingRoom = false;
+                Listeners.Raise(RunStopped, Failure(nameof(RunStopped)));
+            }
+        }
+
+        [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.StartRound))]
+        private static class SurvivalStartRoundPatch
+        {
+            static void Prefix(SurvivalMode __instance)
+            {
+                if (!RunInWaitingRoom || !__instance.GameModeActive()) return;
+                RunInWaitingRoom = false;
+                Raise(RunLeavingWaitingRoom, __instance, nameof(RunLeavingWaitingRoom));
+            }
         }
 
         [HarmonyPatch(typeof(SurvivalMode), "StartWave")]

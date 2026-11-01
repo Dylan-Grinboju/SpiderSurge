@@ -14,6 +14,7 @@ namespace SpiderSurge
         private const float Width = 640f;
         private const float Height = 68f;
         private const float Gap = 10f;
+        private const float NoticeSeconds = 4f;
 
         // Room the cards leave under them for the line, two lines of text at most
         public const float Reserve = Gap + Height;
@@ -24,8 +25,26 @@ namespace SpiderSurge
         private int _shownLevel = -1;
         private int _shownCurrentLevel = -1;
         private int _selectionStamp = -1;
+        private bool _notice;
+        private float _noticeUntil;
 
         public static PerkHint Current { get; private set; }
+
+        // The vanilla toast draws under the open perk view, so this line carries purchase and challenge notices there for a few seconds
+        public static void Notice(string text, Color color)
+        {
+            var hint = Current;
+            var view = hint != null && hint._hud != null ? hint._hud.perkChoiceView : null;
+            if (hint == null || hint._text == null || !hint.isActiveAndEnabled || view == null || !view.IsVisible)
+            {
+                Toast.Show(text, color);
+                return;
+            }
+            hint._notice = true;
+            hint._noticeUntil = Time.unscaledTime + NoticeSeconds;
+            hint._text.color = color;
+            hint._text.text = text;
+        }
 
         public static void Clear()
         {
@@ -115,6 +134,14 @@ namespace SpiderSurge
                 foreach (var choice in PerkChoiceWidget.Cards(_hud))
                     if (choice.modifier?.data != null)
                         SurvivalModifierChoiceCard_SetupCard_Patch.Postfix(choice, choice.modifier, choice.level, GameFields.CardIndex(choice), false);
+            if (_notice)
+            {
+                _selectionStamp = selection;
+                if (Time.unscaledTime < _noticeUntil) return;
+                _notice = false;
+                _text.color = Color.white;
+                _shownLevel = -1;
+            }
             if (key == _shownKey && level == _shownLevel && currentLevel == _shownCurrentLevel && selection == _selectionStamp) return;
             _shownKey = key;
             _shownLevel = level;

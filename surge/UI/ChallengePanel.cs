@@ -68,7 +68,8 @@ namespace SpiderSurge
                 nav.selectOnLeft = _current._accept;
                 _current._skip.navigation = nav;
             }
-            _current.Text(template.perkDescriptionText, "Footer", "Host decides for the team. No penalty for skipping.", new Vector2(0, -188), new Vector2(width, 32), 14).color = Hud.Muted;
+            string footer = Net.IsRemoteClient ? "No penalty for skipping." : "Host decides for the team. No penalty for skipping.";
+            _current.Text(template.perkDescriptionText, "Footer", footer, new Vector2(0, -188), new Vector2(width, 32), 14).color = Hud.Muted;
             _current.SetVisible(visible);
             if (visible) _current.Refresh();
         }

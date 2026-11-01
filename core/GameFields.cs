@@ -31,6 +31,9 @@ namespace SpiderSurge.Common
 
         public static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = Field<NetworkObject, HashSet<ulong>>("Observers");
 
+        // The game's own pickup equip, which also tells every client which weapon the spider holds
+        public static readonly MethodInfo EquipWeapon = Method(typeof(WeaponManager), "EquipWeapon");
+
         private static AccessTools.FieldRef<T, F> Field<T, F>(string name)
         {
             FieldInfo field = AccessTools.Field(typeof(T), name);

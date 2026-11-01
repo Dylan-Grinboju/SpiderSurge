@@ -436,6 +436,7 @@ namespace SpiderSurge
                 ChaosIcon.CenterBefore(_headerIcon, _header);
             }
             bool selectedCan = false;
+            string selectedUnavailable = null;
             foreach (Entry entry in _entries)
             {
                 int cost = PerkShop.CostOf(entry.Item);
@@ -444,7 +445,11 @@ namespace SpiderSurge
                 Modifier purchased = entry.Item == ShopItem.Perk ? PerkShop.PurchasedPerk : null;
                 bool revealed = purchased?.data != null;
                 LayoutEntry(entry, revealed);
-                if (entry == _selected) selectedCan = can;
+                if (entry == _selected)
+                {
+                    selectedCan = can;
+                    selectedUnavailable = unavailable;
+                }
                 float alpha = can || revealed ? 1f : 0.45f;
                 if (entry.Title != null)
                 {
@@ -473,7 +478,7 @@ namespace SpiderSurge
                     entry.Background.color = PerkChoiceWidget.Faded(tint, can || revealed ? 1f : 0.6f);
                 }
             }
-            RefreshBuy(selectedCan);
+            RefreshBuy(selectedCan, selectedUnavailable);
         }
 
         // Centers the title and description around the middle and keeps them inside the card's frame; a bought perk shows a small icon beside its name and the description across the card
@@ -508,7 +513,7 @@ namespace SpiderSurge
                 ? perks.GetDescription(perk.data.key) : (string)perk.data.description;
         }
 
-        private void RefreshBuy(bool selectedCan)
+        private void RefreshBuy(bool selectedCan, string selectedUnavailable)
         {
             if (_buy == null || _buy.Button == null) return;
             bool can = _selected != null && selectedCan;
@@ -517,7 +522,7 @@ namespace SpiderSurge
             {
                 _buy.Label.text = _selected == null ? "Pick an item to buy"
                     : _selected.Item == ShopItem.Perk && PerkShop.PurchasedPerk != null ? "Purchased"
-                    : $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
+                    : selectedUnavailable ?? $"Buy {PerkShop.NameOf(_selected.Item)} for <color={Consts.Formatting.ColorGold}>{PerkShop.PriceOf(_selected.Item)}</color>";
             }
         }
 

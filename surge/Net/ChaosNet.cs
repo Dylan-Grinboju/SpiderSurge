@@ -93,7 +93,7 @@ namespace SpiderSurge
 
         private static void OnToast(ulong sender, BinaryReader reader)
         {
-            if (sender == Net.ServerId) Toast.Show(reader.ReadString(), Hud.Pink);
+            if (sender == Net.ServerId) PerkHint.Notice(reader.ReadString(), Hud.Pink);
         }
 
         private static void WriteState(BinaryWriter writer)
