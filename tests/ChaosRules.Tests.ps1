@@ -18,6 +18,34 @@ foreach ($count in 2, 3, 4, 5) {
 }
 Assert-Equal ([SpiderSurge.ChaosRules]::BonusSlot(0, 0, 0)) -1 'Empty choices have no bonus'
 
+foreach ($level in 0, 1, 2) {
+    foreach ($count in 0..5) {
+        $first = [SpiderSurge.ChaosRules]::BonusSlot(1, $count, 0, $level)
+        Assert-Equal ($first -ge 0) ($level -gt 0 -and $count -gt 0) 'Cartographer guarantees the first bonus even at maximum roll'
+        Assert-Equal ([SpiderSurge.ChaosRules]::SecondBonusSlot(0, $count, $first, 0, $level) -ge 0) ($level -eq 2 -and $count -gt 1) 'Only level 2 can mark a second distinct map'
+    }
+    foreach ($roll in 0, .499999, .5, .749999, .75, 1) {
+        $threshold = if ($level -eq 0) { .5 } else { .75 }
+        Assert-Equal ([SpiderSurge.ChaosRules]::OffersChallenge($roll, $level)) ($roll -lt $threshold) 'Challenge chance boundary'
+        foreach ($kind in [Enum]::GetValues([SpiderSurge.ChallengeKind])) {
+            $bonus = if ($kind -ne 'None' -and $level -eq 2 -and $roll -lt .5) { 1 } else { 0 }
+            Assert-Equal ([SpiderSurge.ChaosRules]::ChallengeReward($kind, $level, $roll)) ([SpiderSurge.ChaosRules]::Reward($kind) + $bonus) 'Challenge bonus is exactly one and only at level 2'
+        }
+    }
+}
+foreach ($count in 2..5) {
+    foreach ($first in 0..($count - 1)) {
+        $others = @()
+        foreach ($selected in 0..($count - 2)) {
+            $second = [SpiderSurge.ChaosRules]::SecondBonusSlot(.499999, $count, $first, $selected, 2)
+            Assert-Equal ($second -ge 0 -and $second -lt $count -and $second -ne $first) $true 'Second bonus stays in range and cannot duplicate the first'
+            $others += $second
+            Assert-Equal ([SpiderSurge.ChaosRules]::SecondBonusSlot(.5, $count, $first, $selected, 2)) -1 'Second-map roll fails at the 50 percent boundary'
+        }
+        Assert-Equal (@($others | Select-Object -Unique).Count) ($count - 1) 'Every remaining card can be selected uniformly'
+    }
+}
+
 $cases = @(
     @{ Lives = 1; Abilities = $false; Ultimate = $false; Expected = 'LifeWager,Overrun' },
     @{ Lives = 2; Abilities = $false; Ultimate = $false; Expected = 'LifeWager,Overrun,PoisonedHeart' },

@@ -47,6 +47,8 @@ namespace SpiderSurge
             }
         }
         public static int BonusSlot { get; private set; } = -1;
+        public static int SecondBonusSlot { get; private set; } = -1;
+        public static bool HasMapBonus(int slot) => slot >= 0 && (slot == BonusSlot || slot == SecondBonusSlot);
         public static bool BonusPaid { get; private set; }
         private static int _visitWave = -1;
         public static bool SoldOut(ShopItem item) => (PurchasedMask & (1 << (int)item)) != 0;
@@ -62,7 +64,10 @@ namespace SpiderSurge
             PurchasedMask = 0;
             PurchasedPerkKey = "";
             BonusPaid = false;
-            BonusSlot = ChaosRules.BonusSlot(UnityEngine.Random.value, upcoming.Count, UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count)));
+            int cartographer = PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ChaosCartographer) ?? 0;
+            BonusSlot = ChaosRules.BonusSlot(UnityEngine.Random.value, upcoming.Count, UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count)), cartographer);
+            SecondBonusSlot = ChaosRules.SecondBonusSlot(UnityEngine.Random.value, upcoming.Count, BonusSlot,
+                UnityEngine.Random.Range(0, Math.Max(1, upcoming.Count - 1)), cartographer);
             RollOffer(upcoming);
             ChaosWallet.Notify();
         }
@@ -73,7 +78,7 @@ namespace SpiderSurge
             BonusPaid = true;
             var cards = PerkChoiceWidget.Cards(SurvivalModeHud.instance);
             int index = cards.FindIndex(card => card.modifier == modifier && card.level == level);
-            if (index >= 0 && index == BonusSlot) ChaosWallet.GrantPoints(1, "Map bonus");
+            if (HasMapBonus(index)) ChaosWallet.GrantPoints(1, "Map bonus");
             ChaosNet.MarkDirty();
         }
 
@@ -96,20 +101,22 @@ namespace SpiderSurge
             PurchasedMask = 0;
             PurchasedPerkKey = "";
             BonusSlot = -1;
+            SecondBonusSlot = -1;
             BonusPaid = false;
             _visitWave = -1;
             SetOffer(new ShopItem[0]);
         }
 
-        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, bool paid, ShopItem[] offer, string purchasedPerk)
+        internal static void ApplyRemoteOffer(int visit, int purchased, int bonus, int secondBonus, bool paid, ShopItem[] offer, string purchasedPerk)
         {
             if (!Net.IsRemoteClient) return;
             // The cards can show before this state arrives, so the bonus label follows the state too
-            bool relabel = visit != VisitId || bonus != BonusSlot;
+            bool relabel = visit != VisitId || bonus != BonusSlot || secondBonus != SecondBonusSlot;
             VisitId = visit;
             PurchasedMask = purchased;
             PurchasedPerkKey = purchasedPerk ?? "";
             BonusSlot = bonus;
+            SecondBonusSlot = secondBonus;
             BonusPaid = paid;
             SetOffer(offer ?? new ShopItem[0]);
             if (relabel) MapBonusLabels.Refresh();

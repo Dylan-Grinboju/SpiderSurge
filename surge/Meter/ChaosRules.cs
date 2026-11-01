@@ -92,7 +92,20 @@ namespace SpiderSurge
             }
         }
 
-        public static int BonusSlot(double chance, int count, int selectedSlot) => chance < .75 && count > 0 ? Math.Max(0, Math.Min(count - 1, selectedSlot)) : -1;
+        public static int BonusSlot(double chance, int count, int selectedSlot, int perkLevel = 0) =>
+            (perkLevel > 0 || chance < .75) && count > 0 ? Math.Max(0, Math.Min(count - 1, selectedSlot)) : -1;
+
+        public static int SecondBonusSlot(double chance, int count, int firstSlot, int selectedSlot, int perkLevel)
+        {
+            if (perkLevel < 2 || chance >= .5 || count < 2 || firstSlot < 0 || firstSlot >= count) return -1;
+            int slot = Math.Max(0, Math.Min(count - 2, selectedSlot));
+            return slot >= firstSlot ? slot + 1 : slot;
+        }
+
+        public static bool OffersChallenge(double chance, int perkLevel) => chance < (perkLevel > 0 ? .75 : .5);
+
+        public static int ChallengeReward(ChallengeKind kind, int perkLevel, double chance) =>
+            Reward(kind) + (kind != ChallengeKind.None && perkLevel >= 2 && chance < .5 ? 1 : 0);
 
         // "1 chaos point", "+2 chaos points", "-1 chaos point"
         public static string Points(int amount, bool signed = false) =>
