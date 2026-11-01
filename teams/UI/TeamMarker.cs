@@ -91,7 +91,8 @@ namespace SpiderTeams
             {
                 return false;
             }
-            return LobbyController.inLobby || LobbyController.inWaitingRoom || TeamManager.TeamMatchActive;
+            // Teams play no part in a survival waiting room
+            return LobbyController.inLobby || TeamManager.InVersusLobby || TeamManager.TeamMatchActive;
         }
 
         private void Sync(bool show)

@@ -10,7 +10,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split
 - **Team Versus**: A versus round ends when one team is left standing. Every member of the winning team scores, alive or dead, and the first team to reach the winning score takes the match.
 - **Any Number of Teams**: Play with 2 to 32 teams. With as many teams as players, everyone is on their own team, which plays exactly like normal free-for-all.
 - **More Than 4 Players**: Works with [InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends) for up to 32 players.
-- **Pick Teams in the Versus Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team. A hint in the versus waiting room explains the controls. New players, including those joining a match in progress, immediately join the smallest team automatically; ties go to the first team.
+- **Pick Teams in the Versus Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team. A hint in the versus waiting room explains the controls. With Online mode off, versus for two or more players skips the waiting room, so teams are picked in the main lobby instead. New players, including those joining a match in progress, immediately join the smallest team automatically; ties go to the first team.
 - **Configurable Friendly Fire**: Teammates' hits can push you (the default), do nothing, or work as normal.
 - **Team Visuals**: Recolor spiders in their team's color, show a team marker above each spider, both, or neither.
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
@@ -27,7 +27,7 @@ Team versus starts off on new installs. Switch it on or off between matches from
 ## How to Play
 
 1. Gather everyone in the lobby. While team versus is on, the versus platform reads **TEAM VERSUS**.
-2. Enter the versus waiting room. Each player presses **Y / Triangle** (controller) or **T** (keyboard) to switch to the next team. Every switch is announced, for example "P2 joined Blue Team". Team switching is unavailable in the main lobby, survival waiting room and active rounds.
+2. Enter the versus waiting room, or stay in the main lobby with Online mode off. Each player presses **Y / Triangle** (controller) or **T** (keyboard) to switch to the next team. Every switch is announced, for example "P2 joined Blue Team". Team switching is unavailable in the survival waiting room and active rounds, and in the main lobby while Online mode is on.
 3. Start the versus rounds as usual. Teams are locked until the match ends; late arrivals join the smallest team without moving existing players.
 
 - A round ends when only one team has spiders alive. If the last spiders all die during the slow motion at the end of a round, the round is a draw.
@@ -112,7 +112,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
 
 ### Input:
-The team buttons are fixed: Y / Triangle on a controller and T on the keyboard. They switch teams only in the versus waiting room while team versus is enabled. Y keeps its normal show-names action elsewhere. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
+The team buttons are fixed: Y / Triangle on a controller and T on the keyboard. They switch teams only while team versus is enabled, in the versus waiting room or, with Online mode off, in the main lobby. Y keeps its normal show-names action elsewhere. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).

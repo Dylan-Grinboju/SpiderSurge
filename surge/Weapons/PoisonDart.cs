@@ -110,8 +110,12 @@ namespace SpiderSurge.Weapons
             return puff;
         }
 
+        // The dart and the enemy or player it dazed, on the host
+        public static event System.Action<Component, Component> Dazed;
+        private const string ListenerFailed = "SpiderSurge Daze Dart listener failed";
+
         // The host decides what the dart hit: an enemy or another spider is dazed through its shield, which holds
-        internal static void Hit(Collider2D collider, PlayerController shooter)
+        internal static void Hit(Component dart, Collider2D collider, PlayerController shooter)
         {
             if (collider == null) return;
             EnemyHealthSystem enemy = collider.GetComponentInParent<EnemyHealthSystem>();
@@ -123,7 +127,7 @@ namespace SpiderSurge.Weapons
             if (enemy != null)
             {
                 if (enemy.IsDead()) return;
-                DazedEnemy.Daze(enemy, Values.DazeDuration);
+                if (DazedEnemy.Daze(enemy, Values.DazeDuration)) Listeners.Raise(Dazed, dart, (Component)enemy, ListenerFailed);
                 return;
             }
 
@@ -134,7 +138,7 @@ namespace SpiderSurge.Weapons
             SpiderHealthSystem spider = player != null ? player.spiderHealthSystem : null;
             if (spider == null || player == shooter || spider.dead || spider.astralDead || Immune(spider)) return;
             if (shooter != null && SpiderTeams.FriendlyFireGate.SparesTeammate(shooter.playerID.Value, spider)) return;
-            DazedSpider.Daze(spider, Values.DazeDuration);
+            if (DazedSpider.Daze(spider, Values.DazeDuration)) Listeners.Raise(Dazed, dart, (Component)player, ListenerFailed);
         }
 
         private static readonly AccessTools.FieldRef<SpiderHealthSystem, float> ImmuneTill = AccessTools.FieldRefAccess<SpiderHealthSystem, float>("_immuneTill");
@@ -177,7 +181,7 @@ namespace SpiderSurge.Weapons
         {
             if (!Net.IsAuthority || _spent) return;
             _spent = true;
-            PoisonDart.Hit(collision.collider, _shooter);
+            PoisonDart.Hit(this, collision.collider, _shooter);
         }
     }
 

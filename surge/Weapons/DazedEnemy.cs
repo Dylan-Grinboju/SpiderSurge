@@ -120,6 +120,8 @@ namespace SpiderSurge.Weapons
             if (_visualOnly || !_held || _enemy == null || FrozenEnemy.IsHeld(_enemy)) return;
             Rigidbody2D body = _enemy.rb2D;
             if (body == null || body.bodyType != RigidbodyType2D.Dynamic || !body.simulated) return;
+            // A Kinetic Pulse or Repulsor launch carries it and its stun holds it, as for an enemy that isn't dazed
+            if (PulseKnockback.IsUncapped(body) || _brains.Exists(PulseKnockback.IsPulseStunned)) return;
 
             Vector2 direction = _wander.Step(Time.fixedDeltaTime);
             if (_roller != null)

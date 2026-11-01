@@ -272,6 +272,7 @@ namespace SpiderSurge
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
             SurgeGameModeManager.EndRun(RunEnd.LeftHost);
+            Maps.SurgeMaps.Forget();
         }
 
         private static void WriteState(BinaryWriter writer)

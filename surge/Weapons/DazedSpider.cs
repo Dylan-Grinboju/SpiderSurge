@@ -52,9 +52,13 @@ namespace SpiderSurge.Weapons
             dazed._until = Time.time + duration;
             dazed._controller = dazed.GetComponent<SpiderController>();
             if (dazed._controller != null) dazed._heldMove = MoveInput(dazed._controller);
-            // A held trigger lets go, as if the player released it
+            // A held trigger and a held grab let go, as if the player released them; a grab left on would pick up whatever it stumbles past
             var weapons = dazed.GetComponentInChildren<SpiderWeaponManager>();
-            if (Net.IsAuthority && weapons != null && weapons.equippedWeapon != null) weapons.equippedWeapon.Use(false);
+            if (Net.IsAuthority && weapons != null)
+            {
+                weapons.tryingToPickupWeapon.Value = false;
+                if (weapons.equippedWeapon != null) weapons.equippedWeapon.Use(false);
+            }
             dazed._vfx = DazeVfx.Attach(health.transform, 6f);
             return true;
         }

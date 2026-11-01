@@ -33,6 +33,7 @@ namespace StatsMod
             Owners.ExplosionCreated += HitLogic.SetExplosionOwner;
             Owners.Equipped += AccuracyTracker.Forget;
             Owners.Reflected += AccuracyTracker.Forget;
+            SpiderSurge.Weapons.PoisonDart.Dazed += AccuracyTracker.Dazed;
 
             GameObject pauseHandlerObj = new GameObject(PauseHandlerName);
             pauseHandlerObj.AddComponent<PauseHandler>();
@@ -52,6 +53,7 @@ namespace StatsMod
             Owners.ExplosionCreated -= HitLogic.SetExplosionOwner;
             Owners.Equipped -= AccuracyTracker.Forget;
             Owners.Reflected -= AccuracyTracker.Forget;
+            SpiderSurge.Weapons.PoisonDart.Dazed -= AccuracyTracker.Dazed;
             TitlesManager.Instance.ReleasePortraits();
             AccuracyTracker.Reset();
             if (UIManager.Instance != null)

@@ -26,6 +26,7 @@ namespace SpiderSurge.Weapons
         private Collider2D _fieldCollider;
         private Vector2 _centerOfMass;
         private float _inertia;
+        private WeaponManager _holder;
         private Collider2D _ignoredHolder;
         private Vector2 _baseSize;
         private Vector2 _size;
@@ -73,9 +74,14 @@ namespace SpiderSurge.Weapons
             if (_started) Send();
         }
 
+        // Put away into the Pocket Dimension, it lights again for whoever holds it when it comes back
+        private void OnDisable() => Douse(false);
+
         private void Update()
         {
             bool held = _left > 0f && _gun.equipped && _gun.owner != null && _gun.owner.healthSystem != null;
+            // Another spider can catch it in the frame it was dropped; the blade then spares its new holder instead
+            if (held && _lit && _holder != _gun.owner) Douse(false);
             if (held != _lit)
             {
                 if (held) Light(); else Douse(true);
@@ -217,6 +223,7 @@ namespace SpiderSurge.Weapons
         private void Light()
         {
             _lit = true;
+            _holder = _gun.owner;
             _ignoredHolder = _gun.owner.healthSystem.GetComponent<Collider2D>();
             if (_ignoredHolder != null) Physics2D.IgnoreCollision(_fieldCollider, _ignoredHolder, true);
             field.ChangeColor(BladeColor(_gun.owner));
@@ -231,6 +238,7 @@ namespace SpiderSurge.Weapons
             _lit = false;
             if (_ignoredHolder != null && _fieldCollider != null) Physics2D.IgnoreCollision(_fieldCollider, _ignoredHolder, false);
             _ignoredHolder = null;
+            _holder = null;
             if (_fieldCollider != null) SetCollider(false);
             if (field != null) field.gameObject.SetActive(false);
             if (beamSound != null) beamSound.Pause();

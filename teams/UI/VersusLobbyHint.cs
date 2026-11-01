@@ -13,7 +13,7 @@ namespace SpiderTeams
         {
             var manager = TeamManager.Instance;
             var game = GameController.instance;
-            if (manager == null || !manager.PicksOpen || game == null || !game.acceptingInputs || game.gamePaused
+            if (manager == null || !manager.PicksOpen || game == null || !game.acceptingInputs || GameMenus.Open || SettingsPage.IsOpen
                 || LevelController.IsLoading)
             {
                 return;

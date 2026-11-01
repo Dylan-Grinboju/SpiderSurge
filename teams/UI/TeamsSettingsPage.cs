@@ -208,7 +208,7 @@ namespace SpiderTeams
 
         private static string KeyboardLabel() => Controls.Display(Controls.TeamKeyboard);
 
-        private static string PickHint() => $"In the versus lobby, press {GamepadLabel()} / Triangle (controller) or {KeyboardLabel()} (keyboard) to switch team.";
+        private static string PickHint() => $"In the versus lobby, or the main lobby with Online mode off, press {GamepadLabel()} / Triangle (controller) or {KeyboardLabel()} (keyboard) to switch team.";
 
         private static string Plural(int count, string noun)
         {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
@@ -35,6 +36,41 @@ namespace SpiderSurge.Maps
         static void Prefix(LevelController __instance, GameLevel level, ref string nameOverride)
         {
             if (level != null) SurgeMaps.OnLevelChosen(__instance, level, ref nameOverride);
+        }
+    }
+
+    // Every Surge map loads the same scene, so picking another Surge map would pass for staying on this one (I Like It Here)
+    [HarmonyPatch(typeof(SurvivalMode), "CheckChoiceAchievements")]
+    internal static class SurgeMapChoiceAchievementPatch
+    {
+        private static GameLevel _elsewhere;
+
+        static void Prefix(ref GameLevel level)
+        {
+            SurgeMap map = SurgeMaps.Of(level);
+            if (map == null || map == SurgeMaps.Current) return;
+            if (_elsewhere == null)
+            {
+                _elsewhere = ScriptableObject.CreateInstance<GameLevel>();
+                _elsewhere.name = "SurgeMapElsewhere";
+                _elsewhere.hideFlags = HideFlags.DontUnloadUnusedAsset;
+            }
+            level = _elsewhere;
+        }
+    }
+
+    // The game announces each wave except on custom maps, which Surge maps are built on
+    [HarmonyPatch(typeof(SurvivalMode), "StartWave")]
+    internal static class SurgeMapWaveAnnouncePatch
+    {
+        private static readonly MethodInfo AnnounceWave = AccessTools.Method(typeof(SurvivalMode), "AnnounceWave");
+
+        static void Prefix(bool ____waveInProgress, out bool __state) => __state = ____waveInProgress;
+
+        static void Postfix(SurvivalMode __instance, bool ____waveInProgress, bool __state)
+        {
+            if (__state || !____waveInProgress || SurgeMaps.Current == null || SceneManager.GetActiveScene().name != SurgeMaps.SceneName) return;
+            AnnounceWave?.Invoke(__instance, null);
         }
     }
 

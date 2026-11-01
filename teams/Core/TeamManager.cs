@@ -198,6 +198,8 @@ namespace SpiderTeams
 
         public void OnLobbyLoaded()
         {
+            // Read again here, since the main lobby's picks depend on it (InOfflineLobby)
+            GameSettings.LoadGameMode();
             if (HostOwnsRoster)
             {
                 MarkRosterChanged();
@@ -294,7 +296,10 @@ namespace SpiderTeams
         public static bool InVersusLobby => LobbyController.inWaitingRoom
             && VersusMode.instance != null && VersusMode.instance.GameModeActive();
 
-        public bool PicksOpen => InVersusLobby && ModConfig.TeamsEnabled
+        // With Online mode off, versus for two or more players starts without a waiting room, so they pick in the main lobby
+        public static bool InOfflineLobby => LobbyController.inLobby && !GameSettings.IsOnlineMode;
+
+        public bool PicksOpen => (InVersusLobby || InOfflineLobby) && ModConfig.TeamsEnabled
             && (Net.IsRemoteClient ? !_remoteLocked : !MatchLocked);
 
         public int AddTeamPoint(int team)
