@@ -32,7 +32,7 @@ namespace SpiderSurge.Weapons
             gun.serializationWeaponName = Values.Id;
             gun.usedInCustomTiers = false;
             gun.maxAmmo = Values.Charges;
-            Sprite sprite = CustomWeapons.LoadSprite(SpriteResource, Values.Name, source.GetComponent<SpriteRenderer>().sprite, Values.PixelsPerUnit, optional: true);
+            Sprite sprite = CustomWeapons.LoadSprite(SpriteResource, Values.Name, source.GetComponent<SpriteRenderer>().sprite, Values.PixelsPerUnit);
             if (sprite != null) go.GetComponent<SpriteRenderer>().sprite = sprite;
 
             // No pellets and no bang: the blast pushes, and plays the pulse's effects instead
@@ -43,13 +43,7 @@ namespace SpiderSurge.Weapons
                 emission.enabled = false;
             }
             foreach (AudioSource bang in gun.shotSounds) bang.volume = 0f;
-            if (gun.activeIndicator != null)
-            {
-                foreach (SpriteRenderer light in gun.activeIndicator.GetComponentsInChildren<SpriteRenderer>(true))
-                {
-                    light.color = SurgeVfx.SetAlpha(Consts.Values.Pulse.RingColor, light.color.a);
-                }
-            }
+            CustomWeapons.ReplaceIndicator(go, gun.activeIndicator, "SpiderSurge.RepulsorReadySprite", Values.PixelsPerUnit);
             go.AddComponent<RepulsorBlast>();
             CustomPrefabNet.RegisterWeapon(go, Values.Name);
             return go;

@@ -35,12 +35,11 @@ namespace SpiderSurge.Weapons
             grenade.usedInCustomTiers = false;
             // Every peer makes its own cloud where the grenade bursts, as it makes the Grenade's explosion
             grenade.explosion = cloud;
-            Sprite sprite = CustomWeapons.LoadSprite(SpriteResource, Values.Name, source.GetComponent<SpriteRenderer>().sprite, Values.PixelsPerUnit, optional: true);
+            Sprite sprite = CustomWeapons.LoadSprite(SpriteResource, Values.Name, source.GetComponent<SpriteRenderer>().sprite, Values.PixelsPerUnit);
             if (sprite != null) go.GetComponent<SpriteRenderer>().sprite = sprite;
-            if (grenade.lights != null)
-            {
-                foreach (SpriteRenderer light in grenade.lights.GetComponentsInChildren<SpriteRenderer>(true)) light.color = SurgeVfx.SetAlpha(Values.Color, light.color.a);
-            }
+            Transform inactiveLights = go.transform.Find("InactiveLights");
+            if (inactiveLights != null) inactiveLights.gameObject.SetActive(false);
+            CustomWeapons.ReplaceIndicator(go, grenade.lights, "SpiderSurge.PoisonGrenadeArmedSprite", Values.PixelsPerUnit);
             CustomPrefabNet.RegisterWeapon(go, Values.Name);
             return go;
         }

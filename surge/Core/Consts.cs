@@ -355,8 +355,8 @@ namespace SpiderSurge
             public static class PoisonDart
             {
                 public const SerializationWeaponName Id = (SerializationWeaponName)101;
-                public const string Name = "Poison Dart";
-                public const string ShotName = "Poison Dart Shot";
+                public const string Name = "Daze Dart";
+                public const string ShotName = "Daze Dart Shot";
                 public const float LauncherPixelsPerUnit = 30f;
                 public const float DartPixelsPerUnit = 50f;
                 public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(0.7f, 4.4f);

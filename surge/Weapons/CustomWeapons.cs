@@ -134,6 +134,28 @@ namespace SpiderSurge.Weapons
             return Resources.FindObjectsOfTypeAll<T>().FirstOrDefault(w => w.name == name && !w.gameObject.scene.IsValid());
         }
 
+        // Keep the game's ready/fuse toggle, with artwork aligned to the replacement body.
+        internal static void ReplaceIndicator(GameObject weapon, GameObject indicator, string resource, float pixelsPerUnit)
+        {
+            if (indicator == null) return;
+            SpriteRenderer body = weapon.GetComponent<SpriteRenderer>();
+            Sprite sprite = LoadSprite(resource, indicator.name, body.sprite, pixelsPerUnit);
+            if (sprite == null) return;
+            foreach (Renderer renderer in indicator.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
+            foreach (var light in indicator.GetComponentsInChildren<UnityEngine.Experimental.Rendering.Universal.Light2D>(true)) light.enabled = false;
+            var overlay = new GameObject("WeaponIndicator").AddComponent<SpriteRenderer>();
+            overlay.transform.SetParent(indicator.transform, false);
+            overlay.transform.position = weapon.transform.position;
+            overlay.transform.rotation = weapon.transform.rotation;
+            Vector3 parentScale = indicator.transform.lossyScale;
+            Vector3 weaponScale = weapon.transform.lossyScale;
+            overlay.transform.localScale = new Vector3(weaponScale.x / parentScale.x, weaponScale.y / parentScale.y, weaponScale.z / parentScale.z);
+            overlay.sprite = sprite;
+            overlay.sharedMaterial = body.sharedMaterial;
+            overlay.sortingLayerID = body.sortingLayerID;
+            overlay.sortingOrder = body.sortingOrder + 1;
+        }
+
         // Same pivot as the sprite it replaces, so grips, muzzles and shots line up. An optional sprite not in the build is null without a warning
         internal static Sprite LoadSprite(string resource, string name, Sprite source, float pixelsPerUnit, bool optional = false)
         {
