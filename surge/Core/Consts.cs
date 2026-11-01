@@ -228,6 +228,7 @@ namespace SpiderSurge
                 public const float AbilityRangeIncreasePerLevel = 25f;
                 public const float UltimateBaseRange = 125f;
                 public const float UltimateRangeIncreasePerLevel = 50f;
+                public const float RewindSpiderDuration = 2f;
                 public const float RewindRingTime = 0.4f;
                 public const float TintStrength = 0.6f;
                 public const string WaspName = "Wasp";
@@ -571,7 +572,7 @@ namespace SpiderSurge
                 [PerkNames.AmmoAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Spawns weapons around the map</color>",
                 [PerkNames.PulseAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Kills nearby enemies; the wider pulse knocks the rest back</color>",
                 [PerkNames.StorageAbilityUltimate] = "<color=" + Formatting.ColorRed + ">For 3 seconds, pull the enemies and spiders around you toward you; whatever reaches you goes into the pocket dimension</color>",
-                [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn back time on nearby enemies, turning them into wasps. Shields stay</color>"
+                [PerkNames.FreezeAbilityUltimate] = "<color=" + Formatting.ColorRed + ">Turn nearby enemies into Wasps and briefly freeze other spiders. Shields stay</color>"
             };
 
             private static readonly Dictionary<string, string> upgradeDescriptions = new Dictionary<string, string>

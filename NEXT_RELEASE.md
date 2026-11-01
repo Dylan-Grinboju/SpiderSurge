@@ -53,6 +53,8 @@ Surge runs add 14 new maps to the map choices, from the arches of Aqueduct to th
 
 <img width="1600" alt="Your first Surge run, explained in How to play" src="docs/images/guide-first-run.png" />
 
+Rewind now briefly freezes other spiders in range, including teammates. Walls and solid platforms block the spider freeze; the caster stays free. Weapons and shields are kept, and an existing longer freeze is preserved.
+
 ### Teams
 
 Split the lobby into teams and fight until one team is left standing. Spiders take their team's color, teammates spawn together, and the win screen shows each team's score.

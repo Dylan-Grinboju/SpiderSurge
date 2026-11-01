@@ -117,6 +117,7 @@ namespace SpiderSurge
                 if (IsAuthority)
                 {
                     RewindEnemies(body.position, range);
+                    FrozenSpider.FreezeAround(body.position, range, Consts.Values.Freeze.RewindSpiderDuration, PlayerId);
                 }
             }
 
