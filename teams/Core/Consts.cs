@@ -32,7 +32,7 @@ namespace SpiderTeams
             public const int TeamCount = 2;
             public const string FriendlyFire = "push";
             public const bool RecolorSpiders = true;
-            public const bool ShowMarker = false;
+            public const bool ShowMarker = true;
             public const bool GroupTeammates = true;
             public const bool SurgeEnabled = false;
             public const string SurgeAbility = "pulse";

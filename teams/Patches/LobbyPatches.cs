@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using SpiderSurge.Common;
 using UnityEngine.SceneManagement;
 using Logger = Silk.Logger;
 
@@ -79,6 +80,10 @@ namespace SpiderTeams
         {
             if (TeamManager.Instance != null)
             {
+                if (Net.IsHost)
+                {
+                    TeamManager.Instance.NormalizeRoster();
+                }
                 TeamManager.Instance.MarkRosterChanged();
             }
         }

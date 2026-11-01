@@ -10,7 +10,7 @@ The Teams part of [SpiderSurge](../README.md): team versus for SpiderHeck. Split
 - **Team Versus**: A versus round ends when one team is left standing. Every member of the winning team scores, alive or dead, and the first team to reach the winning score takes the match.
 - **Any Number of Teams**: Play with 2 to 32 teams. With as many teams as players, everyone is on their own team, which plays exactly like normal free-for-all.
 - **More Than 4 Players**: Works with [InfiniteFriends](https://github.com/Dylan-Grinboju/InfiniteFriends) for up to 32 players.
-- **Pick Teams in the Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team. New players join the smallest team automatically.
+- **Pick Teams in the Versus Lobby**: Press **Y / Triangle** on a controller or **T** on the keyboard to switch to the next team. A hint in the versus waiting room explains the controls. New players, including those joining a match in progress, immediately join the smallest team automatically; ties go to the first team.
 - **Configurable Friendly Fire**: Teammates' hits can push you (the default), do nothing, or work as normal.
 - **Team Visuals**: Recolor spiders in their team's color, show a team marker above each spider, both, or neither.
 - **Team Spawns**: Teammates spawn close to each other, and the teams spawn apart.
@@ -27,8 +27,8 @@ Team versus starts off on new installs. Switch it on or off between matches from
 ## How to Play
 
 1. Gather everyone in the lobby. While team versus is on, the versus platform reads **TEAM VERSUS**.
-2. Each player presses **Y / Triangle** (controller) or **T** (keyboard) to switch to the next team. Every switch is announced, for example "P2 joined Blue Team".
-3. Start versus as usual. Teams are locked until the match ends.
+2. Enter the versus waiting room. Each player presses **Y / Triangle** (controller) or **T** (keyboard) to switch to the next team. Every switch is announced, for example "P2 joined Blue Team". Team switching is unavailable in the main lobby, survival waiting room and active rounds.
+3. Start the versus rounds as usual. Teams are locked until the match ends; late arrivals join the smallest team without moving existing players.
 
 - A round ends when only one team has spiders alive. If the last spiders all die during the slow motion at the end of a round, the round is a draw.
 - Every member of the winning team gets a point, alive or dead, so everyone on a team has the same score on the scoreboard.
@@ -104,7 +104,7 @@ Teams' settings are the `teams` section of `...\Silk\Config\Mods\SpiderSurge.yam
 ### Visuals:
 `teams.recolorSpiders`: During a match, each spider's main color becomes a shade of its team's color. Teammates get slightly different shades, so you can still tell them apart. Second colors and hats are kept, and the original colors come back when the match ends. Your saved colors are never changed. Default: `true`.
 
-`teams.showMarker`: Shows a team-colored marker above each spider, in the lobby and during matches. Each player turns it on for their own screen. Default: `false`.
+`teams.showMarker`: Shows a team-colored triangle above each spider, in the lobby and during matches. Each player can turn it off for their own screen. Default: `true`.
 
 You can use both, one, or neither. With both off, teams only show in the announcements and on the versus setup page.
 
@@ -112,7 +112,7 @@ You can use both, one, or neither. With both off, teams only show in the announc
 `teams.groupTeammates`: Spawns teammates close to each other, with the teams spread apart. Works with any number of spawn points, including the extra ones from InfiniteFriends. Default: `true`.
 
 ### Input:
-The team buttons are fixed: Y / Triangle on a controller and T on the keyboard. In the lobby they only switch team, even though Y and Tab are also the game's show-names buttons. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
+The team buttons are fixed: Y / Triangle on a controller and T on the keyboard. They switch teams only in the versus waiting room while team versus is enabled. Y keeps its normal show-names action elsewhere. Older `teams.buttonGamepad` and `teams.buttonKeyboard` values are ignored.
 
 ### Surge:
 These only matter while the Surge part runs. See [Surge Abilities](#surge-abilities).

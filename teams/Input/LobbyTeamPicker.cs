@@ -36,8 +36,7 @@ namespace SpiderTeams
         private void Update()
         {
             var manager = TeamManager.Instance;
-            bool room = LobbyController.inLobby || LobbyController.inWaitingRoom;
-            bool wanted = manager != null && manager.PicksOpen && ModConfig.TeamsEnabled && room;
+            bool wanted = manager != null && manager.PicksOpen;
             if (wanted == _active)
             {
                 return;
@@ -97,7 +96,7 @@ namespace SpiderTeams
         internal static bool HoldsTeamButton(PlayerInput input)
         {
             LobbyTeamPicker picker = _current;
-            if (picker == null || !picker._active || input == null)
+            if (picker == null || !picker._active || input == null || TeamManager.Instance?.PicksOpen != true)
             {
                 return false;
             }
