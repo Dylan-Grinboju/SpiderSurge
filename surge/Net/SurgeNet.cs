@@ -29,6 +29,7 @@ namespace SpiderSurge
         PulseImpact = 6,
         ImmuneHit = 7,
         Salvage = 8,
+        RepulsorBlast = 9,
     }
 
     public enum EnemyFx : byte
@@ -44,6 +45,8 @@ namespace SpiderSurge
         HatchCancelled = 8,
         CocoonPulse = 9,
         SpiderFrozen = 10,
+        Dazed = 11,
+        SpiderDazed = 12,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -87,6 +90,7 @@ namespace SpiderSurge
             ChaosNet.Initialize();
             AbilitySelection.Initialize();
             Vfx.WeaponVfx.Initialize();
+            Weapons.BayonetBlade.Initialize();
         }
 
         public static void Shutdown()
@@ -97,6 +101,7 @@ namespace SpiderSurge
             }
             _initialized = false;
             Vfx.WeaponVfx.Shutdown();
+            Weapons.BayonetBlade.Shutdown();
             foreach (var (channel, _) in HostChannels)
             {
                 Net.Unregister(channel);
@@ -226,14 +231,18 @@ namespace SpiderSurge
 
         private static void OnPeerReady(ulong clientId)
         {
-            Enemies.CustomEnemyNet.RegisterHandlers();
+            Weapons.CustomWeapons.EnsureCreated();
+            CustomPrefabNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
+            Weapons.BayonetBlade.SendAllTo(clientId);
 
             // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.
             SendFrozenTo<FrozenSpider>(clientId, EnemyFx.SpiderFrozen, frozen => frozen.TimeLeft);
             SendFrozenTo<FrozenEnemy>(clientId, EnemyFx.Frozen, frozen => FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>()));
             SendFrozenTo<FrozenCloud>(clientId, EnemyFx.CloudFrozen, frozen => frozen.TimeLeft);
             SendFrozenTo<FrozenShot>(clientId, EnemyFx.ShotFrozen, frozen => frozen.TimeLeft);
+            SendFrozenTo<Weapons.DazedEnemy>(clientId, EnemyFx.Dazed, dazed => dazed.TimeLeft);
+            SendFrozenTo<Weapons.DazedSpider>(clientId, EnemyFx.SpiderDazed, dazed => dazed.TimeLeft);
 
             // The game sends a shield's break only as it happens, so a joiner would see every broken shield still up
             foreach (EnemyHealthSystem enemy in UnityEngine.Object.FindObjectsOfType<EnemyHealthSystem>())
@@ -248,7 +257,9 @@ namespace SpiderSurge
         {
             _lastRemoteWave = 0;
             _awaitingFirstState = true;
-            Enemies.CustomEnemyNet.RegisterHandlers();
+            Weapons.BayonetBlade.Forget();
+            Weapons.CustomWeapons.EnsureCreated();
+            CustomPrefabNet.RegisterHandlers();
         }
 
         private static void OnLeftHost()
@@ -426,6 +437,13 @@ namespace SpiderSurge
                 return;
             }
 
+            // The host fires every Repulsor, so the radius carries the blast's direction
+            if (fx == SurgeFx.RepulsorBlast)
+            {
+                Vfx.RepulsorVfx.Draw(position, radius);
+                return;
+            }
+
             // A local caster already drew its own effect when it pressed the button
             if (Players.IsLocal(playerId))
             {
@@ -474,6 +492,12 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.ShotFrozen:
                     FrozenShot.ShowFrozen(target, value);
+                    break;
+                case EnemyFx.Dazed:
+                    Weapons.DazedEnemy.ShowDazed(target.GetComponent<EnemyHealthSystem>(), value);
+                    break;
+                case EnemyFx.SpiderDazed:
+                    Weapons.DazedSpider.ShowDazed(target, value);
                     break;
                 case EnemyFx.ChargeCalmed:
                     foreach (WhispBrain whisp in target.GetComponentsInChildren<WhispBrain>()) FrozenEnemy.CalmChargeLight(whisp);

@@ -42,6 +42,10 @@ namespace SpiderSurge
             public const string Adrenaline = "adrenaline";
             public const string Blademaster = "blademaster";
             public const string CoolExplosions = "coolexplosions";
+            public const string SizeMatters = "sizematters";
+            public const string ThickBlades = "thickblades";
+            public const string AmmoOverride = "ammoOverride";
+            public const string HalvedAmmo = "halvedAmmo";
         }
 
         // Sound file names (without extension) - must match embedded .wav filenames
@@ -333,6 +337,75 @@ namespace SpiderSurge
                     { "Hornet Variant", "LaserHornet" },
                     { "MissileWhisp", "LaserMissileWhisp" },
                 };
+            }
+
+            public static class Bayonet
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)100;
+                public const string Name = "Bayonet";
+                // Half the Particle Blade's length, with its force; Size Matters and Thick Blades grow it the same way
+                public static readonly UnityEngine.Vector2 BladeSize = new UnityEngine.Vector2(1f, 12f);
+                public const float SizeMattersLengthPerLevel = 0.5f;
+                public const float ThickBladesMinExtraWidth = 3f;
+                public const float ThickBladesMaxExtraWidth = 100f;
+                public const float BladeForce = 400f;
+                // Emitter crown in the sprite, in the weapon's local units
+                public static readonly UnityEngine.Vector2 BladeOrigin = new UnityEngine.Vector2(1.75f, 5.1f);
+                public const float SpritePixelsPerUnit = 20f;
+            }
+
+            public static class PoisonDart
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)101;
+                public const string Name = "Daze Dart";
+                public const string ShotName = "Daze Dart Shot";
+                public const float LauncherPixelsPerUnit = 30f;
+                public const float DartPixelsPerUnit = 50f;
+                public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(0.7f, 4.4f);
+                // A flatter arc than the Grenade Launcher's
+                public const float ShotForce = 240f;
+                public const float DartLifetime = 4f;
+                public const float DazeDuration = 5f;
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.49f, 0.84f, 0.23f, 1f);
+                // A dazed enemy flies small circles at this speed, turning at a rate re-rolled every so often
+                public const float WanderSpeed = 18f;
+                public const float WanderSteer = 5f;
+                public const float WanderTurnMin = 2.5f;
+                public const float WanderTurnMax = 4.5f;
+                public const float WanderRerollMin = 0.6f;
+                public const float WanderRerollMax = 1.4f;
+                // A dazed roller rolls with this share of its own power
+                public const float RollerWanderShare = 0.6f;
+                // A dazed spider's stick input
+                public const float SpiderWanderInput = 0.8f;
+                public const float SpiderInputInterval = 0.05f;
+            }
+
+            public static class Repulsor
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)102;
+                public const string Name = "Repulsor";
+                public const float PixelsPerUnit = 30f;
+                public const float Charges = 3f;
+                // The Baby Shotgun's pellet cone: a 120 degree arc of pellets at 250 units a second for 0.3 seconds
+                public const float ConeHalfAngle = 60f;
+                public const float Range = 75f;
+            }
+
+            public static class PoisonGrenade
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)103;
+                public const string Name = "Poison Grenade";
+                public const string CloudName = "Poison Grenade Cloud";
+                public const float PixelsPerUnit = 30f;
+                public const float CloudDuration = 5f;
+                // The Hornet Shaman's cloud: zaps reach 50 units, and 0.2 seconds within 20 units kills
+                public const float ZapRadius = 50f;
+                public const float KillRadius = 20f;
+                public const float KillTime = 0.2f;
+                public const float FadeTime = 1f;
+                public const float Hue = 0.6f;
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.25f, 0.55f, 1f, 1f);
             }
 
             public static class ShieldBubbles

@@ -47,6 +47,9 @@ namespace StatsMod
             Add<Snowballs>("ExplodeClientRpc", "Snowball", HitLogic.WeaponPlayer, weapon => weapon);
             Add<WhispBrain>("ProcessCollision", null, whisp => null);
             Add<SpiderSurge.PulseAbility>("ApplyPulsePhysics", HitLogic.PulseWeapon, SpiderSurge.PulseAbility.CasterOf);
+            // Mod weapons count in the game weapon's category they come from
+            Add<SpiderSurge.Weapons.RepulsorBlast>("Blast", "Shotgun", blast => HitLogic.WeaponPlayer(blast.Weapon), blast => blast.Weapon);
+            Add<SpiderSurge.Weapons.PoisonCloud>("Poison", "Explosions", cloud => cloud.Owner);
         }
 
         private static void Add<T>(string method, string weapon, Func<T, PlayerController> owner, Func<T, Weapon> weaponOf = null) where T : Component

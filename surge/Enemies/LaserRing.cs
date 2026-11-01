@@ -113,8 +113,8 @@ namespace SpiderSurge.Enemies
             if (!hintQueued) hintQueued = EncounterHints.Encounter("laser-shield", "Break the red shield to stop this enemy's laser ring.", health);
             if (!synced) return;
 
-            // Freeze Time and the Black Hole make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
-            if (remoteHold || FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(health.gameObject))
+            // Freeze Time, the Black Hole and the Poison Dart make the enemy harmless, so the ring goes out and its cycle waits until the hold ends; a cut warning or beam resumes from the warning
+            if (remoteHold || FrozenEnemy.IsHeld(health) || Weapons.DazedEnemy.IsDazed(health) || SwallowedTarget.IsSwallowed(health.gameObject))
             {
                 // Clients don't see the Black Hole's hold, so the host tells them when a hold starts; its next warning sync ends it
                 if (!held) SurgeNet.SendEnemyFx(EnemyFx.LaserHold, health.GetComponent<NetworkObject>(), 0f);
