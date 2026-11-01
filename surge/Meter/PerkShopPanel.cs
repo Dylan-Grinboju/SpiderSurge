@@ -134,19 +134,21 @@ namespace SpiderSurge
 
             float cardsWidth = 0f;
             float cardsHeight = 0f;
+            float votes = 0f;
             foreach (var card in cards)
             {
                 var cardRect = (RectTransform)card.transform;
                 Vector3 scale = PerkCardScale.Of(card).Base;
                 cardsWidth += cardRect.sizeDelta.x * scale.x;
                 cardsHeight = Mathf.Max(cardsHeight, cardRect.sizeDelta.y * scale.y);
+                votes = Mathf.Max(votes, PerkChoiceWidget.VotesReach(card) * scale.y);
             }
             float roomX = viewWidth - 2f * M.SideMargin - M.PanelGap - M.PanelWidth - spaces;
             float below = (PerkConfirmButton.Current != null ? M.ConfirmGap + M.ConfirmHeight : 0f) + PerkHint.Reserve;
             float roomY = CardsTop(hud) + viewHeight / 2f - M.BottomMargin - below;
             float factor = 1f;
             if (cardsWidth > 0f) factor = Mathf.Min(factor, roomX / cardsWidth);
-            if (cardsHeight > 0f) factor = Mathf.Min(factor, roomY / cardsHeight);
+            if (cardsHeight > 0f) factor = Mathf.Min(factor, roomY / (cardsHeight + votes));
             factor = Mathf.Max(factor, M.MinCardFactor);
             foreach (var card in cards)
             {

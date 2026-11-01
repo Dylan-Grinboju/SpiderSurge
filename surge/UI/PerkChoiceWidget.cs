@@ -43,11 +43,21 @@ namespace SpiderSurge
             foreach (var choice in Cards(hud))
             {
                 var card = (RectTransform)choice.transform;
-                float cardBottom = local.y + card.localPosition.y + card.rect.yMin * card.localScale.y;
+                float cardBottom = local.y + card.localPosition.y + (card.rect.yMin - VotesReach(choice)) * card.localScale.y;
                 bottom = any ? Mathf.Min(bottom, cardBottom) : cardBottom;
                 any = true;
             }
             return new Vector2(local.x + root.rect.center.x, bottom);
+        }
+
+        // Online, the game shows remote players' votes as a row of icons hanging below each card, so what goes under the cards keeps clear of it
+        public static float VotesReach(SurvivalModifierChoiceCard card)
+        {
+            Image icon = Net.IsOnline && card != null && card.voteImages != null && card.voteImages.Length > 0 ? card.voteImages[0] : null;
+            var row = icon != null ? icon.rectTransform.parent as RectTransform : null;
+            if (row == null || row == card.transform) return 0f;
+            float iconsBottom = row.localPosition.y + row.rect.center.y - icon.rectTransform.rect.height / 2f;
+            return Mathf.Max(0f, ((RectTransform)card.transform).rect.yMin - iconsBottom);
         }
 
         // A layout forced in the frame the old cards are destroyed would put the new ones after them, and Doozy keeps that spot as the first card's rest position when the view selects it at once
