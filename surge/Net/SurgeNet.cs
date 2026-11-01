@@ -44,6 +44,8 @@ namespace SpiderSurge
         HatchCancelled = 8,
         CocoonPulse = 9,
         SpiderFrozen = 10,
+        Dazed = 11,
+        SpiderDazed = 12,
     }
 
     // The host owns the run: mode, perks, phase and wave go to clients as one state message; clients ask the host to run
@@ -228,7 +230,7 @@ namespace SpiderSurge
 
         private static void OnPeerReady(ulong clientId)
         {
-            Weapons.Bayonet.EnsureCreated();
+            Weapons.CustomWeapons.EnsureCreated();
             CustomPrefabNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
             Weapons.BayonetBlade.SendAllTo(clientId);
@@ -238,6 +240,8 @@ namespace SpiderSurge
             SendFrozenTo<FrozenEnemy>(clientId, EnemyFx.Frozen, frozen => FrozenEnemy.TimeLeftOn(frozen.GetComponent<EnemyHealthSystem>()));
             SendFrozenTo<FrozenCloud>(clientId, EnemyFx.CloudFrozen, frozen => frozen.TimeLeft);
             SendFrozenTo<FrozenShot>(clientId, EnemyFx.ShotFrozen, frozen => frozen.TimeLeft);
+            SendFrozenTo<Weapons.DazedEnemy>(clientId, EnemyFx.Dazed, dazed => dazed.TimeLeft);
+            SendFrozenTo<Weapons.DazedSpider>(clientId, EnemyFx.SpiderDazed, dazed => dazed.TimeLeft);
 
             // The game sends a shield's break only as it happens, so a joiner would see every broken shield still up
             foreach (EnemyHealthSystem enemy in UnityEngine.Object.FindObjectsOfType<EnemyHealthSystem>())
@@ -253,7 +257,7 @@ namespace SpiderSurge
             _lastRemoteWave = 0;
             _awaitingFirstState = true;
             Weapons.BayonetBlade.Forget();
-            Weapons.Bayonet.EnsureCreated();
+            Weapons.CustomWeapons.EnsureCreated();
             CustomPrefabNet.RegisterHandlers();
         }
 
@@ -480,6 +484,12 @@ namespace SpiderSurge
                     break;
                 case EnemyFx.ShotFrozen:
                     FrozenShot.ShowFrozen(target, value);
+                    break;
+                case EnemyFx.Dazed:
+                    Weapons.DazedEnemy.ShowDazed(target.GetComponent<EnemyHealthSystem>(), value);
+                    break;
+                case EnemyFx.SpiderDazed:
+                    Weapons.DazedSpider.ShowDazed(target, value);
                     break;
                 case EnemyFx.ChargeCalmed:
                     foreach (WhispBrain whisp in target.GetComponentsInChildren<WhispBrain>()) FrozenEnemy.CalmChargeLight(whisp);

@@ -154,7 +154,7 @@ namespace SpiderSurge.Enemies
             if (nearest != null) Destroy(nearest.gameObject);
         }
 
-        private bool Held => FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(gameObject);
+        private bool Held => FrozenEnemy.IsHeld(health) || Weapons.DazedEnemy.IsDazed(health) || SwallowedTarget.IsSwallowed(gameObject);
 
         private void OnCharacterDied()
         {

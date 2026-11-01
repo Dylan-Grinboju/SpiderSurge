@@ -352,6 +352,33 @@ namespace SpiderSurge
                 public const float SpritePixelsPerUnit = 20f;
             }
 
+            public static class PoisonDart
+            {
+                public const SerializationWeaponName Id = (SerializationWeaponName)101;
+                public const string Name = "Poison Dart";
+                public const string ShotName = "Poison Dart Shot";
+                public const float LauncherPixelsPerUnit = 30f;
+                public const float DartPixelsPerUnit = 50f;
+                public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(0.7f, 4.4f);
+                // A flatter arc than the Grenade Launcher's
+                public const float ShotForce = 240f;
+                public const float DartLifetime = 4f;
+                public const float DazeDuration = 5f;
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.49f, 0.84f, 0.23f, 1f);
+                // A dazed enemy flies small circles at this speed, turning at a rate re-rolled every so often
+                public const float WanderSpeed = 18f;
+                public const float WanderSteer = 5f;
+                public const float WanderTurnMin = 2.5f;
+                public const float WanderTurnMax = 4.5f;
+                public const float WanderRerollMin = 0.6f;
+                public const float WanderRerollMax = 1.4f;
+                // A dazed roller rolls with this share of its own power
+                public const float RollerWanderShare = 0.6f;
+                // A dazed spider's stick input
+                public const float SpiderWanderInput = 0.8f;
+                public const float SpiderInputInterval = 0.05f;
+            }
+
             public static class ShieldBubbles
             {
                 // Base enemy name -> the shield bubble's height and scale on the enemy's root; Wasp, Hornet and Whisp values are the game's own shielded versions'

@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using SpiderSurge.Common;
 using UnityEngine;
-using Logger = Silk.Logger;
 using Values = SpiderSurge.Consts.Values.Bayonet;
 
 namespace SpiderSurge.Weapons
@@ -22,11 +20,11 @@ namespace SpiderSurge.Weapons
         {
             if (Prefab != null || _failed) return;
 
-            var shotgun = FindPrefab<Shotgun>("Mini Shotgun");
-            var blade = FindPrefab<ParticleBlade>("Particle Blade");
+            var shotgun = CustomWeapons.FindPrefab<Shotgun>("Mini Shotgun");
+            var blade = CustomWeapons.FindPrefab<ParticleBlade>("Particle Blade");
             if (shotgun == null || blade == null) return;
 
-            Sprite sprite = LoadSprite(shotgun.GetComponent<SpriteRenderer>());
+            Sprite sprite = CustomWeapons.LoadSprite(SpriteResource, Values.Name, shotgun.GetComponent<SpriteRenderer>().sprite, Values.SpritePixelsPerUnit);
             if (sprite == null)
             {
                 _failed = true;
@@ -38,47 +36,9 @@ namespace SpiderSurge.Weapons
 
         public static bool Is(Weapon weapon) => weapon != null && weapon.serializationWeaponName == Values.Id;
 
-        internal static bool Is(SpawnableWeapon entry) => entry != null && entry.weaponObject != null && Is(entry.weaponObject.GetComponent<Weapon>());
-
-        private static bool IsBabyShotgun(SpawnableWeapon entry)
-        {
-            Weapon weapon = entry != null && entry.weaponObject != null ? entry.weaponObject.GetComponent<Weapon>() : null;
-            return weapon != null && weapon.serializationWeaponName == SerializationWeaponName.MiniShotgun;
-        }
-
-        // Adds the Bayonet after the Baby Shotgun, with its rarity; a list without the Baby Shotgun stays as it is
-        internal static SpawnableWeapon AddTo(List<SpawnableWeapon> weapons)
-        {
-            if (weapons == null) return null;
-            SpawnableWeapon existing = weapons.Find(Is);
-            if (existing != null) return existing;
-            int index = weapons.FindIndex(IsBabyShotgun);
-            if (index < 0) return null;
-            EnsureCreated();
-            if (Prefab == null) return null;
-            var entry = new SpawnableWeapon(Prefab.GetComponent<Weapon>(), (int)weapons[index].baseRarity);
-            weapons.Insert(index + 1, entry);
-            return entry;
-        }
-
-        internal static float BabyShotgunRarity(List<SpawnableWeapon> weapons)
-        {
-            SpawnableWeapon shotgun = weapons?.Find(IsBabyShotgun);
-            return shotgun != null ? shotgun.baseRarity : 0f;
-        }
-
-        private static T FindPrefab<T>(string name) where T : Component
-        {
-            return Resources.FindObjectsOfTypeAll<T>().FirstOrDefault(w => w.name == name && !w.gameObject.scene.IsValid());
-        }
-
         private static GameObject Build(Shotgun shotgun, ParticleBlade blade, Sprite sprite)
         {
-            // The prefab stays active under an inactive holder, so the spawner's plain Instantiate gives a live weapon
-            var holder = new GameObject("SpiderSurgeWeapons");
-            holder.SetActive(false);
-            Object.DontDestroyOnLoad(holder);
-            GameObject bayonet = Object.Instantiate(shotgun.gameObject, holder.transform);
+            GameObject bayonet = Object.Instantiate(shotgun.gameObject, CustomWeapons.Holder);
             bayonet.name = Values.Name;
             var gun = bayonet.GetComponent<Shotgun>();
             gun.serializationWeaponName = Values.Id;
@@ -124,171 +84,6 @@ namespace SpiderSurge.Weapons
             Object.Destroy(partsHolder);
             CustomPrefabNet.RegisterWeapon(bayonet, Values.Name);
             return bayonet;
-        }
-
-        // Same canvas, pivot and scale as the Baby Shotgun's sprite, so the grip, muzzle and shot line up
-        private static Sprite LoadSprite(SpriteRenderer source)
-        {
-            try
-            {
-                using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(SpriteResource))
-                {
-                    if (stream == null)
-                    {
-                        Logger.LogWarning("[SpiderSurge] The Bayonet sprite is missing from the build.");
-                        return null;
-                    }
-                    var data = new byte[stream.Length];
-                    stream.Read(data, 0, data.Length);
-                    var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                    if (!texture.LoadImage(data)) return null;
-                    texture.filterMode = source != null && source.sprite != null ? source.sprite.texture.filterMode : FilterMode.Bilinear;
-                    texture.name = Values.Name;
-                    Vector2 pivot = source != null && source.sprite != null
-                        ? new Vector2(source.sprite.pivot.x / source.sprite.texture.width, source.sprite.pivot.y / source.sprite.texture.height)
-                        : new Vector2(0.5f, 0.5f);
-                    return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), pivot, Values.SpritePixelsPerUnit);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.LogError($"[SpiderSurge] Could not load the Bayonet sprite: {ex.Message}");
-                return null;
-            }
-        }
-    }
-
-    // Survival's weapon list is copied from its config when a run starts; the Bayonet joins it next to the Baby Shotgun
-    [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.StartGame))]
-    internal static class Bayonet_SurvivalWeapons_Patch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(SurvivalMode __instance)
-        {
-            Bayonet.AddTo(GameFields.SurvivalWeapons?.Invoke(__instance));
-        }
-    }
-
-    // In Versus the Bayonet has its own rarity button. The game saves its weapon rarities by position and drops the save when
-    // the count differs, so its save holds only the game's weapons and the Bayonet's rarity is kept in the mod's data
-    internal static class BayonetVersus
-    {
-        private const string Section = "versus.weapons";
-        private const string RarityKey = "bayonet ";
-        private const int MaxRarity = 5;
-
-        private static int _takenAt = -1;
-        private static SpawnableWeapon _taken;
-
-        private static List<SpawnableWeapon> Weapons => VersusMode.instance != null ? VersusMode.instance.weapons : null;
-
-        internal static SpawnableWeapon Entry => Weapons?.Find(Bayonet.Is);
-
-        internal static void Ensure()
-        {
-            if (Weapons != null && Entry == null) Bayonet.AddTo(Weapons);
-        }
-
-        internal static void TakeOut()
-        {
-            List<SpawnableWeapon> weapons = Weapons;
-            if (weapons == null || _taken != null) return;
-            int index = weapons.FindIndex(Bayonet.Is);
-            if (index < 0) return;
-            _takenAt = index;
-            _taken = weapons[index];
-            weapons.RemoveAt(index);
-        }
-
-        internal static void PutBack()
-        {
-            List<SpawnableWeapon> weapons = Weapons;
-            if (_taken != null && weapons != null && !weapons.Contains(_taken)) weapons.Insert(Mathf.Min(_takenAt, weapons.Count), _taken);
-            _taken = null;
-            _takenAt = -1;
-        }
-
-        // Until its rarity is saved, the Bayonet follows the Baby Shotgun's, so a player's own weapon choice stays as it was
-        internal static void LoadRarity()
-        {
-            SpawnableWeapon entry = Entry;
-            if (entry == null) return;
-            entry.baseRarity = Bayonet.BabyShotgunRarity(Weapons);
-            foreach (string line in ModData.Lines(Section))
-            {
-                if (line.StartsWith(RarityKey, System.StringComparison.Ordinal) && int.TryParse(line.Substring(RarityKey.Length), out int rarity))
-                {
-                    entry.baseRarity = Mathf.Clamp(rarity, 0, MaxRarity);
-                }
-            }
-        }
-
-        internal static void SaveRarity()
-        {
-            SpawnableWeapon entry = Entry;
-            if (entry != null) ModData.Write(Section, new[] { RarityKey + (int)entry.baseRarity });
-        }
-    }
-
-    [HarmonyPatch(typeof(GameSettings), "LoadVersusWeaponSettings")]
-    internal static class Bayonet_VersusLoad_Patch
-    {
-        [HarmonyPrefix]
-        private static void Prefix()
-        {
-            BayonetVersus.Ensure();
-            // The defaults are recorded with the Bayonet in place, so resetting the rarities covers it too
-            VersusMode.instance?.SaveDefaultRarities();
-            BayonetVersus.TakeOut();
-        }
-
-        [HarmonyFinalizer]
-        private static void Finalizer()
-        {
-            BayonetVersus.PutBack();
-            BayonetVersus.LoadRarity();
-        }
-    }
-
-    [HarmonyPatch(typeof(GameSettings), nameof(GameSettings.SaveVersusWeaponSettings))]
-    internal static class Bayonet_VersusSave_Patch
-    {
-        [HarmonyPrefix]
-        private static void Prefix() => BayonetVersus.TakeOut();
-
-        [HarmonyFinalizer]
-        private static void Finalizer()
-        {
-            BayonetVersus.PutBack();
-            BayonetVersus.SaveRarity();
-        }
-    }
-
-    // The game's own profiles don't list the Bayonet, so with one of them it follows the Baby Shotgun
-    [HarmonyPatch(typeof(VersusProfile), "SetWeapons")]
-    internal static class Bayonet_VersusProfile_Patch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(VersusProfile __instance)
-        {
-            SpawnableWeapon entry = BayonetVersus.Entry;
-            if (entry == null || (__instance.weapons != null && __instance.weapons.Contains(Values.Id))) return;
-            entry.baseRarity = Bayonet.BabyShotgunRarity(VersusMode.instance.weapons);
-            BayonetVersus.SaveRarity();
-        }
-    }
-
-    // The rarity button shows the weapon's localized name, and the Bayonet has no term of its own
-    [HarmonyPatch(typeof(CustomTierWeaponButton), nameof(CustomTierWeaponButton.Setup))]
-    internal static class Bayonet_WeaponButton_Patch
-    {
-        private static readonly AccessTools.FieldRef<CustomTierWeaponButton, TMPro.TextMeshProUGUI> Title =
-            AccessTools.FieldRefAccess<CustomTierWeaponButton, TMPro.TextMeshProUGUI>("titleText");
-
-        [HarmonyPostfix]
-        private static void Postfix(CustomTierWeaponButton __instance, SpawnableWeapon weapon)
-        {
-            if (Bayonet.Is(weapon)) Title(__instance).text = Values.Name;
         }
     }
 
