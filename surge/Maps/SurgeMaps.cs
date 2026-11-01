@@ -180,7 +180,7 @@ namespace SpiderSurge.Maps
             // The level's name is the scene LevelController loads
             level.name = SceneName;
             level.label = map.Term;
-            level.AuthorName = "";
+            level.AuthorName = "thmrgnd";
             level.serializationMapName = SerializationMapMame.NonPlayable;
             level.beginnerFriendly = map.beginner;
             level.thumbnail = IconLoader.GetIcon("map_" + map.id) ?? LevelController.instance?.customMapGameLevel?.thumbnail;
