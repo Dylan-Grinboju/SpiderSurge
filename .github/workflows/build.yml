@@ -60,7 +60,7 @@ jobs:
         with:
           name: SpiderSurge
 
-      # The mod's update check reads published releases, so a release is only published once its DLL is attached; a beta tag is a pre-release, which only beta DLLs are offered
+      # A release is only published once its DLL is attached; beta tags are pre-releases offered to beta subscribers
       - name: Attach SpiderSurge.dll and publish
         env:
           GH_TOKEN: ${{ github.token }}

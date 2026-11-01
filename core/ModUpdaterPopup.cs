@@ -80,6 +80,7 @@ namespace SpiderSurge.Common
             {
                 bool installable = offered.TryGetInstallableAsset(out _, out _);
                 SetPopupText("SpiderSurge " + version + " is available."
+                    + (offered.IsBeta ? "\n" + BetaSubscriptionNotice : "")
                     + (!installable ? "\nTo install it by hand, download SpiderSurge.dll from its release page and replace the one in SpiderHeck's Silk/Mods folder while the game is closed."
                         : resultPending ? "\nThe installer from your last session is still running. Install it from Mods > SpiderSurge > Settings > Advanced > Updates in a minute." : ""));
                 if (installable && !resultPending) Add("Install now", () => StartDownload(offered));

@@ -24,6 +24,7 @@ internal static class UpdaterTests
 
     private static int Main(string[] args)
     {
+        UpdaterSettingsTests.Run(Check);
         string dll = Path.GetFullPath(args[0]);
         string helper = Path.GetFullPath(args[1]);
         string version = AssemblyName.GetAssemblyName(dll).Version.ToString(3);
@@ -54,14 +55,14 @@ internal static class UpdaterTests
             && ReleaseVersion.IsNewer("0.4.1", "0.4.1-dev.12") && ReleaseVersion.IsNewer("0.4.1-beta.1", "0.4.0"), "order betas and releases as in SemVer");
         Check(!ReleaseVersion.IsNewer("1.0.0-beta.1", "1.0.0") && !ReleaseVersion.IsNewer("1.0.0", "1.0.0+local") && !ReleaseVersion.IsNewer("0.4.0", "0.4.1-dev.3")
             && !ReleaseVersion.IsNewer("1.0", "0.4.0") && !ReleaseVersion.IsNewer("1.0.0-", "0.4.0") && !ReleaseVersion.IsNewer("1.0.0.1", "0.4.0"), "never offer an older, equal or malformed version");
-        Check(ReleaseVersion.Parse("1.0.0-beta.1.12").IsBeta && !ReleaseVersion.Parse("0.4.1-dev.12").IsBeta && !ReleaseVersion.Parse("1.0.0").IsBeta, "only a beta build is on the beta channel");
+        Check(ReleaseVersion.Parse("1.0.0-beta.1.12").IsBeta && !ReleaseVersion.Parse("0.4.1-dev.12").IsBeta && !ReleaseVersion.Parse("1.0.0").IsBeta, "recognize beta builds for automatic subscription");
         UpdateRelease stable = Listed("v0.4.0", false), beta1 = Listed("v1.0.0-beta.1", true), beta2 = Listed("v1.0.0-beta.2", true), final = Listed("v1.0.0", false);
         UpdateRelease draft = Listed("v1.0.0-beta.3", true), unflagged = Listed("v1.0.0-beta.4", false), flagged = Listed("v0.5.0", true);
         draft.Draft = true;
         var listed = new[] { beta2, unflagged, draft, flagged, beta1, stable };
-        Check(UpdateRelease.Newest(listed, false) == stable, "release DLLs are not offered betas");
-        Check(UpdateRelease.Newest(listed, true) == beta2, "beta DLLs are offered the newest published beta");
-        Check(UpdateRelease.Newest(new[] { beta2, final, beta1 }, true) == final, "beta DLLs are offered the release that follows their betas");
+        Check(UpdateRelease.Newest(listed, false) == stable, "unsubscribed players are not offered betas");
+        Check(UpdateRelease.Newest(listed, true) == beta2, "subscribers are offered the newest published beta");
+        Check(UpdateRelease.Newest(new[] { beta2, final, beta1 }, true) == final, "subscribers are offered the stable release that follows its betas");
         UpdatePackage.Verify(dll, hash, version); Check(true, "verify actual merged mod assembly");
         UpdatePackage.Verify(dll, hash, betaVersion); Check(true, "verify a beta by its release number");
         Reject(() => UpdatePackage.Verify(dll, new string('0', 64), version), "reject corrupt checksum");
