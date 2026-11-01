@@ -5,10 +5,10 @@ using Unity.Netcode;
 using UnityEngine;
 using Logger = Silk.Logger;
 
-namespace SpiderSurge.Enemies
+namespace SpiderSurge
 {
-    // Each custom enemy clone gets its own hash and prefab handler, so clients build the clone instead of the enemy it copies
-    public static class CustomEnemyNet
+    // Each custom clone (enemy or weapon) gets its own hash and prefab handler, so clients build the clone instead of the prefab it copies
+    public static class CustomPrefabNet
     {
         private sealed class Handler : INetworkPrefabInstanceHandler
         {
@@ -40,9 +40,11 @@ namespace SpiderSurge.Enemies
 
         private static readonly Dictionary<GameObject, uint> _entries = new Dictionary<GameObject, uint>();
 
-        public static uint HashFor(string name) => Net.Hash("SpiderSurge.Enemy:" + name);
+        public static void RegisterEnemy(GameObject prefab, string name) => Register(prefab, "SpiderSurge.Enemy:" + name, name);
 
-        public static void Register(GameObject prefab, string name)
+        public static void RegisterWeapon(GameObject prefab, string name) => Register(prefab, "SpiderSurge.Weapon:" + name, name);
+
+        private static void Register(GameObject prefab, string key, string name)
         {
             if (prefab == null || _entries.ContainsKey(prefab))
             {
@@ -54,7 +56,7 @@ namespace SpiderSurge.Enemies
                 Logger.LogWarning($"[SpiderSurge] {name} has no NetworkObject, clients will not see it");
                 return;
             }
-            uint hash = HashFor(name);
+            uint hash = Net.Hash(key);
             GlobalObjectIdHash(networkObject) = hash;
             _entries[prefab] = hash;
             AddHandler(prefab, hash);

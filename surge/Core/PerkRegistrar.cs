@@ -33,7 +33,9 @@ namespace SpiderSurge
                     { Consts.PerkNames.AbilityDuration, "duration_perk" },
                     { Consts.PerkNames.ShortTermInvestment, "short_term_perk" },
                     { Consts.PerkNames.LongTermInvestment, "long_term_perk" },
-                    { Consts.PerkNames.PerkLuck, "luck_perk" }
+                    { Consts.PerkNames.PerkLuck, "luck_perk" },
+                    { Consts.PerkNames.ChaosCartographer, "chaos_cartographer_perk" },
+                    { Consts.PerkNames.ChallengeSeeker, "challenge_seeker_perk" }
                 };
 
                 // Use an existing modifier's icon as fallback/placeholder

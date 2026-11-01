@@ -39,7 +39,7 @@ namespace SpiderSurge.Enemies
         private void FixedUpdate()
         {
             if (!Net.IsAuthority || networkObject == null || !networkObject.IsSpawned || !ShieldActive) return;
-            if (FrozenEnemy.IsHeld(health) || SwallowedTarget.IsSwallowed(gameObject)) return;
+            if (FrozenEnemy.IsHeld(health) || Weapons.DazedEnemy.IsDazed(health) || SwallowedTarget.IsSwallowed(gameObject)) return;
 
             timer += Time.fixedDeltaTime;
             if (timer < Consts.Values.Enemies.CocoonPulseInterval) return;

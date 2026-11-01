@@ -99,6 +99,13 @@
     <EmbeddedResource Include="surge\Icons\*.png" />
     <EmbeddedResource Include="surge\Maps\Layouts\*.json" />
     <EmbeddedResource Include="surge\Maps\Thumbnails\*.png" />
+    <EmbeddedResource Include="surge\Weapons\bayonet.png" LogicalName="SpiderSurge.BayonetSprite" />
+    <EmbeddedResource Include="surge\Weapons\poison_dart.png" LogicalName="SpiderSurge.PoisonDartSprite" />
+    <EmbeddedResource Include="surge\Weapons\poison_dart_shot.png" LogicalName="SpiderSurge.PoisonDartShotSprite" />
+    <EmbeddedResource Include="surge\Weapons\repulsor.png" LogicalName="SpiderSurge.RepulsorSprite" />
+    <EmbeddedResource Include="surge\Weapons\repulsor_ready.png" LogicalName="SpiderSurge.RepulsorReadySprite" />
+    <EmbeddedResource Include="surge\Weapons\poison_grenade.png" LogicalName="SpiderSurge.PoisonGrenadeSprite" />
+    <EmbeddedResource Include="surge\Weapons\poison_grenade_armed.png" LogicalName="SpiderSurge.PoisonGrenadeArmedSprite" />
   </ItemGroup>
 
   <!-- Assembly References -->

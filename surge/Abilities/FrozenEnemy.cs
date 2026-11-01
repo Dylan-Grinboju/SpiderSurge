@@ -221,7 +221,7 @@ namespace SpiderSurge
             TintAll();
         }
 
-        private static void StopChargeCosmetics(EnemyBrain brain)
+        internal static void StopChargeCosmetics(EnemyBrain brain)
         {
             try
             {
@@ -410,7 +410,7 @@ namespace SpiderSurge
             }
         }
 
-        private static IEnumerable<EnemyBrain> Brains(EnemyHealthSystem enemy)
+        internal static IEnumerable<EnemyBrain> Brains(EnemyHealthSystem enemy)
         {
             EnemyBrain[] brains = enemy.GetComponentsInChildren<EnemyBrain>(true);
             if (brains.Length == 0)
@@ -528,7 +528,8 @@ namespace SpiderSurge
         }
     }
 
-    // The cloud chases its target on its own, so it stays where it is while it is frozen; it freezes with its shaman, even one frozen before the cloud spawned
+    // The cloud chases its target on its own, so it stays where it is while it is frozen; it freezes with its shaman, even one frozen before the cloud spawned.
+    // A dazed shaman doesn't steer it either, so it waits where it is
     [HarmonyPatch(typeof(DeathCloud), "MoveTowardsGoal")]
     public static class FrozenEnemy_DeathCloud_Patch
     {
@@ -537,7 +538,7 @@ namespace SpiderSurge
             EnemyHealthSystem shaman = __instance.origin != null ? __instance.origin.GetComponentInParent<EnemyHealthSystem>() : null;
             if (FrozenEnemy.IsFrozen(shaman) && FreezeAbility.HasLineOfSight(shaman.transform.position, __instance.transform.position))
                 FrozenCloud.Freeze(__instance, FrozenEnemy.ThawTimeOf(shaman));
-            if (!FrozenCloud.IsFrozen(__instance)) return true;
+            if (!FrozenCloud.IsFrozen(__instance) && !Weapons.DazedEnemy.IsDazed(shaman)) return true;
             if (__instance.rb2d != null) __instance.rb2d.velocity = Vector2.zero;
             return false;
         }

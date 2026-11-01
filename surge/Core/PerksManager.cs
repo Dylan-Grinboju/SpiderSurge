@@ -42,7 +42,7 @@ namespace SpiderSurge
         private readonly HashSet<string> abilityPerks = new HashSet<string>(Abilities.Select(entry => entry.ability));
 
         // Upgrade perks - shown in normal perk selection
-        private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck };
+        private readonly HashSet<string> upgradePerks = new HashSet<string> { Consts.PerkNames.AbilityCooldown, Consts.PerkNames.AbilityDuration, Consts.PerkNames.ShortTermInvestment, Consts.PerkNames.LongTermInvestment, Consts.PerkNames.PerkLuck, Consts.PerkNames.ChaosCartographer, Consts.PerkNames.ChallengeSeeker };
 
         // Ultimates can be selected independently of regular abilities.
         private readonly HashSet<string> abilityUltimatePerks = new HashSet<string>(Abilities.Select(entry => entry.ultimate));
@@ -59,6 +59,8 @@ namespace SpiderSurge
             [Consts.PerkNames.ShortTermInvestment] = 1,
             [Consts.PerkNames.LongTermInvestment] = 1,
             [Consts.PerkNames.PerkLuck] = 2,
+            [Consts.PerkNames.ChaosCartographer] = 2,
+            [Consts.PerkNames.ChallengeSeeker] = 2,
             // Ultimate perks are level 1 only
             [Consts.PerkNames.ImmuneAbilityUltimate] = 1,
             [Consts.PerkNames.AmmoAbilityUltimate] = 1,
@@ -182,8 +184,8 @@ namespace SpiderSurge
         public bool IsAvailable(string perkName)
         {
             if (!maxLevels.TryGetValue(perkName, out int maxLevel)) return false;
-            // Luck is the only Surge perk that doesn't act through an ability
-            if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck) return false;
+            if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck &&
+                perkName != Consts.PerkNames.ChaosCartographer && perkName != Consts.PerkNames.ChallengeSeeker) return false;
             int level = GetPerkLevel(perkName);
             if (level >= maxLevel) return false;
 

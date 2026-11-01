@@ -182,7 +182,7 @@ namespace SpiderSurge.Enemies
             Object.DontDestroyOnLoad(newEnemyObj);
 
             AddToEnemyList(newEnemyObj);
-            CustomEnemyNet.Register(newEnemyObj, name);
+            CustomPrefabNet.RegisterEnemy(newEnemyObj, name);
             return newEnemyObj;
         }
 

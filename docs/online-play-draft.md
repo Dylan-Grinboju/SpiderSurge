@@ -23,7 +23,7 @@ The first run found that a client dropped every message from the host: NGO turns
 - Roster lock moved from `StartMatch` to the first `StartRound` that is not the waiting room, so late joiners in the waiting room can still pick.
 - Client gates: `LateUpdate`/`DeclareWinner`/`EndMatch`, friendly fire, spawn grouping and recolouring only run their rule on the host; clients follow the roster.
 
-## Surge (`surge/Net/SurgeNet.cs`, `surge/Net/CustomEnemyNet.cs`)
+## Surge (`surge/Net/SurgeNet.cs`, `surge/Net/CustomPrefabNet.cs`)
 
 - `surge.state` host → all: mode on, run active, run used Surge, wave, the three perk-phase flags, nonzero perk levels, lucky perk keys. Flushed once per frame when dirty, plus synchronous sends at wave start and right after `ApplyPerkLuck` (before the perk cards' ClientRpc). Needed because the game's `SetModLevelClientRpc` writes the level directly on clients and bypasses our `SetModLevel` postfix.
 - `surge.ability` owner → host: (playerId, kind, ultimate). The host validates ownership and replays through `BaseAbility.ActivateFromNetwork`, which skips the host's own menus and only refuses while the shared pause or input lock is on. On the client the ability still runs its cooldown, sounds and local visuals; world effects (`Immune` barrier, `Ammo` set, `Pulse` physics, `Storage` swap) are gated on `IsAuthority`.
@@ -53,7 +53,7 @@ The first run found that a client dropped every message from the host: NGO turns
 
 1. **Cooldown drift.** A client fires an ability locally and asks the host; if the host's instance refuses (its cooldown or perk check differs), nothing tells the client. Either echo a result or make the client wait for the host's `surge.fx`/state before playing the effect.
 2. **Perk index parity.** The game's `ModSyncResponceClientRpc` syncs `_currModsState` by index, so our perks must be appended in the same order on every machine. The same-version rule guarantees that.
-3. **Prefab handler path.** `CustomEnemyNet` relies on NGO calling `PrefabHandler` before the prefab lookup on clients (verified in the decompiled 1.0.0-pre `NetworkSpawnManager.CreateLocalNetworkObject`), and on `GlobalObjectIdHash` being writable at runtime. Verified on 2026-10-18.
+3. **Prefab handler path.** `CustomPrefabNet` relies on NGO calling `PrefabHandler` before the prefab lookup on clients (verified in the decompiled 1.0.0-pre `NetworkSpawnManager.CreateLocalNetworkObject`), and on `GlobalObjectIdHash` being writable at runtime. Verified on 2026-10-18.
 4. **Mid-session joiner.** A joiner gets the state/roster/snapshot at once, but the stats UI isn't told a session started (only the `Started` snapshot does that), so it stays on whatever page it was.
 5. **Stats restart.** When the host restarts without visiting the lobby, clients only show titles if `restartRequested` arrived in the stopped snapshot; verify the ordering in practice.
 6. **Pausing.** `PauseHandler` keys off `Time.timeScale`, which the host controls online. Clients ignore pause for their timers; session time on a client interpolates from the last snapshot and keeps running through a host pause until the next snapshot corrects it.

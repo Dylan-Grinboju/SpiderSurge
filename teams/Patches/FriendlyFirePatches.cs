@@ -92,6 +92,10 @@ namespace SpiderTeams
             // The pulse knocks back and, as an ultimate, kills; its caster becomes the attacker so the friendly fire rule applies.
             Add<Component>("PulseAbility_ApplyPulsePhysics_Patch", ability => Players.IdOf(ability),
                 AccessTools.Method(typeof(SpiderSurge.PulseAbility), "ApplyPulsePhysics"));
+            Add<SpiderSurge.Weapons.RepulsorBlast>("RepulsorBlast_Blast_Patch", blast => OwnerRegistry.OfWeapon(blast.Weapon),
+                AccessTools.Method(typeof(SpiderSurge.Weapons.RepulsorBlast), "Blast"));
+            Add<SpiderSurge.Weapons.PoisonCloud>("PoisonCloud_Poison_Patch", cloud => OwnerRegistry.OfPlayer(cloud.Owner),
+                AccessTools.Method(typeof(SpiderSurge.Weapons.PoisonCloud), "Poison"));
         }
 
         public static void Unregister() => View.Unregister();

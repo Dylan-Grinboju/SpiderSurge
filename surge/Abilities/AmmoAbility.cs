@@ -103,8 +103,8 @@ namespace SpiderSurge
         {
             if (ultimate) return true;
             if (weaponManager == null) FindWeaponManager();
-            return weaponManager != null && weaponManager.equippedWeapon != null
-                && weaponManager.equippedWeapon.maxAmmo > 0f && weaponManager.equippedWeapon.ammo > 0f;
+            Weapon weapon = weaponManager != null ? weaponManager.equippedWeapon : null;
+            return weapon != null && weapon.maxAmmo > 0f && (weapon.ammo > 0f || Weapons.BayonetBlade.HasBladeLeft(weapon));
         }
 
         protected override void OnActivate()
@@ -170,6 +170,7 @@ namespace SpiderSurge
 
             float reserve = weapon is ParticleBlade ? weapon.maxAmmo * Consts.Values.Ammo.SalvageBladeFraction : 1f;
             weapon.ammo = Mathf.Min(originalAmmo, reserve);
+            Weapons.BayonetBlade.Salvage(weapon, Consts.Values.Ammo.SalvageBladeFraction);
             ClipVfx.Salvage(weapon.transform.position);
             SurgeNet.SendFx(SurgeFx.Salvage, PlayerId, weapon.transform.position, 0f, true);
         }

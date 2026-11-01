@@ -15,6 +15,8 @@ namespace SpiderSurge
     {
         public static ChallengeKind Offered { get; private set; }
         public static ChallengeKind Active { get; private set; }
+        public static int OfferedReward { get; private set; }
+        public static int ActiveReward { get; private set; }
         public static bool Pending { get; private set; }
         public static bool WagerFailed { get; private set; }
         private static int _heldLives;
@@ -30,17 +32,19 @@ namespace SpiderSurge
         // The HUD reads this every frame, and the text only changes with the challenge and the wager
         private static ChallengeKind _statusKind;
         private static bool _statusFailed;
+        private static int _statusReward;
         private static string _status = "";
         public static string Status
         {
             get
             {
-                if (Active != _statusKind || WagerFailed != _statusFailed)
+                if (Active != _statusKind || WagerFailed != _statusFailed || ActiveReward != _statusReward)
                 {
                     _statusKind = Active;
                     _statusFailed = WagerFailed;
+                    _statusReward = ActiveReward;
                     _status = Active == ChallengeKind.None ? "" :
-                        $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ChaosRules.Reward(Active)} Chaos at next map choice")}";
+                        $"{ChaosRules.Name(Active)} \u00b7 {(WagerFailed ? "Reward lost" : $"+{ActiveReward} Chaos at next map choice")}";
                 }
                 return _status;
             }
@@ -49,7 +53,8 @@ namespace SpiderSurge
         // Keep the selected perk, but wait for the challenge decision before loading its map.
         public static void LoadChosenMap(LevelController controller, GameLevel level, float delay, string nameOverride, string authorName)
         {
-            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing || UnityEngine.Random.value >= .5f)
+            if (!Net.IsAuthority || !ChaosWallet.Enabled || AbilitySelection.IsChoosing ||
+                !ChaosRules.OffersChallenge(UnityEngine.Random.value, PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ChallengeSeeker) ?? 0))
             {
                 controller.LoadLevelWithTransition(level, delay, nameOverride, authorName);
                 return;
@@ -67,10 +72,12 @@ namespace SpiderSurge
             var eligible = ChaosRules.Eligible(SurvivalMode.instance.Lives, abilities, ultimate, Parts.Stats.Running ? Players.All?.Count(player => player != null) ?? 0 : 0);
             ChaosRules.AvoidRecent(eligible, _lastOffered, _previousOffered);
             Offered = eligible[UnityEngine.Random.Range(0, eligible.Count)];
+            OfferedReward = ChaosRules.ChallengeReward(Offered,
+                PerksManager.Instance?.GetPerkLevel(Consts.PerkNames.ChallengeSeeker) ?? 0, UnityEngine.Random.value);
             _previousOffered = _lastOffered;
             _lastOffered = Offered;
             Pending = true;
-            ChaosWallet.Record($"Challenge offered: {ChaosRules.Name(Offered)}");
+            ChaosWallet.Record($"Challenge offered: {ChaosRules.Name(Offered)}; reward {OfferedReward}");
             ChaosNet.MarkDirty();
             Tick();
             // Without the panel nobody could answer, so the run goes on without a challenge
@@ -89,6 +96,7 @@ namespace SpiderSurge
             if (accept)
             {
                 SetActive(Offered);
+                ActiveReward = OfferedReward;
                 WagerFailed = false;
                 if (Active == ChallengeKind.PoisonedHeart)
                 {
@@ -111,7 +119,7 @@ namespace SpiderSurge
         {
             if (!Net.IsAuthority || Active == ChallengeKind.None) return;
             var completed = Active;
-            int reward = WagerFailed ? 0 : ChaosRules.Reward(completed);
+            int reward = WagerFailed ? 0 : ActiveReward;
             int returned = _heldLives;
             _heldLives = 0;
             SetActive(ChallengeKind.None);
@@ -189,6 +197,7 @@ namespace SpiderSurge
             }
             bool doubling = kind == ChallengeKind.DoubleCooldown && Active != ChallengeKind.DoubleCooldown;
             Active = kind;
+            if (kind == ChallengeKind.None) ActiveReward = 0;
             if (doubling)
                 foreach (var ability in UnityEngine.Object.FindObjectsOfType<BaseAbility>()) ability.RescaleChallengeCooldown(2f);
         }
@@ -199,6 +208,7 @@ namespace SpiderSurge
             _lastOffered = _previousOffered = ChallengeKind.None;
             Pending = false;
             Offered = ChallengeKind.None;
+            OfferedReward = 0;
             SetActive(ChallengeKind.None);
             _heldLives = 0;
             WagerFailed = false;
@@ -206,10 +216,12 @@ namespace SpiderSurge
             ChaosNet.MarkDirty();
         }
 
-        internal static void ApplyRemote(ChallengeKind offered, ChallengeKind active, bool pending, bool failed)
+        internal static void ApplyRemote(ChallengeKind offered, ChallengeKind active, int offeredReward, int activeReward, bool pending, bool failed)
         {
             Offered = offered;
             SetActive(active);
+            OfferedReward = offeredReward;
+            ActiveReward = activeReward;
             Pending = pending;
             WagerFailed = failed;
             Tick();

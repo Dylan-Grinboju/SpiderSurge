@@ -338,6 +338,7 @@ namespace SpiderSurge
                 {
                     WeaponName = weaponData.Name,
                     Ammo = weaponData.Ammo,
+                    Blade = Weapons.BayonetBlade.LeftOn(weaponData.WeaponRef),
                     Journey = weaponData.Journey
                 });
             }
@@ -453,6 +454,7 @@ namespace SpiderSurge
                     {
                         newWeapon.ammo = data.Ammo;
                         KeepRestoredAmmo(newWeapon, data.Ammo);
+                        Weapons.BayonetBlade.Restore(newWeapon, data.Blade);
                         AchievementTracker.Run("Family Heirloom", static kept => StoredWeaponAchievement.Restore(kept.newWeapon, kept.Journey, kept.playerId), (newWeapon, data.Journey, playerId));
                     }
 

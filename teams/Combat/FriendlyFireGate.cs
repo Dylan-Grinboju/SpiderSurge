@@ -41,9 +41,20 @@ namespace SpiderTeams
             return ModConfig.FriendlyFire != FriendlyFireMode.Ignore || DamageContext.InPulse || !IsTeammateHit(victim, out _, out _, out _);
         }
 
+        // The Poison Dart's daze reaches a teammate only when friendly fire does damage
+        public static bool SparesTeammate(int attacker, SpiderHealthSystem victim)
+        {
+            return ModConfig.FriendlyFire != FriendlyFireMode.Damage && IsTeammate(attacker, victim, out _, out _);
+        }
+
         private static bool IsTeammateHit(SpiderHealthSystem victim, out int attacker, out PlayerController victimPlayer, out int attackerTeam)
         {
             attacker = DamageContext.Current;
+            return IsTeammate(attacker, victim, out victimPlayer, out attackerTeam);
+        }
+
+        private static bool IsTeammate(int attacker, SpiderHealthSystem victim, out PlayerController victimPlayer, out int attackerTeam)
+        {
             victimPlayer = null;
             attackerTeam = -1;
             if (victim == null || attacker < 0 || !TeamManager.HostTeamMatch)

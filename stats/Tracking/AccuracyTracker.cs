@@ -27,7 +27,7 @@ namespace StatsMod
         {
             if (!weaponNames.TryGetValue(weapon, out string name))
             {
-                name = weapon.ToString();
+                name = SpiderSurge.Weapons.CustomWeapons.NameOf(weapon) ?? weapon.ToString();
                 weaponNames[weapon] = name;
             }
             return name;

@@ -291,8 +291,11 @@ namespace SpiderTeams
 
         private bool _remoteLocked;
 
-        // Whether the host still lets players pick; on the host this is !MatchLocked
-        public bool PicksOpen => Net.IsRemoteClient ? !_remoteLocked : !MatchLocked;
+        public static bool InVersusLobby => LobbyController.inWaitingRoom
+            && VersusMode.instance != null && VersusMode.instance.GameModeActive();
+
+        public bool PicksOpen => InVersusLobby && ModConfig.TeamsEnabled
+            && (Net.IsRemoteClient ? !_remoteLocked : !MatchLocked);
 
         public int AddTeamPoint(int team)
         {

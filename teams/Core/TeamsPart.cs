@@ -88,6 +88,7 @@ namespace SpiderTeams
             manager.AddComponent<TeamVisuals>();
             manager.AddComponent<TeamMarkers>();
             manager.AddComponent<LobbyTeamPicker>();
+            manager.AddComponent<VersusLobbyHint>();
         }
     }
 }

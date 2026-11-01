@@ -21,6 +21,41 @@ namespace SpiderSurge.Vfx
         }
     }
 
+    // The Repulsor's blast: the Kinetic Pulse's ring, flash, sparks and shards, through a cone from the muzzle
+    public static class RepulsorVfx
+    {
+        public static void Draw(Vector3 origin, float angle)
+        {
+            SurgeVfx.Safely(() =>
+            {
+                Color color = Consts.Values.Pulse.RingColor;
+                float speed = Consts.Values.Pulse.RingSpeed;
+                float range = Consts.Values.Repulsor.Range;
+                float half = Consts.Values.Repulsor.ConeHalfAngle * Mathf.Deg2Rad;
+                float travel = range / speed;
+                Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+
+                Shockwave.ExpandArc(origin, range, color, speed, angle, half, 2.5f);
+                SurgeVfx.Flash(origin + direction * range * 0.3f, color, 1.8f, range * 0.45f, 0.14f);
+                SurgeVfx.Disc(origin, SurgeVfx.SetAlpha(color, 0.8f), 1.5f, 6f, 0.1f, SurgeVfx.Order + 2);
+                ToCone(SurgeVfx.Burst(origin, Color.Lerp(color, Color.white, 0.3f), color, 16, speed * 0.35f, speed * 0.95f, 0.8f, 1.8f, travel * 0.45f, travel, 1f, trails: true), angle, half);
+                ToCone(AccentVfx.Shards(origin, color, 18, 100f, 1.5f, 0.5f), angle, half);
+            });
+            SoundManager.Play(Consts.SoundNames.PulseAbility, Consts.SoundVolumes.PulseAbility);
+        }
+
+        // A circle burst restarted on just the cone's arc
+        private static void ToCone(ParticleSystem system, float angle, float half)
+        {
+            if (system == null) return;
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.arc = half * 2f * Mathf.Rad2Deg;
+            shape.rotation = new Vector3(0f, 0f, (angle - half) * Mathf.Rad2Deg);
+            system.Play();
+        }
+    }
+
     public static class FreezeVfx
     {
         public static void Cast(Vector3 position, float range)

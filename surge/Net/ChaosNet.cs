@@ -106,11 +106,14 @@ namespace SpiderSurge
             writer.Write(PerkShop.PurchasedMask);
             writer.Write(PerkShop.PurchasedPerkKey);
             writer.Write(PerkShop.BonusSlot);
+            writer.Write(PerkShop.SecondBonusSlot);
             writer.Write(PerkShop.BonusPaid);
             writer.Write((byte)PerkShop.Offer.Length);
             foreach (ShopItem item in PerkShop.Offer) writer.Write((byte)item);
             writer.Write((byte)ChallengeController.Offered);
             writer.Write((byte)ChallengeController.Active);
+            writer.Write(ChallengeController.OfferedReward);
+            writer.Write(ChallengeController.ActiveReward);
             writer.Write(ChallengeController.Pending);
             writer.Write(ChallengeController.WagerFailed);
         }
@@ -146,16 +149,19 @@ namespace SpiderSurge
                 int purchased = reader.ReadInt32();
                 string purchasedPerk = reader.ReadString();
                 int bonus = reader.ReadInt32();
+                int secondBonus = reader.ReadInt32();
                 bool paid = reader.ReadBoolean();
                 var offer = new ShopItem[reader.ReadByte()];
                 for (int i = 0; i < offer.Length; i++) offer[i] = (ShopItem)reader.ReadByte();
                 var offered = (ChallengeKind)reader.ReadByte();
                 var active = (ChallengeKind)reader.ReadByte();
+                int offeredReward = reader.ReadInt32();
+                int activeReward = reader.ReadInt32();
                 bool pending = reader.ReadBoolean();
                 bool failed = reader.ReadBoolean();
-                PerkShop.ApplyRemoteOffer(visit, purchased, bonus, paid, offer, purchasedPerk);
+                PerkShop.ApplyRemoteOffer(visit, purchased, bonus, secondBonus, paid, offer, purchasedPerk);
                 ChaosWallet.ApplyRemote(points, earned, spent, challenges);
-                ChallengeController.ApplyRemote(offered, active, pending, failed);
+                ChallengeController.ApplyRemote(offered, active, offeredReward, activeReward, pending, failed);
             }
             catch (Exception ex)
             {
