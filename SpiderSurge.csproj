@@ -97,6 +97,8 @@
   <ItemGroup>
     <EmbeddedResource Include="surge\Sounds\*.wav" />
     <EmbeddedResource Include="surge\Icons\*.png" />
+    <EmbeddedResource Include="surge\Maps\Layouts\*.json" />
+    <EmbeddedResource Include="surge\Maps\Thumbnails\*.png" />
     <EmbeddedResource Include="surge\Weapons\bayonet.png" LogicalName="SpiderSurge.BayonetSprite" />
     <EmbeddedResource Include="surge\Weapons\poison_dart.png" LogicalName="SpiderSurge.PoisonDartSprite" />
     <EmbeddedResource Include="surge\Weapons\poison_dart_shot.png" LogicalName="SpiderSurge.PoisonDartShotSprite" />
