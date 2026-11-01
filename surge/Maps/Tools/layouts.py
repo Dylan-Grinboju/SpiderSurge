@@ -9,6 +9,7 @@ import argparse
 import json
 import math
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAYOUTS = os.path.join(os.path.dirname(HERE), "Layouts")
@@ -78,18 +79,6 @@ def honeycomb(cx, cy, s=1.0):
     return el("HoneyComb", cx - 39.5 * s, cy + 12.9 * s, 0, s)
 
 
-def tetromino(cells, x, y, r, size=50.0):
-    """Big Blocks on grid cells, rotated by r degrees around (x, y)."""
-    c, sn = math.cos(math.radians(r)), math.sin(math.radians(r))
-    mx = sum(i for i, _ in cells) / len(cells)
-    my = sum(j for _, j in cells) / len(cells)
-    out = []
-    for i, j in cells:
-        px, py = (i - mx) * size, (j - my) * size
-        out.append(el("Big Block", x + px * c - py * sn, y + px * sn + py * c, r, size / 63.0))
-    return out
-
-
 # ---------------------------------------------------------------- maps
 
 def pipe(points, s=0.6, radius=23.0):
@@ -104,17 +93,10 @@ def pipe(points, s=0.6, radius=23.0):
         quadrant = ("u" if d1[1] - d2[1] > 0 else "l") + ("r" if d1[0] - d2[0] > 0 else "l")
         out.append(quarter(cx + (d2[0] - d1[0]) * radius, cy + (d2[1] - d1[1]) * radius, quadrant, radius / 41.6))
     ends.append(points[-1])
-    piece = 202.0 * s
     for (x1, y1), (x2, y2) in zip(ends[::2], ends[1::2]):
         length = math.hypot(x2 - x1, y2 - y1)
-        if length <= piece:
-            out.append(bar(x1, y1, x2, y2))
-            continue
-        n = math.ceil(length / piece)
-        ux, uy = (x2 - x1) / length, (y2 - y1) / length
-        for k in range(n):
-            d = piece / 2 + k * (length - piece) / (n - 1)
-            out.append(el("Loooong Boi", x1 + ux * d, y1 + uy * d, math.degrees(math.atan2(uy, ux)), s))
+        out.append(el("Loooong Boi", (x1 + x2) / 2, (y1 + y2) / 2,
+                      math.degrees(math.atan2(y2 - y1, x2 - x1)), length / 202.0, s))
     return out
 
 
@@ -223,37 +205,34 @@ surge_map(
     rare=[(0, 227)],
 )
 
-# Giant falling blocks frozen in mid-air at odd angles
+# Broken slabs with staggered edges and open routes between the rubble
 surge_map(
     "fallen_blocks", "Fallen Blocks", MULTIVERSE, LAVA_BOTTOM,
-    elements=(
-        tetromino([(0, 1), (1, 1), (2, 1), (1, 0)], 0, -100, 0)
-        + tetromino([(0, 0), (1, 0), (2, 0), (2, 1)], -260, 10, 15)
-        + tetromino([(0, 0), (1, 0), (1, 1), (2, 1)], 250, 20, -20)
-        + tetromino([(0, 0), (1, 0), (2, 0), (3, 0)], -110, 180, 80)
-        + tetromino([(0, 0), (1, 0), (0, 1), (1, 1)], 140, 200, 10)
-    ),
-    players=[(-40, -40), (40, -40), (-290, 40), (240, 90)],
-    enemies=[(-430, 120), (430, 120), (0, 80), (-300, 280), (330, 300), (0, 320), (-200, -150), (200, -130)],
-    weapons=[(-60, -48), (140, 270)],
-    rare=[(0, -48)],
+    elements=[
+        el("Big Block", -40, -110, -12, 1.6, 0.8), el("Platform", 75, -95, 8, 1.5),
+        el("Pentagon", -260, 5, 18, 1.1), el("Big Block", 250, 35, -22, 1.7, 0.9),
+        el("Platform", -110, 180, -28, 1.7), el("Pentagon", 135, 205, 12, 1.1),
+        el("Platform", -335, 190, 10, 0.9),
+    ],
+    players=[(-55, -65), (-20, -70), (60, -60), (90, -55)],
+    enemies=[(-430, 100), (430, 120), (0, 80), (-300, 300), (330, 300), (0, 330), (-200, -150), (200, -140)],
+    weapons=[(-260, 80), (250, 80)],
+    rare=[(135, 280)],
 )
 
-# A steel bridge with a truss over its deck and two towers at the ends
+# A broken truss: two abutments, an upper span, and a clear central crossing
 surge_map(
     "truss_bridge", "Truss Bridge", DESOLATION, LAVA_BOTTOM,
     elements=[
-        el("Loooong Boi", -226, 0, 0, 1.12), el("Loooong Boi", 0, 0, 0, 1.12), el("Loooong Boi", 226, 0, 0, 1.12),
-        el("Loooong Boi", -113, 120, 0, 1.12), el("Loooong Boi", 113, 120, 0, 1.12),
-        bar(-226, 0, -113, 120), bar(-113, 120, 0, 0), bar(0, 0, 113, 120), bar(113, 120, 226, 0),
-        bar(-345, -170, -345, 60), bar(345, -170, 345, 60),
-        el("Platform", -345, 80, 0, 1.1), el("Platform", 345, 80, 0, 1.1),
-        el("Pancake", 0, 250, 0, 1.1),
+        el("Loooong Boi", -230, -50, 0, 1.1), el("Loooong Boi", 230, -50, 0, 1.1),
+        bar(-310, -50, -220, 120), bar(310, -50, 220, 120),
+        el("Platform", -220, 140, 0, 1.4), el("Platform", 220, 140, 0, 1.4),
+        el("Loooong Boi", 0, 190, 0, 1.1), el("Platform", 0, -95, 0, 1.3),
     ],
-    players=[(-290, 32), (-60, 32), (60, 32), (290, 32)],
-    enemies=[(-430, 120), (430, 120), (-150, -150), (150, -150), (0, 330), (-300, 280), (300, 280), (-430, -100)],
-    weapons=[(-170, 27), (170, 27), (0, 280)],
-    rare=[(0, 146)],
+    players=[(-220, -18), (-160, -18), (160, -18), (220, -18)],
+    enemies=[(-430, 120), (430, 120), (-150, -150), (150, -150), (0, 330), (-300, 280), (300, 280), (0, 50)],
+    weapons=[(-220, 173), (220, 173), (0, 223)],
+    rare=[(0, -60)],
 )
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
@@ -318,46 +297,49 @@ surge_map(
     rare=[(0, 140)],
 )
 
-# Two crossed beams split the map into four wedges
+# Four broken beams frame an open crossing instead of sealing off four wedges
 surge_map(
     "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM,
     elements=[
-        bar(0, 60, -230, -110), bar(0, 60, 230, -110), bar(0, 60, -230, 230), bar(0, 60, 230, 230),
-        el("Ballish", 0, 60, 0, 1.2), el("Pancake", 0, -120, 0, 1.3),
+        bar(-75, 5, -230, -110), bar(75, 5, 230, -110),
+        bar(-75, 115, -230, 230), bar(75, 115, 230, 230),
+        el("Pancake", 0, -120, 0, 1.3),
         el("Platform", -330, 150, 0, 1.2), el("Platform", 330, 150, 0, 1.2), el("Platform", 0, 250),
     ],
-    players=[(-120, 12), (120, 12), (-40, -83), (40, -83)],
-    enemies=[(-430, 60), (430, 60), (0, -20), (0, 150), (-200, 330), (200, 330), (-330, -150), (330, -150)],
+    players=[(-150, -20), (150, -20), (-40, -83), (40, -83)],
+    enemies=[(-430, 60), (430, 60), (0, 30), (0, 150), (-200, 330), (200, 330), (-330, -150), (330, -150)],
     weapons=[(-330, 178), (330, 178)],
     rare=[(0, 275)],
 )
 
-# Two leaning ladders and a column of rocks between a lava floor and a lava ceiling
+# Broken ladder spines with alternating ledges; no closed cells between rungs
 _ladders = []
 for lx, lean in ((-200, -12), (200, 12)):
-    ladder = [el("Loooong Boi", rail, y, 90, 0.9) for rail in (lx - 40, lx + 40) for y in (-50, 132)]
-    ladder += [el("Platform", lx, y) for y in (-120, -50, 20, 90, 160)]
+    ladder = [el("Loooong Boi", lx, y, 90, 0.65) for y in (-70, 140)]
+    ladder += [el("Platform", lx + offset, y, 0, 1.3)
+               for offset, y in ((-35, -120), (35, -35), (-35, 65), (35, 165))]
     _ladders += rotate(ladder, lx, 40, lean)
 surge_map(
     "ladders", "Ladders", FROSTY, LAVA_TOP_BOTTOM,
     elements=_ladders + [el("Ballish", 0, -80, 0, 1.4), el("Pancake", 0, 80, 0, 1.2), el("Ballish", 0, 220, 0, 0.9)],
-    players=[(-200, -18), (200, -18), (-30, 116), (30, 116)],
+    players=[(-183, -15), (255, 15), (-30, 116), (30, 116)],
     enemies=[(-420, 60), (420, 60), (-420, 250), (420, 250), (0, 310), (0, -170), (-100, 300), (100, 300)],
-    weapons=[(-175, 184), (175, 184)],
+    weapons=[(-140, 180), (208, 200)],
     rare=[(0, -26)],
 )
 
-# A tangle of thin pipes with elbow bends
+# Broken pipe runs leave a second exit from every interior pocket
 surge_map(
     "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM,
     elements=(
-        pipe([(-340, 180), (-340, -90), (340, -90), (340, 180)])
-        + pipe([(-200, -90), (-200, 60), (-60, 60), (-60, 180)])
-        + pipe([(120, -90), (120, 30), (260, 30)])
+        pipe([(-340, 180), (-340, -90), (-100, -90)])
+        + pipe([(100, -90), (340, -90), (340, 180)])
+        + pipe([(-200, -20), (-200, 60), (-60, 60), (-60, 180)])
+        + pipe([(120, -20), (120, 30), (260, 30)])
         + pipe([(-120, 240), (180, 240), (180, 150)])
         + pipe([(-340, 110), (-250, 110)]) + pipe([(340, 120), (260, 120)])
     ),
-    players=[(-270, -63), (-120, -63), (40, -63), (260, -63)],
+    players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
     enemies=[(-430, 40), (430, 40), (-200, -170), (200, -170), (0, 320), (-250, 280), (300, 300), (0, 140)],
     weapons=[(-130, 80), (190, 50)],
     rare=[(30, 260)],
@@ -377,6 +359,67 @@ surge_map(
     enemies=[(-430, 150), (430, 150), (0, 300), (-120, -50), (120, -50), (-350, 280), (350, 280), (0, -170)],
     weapons=[(-300, -54), (310, -40)],
     rare=[(10, -40)],
+)
+
+
+# A crescent shelters one side of an arena while its open mouth invites long swings
+surge_map(
+    "crescent", "Crescent", SPACE, LAVA_BOTTOM,
+    elements=[
+        quarter(-80, 65, "ul", 3.3), quarter(-80, 65, "ll", 3.3),
+        el("Platform", -110, 55, 0, 1.3), el("Platform", -50, -95, 0, 1.4),
+        el("Platform", 140, -45, -8, 1.6), el("Pentagon", 255, 120, 12, 1.2),
+        el("Platform", 20, 235, 0, 1.4),
+    ],
+    players=[(-125, 88), (-95, 88), (120, -10), (155, -15)],
+    enemies=[(-380, 65), (-330, 290), (0, 330), (400, 250), (410, 0), (220, -160), (0, 65)],
+    weapons=[(-50, -60), (20, 270)],
+    rare=[(255, 200)],
+)
+
+# A diagonal ravine: sheltered lower shelves and exposed high crossing points
+surge_map(
+    "faultline", "Faultline", CAVE, LAVA_BOTTOM,
+    elements=[
+        el("Pentagon", -240, -90, -15, 1.9), el("Pentagon", 225, -35, 20, 1.8),
+        el("Platform", -120, 100, -12, 1.7), el("Platform", 100, 175, 12, 1.7),
+        el("Platform", -310, 210, 0, 1.2), el("Platform", 315, 260, 0, 1.2),
+        el("Platform", -35, -125, 0, 1.1),
+    ],
+    players=[(-260, 8), (-220, 22), (205, 72), (245, 55)],
+    enemies=[(-430, 70), (430, 120), (-170, 300), (0, 320), (180, 315), (0, 0), (380, -150)],
+    weapons=[(-120, 140), (100, 215)],
+    rare=[(-35, -90)],
+)
+
+# A fragile direct crossing with durable islands and a permanent overhead detour
+surge_map(
+    "causeway", "Causeway", FROSTY, LAVA_BOTTOM,
+    elements=[
+        el("Pentagon", -270, -90, -8, 1.5), el("Pentagon", 270, -90, 8, 1.5),
+        honeycomb(-125, -30, 1.4), honeycomb(15, -30, 1.4), honeycomb(155, -30, 1.1),
+        el("Platform", -225, 95, 0, 1.3), el("Platform", 220, 95, 0, 1.3),
+        el("Loooong Boi", 0, 195, 0, 1.0),
+    ],
+    players=[(-290, -5), (-250, -5), (250, -5), (290, -5)],
+    enemies=[(-430, 80), (430, 80), (-300, 300), (300, 300), (0, 325), (0, 75), (0, -155)],
+    weapons=[(-225, 130), (220, 130)],
+    rare=[(15, 12)],
+)
+
+# Offset launch islands: pads feed an open upper lane, with a lower recovery ledge
+surge_map(
+    "slingshot", "Slingshot", DESERT, LAVA_BOTTOM,
+    elements=[
+        el("Platform", -285, -100, 0, 2.0), el("Platform", 275, -20, 0, 2.0),
+        el("Jump Pad", -285, -78, 0, 1.5), el("Jump Pad", 275, 2, 0, 1.5),
+        el("Platform", -100, 100, -10, 1.4), el("Platform", 100, 190, 10, 1.4),
+        el("Pancake", 0, -115, 0, 1.2), el("Ballish", -290, 245, 0, 0.8),
+    ],
+    players=[(-325, -62), (-245, -62), (235, 18), (315, 18)],
+    enemies=[(-430, 70), (430, 140), (-160, 300), (250, 315), (0, 325), (0, 20), (180, -150)],
+    weapons=[(-100, 135), (100, 225)],
+    rare=[(0, -80)],
 )
 
 
@@ -440,13 +483,22 @@ def check(maps, shapes):
     """Spawns must stand clear of solids: players and weapons on ground below, enemies in open air."""
     problems = 0
     for m in maps:
+        unknown = {p["o"] for e in m["elements"] for p in [e] + e.get("with", []) if p["o"] not in shapes}
+        if unknown:
+            print(f'{m["id"]}: missing collider data for {", ".join(sorted(unknown))}'); problems += 1
+            continue
         polys = solids(m, shapes)
         safe = [(o, p) for o, p in polys]
+        if not safe:
+            print(f'{m["id"]}: no solid ground'); problems += 1
+            continue
         for e in m["elements"]:
             kind = e["o"]
             if kind not in ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner"):
                 continue
             x, y = e["x"], e["y"]
+            if not (-470 < x < 470 and -190 < y < 350):
+                print(f'{m["id"]}: {kind} at ({x}, {y}) is near the lava'); problems += 1
             if any(_inside(x, y, pts) for _, pts in safe) or min(_distance(x, y, pts) for _, pts in safe) < 8:
                 print(f'{m["id"]}: {kind} at ({x}, {y}) is inside a solid'); problems += 1
                 continue
@@ -508,11 +560,20 @@ if __name__ == "__main__":
     parser.add_argument("--preview", action="store_true", help="also draws <id>.png next to shapes.json")
     parser.add_argument("--only", help="comma-separated map ids")
     args = parser.parse_args()
-    chosen = [m for m in MAPS if not args.only or m["id"] in args.only.split(",")]
-    write(MAPS)
-    print(f"{len(MAPS)} maps written to {LAYOUTS}")
+    requested = set(args.only.split(",")) if args.only else {m["id"] for m in MAPS}
+    unknown = requested - {m["id"] for m in MAPS}
+    if unknown:
+        parser.error(f'unknown maps: {", ".join(sorted(unknown))}')
+    chosen = [m for m in MAPS if m["id"] in requested]
+    if args.preview and not args.shapes:
+        parser.error("--preview requires --shapes")
     if args.shapes:
         shapes = json.load(open(os.path.join(args.shapes, "shapes.json"), encoding="utf-8"))
-        print(f"{check(chosen, shapes)} placement problems")
+        problems = check(chosen, shapes)
+        print(f"{problems} placement problems")
+        if problems:
+            sys.exit(1)
         if args.preview:
             preview(chosen, args.shapes, shapes)
+    write(chosen)
+    print(f"{len(chosen)} maps written to {LAYOUTS}")
