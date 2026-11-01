@@ -368,26 +368,20 @@ namespace SpiderSurge
                 return requiredModLevel >= 1;
         }
 
+        // A weapon in several groups, like a Particle Blade that can also be thrown or the Bayonet, is kept by any of their perks
         private int GetRequiredModLevel(List<Weapon.WeaponType> types)
         {
-            bool isBoom = false;
-            bool isParticles = false;
-            bool isGuns = false;
-
+            int level = 0;
             foreach (var wType in types)
             {
                 if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
-                    isBoom = true;
+                    level = Mathf.Max(level, _cachedMoreBoomLevel);
                 else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
-                    isParticles = true;
+                    level = Mathf.Max(level, _cachedMoreParticlesLevel);
                 else if (wType == Weapon.WeaponType.Gun)
-                    isGuns = true;
+                    level = Mathf.Max(level, _cachedMoreGunsLevel);
             }
-
-            if (isBoom) return _cachedMoreBoomLevel;
-            if (isParticles) return _cachedMoreParticlesLevel;
-            if (isGuns) return _cachedMoreGunsLevel;
-            return 0;
+            return level;
         }
 
         private void RestoreWeapons()

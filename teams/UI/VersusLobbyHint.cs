@@ -14,7 +14,7 @@ namespace SpiderTeams
             var manager = TeamManager.Instance;
             var game = GameController.instance;
             if (manager == null || !manager.PicksOpen || game == null || !game.acceptingInputs || GameMenus.Open || SettingsPage.IsOpen
-                || LevelController.IsLoading)
+                || LevelController.IsLoading || StatsMod.UIManager.TitlesShowing)
             {
                 return;
             }
@@ -27,7 +27,8 @@ namespace SpiderTeams
             }
             float scale = Mathf.Min(Screen.width / 1280f, Screen.height / 720f);
             Hud.Resize(_style, 20, scale);
-            var rect = new Rect(24f * scale, Screen.height - 160f * scale, Screen.width - 48f * scale, 68f * scale);
+            // High enough to clear the lava edge in the main lobby as well as in the waiting room
+            var rect = new Rect(24f * scale, Screen.height - 200f * scale, Screen.width - 48f * scale, 68f * scale);
             Hud.Label(rect, Hint, _style, Hud.Text, shadow: true);
         }
     }

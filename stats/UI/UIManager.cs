@@ -62,6 +62,9 @@ namespace StatsMod
                 return (mods != null && (mods.IsVisible || mods.IsShowing)) || UIPopupManager.CurrentVisibleQueuePopup != null;
             }
         }
+
+        // The end-of-run titles and results cover the lobby
+        internal static bool TitlesShowing => Instance != null && Instance.titlesUI != null && Instance.titlesUI.IsVisible() && !TitlesBlockedByMenu;
         #endregion
 
         #region UI Components

@@ -250,9 +250,10 @@ namespace SpiderSurge.Weapons
                     enemy.Damage(Vector3.zero, position, false);
                     return;
                 }
-                // An Exploding Roller shrugs off direct hits; the cloud dissolves it as lava would, after a touch that marks who killed it
+                // An Exploding Roller shrugs off direct hits; the cloud kills it as a hit would, after a touch that marks who killed it.
+                // Disintegrate would count as a lava death and unlock Environmental Warfare
                 enemy.Impact(Vector3.zero, position, false);
-                enemy.Disintegrate();
+                enemy.Explode();
             }
         }
     }
