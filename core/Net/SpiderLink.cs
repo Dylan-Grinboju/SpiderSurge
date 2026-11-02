@@ -45,7 +45,8 @@ namespace SpiderSurge.Common
     {
         private static void Postfix(SpiderController __instance)
         {
-            if (!__instance.IsServer && __instance.GetComponent<SpiderLink>() == null)
+            // NetworkBehaviour.IsServer is not public in the game's Netcode build, so the publicized reference throws at run time
+            if (Net.IsRemoteClient && __instance.GetComponent<SpiderLink>() == null)
             {
                 __instance.gameObject.AddComponent<SpiderLink>();
             }
