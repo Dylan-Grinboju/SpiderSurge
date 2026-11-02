@@ -134,6 +134,24 @@
    "sy": 1.0
   },
   {
+   "o": "PortalPoint",
+   "x": -300,
+   "y": 25,
+   "r": 0.0,
+   "sx": 1.0,
+   "sy": 1.0,
+   "with": [
+    {
+     "o": "PortalPoint Variant",
+     "x": 300,
+     "y": 25,
+     "r": 0.0,
+     "sx": 1.0,
+     "sy": 1.0
+    }
+   ]
+  },
+  {
    "o": "Player Spawn Point",
    "x": -75,
    "y": -72,

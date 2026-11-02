@@ -45,9 +45,12 @@ def render(arena, shapes):
     lights = ImageDraw.Draw(glow)
     polygons = layouts.solids(arena, shapes)
     for name, points in polygons:
-        if name.startswith("Death") or name in ("HoneyComb", "HoneycombSector"):
-            color = (255, 120, 22, 140) if name.startswith("Death") else (55, 185, 210, 90)
+        if name.startswith("Death") or name in ("HoneyComb", "HoneycombSector", layouts.HOVER):
+            color = (255, 120, 22, 140) if name.startswith("Death") else (55, 185, 210, 90) if name != layouts.HOVER else (40, 110, 255, 120)
             lights.line([point(*p) for p in points + points[:1]], fill=color, width=8)
+    for x, y in portals(arena):
+        cx, cy = point(x, y)
+        lights.ellipse((cx - 22, cy - 22, cx + 22, cy + 22), outline=(255, 223, 0, 170), width=10)
     image = Image.alpha_composite(image.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(8)))
     draw = ImageDraw.Draw(image)
     for name, points in polygons:
@@ -60,6 +63,8 @@ def render(arena, shapes):
             fill, edge = (55, 17, 10, 255), (255, 164, 41, 255)
         elif ice:
             fill, edge = (13, 49, 59, 255), (75, 173, 195, 255)
+        elif name == layouts.HOVER:
+            edge = (90, 150, 255, 255)
         draw.polygon(outline, fill=fill)
         draw.line(outline + outline[:1], fill=edge, width=2, joint="curve")
 
@@ -82,7 +87,17 @@ def render(arena, shapes):
             for y in (10, 25, 40):
                 draw.line([local(-7, y), local(0, y + 7), local(7, y)], fill=(53, 107, 128), width=2)
 
+    for x, y in portals(arena):
+        cx, cy = point(x, y)
+        draw.ellipse((cx - 14, cy - 14, cx + 14, cy + 14), outline=(255, 223, 0), width=4)
+
     return image.convert("RGB").resize((320, 180), Image.Resampling.LANCZOS)
+
+
+def portals(arena):
+    """Both ends of every portal pair."""
+    return [(p["x"], p["y"]) for e in arena["elements"] if e["o"] == "PortalPoint"
+            for p in [e] + e.get("with", [])]
 
 
 if __name__ == "__main__":

@@ -74,6 +74,16 @@ def quarter(cx, cy, quadrant, s=1.0, o="Quarter"):
     return el(o, cx - (ox * c - oy * sn), cy - (ox * sn + oy * c), r, s)
 
 
+def portal(x1, y1, x2, y2):
+    """A pair of linked portal points; whatever enters one leaves the other with its velocity."""
+    return el("PortalPoint", x1, y1, with_=[el("PortalPoint Variant", x2, y2)])
+
+
+def hover(x, y, r=0.0, s=1.0):
+    """A floating platform: solid, but it drifts when pushed or stood on."""
+    return el("FloatingPlatformWide Variant", x, y, r, s)
+
+
 def honeycomb(cx, cy, s=1.0):
     """A breakable ice shelf centered on (cx, cy); about 95 x 34 at scale 1."""
     return el("HoneyComb", cx - 39.5 * s, cy + 12.9 * s, 0, s)
@@ -112,7 +122,7 @@ def rotate(elements, cx, cy, deg):
     return out
 
 
-# Ruined arches with a broken deck on top; the arches give cover underneath
+# Ruined arches with a broken deck on top; the arches give cover and hover pads a foothold underneath
 _arches = []
 for ax in (-224, -75, 75, 224):
     _arches += [quarter(ax, -10, "ul", 1.8), quarter(ax, -10, "ur", 1.8)]
@@ -125,6 +135,7 @@ surge_map(
         el("Loooong Boi", -245, 96), el("Loooong Boi", -95, 96, 0, 0.8),
         el("Loooong Boi", 120, 96, 0, 0.8), el("Loooong Boi", 262, 96, 0, 0.9),
         el("Platform", -150, 205, 0, 1.2), el("Platform", 150, 205, 0, 1.2), el("Pancake", 0, 265, 0, 0.9),
+        hover(-224, -110, 0, 1.3), hover(224, -110, 0, 1.3),
     ],
     players=[(-200, 128), (-60, 128), (90, 128), (230, 128)],
     enemies=[(-420, 60), (420, 60), (-300, 280), (300, 280), (0, 340), (-75, -140), (75, -140)],
@@ -147,15 +158,16 @@ surge_map(
     rare=[(0, 140)],
 )
 
-# Shelves of breakable ice over one solid floor; every shot thins them out
+# Shelves of breakable ice over one solid floor; floor pads fire up through the gaps once the ice is gone
 surge_map(
     "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM,
     elements=[
         el("Loooong Boi", 0, -110, 0, 1.4), el("Ballish", -330, -40, 0, 0.9), el("Ballish", 330, -40, 0, 0.9),
         honeycomb(-200, 0, 1.6), honeycomb(200, 0, 1.6), honeycomb(0, 100, 1.6),
         honeycomb(-230, 200, 1.2), honeycomb(230, 200, 1.2),
+        el("Jump Pad", -100, -94), el("Jump Pad", 100, -94),
     ],
-    players=[(-40, 147), (40, 147), (-80, -74), (80, -74)],
+    players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
     enemies=[(-420, 100), (420, 100), (0, 300), (-250, -160), (250, -160), (-380, 300), (380, 300)],
     weapons=[(0, -80), (-230, 234)],
     rare=[(230, 234)],
@@ -237,7 +249,7 @@ surge_map(
     rare=[(260, 73)],
 )
 
-# Two jaws full of teeth, with lava above and below
+# Two jaws full of teeth, with lava above and below; portals over the lip ends wrap one side to the other
 surge_map(
     "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM,
     elements=[
@@ -247,6 +259,7 @@ surge_map(
         el("Spike", -75, 228, 180, 0.9), el("Spike", 75, 228, 180, 0.9),
         el("Spike", -210, 222, 180, 0.8), el("Spike", 210, 222, 180, 0.8),
         el("Pentagon", 0, 90, 0, 0.8), el("Ballish", -250, 90), el("Ballish", 250, 90),
+        portal(-300, 25, 300, 25),
     ],
     players=[(-75, -72), (75, -72), (-240, -33), (240, -33)],
     enemies=[(-420, 90), (420, 90), (-80, 30), (80, 30), (-300, 300), (300, 300), (0, 330), (-420, -120)],
@@ -254,7 +267,7 @@ surge_map(
     rare=[(0, 140)],
 )
 
-# Four broken beams frame an open crossing instead of sealing off four wedges
+# Four broken beams frame an open crossing; portals join each lower tip to the opposite upper tip
 surge_map(
     "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM,
     elements=[
@@ -262,8 +275,9 @@ surge_map(
         bar(-75, 115, -230, 230), bar(75, 115, 230, 230),
         el("Pancake", 0, -120, 0, 1.3),
         el("Platform", -330, 150, 0, 1.2), el("Platform", 330, 150, 0, 1.2), el("Platform", 0, 250),
+        portal(-205, -45, 205, 255), portal(205, -45, -205, 255),
     ],
-    players=[(-150, -20), (150, -20), (-40, -83), (40, -83)],
+    players=[(-120, 10), (120, 10), (-40, -83), (40, -83)],
     enemies=[(-430, 60), (430, 60), (0, 30), (0, 150), (-200, 330), (200, 330), (-330, -150), (330, -150)],
     weapons=[(-330, 178), (330, 178)],
     rare=[(0, 275)],
@@ -285,7 +299,7 @@ surge_map(
     rare=[(0, -26)],
 )
 
-# Broken pipe runs leave a second exit from every interior pocket
+# Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap
 surge_map(
     "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM,
     elements=(
@@ -295,6 +309,7 @@ surge_map(
         + pipe([(120, -20), (120, 30), (260, 30)])
         + pipe([(-120, 240), (180, 240), (180, 150)])
         + pipe([(-340, 110), (-250, 110)]) + pipe([(340, 120), (260, 120)])
+        + [el("AeroTube", 0, -195, 0, 1.5)]
     ),
     players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
     enemies=[(-430, 40), (430, 40), (-200, -170), (200, -170), (0, 320), (-250, 280), (300, 300), (0, 140)],
@@ -302,7 +317,7 @@ surge_map(
     rare=[(30, 260)],
 )
 
-# A satellite with long solar wings, a dish underneath and drifting debris
+# A satellite with long solar wings, a dish underneath and debris that drifts when pushed
 surge_map(
     "satellite", "Satellite", SPACE, LAVA_BOTTOM, beginner=True,
     elements=[
@@ -310,7 +325,7 @@ surge_map(
         el("Spike", 0, 121, 0, 0.8), quarter(0, -20, "ll", 1.2), quarter(0, -20, "lr", 1.2),
         el("Ballish", -300, -100, 0, 1.1), el("Ballish", 310, -80, 0, 0.9),
         el("Ballish", -200, 220, 0, 0.8), el("Ballish", 230, 230),
-        el("Platform", -120, -140, 15), el("Platform", 120, -150, -15),
+        hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
     enemies=[(-430, 150), (430, 150), (0, 300), (-120, -50), (120, -50), (-350, 280), (350, 280), (0, -170)],
@@ -391,6 +406,50 @@ def _ground(x, y, polys, reach):
     return None
 
 
+HOVER = "FloatingPlatformWide Variant"
+SPAWNS = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner")
+
+
+def check_gadgets(m, safe):
+    """Pads need footing; portals come in pairs, stay off beginner maps and drop their exits onto solid ground."""
+    problems = 0
+    spawns = [(e["x"], e["y"]) for e in m["elements"] if e["o"] in SPAWNS]
+    enemies = [(p["x"], p["y"]) for p in m["enemies"]]
+    ends = []
+    for e in m["elements"]:
+        if e["o"] == "Jump Pad":
+            gap = _ground(e["x"], e["y"] - 1, safe, 8)
+            if gap is None:
+                print(f'{m["id"]}: Jump Pad at ({e["x"]}, {e["y"]}) has no footing'); problems += 1
+            if any(math.hypot(x - e["x"], y - e["y"]) < 30 for x, y in spawns):
+                print(f'{m["id"]}: Jump Pad at ({e["x"]}, {e["y"]}) is under a spawn'); problems += 1
+        if e["o"] == "PortalPoint":
+            pair = [p for p in e.get("with", []) if p["o"] == "PortalPoint Variant"]
+            if len(pair) != 1:
+                print(f'{m["id"]}: portal at ({e["x"]}, {e["y"]}) needs exactly one linked exit'); problems += 1
+            ends += [e] + pair
+        elif e["o"] == "PortalPoint Variant":
+            print(f'{m["id"]}: portal exit at ({e["x"]}, {e["y"]}) is not linked'); problems += 1
+    if ends and m["beginner"]:
+        print(f'{m["id"]}: beginner maps get no portals'); problems += 1
+    for e in ends:
+        x, y = e["x"], e["y"]
+        if not (-440 < x < 440 and -150 < y < 330):
+            print(f'{m["id"]}: portal at ({x}, {y}) is near the lava'); problems += 1
+        if min(_distance(x, y, pts) for _, pts in safe) < 20:
+            print(f'{m["id"]}: portal at ({x}, {y}) is jammed against a solid'); problems += 1
+        if any(math.hypot(px - x, py - y) < 70 for px, py in spawns):
+            print(f'{m["id"]}: portal at ({x}, {y}) is too close to a player or weapon spawn'); problems += 1
+        if any(math.hypot(px - x, py - y) < 60 for px, py in enemies):
+            print(f'{m["id"]}: portal at ({x}, {y}) is too close to an enemy spawn'); problems += 1
+        # Velocity carries through, so a spider falling into one end lands below the other
+        gap = _ground(x, y, safe, 80)
+        under = [o for o, pts in safe if gap is not None and _inside(x, y - gap, pts)]
+        if gap is None or any(o.startswith("Death") or o == HOVER for o in under):
+            print(f'{m["id"]}: portal at ({x}, {y}) has no solid footing below'); problems += 1
+    return problems
+
+
 def check(maps, shapes):
     """Spawns must stand clear of solids: players and weapons on ground below, enemies in open air."""
     problems = 0
@@ -420,6 +479,9 @@ def check(maps, shapes):
             under = [o for o, pts in safe if _inside(x, y - (gap or 0), pts)]
             if any(o.startswith("Death") for o in under):
                 print(f'{m["id"]}: {kind} at ({x}, {y}) stands on a hazard'); problems += 1
+            if HOVER in under:
+                print(f'{m["id"]}: {kind} at ({x}, {y}) stands on a floating platform that drifts'); problems += 1
+        problems += check_gadgets(m, safe)
         for p in m["enemies"]:
             d = min(_distance(p["x"], p["y"], pts) for _, pts in safe)
             if d < 45 or any(_inside(p["x"], p["y"], pts) for _, pts in safe):
@@ -448,7 +510,7 @@ def preview(maps, out_dir, shapes):
         if m["lava"] in (LAVA_SIDES_BOTTOM, LAVA_ALL):
             ax.axvspan(-560, -500, color="#ffcc88"); ax.axvspan(500, 560, color="#ffcc88")
         for o, pts in solids(m, shapes):
-            col = "#e03030" if o.startswith("Death") else "#4a7"
+            col = "#e03030" if o.startswith("Death") else "#48c" if o == HOVER else "#4a7"
             ax.add_patch(Polygon(pts, closed=True, fc=col, ec="none", alpha=0.9))
         for e in m["elements"]:
             if e["o"] == "Player Spawn Point":
@@ -457,6 +519,12 @@ def preview(maps, out_dir, shapes):
                 ax.plot(e["x"], e["y"], "D", color="gold" if "Rare" in e["o"] else "#2a2", ms=6)
             elif e["o"] in ("Jump Pad", "AeroTube"):
                 ax.plot(e["x"], e["y"], "^", color="#f80", ms=10)
+            elif e["o"] == "PortalPoint":
+                for p in [e] + e.get("with", []):
+                    ax.add_patch(plt.Circle((p["x"], p["y"]), 10, fill=False, ec="#e6b800", lw=2))
+                    ax.add_patch(plt.Circle((p["x"], p["y"]), 15, fill=False, ec="#e6b800", lw=0.8, ls=":"))
+                for p in e.get("with", []):
+                    ax.plot([e["x"], p["x"]], [e["y"], p["y"]], ":", color="#e6b800", lw=1)
         for p in m["enemies"]:
             ax.plot(p["x"], p["y"], "x", color="red", ms=9, mew=2)
         ax.set_xlim(-520, 520); ax.set_ylim(-260, 400); ax.set_aspect("equal")
