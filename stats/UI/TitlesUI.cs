@@ -17,7 +17,8 @@ namespace StatsMod
         public float CARD_PADDING = 24f;
         public float CARD_BAND_HEIGHT = 6f;
         public float HEADER_HEIGHT = 136f;
-        private float HeaderHeight => HEADER_HEIGHT + (RunRecap.Last != null ? 96f : 0f);
+        private bool ShowLegend => hasRankedStats && ModConfig.TitlesEnabled && TitlesManager.Instance.HasGameEndedTitles;
+        private float HeaderHeight => HEADER_HEIGHT + (RunRecap.Last != null ? 96f : 0f) + (ShowLegend ? 40f : 0f);
         public float HEADER_TO_GRID_SPACING = 30f;
         public float BASE_MAX_WIDTH_PERCENT = 0.94f;
         public float BASE_MAX_HEIGHT_PERCENT = 0.92f;
@@ -82,8 +83,19 @@ namespace StatsMod
             public float DescriptionHeight;
             public float FooterHeight;
             public float NameWidth;
+            public RowLayout[] Rows;
         }
 
+        private sealed class RowLayout
+        {
+            public TitleStatRow Stat;
+            public float Height;
+            public float ValueWidth;
+            public float LabelWidth;
+        }
+
+        private readonly List<TitleStatRow[]> statRows = new List<TitleStatRow[]>();
+        private bool hasRankedStats;
         private readonly List<CardLayout> cardLayouts = new List<CardLayout>();
         private int titlesVersion;
         private int layoutTitlesVersion = -1;
@@ -102,6 +114,8 @@ namespace StatsMod
         private GUIStyle headerStyle;
         private GUIStyle cardTitleStyle;
         private GUIStyle cardDescriptionStyle;
+        private GUIStyle statLabelStyle;
+        private GUIStyle statValueStyle;
         private GUIStyle cardPlayerNameStyle;
         private GUIStyle emptyStyle;
         private GUIStyle emptyNoteStyle;
@@ -121,6 +135,15 @@ namespace StatsMod
         private void UpdateTitlesCache()
         {
             _cachedTitles = TitlesManager.Instance.CurrentTitles;
+            statRows.Clear();
+            hasRankedStats = false;
+            foreach (var title in _cachedTitles)
+            {
+                var rows = TitleStatRow.Parse(title.Description);
+                statRows.Add(rows);
+                if (statRows.Count <= MAX_TITLES)
+                    foreach (var row in rows) hasRankedStats |= row.Direction != 0;
+            }
             titlesVersion++;
             hasAnimationPlayed = false;
             unlockSoundPlayed = false;
@@ -269,6 +292,8 @@ namespace StatsMod
             headerStyle = Hud.Style(HEADER_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter);
             cardTitleStyle = Hud.Style(TITLE_FONT_SIZE, bold: true, anchor: TextAnchor.UpperCenter, wrap: true);
             cardDescriptionStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.UpperCenter, wrap: true);
+            statLabelStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.UpperLeft, wrap: true);
+            statValueStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.UpperRight, wrap: true);
             cardPlayerNameStyle = Hud.Style(PLAYER_NAME_FONT_SIZE, bold: true, wrap: true);
             emptyStyle = Hud.Style(EMPTY_FONT_SIZE, bold: true, anchor: TextAnchor.MiddleCenter);
             emptyNoteStyle = Hud.Style(DESCRIPTION_FONT_SIZE, anchor: TextAnchor.MiddleCenter, wrap: true);
@@ -282,6 +307,8 @@ namespace StatsMod
             Hud.Resize(headerStyle, HEADER_FONT_SIZE, scale);
             Hud.Resize(cardTitleStyle, TITLE_FONT_SIZE, scale);
             Hud.Resize(cardDescriptionStyle, DESCRIPTION_FONT_SIZE, scale);
+            Hud.Resize(statLabelStyle, DESCRIPTION_FONT_SIZE, scale);
+            Hud.Resize(statValueStyle, DESCRIPTION_FONT_SIZE, scale);
             Hud.Resize(cardPlayerNameStyle, PLAYER_NAME_FONT_SIZE, scale);
             Hud.Resize(emptyStyle, EMPTY_FONT_SIZE, scale);
             Hud.Resize(emptyNoteStyle, DESCRIPTION_FONT_SIZE, scale);
@@ -302,7 +329,7 @@ namespace StatsMod
             Hud.Fill(new Rect(0f, 0f, Screen.width, Screen.height), Hud.Dimmer);
 
             bool hasTitles = ModConfig.TitlesEnabled && TitlesManager.Instance.HasGameEndedTitles;
-            if (_cachedTitles == null) _cachedTitles = TitlesManager.Instance.CurrentTitles;
+            if (_cachedTitles == null) UpdateTitlesCache();
             int titleCount = hasTitles ? Mathf.Min(_cachedTitles.Count, MAX_TITLES) : 0;
             int rows = titleCount == 0 ? 0 : (titleCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
 
@@ -371,6 +398,11 @@ namespace StatsMod
 
         private void DrawHeader(Rect header, string caption, float scale)
         {
+            if (ShowLegend)
+            {
+                DrawLegend(header.yMax - 30f * scale, scale);
+                header.height -= 40f * scale;
+            }
             float captionHeight = CAPTION_FONT_SIZE * 2.2f * scale;
             Hud.Label(new Rect(header.x, header.y, header.width, captionHeight), caption, captionStyle, Hud.Pink);
             var recap = RunRecap.Last;
@@ -420,7 +452,23 @@ namespace StatsMod
                 layout.Name = (title.TitleName ?? "").ToUpperInvariant();
                 layout.BadgeHeight = badgeHeight;
                 layout.TitleHeight = cardTitleStyle.CalcHeight(new GUIContent(layout.Name), innerWidth);
-                layout.DescriptionHeight = cardDescriptionStyle.CalcHeight(new GUIContent(title.Description ?? ""), innerWidth);
+                var rows = statRows[index];
+                layout.Rows = new RowLayout[rows.Length];
+                layout.DescriptionHeight = 0f;
+                float valueWidth = 0f;
+                foreach (var row in rows)
+                    valueWidth = Mathf.Max(valueWidth, Mathf.Min(Hud.Width(statValueStyle, row.Value), innerWidth * 0.45f));
+                for (int r = 0; r < rows.Length; r++)
+                {
+                    var row = rows[r];
+                    float labelWidth = innerWidth - valueWidth - 40f * scale;
+                    float rowHeight = row.Direction == 0
+                        ? cardDescriptionStyle.CalcHeight(new GUIContent(row.Label), innerWidth)
+                        : Mathf.Max(statLabelStyle.CalcHeight(new GUIContent(row.Label), labelWidth),
+                            statValueStyle.CalcHeight(new GUIContent(row.Value), valueWidth));
+                    layout.Rows[r] = new RowLayout { Stat = row, Height = rowHeight, ValueWidth = valueWidth, LabelWidth = labelWidth };
+                    layout.DescriptionHeight += rowHeight + (r > 0 ? 5f * scale : 0f);
+                }
                 layout.FooterHeight = Mathf.Max(chipSize, PLAYER_NAME_FONT_SIZE * 1.5f * scale, cardPlayerNameStyle.CalcHeight(new GUIContent(playerName), maxNameWidth));
                 layout.NameWidth = Mathf.Min(Hud.Width(cardPlayerNameStyle, playerName), maxNameWidth);
                 height = Mathf.Max(height, layout.TitleHeight + layout.DescriptionHeight + layout.FooterHeight
@@ -477,7 +525,18 @@ namespace StatsMod
             Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.TitleHeight), layout.Name, cardTitleStyle, Hud.Text);
             y += layout.TitleHeight + TITLE_TO_DESCRIPTION_SPACING * scale;
 
-            Hud.Label(new Rect(card.x + padding, y, innerWidth, layout.DescriptionHeight), title.Description ?? "", cardDescriptionStyle, Hud.Muted);
+            foreach (var row in layout.Rows)
+            {
+                if (row.Stat.Direction == 0)
+                    Hud.Label(new Rect(card.x + padding, y, innerWidth, row.Height), row.Stat.Label, cardDescriptionStyle, Hud.Muted);
+                else
+                {
+                    DrawRankArrow(new Rect(card.x + padding, y + 3f * scale, 18f * scale, 18f * scale), row.Stat.Direction);
+                    Hud.Label(new Rect(card.x + padding + 28f * scale, y, row.LabelWidth, row.Height), row.Stat.Label, statLabelStyle, Hud.Muted);
+                    Hud.Label(new Rect(card.xMax - padding - row.ValueWidth, y, row.ValueWidth, row.Height), row.Stat.Value, statValueStyle, Hud.Text);
+                }
+                y += row.Height + 5f * scale;
+            }
 
             float portraitSize = PORTRAIT_SIZE * scale;
             float borderSize = BORDER_SIZE * scale;
@@ -494,6 +553,38 @@ namespace StatsMod
             Hud.Fill(chip, title.SecondaryColor);
             DrawPortrait(new Rect(chip.x + borderSize, chip.y + borderSize, portraitSize, portraitSize), title, scale);
             Hud.Label(new Rect(chip.xMax + SQUARE_TO_NAME_SPACING * scale, footerY, nameWidth, footerHeight), playerName, cardPlayerNameStyle, playerColor);
+        }
+
+        private void DrawLegend(float y, float scale)
+        {
+            float arrowWidth = 18f * scale;
+            float gap = 10f * scale;
+            float between = 32f * scale;
+            float highWidth = Hud.Width(statLabelStyle, "Highest");
+            float lowWidth = Hud.Width(statLabelStyle, "Lowest");
+            float width = 2f * (arrowWidth + gap) + highWidth + lowWidth + between;
+            float x = (Screen.width - width) * 0.5f;
+            DrawRankArrow(new Rect(x, y + 3f * scale, arrowWidth, arrowWidth), 1);
+            Hud.Label(new Rect(x + arrowWidth + gap, y, highWidth + scale, 30f * scale), "Highest", statLabelStyle, Hud.Muted);
+            x += arrowWidth + gap + highWidth + between;
+            DrawRankArrow(new Rect(x, y + 3f * scale, arrowWidth, arrowWidth), -1);
+            Hud.Label(new Rect(x + arrowWidth + gap, y, lowWidth + scale, 30f * scale), "Lowest", statLabelStyle, Hud.Muted);
+        }
+
+        // Draw the arrows as shapes so they do not depend on the game's font having arrow glyphs.
+        private static void DrawRankArrow(Rect rect, int direction)
+        {
+            Matrix4x4 matrix = GUI.matrix;
+            if (direction < 0) GUIUtility.RotateAroundPivot(180f, rect.center);
+            float stroke = Mathf.Max(1f, rect.width * 0.12f);
+            Hud.Fill(new Rect(rect.center.x - stroke * 0.5f, rect.y + stroke, stroke, rect.height - stroke), Hud.Muted);
+            for (int step = 0; step < 4; step++)
+            {
+                float offset = step * stroke;
+                Hud.Fill(new Rect(rect.center.x - offset - stroke * 0.5f, rect.y + offset, stroke, stroke), Hud.Muted);
+                Hud.Fill(new Rect(rect.center.x + offset - stroke * 0.5f, rect.y + offset, stroke, stroke), Hud.Muted);
+            }
+            GUI.matrix = matrix;
         }
         #endregion
 

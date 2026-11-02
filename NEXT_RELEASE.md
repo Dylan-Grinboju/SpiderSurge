@@ -37,7 +37,9 @@ The big window is a full scoreboard: run time, enemies killed and a table with t
 
 When a run with two or more players ends, everyone gets fun titles based on how they played. The cards are revealed one by one in the lobby.
 
-<img width="1600" alt="End-of-run titles" src="docs/images/stats-titles.jpg" />
+Title requirements appear as compact stat rows, with values aligned on the right and a shared up/down arrow legend for highest/lowest. Longer times use minutes:seconds.
+
+<img width="800" alt="In-game title layout fixture with compact stat rows and highest/lowest arrows" src="docs/images/titles-compact-stats.png" />
 
 Achievements and the title collection have All, Locked, Unlocked, Recently earned and New views. The Collection menu counts unseen unlocks; select one or use **Mark all seen** to clear its marker. **Match history** keeps separate Survival and Versus records, with filters for Surge and non-Surge matches. Player summaries show kills, deaths, best streak and time alive, with detailed statistics, weapon accuracy, maps, perks and titles underneath.
 
