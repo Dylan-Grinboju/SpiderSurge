@@ -39,7 +39,9 @@ Choose the opening preset with **Settings** > **Stats** > **Starting scoreboard*
 ### Titles (F3)
 Shown in the lobby when a run with two or more players ends. The cards are revealed one by one; press F3 to show them all at once.
 
-<img width="1600" alt="End-of-run titles" src="../docs/images/stats-titles.jpg" />
+Each card lists the stats that earned it as compact rows with values on the right. Neutral up/down arrows mean highest/lowest among the players, explained once above the cards. Longer times use minutes:seconds; the collection and saved reports keep their full descriptions.
+
+<img width="800" alt="In-game title layout fixture with compact stat rows and highest/lowest arrows" src="../docs/images/titles-compact-stats.png" />
 
 ### Title collection
 Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Collection** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
