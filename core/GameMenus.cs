@@ -7,7 +7,7 @@ namespace SpiderSurge.Common
 {
     public static class GameMenus
     {
-        // The pause menu (with the Mods menu and the Surge guide), the menus that pause the game and the perk choice
+        // The pause menu (including Mods), the menus that pause the game and the perk choice
         public static bool Open
         {
             get

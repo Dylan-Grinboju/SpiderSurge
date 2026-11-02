@@ -31,19 +31,16 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Chaos points, shop and challenges**: Shared points come from marked map choices, optional challenges and Blood Pact. Each shop item can be purchased once per visit. Bigger Heart grants both maximum capacity and a life. There is no ability-charge meter.
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Overcharge + Efficiency).
 - **Ultimate Upgrades**: After wave 30, everyone sees the same random ultimate offers and chooses their own. Any ultimate works with any regular ability, and duplicate choices are allowed. The normal shared perk/map choice follows. No later ultimate swap is offered. [Pain 8](#pain-level-8) makes the separate ultimate choice before wave 1. Each player retains one shared cooldown for their regular ability and ultimate.
-- **In-Game Guide**: Explains the new mechanics, controls and perk synergies. Open **Mods** > **SpiderSurge** > **How to play** for a first-run walkthrough and illustrated topics about abilities, enemies, controls, progression and multiplayer. Navigate with a controller or mouse.
 - **Achievements**: 25 achievements for ability and combat feats, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
 - **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
     - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
-    - **Reset**: Release Select after remapping, then hold it for 3 seconds to go back to L2. Keeping Select held after a successful remap does not undo it. The controls guide lists each local controller's current ability button.
+    - **Reset**: Release Select after remapping, then hold it for 3 seconds to go back to L2. Keeping Select held after a successful remap does not undo it.
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: Everyone can get the same Surge ability in versus, set up with [Teams](../teams/README.md).
 
 <img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/a92e59fd-22f3-4ab9-922c-22e4b57ad999" />
-
-<img width="1280" alt="The first-run walkthrough in How to play" src="../docs/images/guide-first-run.png" />
 
 <img width="586" alt="A spider holding the Bayonet with its blade lit" src="../docs/images/bayonet.png" />
 
@@ -111,7 +108,7 @@ After choosing a map, the team has a 50% chance of seeing one optional challenge
 | Overrun | Larger enemy waves: 50% more budget, with unchanged spawn pacing and simultaneous-enemy limits. | 2 |
 | Clean Hands | With two or more players, finish without a teammate kill or teammate shield break credited to a player. Failure costs 1 Chaos point once, floored at zero, and forfeits the reward. Reversing all friendly-fire credit refunds the points taken without counting them as earnings. | 1 |
 
-The HUD uses a small currency icon and balance beneath the lives display, with a quieter challenge status line. First encounters with laser enemies and cocoons show a brief local hint without pausing; the guide remains available afterward. Surge results add a compact recap above the existing titles and retain the full scoreboard separately. Map bonuses, completed challenges, purchases and penalties are logged. The economy also works with abilities disabled; inapplicable challenges are excluded. Existing perk-synergy hints remain below the cards.
+The HUD uses a small currency icon and balance beneath the lives display, with a quieter challenge status line. First encounters with laser enemies and cocoons show a brief local hint without pausing. Surge results add a compact recap above the existing titles and retain the full scoreboard separately. Map bonuses, completed challenges, purchases and penalties are logged. The economy also works with abilities disabled; inapplicable challenges are excluded. Existing perk-synergy hints remain below the cards.
 
 ## How to configure Surge
 
@@ -147,7 +144,7 @@ The world ring drains in the active color over a timed ability or ultimate's dur
 `surge.abilityVolume`: **Surge sound effects volume** controls abilities, ultimates, perks, shop purchases, choices, challenges, achievements and title reveals together, from 0 to 100, on top of the game's SFX volume. Set it to 0 to mute all Surge sounds. 80 is the original volume and 100 is a quarter louder. Default: `50`. The existing config key is retained. Source audio and license details are in [Sound credits](../docs/SOUND_CREDITS.md).
 
 ### UI:
-The guide is available from **How to play** in settings. The old `surge.showTutorial` and `controls.surgeGuide.keyboard` values are no longer used.
+The old `surge.showTutorial` and `controls.surgeGuide.keyboard` values are no longer used.
 
 `surge.indicator.radius`: The size of the ability indicator, from 0.5 to 10. Default: `1.5`.
 
