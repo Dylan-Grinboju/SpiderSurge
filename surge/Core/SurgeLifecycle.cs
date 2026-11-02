@@ -26,6 +26,7 @@ namespace SpiderSurge
             {
                 GameEvents.RunStarted += SurvivalMode_StartGame_Patch.OnRunStarted;
                 GameEvents.RunStarted += StartTracking;
+                GameEvents.RunLeavingWaitingRoom += StartTracking;
                 GameEvents.RunStopping += StopTracking;
                 GameEvents.RunStopped += EndRun;
                 GameEvents.RunStopped += SendTelemetry;
@@ -47,6 +48,7 @@ namespace SpiderSurge
             {
                 GameEvents.RunStarted -= SurvivalMode_StartGame_Patch.OnRunStarted;
                 GameEvents.RunStarted -= StartTracking;
+                GameEvents.RunLeavingWaitingRoom -= StartTracking;
                 GameEvents.RunStopping -= StopTracking;
                 GameEvents.RunStopped -= EndRun;
                 GameEvents.RunStopped -= SendTelemetry;
@@ -66,8 +68,13 @@ namespace SpiderSurge
             }
         }
 
-        // After the run's Surge state is set, since tracking records whether this is a Surge run
-        private static void StartTracking(SurvivalMode survival, SurvivalConfig config) => Stats.StartTracking();
+        // After the run's Surge state is set, since tracking records whether this is a Surge run; an online run is tracked once it leaves the waiting room
+        private static void StartTracking(SurvivalMode survival, SurvivalConfig config)
+        {
+            if (!GameEvents.RunInWaitingRoom) Stats.StartTracking();
+        }
+
+        private static void StartTracking(SurvivalMode survival) => Stats.StartTracking();
 
         private static void StopTracking(SurvivalMode survival) => Stats.StopTrackingAndLog();
 

@@ -218,6 +218,9 @@ namespace SpiderSurge.Maps
             if (string.IsNullOrEmpty(nameOverride)) nameOverride = map.name;
         }
 
+        // A client that leaves its host forgets the map; the next host sends its own
+        public static void Forget() => Current = null;
+
         public static void EndRun()
         {
             if (Current == null) return;

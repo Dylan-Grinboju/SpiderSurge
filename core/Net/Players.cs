@@ -73,11 +73,9 @@ namespace SpiderSurge.Common
         // The host acts for every player; a client only for its own
         public static bool MayActFor(int playerId, ulong sender) => sender == Net.ServerId || OwnedBy(playerId, sender);
 
-        public static SpiderHealthSystem HealthOf(int playerId)
-        {
-            var player = ById(playerId);
-            return player != null ? player.spiderHealthSystem : null;
-        }
+        public static SpiderHealthSystem HealthOf(PlayerController player) => player != null ? player.spiderHealthSystem : null;
+
+        public static SpiderHealthSystem HealthOf(int playerId) => HealthOf(ById(playerId));
 
         public static GameObject SpiderOf(int playerId)
         {

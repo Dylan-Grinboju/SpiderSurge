@@ -12,6 +12,9 @@ namespace StatsMod
         public static void Subscribe()
         {
             GameEvents.RunStarting += OnRunStarting;
+            GameEvents.RunLeavingWaitingRoom += OnRunLeavingWaitingRoom;
+            GameEvents.MatchStarting += OnMatchStarting;
+            GameEvents.MatchLeavingWaitingRoom += OnMatchLeavingWaitingRoom;
             GameEvents.RunStopping += OnRunStopping;
             GameEvents.WaveCompleted += OnWaveCompleted;
             GameEvents.PerkApplying += OnPerkApplying;
@@ -22,6 +25,9 @@ namespace StatsMod
         public static void Unsubscribe()
         {
             GameEvents.RunStarting -= OnRunStarting;
+            GameEvents.RunLeavingWaitingRoom -= OnRunLeavingWaitingRoom;
+            GameEvents.MatchStarting -= OnMatchStarting;
+            GameEvents.MatchLeavingWaitingRoom -= OnMatchLeavingWaitingRoom;
             GameEvents.RunStopping -= OnRunStopping;
             GameEvents.WaveCompleted -= OnWaveCompleted;
             GameEvents.PerkApplying -= OnPerkApplying;
@@ -29,11 +35,35 @@ namespace StatsMod
             GameEvents.RoundStarting -= OnRoundStarting;
         }
 
+        // An online run's session starts when the run leaves the waiting room, so it covers only play
         private static void OnRunStarting(SurvivalMode survival)
+        {
+            if (GameEvents.RunInWaitingRoom) GameSessionManager.Instance.WaitForPlay();
+            else StartSurvival();
+        }
+
+        private static void OnRunLeavingWaitingRoom(SurvivalMode survival) => StartSurvival();
+
+        private static void StartSurvival()
         {
             GameSessionManager.Instance.StartSurvivalSession();
             GameSessionManager.Instance.RecordPainLevel();
             Logger.LogInfo("Survival mode started");
+        }
+
+        // Like a run, an online match's session starts when it leaves the waiting room
+        private static void OnMatchStarting(VersusMode versus)
+        {
+            if (GameEvents.MatchInWaitingRoom) GameSessionManager.Instance.WaitForPlay();
+            else StartVersus();
+        }
+
+        private static void OnMatchLeavingWaitingRoom(VersusMode versus) => StartVersus();
+
+        private static void StartVersus()
+        {
+            GameSessionManager.Instance.StartVersusSession();
+            Logger.LogInfo("Versus mode started");
         }
 
         private static void OnRunStopping(SurvivalMode survival)
@@ -83,23 +113,6 @@ namespace StatsMod
     }
 
     #region Versus Mode Hooks
-
-    [HarmonyPatch(typeof(VersusMode), "StartMatch")]
-    public class VersusModeStartPatch
-    {
-        static void Prefix(VersusMode __instance)
-        {
-            try
-            {
-                GameSessionManager.Instance.StartVersusSession();
-                Logger.LogInfo("Versus mode started");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error in VersusMode.StartMatch patch: {ex.Message}");
-            }
-        }
-    }
 
     [HarmonyPatch(typeof(VersusMode), "EndMatch")]
     public class VersusModeEndPatch

@@ -195,6 +195,12 @@ namespace StatsMod
             restartRequested = true;
         }
 
+        // The last results stay up in the online waiting room until play starts, so a restart into it needs no pause
+        public void WaitForPlay()
+        {
+            pauseAfterRestartOnNextSessionStart = false;
+        }
+
         #endregion
 
         #region Timing

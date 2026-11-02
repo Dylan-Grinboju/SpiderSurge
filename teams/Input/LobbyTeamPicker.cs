@@ -236,7 +236,8 @@ namespace SpiderTeams
 
                 var game = GameController.instance;
                 var manager = TeamManager.Instance;
-                if (manager == null || !manager.PicksOpen || (game != null && !game.acceptingInputs))
+                // The pause menu and settings don't stop the game in an online waiting room; a press there changes nothing
+                if (manager == null || !manager.PicksOpen || (game != null && !game.acceptingInputs) || GameMenus.Open || SettingsPage.IsOpen)
                 {
                     return;
                 }

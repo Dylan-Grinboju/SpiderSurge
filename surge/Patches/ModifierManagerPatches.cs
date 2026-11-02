@@ -156,6 +156,7 @@ namespace SpiderSurge
                         m.levelInSurvival, isLucky ? 2 : m.levelInSurvival + 1, isLucky);
                 }
             }
+            PerkCardText.Fit(__instance);
         }
     }
 

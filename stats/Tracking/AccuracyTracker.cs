@@ -91,6 +91,16 @@ namespace StatsMod
             if (victim != null) Hit(source, victim);
         }
 
+        // A Daze Dart deals no damage; dazing an enemy or an opponent is its hit
+        public static void Dazed(Component dart, Component target)
+        {
+            if (target is EnemyHealthSystem enemy)
+            {
+                if (enemy.serializationEnemyName != SerializationEnemyName.FriendlyWasp) Hit(dart, null);
+            }
+            else if (target is PlayerController victim) Hit(dart, victim);
+        }
+
         // Outside versus every player counts as a teammate, so only enemies and opponents make a shot hit.
         private static void Hit(object source, PlayerController victim)
         {

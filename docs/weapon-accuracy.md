@@ -21,6 +21,8 @@ The existing `WeaponHits` totals describe credited kills and shield breaks. One 
 | Hecksaw, Gravity Saw | One launched disc | Existing Stats disc-spawn patch |
 | Rocket, Grenade, Firework and Particle Blade Launchers | One launched projectile | `ProjectileLauncher.Shoot` instantiation |
 | Burst Launcher | One rocket; six per normal firing | Each instantiation in `BurstProjectileLauncher.LaunchProjectile` |
+| Repulsor (SpiderSurge) | One blast; a push that reaches an enemy or opponent is its hit | `RepulsorBlast.Blast`, in place of its empty volley |
+| Daze Dart (SpiderSurge) | One launched dart; dazing an enemy or opponent is its hit | `ProjectileLauncher.Shoot` instantiation; `PoisonDart.Dazed` |
 
 Thrown grenades, mines, cubes, melee weapons, staff melee zaps and Surge abilities are outside this shooting statistic. The Particle Blade Launcher counts its launched blade, rather than ordinary held-blade attacks.
 
@@ -42,7 +44,7 @@ Shot capture patches the actual instantiation or playback sites. The IL rewriter
 
 ## Display and saved stats
 
-Under **Stats > Player table columns > Shooting accuracy**, enable overall accuracy or the desired weapon columns. All are optional and disabled by default. YAML keys are `stats.display.bigUI.columns.accuracy.overall` and `stats.display.bigUI.columns.accuracy.<SerializationWeaponName>`, for example `Railvolver` or `LaserCannon`.
+Under **Stats > Player table columns > Shooting accuracy**, enable overall accuracy or the desired weapon columns. All are optional and disabled by default. YAML keys are `stats.display.bigUI.columns.accuracy.overall` and `stats.display.bigUI.columns.accuracy.<SerializationWeaponName>`, for example `Railvolver` or `LaserCannon`; SpiderSurge weapons use their names, such as `Bayonet` or `Daze Dart`.
 
 Saved run statistics include overall and per-weapon percentages plus raw successful/fired counts, regardless of column visibility. Existing kill and weapon-hit counters keep their meanings. Accuracy is tracked on the host; this does not introduce client-side stats synchronization.
 

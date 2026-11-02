@@ -272,7 +272,7 @@ namespace SpiderSurge
         public static void ShowRefused(ShopItem item, string reason)
         {
             SoundManager.Play(Consts.SoundNames.AbilityNotReady, Consts.SoundVolumes.AbilityNotReady);
-            if (!string.IsNullOrEmpty(reason)) Toast.Show($"{NameOf(item)}: {reason}", Color.white);
+            if (!string.IsNullOrEmpty(reason)) PerkHint.Notice($"{NameOf(item)}: {reason}", Color.white);
         }
 
         // The vanilla path sends the new cards to every client, and the Surge selection prefix runs again with the same phase flags
@@ -419,7 +419,7 @@ namespace SpiderSurge
                 case ShopItem.Perk: what = $"got <b>{DisplayNameOfPerk(detail)}</b>"; break;
                 default: what = "raised the max lives"; break;
             }
-            Toast.Show($"{who} {what}", Hud.Pink);
+            PerkHint.Notice($"{who} {what}", Hud.Pink);
         }
     }
 }

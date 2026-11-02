@@ -91,7 +91,8 @@ namespace SpiderTeams
             {
                 return false;
             }
-            return LobbyController.inLobby || LobbyController.inWaitingRoom || TeamManager.TeamMatchActive;
+            // Teams play no part in a survival waiting room
+            return LobbyController.inLobby || TeamManager.InVersusLobby || TeamManager.TeamMatchActive;
         }
 
         private void Sync(bool show)
@@ -154,7 +155,7 @@ namespace SpiderTeams
                 }
 
                 var player = marker.Player;
-                var health = player != null ? player.spiderHealthSystem : null;
+                var health = Players.HealthOf(player);
                 bool visible = health != null && player.isAlive && !health.dead;
                 marker.Renderer.enabled = visible;
                 if (visible)

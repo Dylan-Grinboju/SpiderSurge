@@ -125,6 +125,8 @@ namespace SpiderSurge.Common
             try
             {
                 bool survival = snapshot.GameMode == StatsMod.GameMode.Survival;
+                // Online, the game over screen restarts into the waiting room, so a run without lives counts as lost before restarted
+                bool lost = survival && !completedSurvival && SurvivalMode.instance != null && SurvivalMode.instance.Lives <= 0;
                 var surge = survival ? SpiderSurgeStatsManager.Instance?.LastFinished : null;
                 var summary = new HistorySummary
                 {
@@ -132,7 +134,7 @@ namespace SpiderSurge.Common
                     Mode = survival ? "survival" : "versus", Surge = survival ? SurgeGameModeManager.IsSurgeRunActive : surgeVersus,
                     Seconds = snapshot.LastGameDuration.TotalSeconds, Pain = snapshot.PainLevel,
                     Wave = survival && SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : 0,
-                    Outcome = restarted ? "Restarted" : survival ? (completedSurvival ? "Completed" : SurvivalMode.instance != null && SurvivalMode.instance.Lives <= 0 ? "Lost" : "Quit") : "Ended"
+                    Outcome = lost ? "Lost" : restarted ? "Restarted" : survival ? (completedSurvival ? "Completed" : "Quit") : "Ended"
                 };
                 var match = new HistoryMatch { Recap = RunRecap.Last, Summary = summary, Maps = snapshot.MapsPlayed.ToList(), Perks = snapshot.PerksChosen.ToList(), SurgeStats = surge, EnemiesKilled = snapshot.EnemiesKilled };
                 bool teams = !survival && SpiderTeams.TeamManager.TeamMatchActive;

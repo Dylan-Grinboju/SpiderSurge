@@ -30,8 +30,7 @@ namespace SpiderSurge
             if (enemy == null || enemy.IsDead() || enemy.GetComponentInChildren<FriendlyWaspStinger>(true) != null) return;
             var origin = explosion.gameObject.AddComponent<StickyGrenadeOrigin>();
             origin.TriggeredBy = enemy;
-            origin.Player = Owners.TryGet(mine.gameObject, out Owners.Record owner) && owner.Armer != null
-                ? owner.Armer : Owners.PlayerOf(mine);
+            origin.Player = Owners.ExplosiveOwner(mine);
         }
 
         internal static void EnemyKilled(EnemyHealthSystem enemy, Explosion explosion)

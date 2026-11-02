@@ -50,6 +50,13 @@ namespace SpiderSurge {
         public static void OnWaveStarted(int wave) { WaveRefunds++; }
     }
     public static class AbilitySelection { public static void Read(BinaryReader reader) { reader.ReadInt32(); } }
+    public static class StorageAbility {
+        public static int Stored;
+        public static void ReadStored(BinaryReader reader) {
+            Stored = reader.ReadInt32();
+            for (int i = 0; i < Stored; i++) { reader.ReadInt32(); reader.ReadInt32(); }
+        }
+    }
     public static class PerkChoiceRefresh { public static void Refresh() { } }
     public static class ReceiverTest {
         private static bool _awaitingFirstState = true;
@@ -70,6 +77,7 @@ function Receive([bool]$active, [int]$wave = 0, [ulong]$sender = 0) {
     $writer.Write($wave); $writer.Write($false); $writer.Write($false)
     $writer.Write([int]1); $writer.Write('pulse'); $writer.Write([int]1)
     $writer.Write([int]0); $writer.Write([int]1); $writer.Write([int]0)
+    $writer.Write([int]1); $writer.Write([int]0); $writer.Write([int]7)
     $stream.Position = 0
     $reader = [IO.BinaryReader]::new($stream)
     $handler.Invoke($sender, $reader)
@@ -80,6 +88,7 @@ Assert-Equal ([SpiderSurge.PlayerAbilityHandler]::Attachments) 0 'Inactive waiti
 Receive $true
 Assert-Equal ([SpiderSurge.PlayerAbilityHandler]::Attachments) 1 'First active round attaches spiders that spawned before its state'
 Assert-Equal ([SpiderSurge.PerksManager]::Instance.Levels['pulse']) 1 'The active build is applied before attachment'
+Assert-Equal ([SpiderSurge.StorageAbility]::Stored) 1 'Stored weapons are read after the ability selection'
 Receive $true
 Assert-Equal ([SpiderSurge.PlayerAbilityHandler]::Attachments) 1 'Repeated active state does not repeatedly scan spiders'
 Receive $false

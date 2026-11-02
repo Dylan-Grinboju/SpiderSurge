@@ -1,7 +1,11 @@
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $stubs = @'
-namespace UnityEngine { public struct Color { public Color(float r, float g, float b, float a = 1f) {} } }
+namespace UnityEngine {
+    public struct Color { public Color(float r, float g, float b, float a = 1f) {} }
+    public struct Vector2 { public Vector2(float x, float y) {} }
+}
+public enum SerializationWeaponName { }
 public class PlayerController {
     public class PlayerId { public int Value; }
     public PlayerId playerID = new PlayerId();

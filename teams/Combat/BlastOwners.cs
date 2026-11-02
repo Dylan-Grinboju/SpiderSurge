@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SpiderSurge.Common;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -28,7 +29,12 @@ namespace SpiderTeams
                     return;
                 }
 
-                int owner = source is BasicProjectile ? OwnerRegistry.Get(source.gameObject) : OwnerRegistry.OfWeapon(source as Weapon);
+                int owner = source is BasicProjectile ? OwnerRegistry.Get(source.gameObject) : OwnerRegistry.OfPlayer(Owners.ExplosiveOwner(source as Weapon));
+                // An explosive nobody armed or held belongs to the attack that set it off: on the host the explode ClientRpc runs inside it
+                if (owner == OwnerRegistry.Unknown)
+                {
+                    owner = DamageContext.Current;
+                }
                 Add(new Entry { Explosion = explosion.GetInstanceID(), Owner = owner });
             }
             catch (System.Exception ex)

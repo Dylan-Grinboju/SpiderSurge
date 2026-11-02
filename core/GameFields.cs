@@ -29,7 +29,13 @@ namespace SpiderSurge.Common
         public static readonly AccessTools.FieldRef<WhispBrain, float> WhispShotCooldownTill = Field<WhispBrain, float>("_shotCooldownTill");
         public static readonly MethodInfo WhispStopChargeCosmetics = Method(typeof(WhispBrain), "StopChargeCosmeticsClientRpc");
 
+        public static readonly AccessTools.FieldRef<PlayerController, UnityEngine.GameObject> ActivePlayerCharacter = Field<PlayerController, UnityEngine.GameObject>("_activePlayerCharacter");
+        public static readonly MethodInfo SetSpiderHealthSystem = AccessTools.PropertySetter(typeof(PlayerController), nameof(PlayerController.spiderHealthSystem));
+
         public static readonly AccessTools.FieldRef<NetworkObject, HashSet<ulong>> Observers = Field<NetworkObject, HashSet<ulong>>("Observers");
+
+        // The game's own pickup equip, which also tells every client which weapon the spider holds
+        public static readonly MethodInfo EquipWeapon = Method(typeof(WeaponManager), "EquipWeapon");
 
         private static AccessTools.FieldRef<T, F> Field<T, F>(string name)
         {

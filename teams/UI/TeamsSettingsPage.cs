@@ -94,7 +94,7 @@ namespace SpiderTeams
             page.Header("Surge abilities in versus");
             if (!SurgeBridge.Available)
             {
-                page.Note("Surge isn't running, so its abilities can't be used in versus. Mods > SpiderSurge > Settings > Advanced > Mod parts and game fixes shows why.");
+                page.Note("Surge isn't running, so its abilities can't be used in versus. The log says why: Mods > SpiderSurge > About SpiderSurge > Support > Open logs.");
                 return;
             }
 
@@ -208,7 +208,7 @@ namespace SpiderTeams
 
         private static string KeyboardLabel() => Controls.Display(Controls.TeamKeyboard);
 
-        private static string PickHint() => $"In the versus lobby, press {GamepadLabel()} / Triangle (controller) or {KeyboardLabel()} (keyboard) to switch team.";
+        private static string PickHint() => $"In the versus lobby, or the main lobby with Online mode off, press {GamepadLabel()} / Triangle (controller) or {KeyboardLabel()} (keyboard) to switch team.";
 
         private static string Plural(int count, string noun)
         {

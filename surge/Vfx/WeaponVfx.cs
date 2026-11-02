@@ -37,6 +37,11 @@ namespace SpiderSurge.Vfx
             });
         }
 
+        // A weapon of this kind for a client that only knows the kind, preferring the prefab
+        public static Weapon Template(SerializationWeaponName kind) =>
+            Resources.FindObjectsOfTypeAll<Weapon>().FirstOrDefault(weapon => weapon.serializationWeaponName == kind && !weapon.gameObject.scene.IsValid())
+            ?? Resources.FindObjectsOfTypeAll<Weapon>().FirstOrDefault(weapon => weapon.serializationWeaponName == kind);
+
         private static void Receive(BinaryReader reader)
         {
             var kind = (SerializationWeaponName)reader.ReadInt32();
@@ -48,8 +53,7 @@ namespace SpiderSurge.Vfx
             bool retrieve = reader.ReadBoolean();
             SurgeVfx.Safely(() =>
             {
-                var template = Resources.FindObjectsOfTypeAll<Weapon>().FirstOrDefault(weapon => weapon.serializationWeaponName == kind && !weapon.gameObject.scene.IsValid())
-                    ?? Resources.FindObjectsOfTypeAll<Weapon>().FirstOrDefault(weapon => weapon.serializationWeaponName == kind);
+                var template = Template(kind);
                 var hand = Players.HealthOf(player)?.GetComponentInChildren<SpiderWeaponManager>();
                 if (template != null) WeaponEcho.Draw(template, position, angle, scale, destination, hand != null ? hand.transform : null, retrieve);
                 if (retrieve) StorageVfx.Retrieve(destination); else StorageVfx.Send(position);

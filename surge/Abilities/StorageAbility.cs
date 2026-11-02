@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using HarmonyLib;
 using Unity.Netcode;
 using SpiderSurge.Common;
@@ -42,9 +43,11 @@ namespace SpiderSurge
         }
 
         private RuntimeStoredWeapon _storedWeaponData;
-        public Sprite StoredWeaponSprite => _storedWeaponData?.WeaponRef != null
-            ? (_storedWeaponData.WeaponRef.GetComponent<SpriteRenderer>()?.sprite
-                ?? _storedWeaponData.WeaponRef.GetComponentInChildren<SpriteRenderer>(true)?.sprite) : null;
+        // The host holds the stored weapon hidden, so clients show the kind the Surge state reports for each player
+        public Sprite StoredWeaponSprite => IsAuthority ? SpriteOf(_storedWeaponData?.WeaponRef) : RemoteSprite(PlayerId);
+
+        private static readonly Dictionary<int, SerializationWeaponName> RemoteStored = new Dictionary<int, SerializationWeaponName>();
+        private static readonly Dictionary<SerializationWeaponName, Sprite> KindSprites = new Dictionary<SerializationWeaponName, Sprite>();
 
         private static readonly Dictionary<Weapon, float> restoredAmmo = new Dictionary<Weapon, float>();
 
@@ -93,13 +96,10 @@ namespace SpiderSurge
             PlayCasterSound(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend);
         }
 
-        private bool _clientSlotFilled;
-
         private IEnumerator SwapSoundsOnly()
         {
             bool hadWeapon = _weaponManager != null && _weaponManager.equippedWeapon != null;
-            bool hadStored = _clientSlotFilled;
-            _clientSlotFilled = hadWeapon;
+            bool hadStored = RemoteStored.ContainsKey(PlayerId);
 
             if (hadWeapon) SoundManager.Play(Consts.SoundNames.StorageSend, Consts.SoundVolumes.StorageSend);
 
@@ -143,6 +143,7 @@ namespace SpiderSurge
 
             _storedWeaponData = StoreWeapon(heldWeaponObj);
             _retrieving = storedWeaponObj;
+            SurgeNet.MarkDirty();
 
             yield return new WaitForSeconds(AbilityDuration);
 
@@ -207,9 +208,25 @@ namespace SpiderSurge
                     weapon.rb2D.angularVelocity = 0f;
                 }
 
-                weapon.Equip(_weaponManager);
-                _weaponManager.OnEquipWeapon(weapon);
-                WeaponVfx.Fold(weapon, _weaponManager.transform, true);
+                // The game's own equip also tells the clients, which need it to fire the weapon. Without it (logged at load) only the host would know.
+                // It refuses a weapon it can't equip, or a spider that already holds one; the retrieved weapon then lands beside the spider
+                if (GameFields.EquipWeapon != null)
+                {
+                    GameFields.EquipWeapon.Invoke(_weaponManager, new object[] { weapon });
+                }
+                else
+                {
+                    weapon.Equip(_weaponManager);
+                    _weaponManager.OnEquipWeapon(weapon);
+                }
+                if (_weaponManager.equippedWeapon == weapon)
+                {
+                    WeaponVfx.Fold(weapon, _weaponManager.transform, true);
+                }
+                else
+                {
+                    Logger.LogWarning($"[Storage] {weapon.name} could not be equipped and was dropped");
+                }
             }
 
             PlayCasterSound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve);
@@ -293,6 +310,7 @@ namespace SpiderSurge
             GameObject retrieving = _retrieving;
             _storedWeaponData = null;
             _retrieving = null;
+            SurgeNet.MarkDirty();
             foreach (GameObject weaponObj in new[] { stored, retrieving })
             {
                 if (weaponObj == null || weaponObj.activeSelf) continue;
@@ -309,6 +327,7 @@ namespace SpiderSurge
                 // If we haven't died, assume map change or forced cleanup
                 SaveWeapons(isDeath: false);
             }
+            SurgeNet.MarkDirty();
             base.OnDestroy();
         }
 
@@ -368,26 +387,20 @@ namespace SpiderSurge
                 return requiredModLevel >= 1;
         }
 
+        // A weapon in several groups, like a Particle Blade that can also be thrown or the Bayonet, is kept by any of their perks
         private int GetRequiredModLevel(List<Weapon.WeaponType> types)
         {
-            bool isBoom = false;
-            bool isParticles = false;
-            bool isGuns = false;
-
+            int level = 0;
             foreach (var wType in types)
             {
                 if (wType == Weapon.WeaponType.Explosive || wType == Weapon.WeaponType.Throwable || wType == Weapon.WeaponType.Mine)
-                    isBoom = true;
+                    level = Mathf.Max(level, _cachedMoreBoomLevel);
                 else if (wType == Weapon.WeaponType.Particle || wType == Weapon.WeaponType.Melee)
-                    isParticles = true;
+                    level = Mathf.Max(level, _cachedMoreParticlesLevel);
                 else if (wType == Weapon.WeaponType.Gun)
-                    isGuns = true;
+                    level = Mathf.Max(level, _cachedMoreGunsLevel);
             }
-
-            if (isBoom) return _cachedMoreBoomLevel;
-            if (isParticles) return _cachedMoreParticlesLevel;
-            if (isGuns) return _cachedMoreGunsLevel;
-            return 0;
+            return level;
         }
 
         private void RestoreWeapons()
@@ -478,7 +491,52 @@ namespace SpiderSurge
             }
 
             StoragePersistenceManager.ClearStoredWeapons(playerId);
+            SurgeNet.MarkDirty();
         }
+
+        private static Sprite SpriteOf(Weapon weapon) => weapon != null
+            ? (weapon.GetComponent<SpriteRenderer>()?.sprite ?? weapon.GetComponentInChildren<SpriteRenderer>(true)?.sprite) : null;
+
+        private static Sprite RemoteSprite(int playerId)
+        {
+            if (!RemoteStored.TryGetValue(playerId, out var kind)) return null;
+            if (!KindSprites.TryGetValue(kind, out Sprite sprite))
+            {
+                sprite = SpriteOf(WeaponVfx.Template(kind));
+                KindSprites[kind] = sprite;
+            }
+            return sprite;
+        }
+
+        // Host: each player's stored weapon kind, sent with the Surge state
+        internal static void WriteStored(BinaryWriter writer)
+        {
+            var stored = new List<StorageAbility>();
+            foreach (var controller in PlayerAbilityHandler.ActiveSpiderControllers)
+            {
+                var storage = controller != null ? controller.GetComponent<StorageAbility>() : null;
+                if (storage != null && storage._storedWeaponData?.WeaponRef != null) stored.Add(storage);
+            }
+            writer.Write(stored.Count);
+            foreach (var storage in stored)
+            {
+                writer.Write(storage.PlayerId);
+                writer.Write((int)storage._storedWeaponData.Name);
+            }
+        }
+
+        internal static void ReadStored(BinaryReader reader)
+        {
+            RemoteStored.Clear();
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                int playerId = reader.ReadInt32();
+                RemoteStored[playerId] = (SerializationWeaponName)reader.ReadInt32();
+            }
+        }
+
+        internal static void ForgetRemote() => RemoteStored.Clear();
 
         private static void KeepRestoredAmmo(Weapon weapon, float ammo)
         {

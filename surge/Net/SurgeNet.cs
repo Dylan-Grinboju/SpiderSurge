@@ -272,6 +272,8 @@ namespace SpiderSurge
             _lastRemoteWave = 0;
             _awaitingFirstState = false;
             SurgeGameModeManager.EndRun(RunEnd.LeftHost);
+            StorageAbility.ForgetRemote();
+            Maps.SurgeMaps.Forget();
         }
 
         private static void WriteState(BinaryWriter writer)
@@ -314,6 +316,7 @@ namespace SpiderSurge
             }
             writer.Write(PlayerAbilityHandler.SpawnEpoch);
             AbilitySelection.Write(writer);
+            StorageAbility.WriteStored(writer);
         }
 
         private static void OnState(BinaryReader reader)
@@ -350,6 +353,7 @@ namespace SpiderSurge
                 SurgeGameModeManager.Instance?.ApplyRemote(active, runUsed, noAbilities);
                 PerksManager.Instance?.ApplyRemote(levels, first, ultUpgrade);
                 AbilitySelection.Read(reader);
+                StorageAbility.ReadStored(reader);
                 PlayerAbilityHandler.ApplyRemoteEpoch(spawnEpoch);
 
                 // A spider may spawn before the first active snapshot, including after an inactive waiting-room snapshot.

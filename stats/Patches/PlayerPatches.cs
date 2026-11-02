@@ -128,6 +128,33 @@ namespace StatsMod
         }
     }
 
+    // The host gives every spider its player's cosmetics through these RPCs, so the record follows them by player, not through the spider
+    [HarmonyPatch]
+    public class PlayerControllerCosmeticsPatch
+    {
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(PlayerController), nameof(PlayerController.SetSpiderCosmeticsClientRpc));
+            yield return AccessTools.Method(typeof(PlayerController), nameof(PlayerController.SpawnSpiderClientRpc));
+        }
+
+        static void Postfix(PlayerController __instance)
+        {
+            try
+            {
+                SkinData skin = __instance.spiderCosmetics;
+                if (skin != null)
+                {
+                    PlayerTracker.Instance.UpdatePlayerColor(__instance, skin.primary);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error in PlayerController cosmetics patch: {ex.Message}");
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(PlayerController), "SpawnCharacter", new Type[] { typeof(Vector3), typeof(Quaternion) })]
     public class PlayerControllerSpawnCharacterPatch
     {

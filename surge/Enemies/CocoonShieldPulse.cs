@@ -60,6 +60,7 @@ namespace SpiderSurge.Enemies
         }
 
         // Apply one gentle impulse per target without stunning players, removing their shields or pushing the cocoon's allies.
+        // Loose objects only drift: their own hit reactions would arm and set off explosives, start cubes and break props
         private void Repel()
         {
             Vector2 origin = transform.position;
@@ -83,7 +84,16 @@ namespace SpiderSurge.Enemies
                 if (direction.sqrMagnitude < 0.0001f && hit.attachedRigidbody != null)
                     direction = hit.attachedRigidbody.position - origin;
                 if (direction.sqrMagnitude < 0.0001f) direction = Vector2.up;
-                target.Impact(direction.normalized * Consts.Values.Enemies.CocoonPulseForce, point, false, false);
+                Vector2 force = direction.normalized * Consts.Values.Enemies.CocoonPulseForce;
+                if (target is SpiderHealthSystem)
+                {
+                    target.Impact(force, point, false, false);
+                    continue;
+                }
+                Rigidbody2D body = hit.attachedRigidbody;
+                if (body == null || body.bodyType != RigidbodyType2D.Dynamic) continue;
+                if (weapon != null) weapon.GetComponentInChildren<PickupEffects>()?.StopFloat();
+                body.AddForceAtPosition(force, point, ForceMode2D.Impulse);
             }
             affected.Clear();
         }

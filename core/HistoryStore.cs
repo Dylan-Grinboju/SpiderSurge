@@ -30,6 +30,10 @@ namespace SpiderSurge.Common
         private static bool loaded;
         private static List<HistorySummary> entries = new List<HistorySummary>();
         private static float retryAt;
+        // Main thread only: the last saved run, and whether the published history already lists it
+        private static RunRecapData savedRecap;
+        private static string savedId;
+        private static bool savedWritten;
         public static string Error { get; private set; }
         public static bool Busy => !worker.IsCompleted;
         public static IReadOnlyList<HistorySummary> Entries => entries;
@@ -43,10 +47,15 @@ namespace SpiderSurge.Common
         {
             MainThread.Run(() => { Error = message; ThreadSafeLog.LogWarning(message); SettingsPage.RefreshOpen(); });
         }
+        // The results screen points to Match history only once this run's record is written
+        public static bool Holds(RunRecapData recap) => recap != null && recap == savedRecap && savedWritten;
         public static void Save(HistoryMatch match)
         {
             string path = Folder;
             byte[] bytes = Serialize(match);
+            savedRecap = match.Recap;
+            savedId = match.Summary.Id;
+            savedWritten = false;
             Schedule(() => { pending[match.Summary.Id] = new PendingWrite { Summary = match.Summary, Bytes = bytes }; Flush(path); });
         }
         public static void ResolveTitleUnlocks(Dictionary<string, long> firstEarned, Action<bool> complete)
@@ -197,7 +206,13 @@ namespace SpiderSurge.Common
         }
         private static void Publish(List<HistorySummary> list, string problem)
         {
-            MainThread.Enqueue(() => { entries = list; Error = problem; SettingsPage.RefreshOpen(); });
+            MainThread.Enqueue(() =>
+            {
+                entries = list;
+                Error = problem;
+                savedWritten = savedId != null && list.Exists(summary => summary.Id == savedId);
+                SettingsPage.RefreshOpen();
+            });
         }
         public static void Detail(string id, Action<HistoryMatch> complete)
         {
@@ -223,6 +238,9 @@ namespace SpiderSurge.Common
         public static void Clear()
         {
             string path = Folder;
+            savedRecap = null;
+            savedId = null;
+            savedWritten = false;
             Schedule(() =>
             {
                 try

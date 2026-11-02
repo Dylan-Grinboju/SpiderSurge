@@ -297,8 +297,8 @@ namespace StatsMod
 
         // The game stores an explosion's owner as a client id that is 0 both for player 0 and for explosions nobody owns
         // (enemy explosions, weapons no player held), so the real owner is kept here when the game creates the explosion.
-        // A grenade or mine belongs to the player who armed it, a BoomSpear to its last holder. Anything else belongs to
-        // the player whose attack set it off: on the host the explode ClientRpc runs inside that attack.
+        // A weapon's blast belongs to Owners.ExplosiveOwner, as in Teams. Anything else belongs to the player whose attack
+        // set it off: on the host the explode ClientRpc runs inside that attack.
         public static void SetExplosionOwner(Explosion explosion, NetworkBehaviour source)
         {
             try
@@ -306,9 +306,11 @@ namespace StatsMod
                 AccuracyTracker.Transfer(source, explosion);
                 Owner owner = default;
                 if (source is BasicProjectile projectile) owner = ProjectileOwner(projectile);
-                else if (source is BoomSpear spear) owner = new Owner { Player = WeaponPlayer(spear), Weapon = spear };
-                else if (Owners.TryGet(source.gameObject, out Owners.Record record) && record.Armer != null && Fresh(record.ArmedAt))
-                    owner = new Owner { Player = record.Armer, Weapon = source as Weapon };
+                else if (source is Weapon weapon)
+                {
+                    PlayerController player = Owners.ExplosiveOwner(weapon);
+                    owner = new Owner { Player = player != null && !departed.Contains(player) ? player : null, Weapon = weapon };
+                }
                 if (owner.Player == null) owner = new Owner { Player = CurrentAttacker, Weapon = CurrentWeapon };
                 if (owner.Player != null)
                 {
@@ -392,7 +394,7 @@ namespace StatsMod
                 : null;
         }
 
-        // Launches, arms and reflections older than the last prune or session start were dropped with the hits
+        // Launches and reflections older than the last prune or session start were dropped with the hits
         private static bool Fresh(float at) => at >= ownersSince;
 
         public static void OnEnemyDeath(EnemyHealthSystem enemy)
