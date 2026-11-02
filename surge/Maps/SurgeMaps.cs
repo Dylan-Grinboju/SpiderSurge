@@ -41,6 +41,15 @@ namespace SpiderSurge.Maps
     }
 
     [DataContract]
+    public class MapRect
+    {
+        [DataMember] public float xmin;
+        [DataMember] public float xmax;
+        [DataMember] public float ymin;
+        [DataMember] public float ymax;
+    }
+
+    [DataContract]
     public class SurgeMap
     {
         [DataMember] public string id;
@@ -50,6 +59,7 @@ namespace SpiderSurge.Maps
         [DataMember] public bool beginner;
         [DataMember] public List<MapElement> elements;
         [DataMember] public List<MapPoint> enemies;
+        [DataMember] public MapRect camera;
 
         public string json;
         public GameLevel level;
@@ -75,6 +85,8 @@ namespace SpiderSurge.Maps
 
         private static readonly AccessTools.FieldRef<EnemySpawner, GameObject[]> EnemySpawns =
             AccessTools.FieldRefAccess<EnemySpawner, GameObject[]>("_enemySpawns");
+        private static readonly AccessTools.FieldRef<CustomMapEditor, BoxCollider2D> CameraConfiner =
+            AccessTools.FieldRefAccess<CustomMapEditor, BoxCollider2D>("cameraConfiner");
 
         // The map the host is playing or about to load; clients learn it from the host
         public static SurgeMap Current { get; private set; }
@@ -256,6 +268,22 @@ namespace SpiderSurge.Maps
             if (CustomMapEditor.editorState != EditorState.Playing || editor.objParent.childCount > 0) return;
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != SceneName) return;
             editor.LoadMap(Current.Path);
+        }
+
+        // Host and clients: the custom map scene's camera box spans its whole build area, so it is fitted to the map's own.
+        // The editor's Start resets the box, and the host builds the map before that, so both call this.
+        public static void FitCamera(CustomMapEditor editor)
+        {
+            SurgeMap map = Current;
+            if (map?.camera == null || editor == null || CustomMapEditor.editorState != EditorState.Playing) return;
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != SceneName) return;
+            BoxCollider2D confiner = CameraConfiner(editor);
+            if (confiner == null) return;
+            MapRect box = map.camera;
+            confiner.transform.position = new Vector3((box.xmin + box.xmax) / 2f, (box.ymin + box.ymax) / 2f, confiner.transform.position.z);
+            confiner.offset = Vector2.zero;
+            confiner.size = new Vector2(box.xmax - box.xmin, box.ymax - box.ymin);
+            Physics2D.SyncTransforms();
         }
 
         // Host only: the enemy spawn points the custom map elements don't have, and a pathfinding graph that knows the new walls

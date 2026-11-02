@@ -1,7 +1,7 @@
 """Render consistent map-card silhouettes from the game's exported collider outlines.
 
 Run after shapes.py: python thumbnails.py <folder containing shapes.json>
-Requires Pillow. These are geometry previews, not gameplay screenshots.
+Requires Pillow. These are geometry previews, not gameplay screenshots; each frames its map's camera box.
 """
 
 import argparse
@@ -26,11 +26,21 @@ PALETTES = [
 SIZE = (1280, 720)
 
 
-def point(x, y):
-    return ((x + 480) * SIZE[0] / 960, (318 - y) * SIZE[1] / 540)
+def frame(arena):
+    """The map's camera box widened or heightened to the card's 16:9, as (left, top, width, height)."""
+    box = arena["camera"]
+    w, h = box["xmax"] - box["xmin"], box["ymax"] - box["ymin"]
+    w, h = max(w, h * 16 / 9) * 1.04, max(h, w * 9 / 16) * 1.04
+    cx, cy = (box["xmin"] + box["xmax"]) / 2, (box["ymin"] + box["ymax"]) / 2
+    return cx - w / 2, cy + h / 2, w, h
 
 
 def render(arena, shapes):
+    left, upper, width, height = frame(arena)
+
+    def point(x, y):
+        return ((x - left) * SIZE[0] / width, (upper - y) * SIZE[1] / height)
+
     image = Image.new("RGB", SIZE)
     draw = ImageDraw.Draw(image)
     top, bottom = PALETTES[arena["background"]]
@@ -108,6 +118,8 @@ if __name__ == "__main__":
     shapes = json.loads((args.shapes / "shapes.json").read_text(encoding="utf-8"))
     if layouts.check(layouts.MAPS, shapes):
         raise SystemExit("Fix placement errors before rendering thumbnails")
+    for arena in layouts.MAPS:
+        arena["camera"] = layouts.camera(arena, shapes)
     args.output.mkdir(parents=True, exist_ok=True)
     for arena in layouts.MAPS:
         render(arena, shapes).save(args.output / ("map_" + arena["id"] + ".png"))
