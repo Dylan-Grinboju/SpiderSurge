@@ -17,7 +17,7 @@ NAMES = [
     "HoneycombSector", "DeathPlatform", "DeathBigBlock", "DeathBallish", "DeathLongBoi", "DeathTriangle", "DeathPancake",
     "DeathQuarter", "DeathSpike", "DeathPentagon", "Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner",
     "Jump Pad", "AeroTube", "DeathZoneBlock", "DeathZoneBall", "DeathZoneLongBoi", "DeathZoneNarrowBlock",
-    "DeathZoneTriangle", "DeathZoneSpike",
+    "DeathZoneTriangle", "DeathZoneSpike", "FloatingPlatformWide Variant", "PortalPoint", "PortalPoint Variant",
 ]
 
 
