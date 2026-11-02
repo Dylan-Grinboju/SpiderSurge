@@ -2,7 +2,8 @@
 
 Coordinates are world units in the game's custom map scene (MapEditorBase). The playable box is about
 x -500..500, y -222..381; the bottom lava starts at y -222. Element names are the map editor's prefab names.
-Run: py surge/Maps/Tools/layouts.py [--shapes <folder from shapes.py> [--preview]] [--only id,id]
+Each map also gets a camera box fitted to its geometry, with the margins of the base-game arenas.
+Run: py surge/Maps/Tools/layouts.py --shapes <folder from shapes.py> [--preview] [--only id,id]
 """
 
 import argparse
@@ -47,13 +48,35 @@ def mirror_points(points):
     return out
 
 
-def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False):
+# Objects that keep their size when a map is scaled: spawns, jump pads (fixed force) and portals
+FIXED_SIZE = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner", "Jump Pad", "PortalPoint", "PortalPoint Variant")
+SCALE_PIVOT = (0.0, -150.0)
+
+
+def scaled(e, f):
+    """The element moved toward SCALE_PIVOT by the factor f, and resized unless its size is fixed."""
+    px, py = SCALE_PIVOT
+    m = dict(e)
+    m["x"], m["y"] = round(px + (e["x"] - px) * f, 2), round(py + (e["y"] - py) * f, 2)
+    if e["o"] not in FIXED_SIZE:
+        m["sx"], m["sy"] = round(e["sx"] * f, 3), round(e["sy"] * f, 3)
+    if "with" in e:
+        m["with"] = [scaled(p, f) for p in e["with"]]
+    return m
+
+
+def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False, scale=1.0):
+    """Coordinates are written at full size; scale shrinks the whole arena toward SCALE_PIVOT."""
     assert len(players) == 4, f"{id}: needs 4 player spawns"
     assert len(enemies) >= 5, f"{id}: needs at least 5 enemy spawns"
+    px, py = SCALE_PIVOT
+    enemies = [(px + (x - px) * scale, py + (y - py) * scale) for x, y in enemies]
     items = list(elements)
     items += [el("Player Spawn Point", x, y) for x, y in players]
     items += [el("Weapon Spawner A", x, y) for x, y in weapons]
     items += [el("Rare Weapon Spawner", x, y) for x, y in rare]
+    if scale != 1.0:
+        items = [scaled(e, scale) for e in items]
     MAPS.append({
         "id": id, "name": name, "background": background, "lava": lava, "beginner": beginner,
         "elements": items, "enemies": [{"x": round(x, 2), "y": round(y, 2)} for x, y in enemies],
@@ -138,14 +161,14 @@ surge_map(
         hover(-224, -110, 0, 1.3), hover(224, -110, 0, 1.3),
     ],
     players=[(-200, 128), (-60, 128), (90, 128), (230, 128)],
-    enemies=[(-420, 60), (420, 60), (-300, 280), (300, 280), (0, 340), (-75, -140), (75, -140)],
+    enemies=[(-350, 155), (350, 155), (-300, 280), (300, 280), (55, 320), (-75, -140), (75, -140)],
     weapons=[(-150, 233), (150, 233), (262, 122)],
     rare=[(0, 291)],
 )
 
 # A W of long ramps; the valleys hold the players, the peaks split the map
 surge_map(
-    "zigzag", "Zigzag", SPACE, LAVA_BOTTOM, beginner=True,
+    "zigzag", "Zigzag", SPACE, LAVA_BOTTOM, beginner=True, scale=0.9,
     elements=[
         bar(-380, 130, -190, -40), bar(-190, -40, 0, 110), bar(0, 110, 190, -40), bar(190, -40, 380, 130),
         el("Platform", -190, 150, 0, 1.3), el("Platform", 190, 150, 0, 1.3),
@@ -153,7 +176,7 @@ surge_map(
         el("Pancake", 0, 250, 0, 1.1), el("Ballish", -330, 260, 0, 0.8), el("Ballish", 330, 260, 0, 0.8),
     ],
     players=[(-235, 40), (-145, 32), (145, 32), (235, 40)],
-    enemies=[(-420, -60), (420, -60), (-190, -150), (190, -150), (0, -60), (-330, 340), (330, 340), (0, 330)],
+    enemies=[(-390, -60), (390, -60), (-115, -65), (115, -65), (0, -60), (-315, 335), (315, 335), (0, 330)],
     weapons=[(-190, 0), (190, 0), (0, 280)],
     rare=[(0, 140)],
 )
@@ -168,14 +191,14 @@ surge_map(
         el("Jump Pad", -100, -94), el("Jump Pad", 100, -94),
     ],
     players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
-    enemies=[(-420, 100), (420, 100), (0, 300), (-250, -160), (250, -160), (-380, 300), (380, 300)],
+    enemies=[(-360, 100), (360, 100), (0, 265), (-250, -135), (250, -135), (-360, 265), (360, 265)],
     weapons=[(0, -80), (-230, 234)],
     rare=[(230, 234)],
 )
 
 # Desert floor with deadly cacti that burn enemies as well as spiders
 surge_map(
-    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM,
+    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.75,
     elements=[
         el("Pancake", -170, -120, 0, 2), el("Pancake", 170, -120, 0, 2),
         el("DeathSpike", -200, -74, 0, 1.2), el("DeathSpike", 200, -74, 0, 1.2),
@@ -183,14 +206,14 @@ surge_map(
         el("Pancake", 0, 160, 0, 1.3), el("Ballish", -330, 120, 0, 0.9), el("Ballish", 330, 120, 0, 0.9),
     ],
     players=[(-100, -73), (100, -73), (-120, 76), (120, 76)],
-    enemies=[(-420, 0), (420, 0), (-250, 280), (250, 280), (0, 320), (0, -170), (0, 60)],
+    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (75, 235), (0, -65), (0, 60)],
     weapons=[(-330, 160), (330, 160)],
     rare=[(0, 192)],
 )
 
 # A volcano with a magma pool in its crater and ledges above the rim
 surge_map(
-    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM,
+    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.85,
     elements=[
         bar(-360, -150, -100, 40), bar(360, -150, 100, 40),
         el("Ballish", -100, 45, 0, 0.8), el("Ballish", 100, 45, 0, 0.8),
@@ -199,35 +222,35 @@ surge_map(
         el("Platform", -200, 150, 0, 1.2), el("Platform", 200, 150, 0, 1.2), el("Pancake", 0, 200),
     ],
     players=[(-250, -26), (-150, 45), (150, 45), (250, -26)],
-    enemies=[(-430, -50), (430, -50), (-300, 280), (300, 280), (0, 330), (0, 60), (-180, -120), (180, -120)],
+    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (65, 265), (0, 60), (-180, -120), (180, -120)],
     weapons=[(-200, 178), (200, 178)],
     rare=[(0, 227)],
 )
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
 surge_map(
-    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM,
+    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.75,
     elements=[
         el("Pancake", 0, -130, 0, 1.6), bar(-90, -125, -300, 120), bar(90, -125, 300, 120),
         el("Jump Pad", -50, -114, 0, 1.5), el("Jump Pad", 50, -114, 0, 1.5),
         el("Platform", -130, 170, 0, 1.2), el("Platform", 130, 170, 0, 1.2), el("Ballish", 0, 250),
     ],
     players=[(-130, -30), (-200, 52), (130, -30), (200, 52)],
-    enemies=[(-420, -50), (420, -50), (-400, 250), (400, 250), (0, 340), (0, 40), (-250, -150), (250, -150)],
+    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, 40), (-250, -150), (250, -150)],
     weapons=[(-130, 198), (130, 198)],
     rare=[(0, 293)],
 )
 
 # Floating rocks over the lava, with geysers that blow fallen spiders back up
 surge_map(
-    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM,
+    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.85,
     elements=[
         el("Pancake", -290, -40, 0, 1.2), el("Pancake", 0, -110, 0, 1.4), el("Pancake", 290, -40, 0, 1.2),
         el("Pancake", -150, 110), el("Pancake", 150, 110), el("Pancake", 0, 240, 0, 0.9),
         el("AeroTube", -150, -205, 0, 1.5), el("AeroTube", 150, -205, 0, 1.5),
     ],
     players=[(-290, -4), (-40, -71), (40, -71), (290, -4)],
-    enemies=[(-430, 100), (430, 100), (-300, 250), (300, 250), (0, 340), (0, 40), (-420, -120), (420, -120)],
+    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (0, 40), (-370, -120), (370, -120)],
     weapons=[(-150, 137), (150, 137)],
     rare=[(0, 266)],
 )
@@ -243,15 +266,15 @@ surge_map(
         el("Pancake", 260, 51, 0, 0.6), bar(130, -103, 245, -5),
         el("Pancake", 0, 190, 0, 1.1), el("Platform", 300, 200, 0, 1.1),
     ],
-    players=[(-320, -87), (-175, -87), (0, -87), (320, -87)],
-    enemies=[(-430, 40), (430, 40), (-300, 250), (150, 300), (0, 330), (0, -20), (420, 250)],
+    players=[(-200, -87), (-40, -87), (40, -87), (290, -87)],
+    enemies=[(-340, 40), (345, 35), (-300, 250), (150, 255), (0, 255), (0, -20), (345, 260)],
     weapons=[(-100, 80), (0, 219)],
     rare=[(260, 73)],
 )
 
 # Two jaws full of teeth, with lava above and below; portals over the lip ends wrap one side to the other
 surge_map(
-    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM,
+    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.9,
     elements=[
         el("Loooong Boi", 0, -110, 0, 1.6), bar(-160, -110, -320, -20), bar(160, -110, 320, -20),
         el("Loooong Boi", 0, 260, 0, 1.6), bar(-160, 260, -320, 170), bar(160, 260, 320, 170),
@@ -262,14 +285,14 @@ surge_map(
         portal(-300, 25, 300, 25),
     ],
     players=[(-75, -72), (75, -72), (-240, -33), (240, -33)],
-    enemies=[(-420, 90), (420, 90), (-80, 30), (80, 30), (-300, 300), (300, 300), (0, 330), (-420, -120)],
+    enemies=[(-150, 140), (150, 140), (-80, 30), (80, 30), (-300, 300), (300, 300), (175, 330), (-330, -120)],
     weapons=[(-110, -78), (110, -78)],
     rare=[(0, 140)],
 )
 
 # Four broken beams frame an open crossing; portals join each lower tip to the opposite upper tip
 surge_map(
-    "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM,
+    "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM, scale=0.85,
     elements=[
         bar(-75, 5, -230, -110), bar(75, 5, 230, -110),
         bar(-75, 115, -230, 230), bar(75, 115, 230, 230),
@@ -278,7 +301,7 @@ surge_map(
         portal(-205, -45, 205, 255), portal(205, -45, -205, 255),
     ],
     players=[(-120, 10), (120, 10), (-40, -83), (40, -83)],
-    enemies=[(-430, 60), (430, 60), (0, 30), (0, 150), (-200, 330), (200, 330), (-330, -150), (330, -150)],
+    enemies=[(-375, 60), (375, 60), (0, 30), (0, 150), (-110, 315), (110, 315), (-330, -150), (330, -150)],
     weapons=[(-330, 178), (330, 178)],
     rare=[(0, 275)],
 )
@@ -291,17 +314,17 @@ for lx, lean in ((-200, -12), (200, 12)):
                for offset, y in ((-35, -120), (35, -35), (-35, 65), (35, 165))]
     _ladders += rotate(ladder, lx, 40, lean)
 surge_map(
-    "ladders", "Ladders", FROSTY, LAVA_TOP_BOTTOM,
+    "ladders", "Ladders", FROSTY, LAVA_TOP_BOTTOM, scale=0.8,
     elements=_ladders + [el("Ballish", 0, -80, 0, 1.4), el("Pancake", 0, 80, 0, 1.2), el("Ballish", 0, 220, 0, 0.9)],
     players=[(-183, -15), (255, 15), (-30, 116), (30, 116)],
-    enemies=[(-420, 60), (420, 60), (-420, 250), (420, 250), (0, 310), (0, -170), (-100, 300), (100, 300)],
+    enemies=[(-315, 25), (295, 60), (-315, 250), (295, 250), (20, 305), (70, -155), (-100, 300), (100, 300)],
     weapons=[(-140, 180), (208, 200)],
     rare=[(0, -26)],
 )
 
 # Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap
 surge_map(
-    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM,
+    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.9,
     elements=(
         pipe([(-340, 180), (-340, -90), (-100, -90)])
         + pipe([(100, -90), (340, -90), (340, 180)])
@@ -312,7 +335,7 @@ surge_map(
         + [el("AeroTube", 0, -195, 0, 1.5)]
     ),
     players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
-    enemies=[(-430, 40), (430, 40), (-200, -170), (200, -170), (0, 320), (-250, 280), (300, 300), (0, 140)],
+    enemies=[(-275, 40), (270, 180), (-120, -25), (45, -110), (30, 175), (-250, 280), (300, 295), (5, 140)],
     weapons=[(-130, 80), (190, 50)],
     rare=[(30, 260)],
 )
@@ -328,7 +351,7 @@ surge_map(
         hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
-    enemies=[(-430, 150), (430, 150), (0, 300), (-120, -50), (120, -50), (-350, 280), (350, 280), (0, -170)],
+    enemies=[(-335, 150), (340, 150), (0, 300), (-120, -50), (120, -50), (-335, 280), (340, 280), (0, -165)],
     weapons=[(-300, -54), (310, -40)],
     rare=[(10, -40)],
 )
@@ -336,7 +359,7 @@ surge_map(
 
 # A crescent shelters one side of an arena while its open mouth invites long swings
 surge_map(
-    "crescent", "Crescent", SPACE, LAVA_BOTTOM,
+    "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.8,
     elements=[
         quarter(-80, 65, "ul", 3.3), quarter(-80, 65, "ll", 3.3),
         el("Platform", -110, 55, 0, 1.3), el("Platform", -50, -95, 0, 1.4),
@@ -344,7 +367,7 @@ surge_map(
         el("Platform", 20, 235, 0, 1.4),
     ],
     players=[(-125, 88), (-95, 88), (120, -10), (155, -15)],
-    enemies=[(-380, 65), (-330, 290), (0, 330), (400, 250), (410, 0), (220, -160), (0, 65)],
+    enemies=[(-260, 220), (-260, 290), (-45, 305), (305, 250), (305, 0), (220, -125), (0, 65)],
     weapons=[(-50, -60), (20, 270)],
     rare=[(255, 200)],
 )
@@ -408,6 +431,23 @@ def _ground(x, y, polys, reach):
 
 HOVER = "FloatingPlatformWide Variant"
 SPAWNS = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner")
+
+# The base-game arenas' median camera box reaches about this far past their geometry (sides, below, above)
+CAMERA_SIDE, CAMERA_BELOW, CAMERA_ABOVE = 25, 30, 65
+# The custom map scene's own camera box, which the fitted one never exceeds
+SCENE_CAMERA = (-465, 465, -185, 345)
+# The widest player spawn spread among the base-game arenas is 511
+MAX_PLAYER_SPREAD = 500
+
+
+def camera(m, shapes):
+    """The camera box for the map: its solids and vents plus the base-game margins, inside the scene's box."""
+    pts = [p for o, pts in solids(m, shapes) for p in pts]
+    pts += [(e["x"], e["y"]) for e in m["elements"] if e["o"] == "AeroTube"]
+    xs, ys = [x for x, _ in pts], [y for _, y in pts]
+    x0, x1, y0, y1 = SCENE_CAMERA
+    return {"xmin": round(max(x0, min(xs) - CAMERA_SIDE), 1), "xmax": round(min(x1, max(xs) + CAMERA_SIDE), 1),
+            "ymin": round(max(y0, min(ys) - CAMERA_BELOW), 1), "ymax": round(min(y1, max(ys) + CAMERA_ABOVE), 1)}
 
 
 def check_gadgets(m, safe):
@@ -482,7 +522,14 @@ def check(maps, shapes):
             if HOVER in under:
                 print(f'{m["id"]}: {kind} at ({x}, {y}) stands on a floating platform that drifts'); problems += 1
         problems += check_gadgets(m, safe)
+        players = [e["x"] for e in m["elements"] if e["o"] == "Player Spawn Point"]
+        if max(players) - min(players) > MAX_PLAYER_SPREAD:
+            print(f'{m["id"]}: player spawns are {max(players) - min(players):.0f} apart (at most {MAX_PLAYER_SPREAD})'); problems += 1
+        box = camera(m, shapes)
         for p in m["enemies"]:
+            # Enemies appear where the camera can show them, as on the base-game arenas
+            if not (box["xmin"] < p["x"] < box["xmax"] and box["ymin"] < p["y"] < box["ymax"]):
+                print(f'{m["id"]}: enemy spawn ({p["x"]}, {p["y"]}) is outside the camera box {box}'); problems += 1
             d = min(_distance(p["x"], p["y"], pts) for _, pts in safe)
             if d < 45 or any(_inside(p["x"], p["y"], pts) for _, pts in safe):
                 print(f'{m["id"]}: enemy spawn ({p["x"]}, {p["y"]}) is {d:.0f} from a solid'); problems += 1
@@ -504,6 +551,9 @@ def preview(maps, out_dir, shapes):
     for m in maps:
         fig, ax = plt.subplots(figsize=(10, 6.2))
         ax.add_patch(plt.Rectangle((-500, -222), 1000, 603, fill=False, ec="#ccc", ls="--"))
+        box = m.get("camera") or camera(m, shapes)
+        ax.add_patch(plt.Rectangle((box["xmin"], box["ymin"]), box["xmax"] - box["xmin"], box["ymax"] - box["ymin"],
+                                   fill=False, ec="#88f", ls=":"))
         ax.axhspan(-300, -222, color="#ffcc88")
         if m["lava"] in (LAVA_TOP_BOTTOM, LAVA_ALL):
             ax.axhspan(381, 460, color="#ffcc88")
@@ -536,7 +586,7 @@ def preview(maps, out_dir, shapes):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--shapes", help="folder with shapes.json (from shapes.py); checks the spawns")
+    parser.add_argument("--shapes", required=True, help="folder with shapes.json (from shapes.py)")
     parser.add_argument("--preview", action="store_true", help="also draws <id>.png next to shapes.json")
     parser.add_argument("--only", help="comma-separated map ids")
     args = parser.parse_args()
@@ -545,15 +595,16 @@ if __name__ == "__main__":
     if unknown:
         parser.error(f'unknown maps: {", ".join(sorted(unknown))}')
     chosen = [m for m in MAPS if m["id"] in requested]
-    if args.preview and not args.shapes:
-        parser.error("--preview requires --shapes")
-    if args.shapes:
-        shapes = json.load(open(os.path.join(args.shapes, "shapes.json"), encoding="utf-8"))
-        problems = check(chosen, shapes)
-        print(f"{problems} placement problems")
-        if problems:
-            sys.exit(1)
-        if args.preview:
-            preview(chosen, args.shapes, shapes)
+    if not args.shapes:
+        parser.error("--shapes is required: the camera boxes are fitted to the collider outlines")
+    shapes = json.load(open(os.path.join(args.shapes, "shapes.json"), encoding="utf-8"))
+    problems = check(chosen, shapes)
+    print(f"{problems} placement problems")
+    if problems:
+        sys.exit(1)
+    for m in chosen:
+        m["camera"] = camera(m, shapes)
+    if args.preview:
+        preview(chosen, args.shapes, shapes)
     write(chosen)
     print(f"{len(chosen)} maps written to {LAYOUTS}")

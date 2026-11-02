@@ -30,6 +30,34 @@ Six overlapping layouts were removed from the previous 20-map selection:
 | Truss Bridge | Its split bridge and upper crossing overlap the stronger architectural identity of Aqueduct. |
 | Causeway | Its breakable crossing overlaps Thin Ice, which makes destruction the defining feature across several shelves. |
 
+## Size
+
+The custom map scene gives every map the same 930 × 530 camera box, about three times the area of a typical base-game arena (median 498 × 354 across the 34 arenas in the endless survival pool). The Surge maps therefore follow the base game's proportions instead:
+
+- **Camera box:** each layout stores a box fitted to its colliders and vents, reaching 25 past the sides, 30 below and 65 above, the base-game arenas' median margins. Host and clients apply it when the map loads, so the camera no longer follows players into empty space or zooms out further than on a base-game arena.
+- **Enemy spawns** lie inside that box, as they do on the base-game arenas. Before, they sat up to 110 units outside the outermost platforms.
+- **Player spawns** are at most 500 apart; the widest base-game spread is 511.
+- **Scale:** `surge_map(..., scale=f)` shrinks a whole arena toward (0, -150). Spawns, jump pads (whose force is fixed) and portals keep their size. Ten arenas are scaled from 0.75 to 0.9, so the selection runs from compact (Crescent 494 and Trampoline 511 wide) to large (Thin Ice 762), with a median of about 670 × 430.
+
+| Arena | Scale | Camera box |
+|---|---|---|
+| Aqueduct | 1 | 749 × 527 |
+| Zigzag | 0.9 | 742 × 400 |
+| Thin Ice | 1 | 762 × 440 |
+| Cactus Garden | 0.75 | 584 × 342 |
+| Caldera | 0.85 | 670 × 409 |
+| Trampoline | 0.75 | 511 × 420 |
+| Geysers | 0.85 | 668 × 442 |
+| Colonnade | 1 | 718 × 439 |
+| Jaws | 0.9 | 630 × 460 |
+| Crossbeams | 0.85 | 675 × 436 |
+| Ladders | 0.8 | 530 × 407 |
+| Pipeworks | 0.9 | 674 × 457 |
+| Satellite | 1 | 718 × 509 |
+| Crescent | 0.8 | 494 × 384 |
+
+Jump pads keep their force on a scaled map, so they throw relatively higher: on Trampoline a pad launch peaks at y 117, level with the upper platforms and well inside the 236 camera top.
+
 ## Gadgets
 
 The map editor's gadgets give several arenas a movement idea beyond their silhouette. They are the game's own networked elements, so the host runs them and clients see the result.
@@ -53,7 +81,7 @@ Base-game arenas remain in Surge's pool. These maps do not replace their geometr
 
 ![Geometry previews of the 14 retained Surge maps](images/surge-map-roster.png)
 
-All 14 cards use consistent geometry previews: native collider silhouettes, subdued biome colors, orange hazards, cyan ice, pad/vent markers, blue hover pads and yellow portal rings. These are diagrams, not gameplay captures; they omit scenery, weapons and players. Regenerating them from the layouts keeps the card's shape accurate after an edit.
+All 14 cards use consistent geometry previews, each framed to its map's camera box: native collider silhouettes, subdued biome colors, orange hazards, cyan ice, pad/vent markers, blue hover pads and yellow portal rings. These are diagrams, not gameplay captures; they omit scenery, weapons and players. Regenerating them from the layouts keeps the card's shape accurate after an edit.
 
 ## Authoring and validation
 
@@ -65,8 +93,8 @@ python surge/Maps/Tools/layouts.py --shapes <scratch>
 python surge/Maps/Tools/thumbnails.py <scratch>
 ```
 
-The checker rejects unknown collider data, unsupported spawn positions, solid overlaps, hazard or hover-pad footing, insufficient enemy clearance, unpaired portals, portals on beginner maps or without footing below their exits, and jump pads without footing. A failure returns a nonzero exit code before writing layouts. `--only id,id` validates and writes only those maps. `--preview` also draws collider diagrams and requires matplotlib.
+`--shapes` is required, because the camera boxes are fitted to the collider outlines. The checker rejects unknown collider data, unsupported spawn positions, solid overlaps, hazard or hover-pad footing, insufficient enemy clearance, enemy spawns outside the camera box, player spawns more than 500 apart, unpaired portals, portals on beginner maps or without footing below their exits, and jump pads without footing. A failure returns a nonzero exit code before writing layouts. `--only id,id` validates and writes only those maps. `--preview` also draws collider diagrams and requires matplotlib.
 
 The thumbnail renderer requires Pillow (available in the workspace's SceneDump environment), validates all maps before writing, and produces 320 × 180 PNGs. It changes only card artwork; the playable maps still use the game's actual prefab materials and backgrounds.
 
-These are static placement checks. They do not establish reachability, pad trajectories, destruction behavior, camera framing or online synchronization; those require gameplay observation. Changes to an arena also require a matching thumbnail, since the card should show its actual shape.
+These are static placement checks. They do not establish reachability, pad trajectories, destruction behavior, how the camera frames play or online synchronization; those require gameplay observation. Changes to an arena also require a matching thumbnail, since the card should show its actual shape.

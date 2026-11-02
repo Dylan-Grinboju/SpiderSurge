@@ -103,9 +103,11 @@ namespace SpiderSurge.Maps
     [HarmonyPatch(typeof(CustomMapEditor), nameof(CustomMapEditor.LoadSerializedMap))]
     internal static class SurgeMapBuiltPatch
     {
-        static void Postfix(SerializedMap serializedMap, bool inEditor)
+        static void Postfix(CustomMapEditor __instance, SerializedMap serializedMap, bool inEditor)
         {
-            if (!inEditor) SurgeMaps.OnMapBuilt(serializedMap);
+            if (inEditor) return;
+            if (serializedMap != null && serializedMap.mapName == SurgeMaps.Current?.name) SurgeMaps.FitCamera(__instance);
+            SurgeMaps.OnMapBuilt(serializedMap);
         }
     }
 
@@ -116,11 +118,16 @@ namespace SpiderSurge.Maps
         static bool Prefix() => !(Net.IsAuthority && SurgeMaps.Current != null);
     }
 
-    // A client's first visit to the scene has no earlier editor to catch the load, so the new one builds the map itself
+    // Start resets the camera box after the host has built the map. A client's first visit to the scene has no earlier
+    // editor to catch the load, so the new one builds the map itself
     [HarmonyPatch(typeof(CustomMapEditor), "Start")]
     internal static class SurgeMapClientStartPatch
     {
-        static void Postfix(CustomMapEditor __instance) => SurgeMaps.BuildOnClient(__instance);
+        static void Postfix(CustomMapEditor __instance)
+        {
+            SurgeMaps.FitCamera(__instance);
+            SurgeMaps.BuildOnClient(__instance);
+        }
     }
 
     // A client that joins mid-map has no map text until the host sends it
