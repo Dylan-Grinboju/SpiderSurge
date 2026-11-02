@@ -29,12 +29,8 @@ namespace SpiderTeams
                     return;
                 }
 
-                int owner = source is BasicProjectile ? OwnerRegistry.Get(source.gameObject) : OwnerRegistry.OfWeapon(source as Weapon);
-                // An explosive nobody held belongs to the player who armed it, else to the attack that set it off: on the host the explode ClientRpc runs inside it
-                if (owner == OwnerRegistry.Unknown && source != null && Owners.TryGet(source.gameObject, out Owners.Record record))
-                {
-                    owner = OwnerRegistry.OfPlayer(record.Armer);
-                }
+                int owner = source is BasicProjectile ? OwnerRegistry.Get(source.gameObject) : OwnerRegistry.OfPlayer(Owners.ExplosiveOwner(source as Weapon));
+                // An explosive nobody armed or held belongs to the attack that set it off: on the host the explode ClientRpc runs inside it
                 if (owner == OwnerRegistry.Unknown)
                 {
                     owner = DamageContext.Current;

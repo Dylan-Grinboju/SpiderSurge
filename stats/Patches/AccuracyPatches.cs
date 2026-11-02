@@ -64,11 +64,14 @@ namespace StatsMod
         }
     }
 
-    // The Repulsor's blast is its shot: its pushes come from the gun itself, before the empty volley plays
+    // The Repulsor's blast is its shot: its pushes come from the gun itself, before the empty volley plays.
+    // They all land inside Blast, so the shot ends with it and a later hit by the thrown gun can't count for it
     [HarmonyPatch(typeof(SpiderSurge.Weapons.RepulsorBlast), "Blast")]
     internal static class AccuracyRepulsorPatch
     {
         static void Prefix(SpiderSurge.Weapons.RepulsorBlast __instance) => AccuracyTracker.Fire(__instance.Weapon, __instance.gameObject);
+
+        static void Finalizer(SpiderSurge.Weapons.RepulsorBlast __instance) => AccuracyTracker.Forget(__instance);
     }
 
     [HarmonyPatch(typeof(RailShot), "ReflectShot")]

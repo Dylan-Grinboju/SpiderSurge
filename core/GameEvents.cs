@@ -35,6 +35,10 @@ namespace SpiderSurge.Common
         // LobbyController.OnSceneLoaded, for every scene it hears about
         public static event Action<Scene> SceneLoaded;
         public static event Action<VersusMode> RoundStarting;
+        // StartMatch began a versus match; an online one opens in the waiting room and is played once NextRound leaves it
+        public static bool MatchInWaitingRoom { get; private set; }
+        public static event Action<VersusMode> MatchStarting;
+        public static event Action<VersusMode> MatchLeavingWaitingRoom;
 
         [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
         private static class StartGamePatch
@@ -70,9 +74,10 @@ namespace SpiderSurge.Common
         [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.StartRound))]
         private static class SurvivalStartRoundPatch
         {
-            static void Prefix(SurvivalMode __instance)
+            // The game's StartRound loads the first level only from the waiting-room scene
+            static void Prefix(SurvivalMode __instance, bool ____waitingRoom)
             {
-                if (!RunInWaitingRoom || !__instance.GameModeActive()) return;
+                if (!RunInWaitingRoom || !____waitingRoom || !__instance.GameModeActive()) return;
                 RunInWaitingRoom = false;
                 Raise(RunLeavingWaitingRoom, __instance, nameof(RunLeavingWaitingRoom));
             }
@@ -144,6 +149,34 @@ namespace SpiderSurge.Common
         private static class StartRoundPatch
         {
             static void Prefix(VersusMode __instance) => Raise(RoundStarting, __instance, nameof(RoundStarting));
+        }
+
+        [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.StartMatch))]
+        private static class StartMatchPatch
+        {
+            static void Prefix(VersusMode __instance, bool waitingRoom)
+            {
+                MatchInWaitingRoom = waitingRoom;
+                Raise(MatchStarting, __instance, nameof(MatchStarting));
+            }
+        }
+
+        // NextRound loads a level whenever a match is in progress, the waiting room's way out too
+        [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.NextRound))]
+        private static class NextRoundPatch
+        {
+            static void Prefix(VersusMode __instance)
+            {
+                if (!MatchInWaitingRoom || !__instance.GameModeActive()) return;
+                MatchInWaitingRoom = false;
+                Raise(MatchLeavingWaitingRoom, __instance, nameof(MatchLeavingWaitingRoom));
+            }
+        }
+
+        [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.EndMatch))]
+        private static class EndMatchPatch
+        {
+            static void Postfix() => MatchInWaitingRoom = false;
         }
 
         private static string Failure(string name) => $"SpiderSurge {name} handler failed";

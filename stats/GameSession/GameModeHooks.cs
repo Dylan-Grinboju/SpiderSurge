@@ -13,6 +13,8 @@ namespace StatsMod
         {
             GameEvents.RunStarting += OnRunStarting;
             GameEvents.RunLeavingWaitingRoom += OnRunLeavingWaitingRoom;
+            GameEvents.MatchStarting += OnMatchStarting;
+            GameEvents.MatchLeavingWaitingRoom += OnMatchLeavingWaitingRoom;
             GameEvents.RunStopping += OnRunStopping;
             GameEvents.WaveCompleted += OnWaveCompleted;
             GameEvents.PerkApplying += OnPerkApplying;
@@ -24,6 +26,8 @@ namespace StatsMod
         {
             GameEvents.RunStarting -= OnRunStarting;
             GameEvents.RunLeavingWaitingRoom -= OnRunLeavingWaitingRoom;
+            GameEvents.MatchStarting -= OnMatchStarting;
+            GameEvents.MatchLeavingWaitingRoom -= OnMatchLeavingWaitingRoom;
             GameEvents.RunStopping -= OnRunStopping;
             GameEvents.WaveCompleted -= OnWaveCompleted;
             GameEvents.PerkApplying -= OnPerkApplying;
@@ -45,6 +49,21 @@ namespace StatsMod
             GameSessionManager.Instance.StartSurvivalSession();
             GameSessionManager.Instance.RecordPainLevel();
             Logger.LogInfo("Survival mode started");
+        }
+
+        // Like a run, an online match's session starts when it leaves the waiting room
+        private static void OnMatchStarting(VersusMode versus)
+        {
+            if (GameEvents.MatchInWaitingRoom) GameSessionManager.Instance.WaitForPlay();
+            else StartVersus();
+        }
+
+        private static void OnMatchLeavingWaitingRoom(VersusMode versus) => StartVersus();
+
+        private static void StartVersus()
+        {
+            GameSessionManager.Instance.StartVersusSession();
+            Logger.LogInfo("Versus mode started");
         }
 
         private static void OnRunStopping(SurvivalMode survival)
@@ -95,51 +114,6 @@ namespace StatsMod
 
     #region Versus Mode Hooks
 
-    [HarmonyPatch(typeof(VersusMode), "StartMatch")]
-    public class VersusModeStartPatch
-    {
-        // An online match opens in the waiting room; its session starts when NextRound leaves it
-        internal static bool InWaitingRoom;
-
-        static void Prefix(VersusMode __instance, bool waitingRoom)
-        {
-            try
-            {
-                InWaitingRoom = waitingRoom;
-                if (waitingRoom) GameSessionManager.Instance.WaitForPlay();
-                else Start();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error in VersusMode.StartMatch patch: {ex.Message}");
-            }
-        }
-
-        internal static void Start()
-        {
-            GameSessionManager.Instance.StartVersusSession();
-            Logger.LogInfo("Versus mode started");
-        }
-    }
-
-    [HarmonyPatch(typeof(VersusMode), nameof(VersusMode.NextRound))]
-    public class VersusModeNextRoundPatch
-    {
-        static void Prefix(VersusMode __instance)
-        {
-            try
-            {
-                if (!VersusModeStartPatch.InWaitingRoom || !__instance.GameModeActive()) return;
-                VersusModeStartPatch.InWaitingRoom = false;
-                VersusModeStartPatch.Start();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Error in VersusMode.NextRound patch: {ex.Message}");
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(VersusMode), "EndMatch")]
     public class VersusModeEndPatch
     {
@@ -148,7 +122,6 @@ namespace StatsMod
         {
             try
             {
-                VersusModeStartPatch.InWaitingRoom = false;
                 if (GameSessionManager.Instance.CurrentGameMode != GameMode.Versus) return;
                 GameSessionManager.Instance.StopVersusSession();
             }

@@ -74,8 +74,9 @@ namespace SpiderSurge.Weapons
             if (_started) Send();
         }
 
-        // Put away into the Pocket Dimension, it lights again for whoever holds it when it comes back
-        private void OnDisable() => Douse(false);
+        // Put away into the Pocket Dimension, it lights again for whoever holds it when it comes back.
+        // Unity ignores SetActive on a child while the weapon itself deactivates, so Update hides the blade once it is back
+        private void OnDisable() => Douse(false, hide: false);
 
         private void Update()
         {
@@ -86,7 +87,11 @@ namespace SpiderSurge.Weapons
             {
                 if (held) Light(); else Douse(true);
             }
-            if (!_lit) return;
+            if (!_lit)
+            {
+                if (field.gameObject.activeSelf) field.gameObject.SetActive(false);
+                return;
+            }
 
             // The shotgun drops its own collider for a moment as it fires; the blade does too, so the volley isn't stopped by it
             SetCollider(_gun.shotgunCollider.enabled);
@@ -232,7 +237,7 @@ namespace SpiderSurge.Weapons
             beamSound.Play();
         }
 
-        private void Douse(bool sound)
+        private void Douse(bool sound, bool hide = true)
         {
             if (!_lit) return;
             _lit = false;
@@ -240,7 +245,7 @@ namespace SpiderSurge.Weapons
             _ignoredHolder = null;
             _holder = null;
             if (_fieldCollider != null) SetCollider(false);
-            if (field != null) field.gameObject.SetActive(false);
+            if (hide && field != null) field.gameObject.SetActive(false);
             if (beamSound != null) beamSound.Pause();
             if (sound && offSound != null) offSound.Play();
         }

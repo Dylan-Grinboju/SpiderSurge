@@ -208,14 +208,25 @@ namespace SpiderSurge
                     weapon.rb2D.angularVelocity = 0f;
                 }
 
-                // The game's own equip also tells the clients, which need it to fire the weapon
-                GameFields.EquipWeapon?.Invoke(_weaponManager, new object[] { weapon });
-                if (_weaponManager.equippedWeapon != weapon)
+                // The game's own equip also tells the clients, which need it to fire the weapon. Without it (logged at load) only the host would know.
+                // It refuses a weapon it can't equip, or a spider that already holds one; the retrieved weapon then lands beside the spider
+                if (GameFields.EquipWeapon != null)
+                {
+                    GameFields.EquipWeapon.Invoke(_weaponManager, new object[] { weapon });
+                }
+                else
                 {
                     weapon.Equip(_weaponManager);
                     _weaponManager.OnEquipWeapon(weapon);
                 }
-                WeaponVfx.Fold(weapon, _weaponManager.transform, true);
+                if (_weaponManager.equippedWeapon == weapon)
+                {
+                    WeaponVfx.Fold(weapon, _weaponManager.transform, true);
+                }
+                else
+                {
+                    Logger.LogWarning($"[Storage] {weapon.name} could not be equipped and was dropped");
+                }
             }
 
             PlayCasterSound(Consts.SoundNames.StorageRetrieve, Consts.SoundVolumes.StorageRetrieve);

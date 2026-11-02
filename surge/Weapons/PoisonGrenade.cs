@@ -140,7 +140,7 @@ namespace SpiderSurge.Weapons
             transform.rotation = Quaternion.identity;
             _until = Time.time + Values.CloudDuration;
             // Like the Grenade's blast, the cloud is the player's who armed it, or else its last holder's
-            if (Bursting != null) Owner = Owners.TryGet(Bursting.gameObject, out Owners.Record record) && record.Armer != null ? record.Armer : Owners.PlayerOf(Bursting);
+            if (Bursting != null) Owner = Owners.ExplosiveOwner(Bursting);
             if (_layers == 0) _layers = LayerMask.GetMask("Player", "Enemy");
         }
 

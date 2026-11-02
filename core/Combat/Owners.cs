@@ -21,7 +21,6 @@ namespace SpiderSurge.Common
             public PlayerController LaunchedBy;
             public float LaunchedAt;
             public PlayerController Armer;
-            public float ArmedAt;
             public PlayerController Reflector;
             public float ReflectedAt;
         }
@@ -73,6 +72,18 @@ namespace SpiderSurge.Common
             return weapon.owner != null ? ManagerPlayer(weapon.owner) : HolderOf(weapon.gameObject);
         }
 
+        // A grenade or mine belongs to the player who armed it; any other explosive, or one nobody armed, to its live or last holder.
+        // Stats, Teams and the Poison Grenade's cloud all take a blast's owner from here
+        public static PlayerController ExplosiveOwner(Weapon explosive)
+        {
+            if (explosive == null)
+            {
+                return null;
+            }
+            PlayerController armer = TryGet(explosive.gameObject, out Record record) ? record.Armer : null;
+            return armer != null ? armer : PlayerOf(explosive);
+        }
+
         public static void SetHolder(GameObject target, PlayerController player)
         {
             if (target == null)
@@ -88,7 +99,6 @@ namespace SpiderSurge.Common
         {
             Record record = Get(explosive.gameObject);
             record.Armer = player;
-            record.ArmedAt = Time.time;
             Store(record);
         }
 
@@ -178,7 +188,6 @@ namespace SpiderSurge.Common
             if (player != null && launcher is ProjectileLauncher && spawned.TryGetComponent(out Grenade grenade) && grenade.preArmed)
             {
                 record.Armer = player;
-                record.ArmedAt = now;
             }
             Store(record);
         }

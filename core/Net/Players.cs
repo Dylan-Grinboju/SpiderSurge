@@ -73,16 +73,7 @@ namespace SpiderSurge.Common
         // The host acts for every player; a client only for its own
         public static bool MayActFor(int playerId, ulong sender) => sender == Net.ServerId || OwnedBy(playerId, sender);
 
-        // A client that joined after a spider spawned never gets spiderHealthSystem for it, so find the spider under the player
-        public static SpiderHealthSystem HealthOf(PlayerController player)
-        {
-            if (player == null)
-            {
-                return null;
-            }
-            var health = player.spiderHealthSystem;
-            return health != null ? health : player.GetComponentInChildren<SpiderHealthSystem>();
-        }
+        public static SpiderHealthSystem HealthOf(PlayerController player) => player != null ? player.spiderHealthSystem : null;
 
         public static SpiderHealthSystem HealthOf(int playerId) => HealthOf(ById(playerId));
 
