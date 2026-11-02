@@ -21,6 +21,10 @@ LAVA_BOTTOM, LAVA_TOP_BOTTOM, LAVA_SIDES_BOTTOM, LAVA_ALL = range(4)
 
 MAPS = []
 
+# Vanilla endless survival averages seven weapons; 31 of its 34 arenas use six enemy points.
+WEAPON_SPAWN_COUNTS = {"Weapon Spawner A": 6, "Rare Weapon Spawner": 1}
+ENEMY_SPAWN_COUNT = 6
+
 
 def el(o, x, y, r=0.0, sx=1.0, sy=None, with_=None):
     e = {"o": o, "x": round(x, 2), "y": round(y, 2), "r": round(r, 2), "sx": round(sx, 3), "sy": round(sx if sy is None else sy, 3)}
@@ -68,7 +72,7 @@ def scaled(e, f):
 def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False, scale=1.0):
     """Coordinates are written at full size; scale shrinks the whole arena toward SCALE_PIVOT."""
     assert len(players) == 4, f"{id}: needs 4 player spawns"
-    assert len(enemies) >= 5, f"{id}: needs at least 5 enemy spawns"
+    assert len(enemies) == ENEMY_SPAWN_COUNT, f"{id}: needs {ENEMY_SPAWN_COUNT} enemy spawns"
     px, py = SCALE_PIVOT
     enemies = [(px + (x - px) * scale, py + (y - py) * scale) for x, y in enemies]
     items = list(elements)
@@ -161,8 +165,8 @@ surge_map(
         hover(-224, -110, 0, 1.3), hover(224, -110, 0, 1.3),
     ],
     players=[(-200, 128), (-60, 128), (90, 128), (230, 128)],
-    enemies=[(-350, 155), (350, 155), (-300, 280), (300, 280), (55, 320), (-75, -140), (75, -140)],
-    weapons=[(-150, 233), (150, 233), (262, 122)],
+    enemies=[(-350, 155), (350, 155), (-300, 280), (300, 280), (-75, -140), (75, -140)],
+    weapons=[(-150.0, 233.0), (150.0, 233.0), (-260.0, 122.0), (-75.0, 122.0), (75.0, 122.0), (262.0, 122.0)],
     rare=[(0, 291)],
 )
 
@@ -176,8 +180,8 @@ surge_map(
         el("Pancake", 0, 250, 0, 1.1), el("Ballish", -330, 260, 0, 0.8), el("Ballish", 330, 260, 0, 0.8),
     ],
     players=[(-235, 40), (-145, 32), (145, 32), (235, 40)],
-    enemies=[(-390, -60), (390, -60), (-115, -65), (115, -65), (0, -60), (-315, 335), (315, 335), (0, 330)],
-    weapons=[(-190, 0), (190, 0), (0, 280)],
+    enemies=[(-390, -60), (390, -60), (-115, -65), (115, -65), (-315, 335), (315, 335)],
+    weapons=[(-190.0, 0.0), (190.0, 0.0), (-190.0, 180.0), (190.0, 180.0), (-330.0, 300.0), (330.0, 300.0)],
     rare=[(0, 140)],
 )
 
@@ -191,9 +195,9 @@ surge_map(
         el("Jump Pad", -100, -94), el("Jump Pad", 100, -94),
     ],
     players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
-    enemies=[(-360, 100), (360, 100), (0, 265), (-250, -135), (250, -135), (-360, 265), (360, 265)],
-    weapons=[(0, -80), (-230, 234)],
-    rare=[(230, 234)],
+    enemies=[(-360, 100), (360, 100), (-250, -135), (250, -135), (-360, 265), (360, 265)],
+    weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-230.0, 234.0), (230.0, 234.0)],
+    rare=[(0, 147)],
 )
 
 # Desert floor with deadly cacti that burn enemies as well as spiders
@@ -206,8 +210,8 @@ surge_map(
         el("Pancake", 0, 160, 0, 1.3), el("Ballish", -330, 120, 0, 0.9), el("Ballish", 330, 120, 0, 0.9),
     ],
     players=[(-100, -73), (100, -73), (-120, 76), (120, 76)],
-    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (75, 235), (0, -65), (0, 60)],
-    weapons=[(-330, 160), (330, 160)],
+    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -65), (0, 60)],
+    weapons=[(-330.0, 160.0), (330.0, 160.0), (-120.0, 76.0), (120.0, 76.0), (-100.0, -85.0), (100.0, -85.0)],
     rare=[(0, 192)],
 )
 
@@ -222,8 +226,8 @@ surge_map(
         el("Platform", -200, 150, 0, 1.2), el("Platform", 200, 150, 0, 1.2), el("Pancake", 0, 200),
     ],
     players=[(-250, -26), (-150, 45), (150, 45), (250, -26)],
-    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (65, 265), (0, 60), (-180, -120), (180, -120)],
-    weapons=[(-200, 178), (200, 178)],
+    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (65, 265), (0, 60)],
+    weapons=[(-200, 178), (200, 178), (-305, -75), (305, -75), (-165, 30), (165, 30)],
     rare=[(0, 227)],
 )
 
@@ -236,8 +240,8 @@ surge_map(
         el("Platform", -130, 170, 0, 1.2), el("Platform", 130, 170, 0, 1.2), el("Ballish", 0, 250),
     ],
     players=[(-130, -30), (-200, 52), (130, -30), (200, 52)],
-    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, 40), (-250, -150), (250, -150)],
-    weapons=[(-130, 198), (130, 198)],
+    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, 40)],
+    weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-85, -82), (85, -82)],
     rare=[(0, 293)],
 )
 
@@ -250,8 +254,8 @@ surge_map(
         el("AeroTube", -150, -205, 0, 1.5), el("AeroTube", 150, -205, 0, 1.5),
     ],
     players=[(-290, -4), (-40, -71), (40, -71), (290, -4)],
-    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (0, 40), (-370, -120), (370, -120)],
-    weapons=[(-150, 137), (150, 137)],
+    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (0, 40)],
+    weapons=[(-150.0, 137.0), (150.0, 137.0), (-290.0, -4.0), (290.0, -4.0), (-45.0, -78.0), (45.0, -78.0)],
     rare=[(0, 266)],
 )
 
@@ -267,8 +271,8 @@ surge_map(
         el("Pancake", 0, 190, 0, 1.1), el("Platform", 300, 200, 0, 1.1),
     ],
     players=[(-200, -87), (-40, -87), (40, -87), (290, -87)],
-    enemies=[(-340, 40), (345, 35), (-300, 250), (150, 255), (0, 255), (0, -20), (345, 260)],
-    weapons=[(-100, 80), (0, 219)],
+    enemies=[(-340, 40), (345, 35), (-300, 250), (150, 255), (0, 255), (0, -20)],
+    weapons=[(-100.0, 80.0), (0.0, 219.0), (300.0, 228.0), (-200.0, -88.0), (-35.0, -88.0), (300.0, -88.0)],
     rare=[(260, 73)],
 )
 
@@ -285,8 +289,8 @@ surge_map(
         portal(-300, 25, 300, 25),
     ],
     players=[(-75, -72), (75, -72), (-240, -33), (240, -33)],
-    enemies=[(-150, 140), (150, 140), (-80, 30), (80, 30), (-300, 300), (300, 300), (175, 330), (-330, -120)],
-    weapons=[(-110, -78), (110, -78)],
+    enemies=[(-150, 140), (150, 140), (-80, 30), (80, 30), (-300, 300), (300, 300)],
+    weapons=[(-110.0, -78.0), (110.0, -78.0), (-250.0, 135.0), (250.0, 135.0), (-160.0, 292.0), (160.0, 292.0)],
     rare=[(0, 140)],
 )
 
@@ -301,8 +305,8 @@ surge_map(
         portal(-205, -45, 205, 255), portal(205, -45, -205, 255),
     ],
     players=[(-120, 10), (120, 10), (-40, -83), (40, -83)],
-    enemies=[(-375, 60), (375, 60), (0, 30), (0, 150), (-110, 315), (110, 315), (-330, -150), (330, -150)],
-    weapons=[(-330, 178), (330, 178)],
+    enemies=[(-375, 60), (375, 60), (0, 30), (0, 150), (-110, 315), (110, 315)],
+    weapons=[(-330.0, 178.0), (330.0, 178.0), (-40.0, -83.0), (40.0, -83.0), (-125.0, 185.0), (125.0, 185.0)],
     rare=[(0, 275)],
 )
 
@@ -317,8 +321,8 @@ surge_map(
     "ladders", "Ladders", FROSTY, LAVA_TOP_BOTTOM, scale=0.8,
     elements=_ladders + [el("Ballish", 0, -80, 0, 1.4), el("Pancake", 0, 80, 0, 1.2), el("Ballish", 0, 220, 0, 0.9)],
     players=[(-183, -15), (255, 15), (-30, 116), (30, 116)],
-    enemies=[(-315, 25), (295, 60), (-315, 250), (295, 250), (20, 305), (70, -155), (-100, 300), (100, 300)],
-    weapons=[(-140, 180), (208, 200)],
+    enemies=[(-315, 25), (295, 90), (-315, 250), (295, 250), (20, 305), (70, -155)],
+    weapons=[(-140, 180), (208, 200), (-260, -85), (206, -85), (-235, 99), (250, 5)],
     rare=[(0, -26)],
 )
 
@@ -335,8 +339,8 @@ surge_map(
         + [el("AeroTube", 0, -195, 0, 1.5)]
     ),
     players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
-    enemies=[(-275, 40), (270, 180), (-120, -25), (45, -110), (30, 175), (-250, 280), (300, 295), (5, 140)],
-    weapons=[(-130, 80), (190, 50)],
+    enemies=[(-275, 40), (270, 180), (-100, -5), (45, -110), (-250, 280), (300, 295)],
+    weapons=[(-130.0, 80.0), (190.0, 50.0), (-200.0, -65.0), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
     rare=[(30, 260)],
 )
 
@@ -351,8 +355,8 @@ surge_map(
         hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
-    enemies=[(-335, 150), (340, 150), (0, 300), (-120, -50), (120, -50), (-335, 280), (340, 280), (0, -165)],
-    weapons=[(-300, -54), (310, -40)],
+    enemies=[(-335, 150), (340, 150), (0, 300), (-120, -50), (120, -50), (0, -165)],
+    weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 255.0), (230.0, 275.0)],
     rare=[(10, -40)],
 )
 
@@ -367,8 +371,8 @@ surge_map(
         el("Platform", 20, 235, 0, 1.4),
     ],
     players=[(-125, 88), (-95, 88), (120, -10), (155, -15)],
-    enemies=[(-260, 220), (-260, 290), (-45, 305), (305, 250), (305, 0), (220, -125), (0, 65)],
-    weapons=[(-50, -60), (20, 270)],
+    enemies=[(-260, 290), (-45, 305), (305, 250), (305, 0), (220, -125), (0, 65)],
+    weapons=[(-50.0, -60.0), (20.0, 270.0), (-110.0, 90.0), (140.0, -10.0), (-110.0, 250.0), (-230.0, 175.0)],
     rare=[(255, 200)],
 )
 
@@ -490,10 +494,35 @@ def check_gadgets(m, safe):
     return problems
 
 
+def check_spawn_distribution(m):
+    problems = 0
+    weapons = [e for e in m["elements"] if e["o"] in WEAPON_SPAWN_COUNTS]
+    regular = [e for e in weapons if e["o"] == "Weapon Spawner A"]
+    players = [e for e in m["elements"] if e["o"] == "Player Spawn Point"]
+    for kind, count in WEAPON_SPAWN_COUNTS.items():
+        actual = sum(e["o"] == kind for e in weapons)
+        if actual != count:
+            print(f'{m["id"]}: needs {count} {kind} points, has {actual}'); problems += 1
+    if len(m["enemies"]) != ENEMY_SPAWN_COUNT:
+        print(f'{m["id"]}: needs {ENEMY_SPAWN_COUNT} enemy spawn points, has {len(m["enemies"])}'); problems += 1
+    for label, points, clearance in (("weapon", weapons, 60), ("enemy", m["enemies"], 90)):
+        for i, a in enumerate(points):
+            for b in points[i + 1:]:
+                if math.hypot(a["x"] - b["x"], a["y"] - b["y"]) < clearance:
+                    print(f'{m["id"]}: {label} spawn points must be at least {clearance} apart'); problems += 1
+    if players and regular and min(e["y"] for e in regular) > min(p["y"] for p in players) + 30:
+        print(f'{m["id"]}: no weapon supply near the lowest player route'); problems += 1
+    for p in m["enemies"]:
+        if any(math.hypot(p["x"] - e["x"], p["y"] - e["y"]) < 60 for e in players):
+            print(f'{m["id"]}: enemy spawn is within 60 of a player spawn'); problems += 1
+    return problems
+
+
 def check(maps, shapes):
     """Spawns must stand clear of solids: players and weapons on ground below, enemies in open air."""
     problems = 0
     for m in maps:
+        problems += check_spawn_distribution(m)
         unknown = {p["o"] for e in m["elements"] for p in [e] + e.get("with", []) if p["o"] not in shapes}
         if unknown:
             print(f'{m["id"]}: missing collider data for {", ".join(sorted(unknown))}'); problems += 1
