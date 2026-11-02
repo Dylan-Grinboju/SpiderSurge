@@ -14,6 +14,9 @@ namespace SpiderSurge.Common
     public static partial class ModUpdater
     {
         public const string CheckForUpdatesKey = "general.checkForUpdates";
+        public const string SubscribeToBetasKey = "general.subscribeToBetas";
+        private const string BetaChannelInitializedKey = "general.betaChannelInitialized";
+        internal const string BetaSubscriptionNotice = "Subscribe to beta releases is on. Unsubscribe in Settings > Advanced.";
         public const string ReleasesUrl = "https://github.com/Dylan-Grinboju/SpiderSurge/releases";
         private const string ReleasesApiUrl = "https://api.github.com/repos/Dylan-Grinboju/SpiderSurge/releases";
         private const int ReleasesPerPage = 100;
@@ -28,16 +31,29 @@ namespace SpiderSurge.Common
         private static string status = IdleStatus;
         private static string previousResult;
         private static string InstalledPath => typeof(SpiderSurgeMod).Assembly.Location;
-        private static bool OnBeta => ReleaseVersion.Parse(SpiderSurgeMod.Version)?.IsBeta == true;
+        private static bool betaChannel;
         private static string UpdateFolder => Path.Combine(Path.GetDirectoryName(InstalledPath), "Disabled", "SpiderSurgeUpdate");
         public static bool CheckForUpdates => Settings.GetBool(CheckForUpdatesKey);
-        public static IEnumerable<KeyValuePair<string, object>> Defaults => new[] { new KeyValuePair<string, object>(CheckForUpdatesKey, true) };
+        public static bool SubscribeToBetas => Settings.GetBool(SubscribeToBetasKey);
+        public static IEnumerable<KeyValuePair<string, object>> Defaults => new[]
+        {
+            new KeyValuePair<string, object>(CheckForUpdatesKey, true),
+            new KeyValuePair<string, object>(SubscribeToBetasKey, false),
+            new KeyValuePair<string, object>(BetaChannelInitializedKey, false)
+        };
 
         // Turning the startup check off only stops that check, never one the player started
         public static void ScheduleCheck()
         {
             if (!watching)
             {
+                // Enroll existing beta users once; an explicit choice survives beta and stable installs.
+                if (!Settings.GetBool(BetaChannelInitializedKey) && ReleaseVersion.Parse(SpiderSurgeMod.Version)?.IsBeta == true)
+                {
+                    Settings.Set(BetaChannelInitializedKey, true);
+                    Settings.Set(SubscribeToBetasKey, true);
+                }
+                betaChannel = SubscribeToBetas;
                 Settings.Changed += OnSettingsChanged;
                 watching = true;
                 ReadPreviousResult();
@@ -66,6 +82,21 @@ namespace SpiderSurge.Common
 
         private static void OnSettingsChanged(string key)
         {
+            if (Settings.Affects(key, SubscribeToBetasKey) && betaChannel != SubscribeToBetas)
+            {
+                betaChannel = SubscribeToBetas;
+                Settings.Set(BetaChannelInitializedKey, true);
+                bool manual = checking && !automaticCheck;
+                CancelCheck();
+                notice = release = null;
+                if (!downloading && !staged)
+                {
+                    ClosePopup();
+                    SetStatus(IdleStatus);
+                    if (manual) Check(NewCheck(false), false);
+                    else if (CheckForUpdates) CheckLater(0);
+                }
+            }
             if (Settings.Affects(key, CheckForUpdatesKey)) ScheduleCheck();
         }
         private static void CancelCheck()
@@ -107,7 +138,7 @@ namespace SpiderSurge.Common
             if (resultPending) ReadPreviousResult();
             page.Title("SpiderSurge updates");
             page.Line("Installed: " + SpiderSurgeMod.Version);
-            if (OnBeta) page.Note("This is a beta, so newer betas are offered as well as releases. Installing a release returns you to releases only.");
+            page.Note(SubscribeToBetas ? BetaSubscriptionNotice : "Beta releases are off. Subscribe in Settings > Advanced to receive them.");
             page.Paragraph("<noparse>" + status + "</noparse>");
             if (resultPending) page.Note("The installer from your last session is still running. Open this page again in a minute to see its result.");
             else if (!string.IsNullOrEmpty(previousResult)) page.Note("<noparse>Previous update: " + previousResult + "</noparse>");
@@ -139,11 +170,12 @@ namespace SpiderSurge.Common
             checking = true;
             if (!automatic) SetStatus("Checking for updates...");
             var token = cancel.Token;
+            bool includeBetas = SubscribeToBetas;
             Task.Run(async () =>
             {
                 UpdateRelease found = null;
                 string problem = null;
-                try { found = await FetchLatest(token); }
+                try { found = await FetchLatest(token, includeBetas); }
                 catch (OperationCanceledException) when (!token.IsCancellationRequested) { problem = "GitHub did not answer in time."; }
                 catch (Exception error) { problem = error.Message; }
                 // A cancelled or replaced check has already reset the page
@@ -151,7 +183,7 @@ namespace SpiderSurge.Common
             });
         }
 
-        private static async Task<UpdateRelease> FetchLatest(CancellationToken cancellation)
+        private static async Task<UpdateRelease> FetchLatest(CancellationToken cancellation, bool includeBetas)
         {
             using (var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
             {
@@ -178,8 +210,8 @@ namespace SpiderSurge.Common
                             }
                         }
                     }
-                    return UpdateRelease.Newest(releases, OnBeta)
-                        ?? throw new InvalidDataException(OnBeta ? "No stable or beta release was found." : "No stable release was found.");
+                    return UpdateRelease.Newest(releases, includeBetas)
+                        ?? throw new InvalidDataException(includeBetas ? "No stable or beta release was found." : "No stable release was found.");
                 }
                 catch (Exception error) when (limit.IsCancellationRequested && !(error is OperationCanceledException))
                 {

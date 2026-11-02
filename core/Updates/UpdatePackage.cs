@@ -24,7 +24,7 @@ namespace SpiderSurge.Common
         internal bool IsBeta => !Draft && Prerelease && Number?.IsBeta == true;
         private string DownloadUrl => "https://github.com/Dylan-Grinboju/SpiderSurge/releases/download/" + Uri.EscapeDataString(Tag) + "/SpiderSurge.dll";
 
-        // A beta DLL is also offered newer betas; a stable release newer than them moves it back to stable releases
+        // Subscribers receive both stable releases and betas, ordered by version.
         internal static UpdateRelease Newest(IEnumerable<UpdateRelease> releases, bool beta) =>
             releases.Where(item => item != null && (item.IsStable || beta && item.IsBeta)).OrderByDescending(item => item.Number).FirstOrDefault();
 

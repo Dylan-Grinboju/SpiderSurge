@@ -461,6 +461,8 @@ namespace SpiderSurge.Common
             Title("Advanced");
             Toggle("Check for updates", ModUpdater.CheckForUpdatesKey);
             Note("Check for a newer SpiderSurge release at startup.");
+            Toggle("Subscribe to beta releases", ModUpdater.SubscribeToBetasKey);
+            Note("Include beta releases when checking for updates. Beta builds may have bugs. Enabled automatically the first time you run a beta; your choice is kept after that.");
             Button("Updates", () => Open("updates"));
             Button("Base game fixes", () => Open("fixes"));
             Button("Reload the settings file", ReloadFile);
