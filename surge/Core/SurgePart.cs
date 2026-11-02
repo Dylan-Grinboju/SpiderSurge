@@ -72,12 +72,6 @@ namespace SpiderSurge
             SurgeSettingsPage.Build(page);
         }
 
-        public override void BuildHub(SettingsPage page)
-        {
-            page.Button("How to play", () => page.Open(SurgeGuide.Page));
-            page.Note("A guide to starting a run, abilities and ultimates, perk synergies, chaos points, challenges, enemies, controls and multiplayer.");
-        }
-
         public override void BuildRecords(SettingsPage page)
         {
             page.Spacer();

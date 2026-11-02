@@ -12,13 +12,10 @@ namespace SpiderSurge
         public static void Build(SettingsPage page)
         {
             if (page.Current == "surge.indicator") { BuildIndicator(page); return; }
-            if (page.Current == SurgeGuide.Page || page.Current.StartsWith(SurgeGuide.Page + ".", StringComparison.Ordinal)) { SurgeGuide.Build(page); return; }
             if (page.Current == AchievementsPage.Page) { AchievementsPage.Build(page); return; }
             if (page.Current == "surge.rules") { BuildRules(page); return; }
             page.Title("Surge");
             page.Note("To play Surge, stand on the Surge Survival platform above and left of Wave Survival in the lobby.");
-            page.Button("How to play", () => page.Open(SurgeGuide.Page));
-            page.Note("Start with a guided first run, then explore abilities, synergies, enemies, chaos points and challenges, and multiplayer.");
 
             page.Button("Advanced run rules", () => page.Open("surge.rules"));
             page.Note("Play without abilities. The host chooses this rule online. The perk-choice timer is on the main Settings page for both survival modes.");
