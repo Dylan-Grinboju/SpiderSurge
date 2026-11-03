@@ -53,7 +53,12 @@ def mirror_points(points):
 
 
 # Objects that keep their size when a map is scaled: spawns, jump pads (fixed force) and portals
-FIXED_SIZE = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner", "Jump Pad", "PortalPoint", "PortalPoint Variant")
+FIXED_SIZE = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner", "Jump Pad",
+              "PortalPoint", "PortalPoint Variant", "PortalLine", "PortalLine Variant")
+# Each portal and its linked exit
+PORTALS = {"PortalPoint": "PortalPoint Variant", "PortalLine": "PortalLine Variant"}
+# A line portal is a 75-unit gate along its x axis
+GATE_HALF = 37.5
 SCALE_PIVOT = (0.0, -150.0)
 
 
@@ -69,7 +74,8 @@ def scaled(e, f):
     return m
 
 
-def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False, scale=1.0):
+def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False, scale=1.0,
+              zero_gravity=False, parts=()):
     """Coordinates are written at full size; scale shrinks the whole arena toward SCALE_PIVOT."""
     assert len(players) == 4, f"{id}: needs 4 player spawns"
     assert len(enemies) == ENEMY_SPAWN_COUNT, f"{id}: needs {ENEMY_SPAWN_COUNT} enemy spawns"
@@ -79,18 +85,24 @@ def surge_map(id, name, background, lava, elements, players, enemies, weapons, r
     items += [el("Player Spawn Point", x, y) for x, y in players]
     items += [el("Weapon Spawner A", x, y) for x, y in weapons]
     items += [el("Rare Weapon Spawner", x, y) for x, y in rare]
+    parts = [dict(g) for g in parts]
     if scale != 1.0:
         items = [scaled(e, scale) for e in items]
+        for g in parts:
+            g["x"], g["y"] = round(px + (g["x"] - px) * scale, 2), round(py + (g["y"] - py) * scale, 2)
+            g["s"] = round(g["s"] * scale, 3)
     MAPS.append({
         "id": id, "name": name, "background": background, "lava": lava, "beginner": beginner,
-        "elements": items, "enemies": [{"x": round(x, 2), "y": round(y, 2)} for x, y in enemies],
+        "zeroGravity": zero_gravity, "elements": items, "parts": parts,
+        "enemies": [{"x": round(x, 2), "y": round(y, 2)} for x, y in enemies],
     })
 
 
-def bar(x1, y1, x2, y2, o="Loooong Boi", length=202.0):
-    """A Loooong Boi (or another long shape of the given unscaled length) from one point to the other."""
+def bar(x1, y1, x2, y2, o="Loooong Boi", length=202.0, thick=None):
+    """A Loooong Boi (or another long shape of the given unscaled length) from one point to the other.
+    Its thickness scales with its length unless thick sets it."""
     dx, dy = x2 - x1, y2 - y1
-    return el(o, (x1 + x2) / 2, (y1 + y2) / 2, math.degrees(math.atan2(dy, dx)), math.hypot(dx, dy) / length)
+    return el(o, (x1 + x2) / 2, (y1 + y2) / 2, math.degrees(math.atan2(dy, dx)), math.hypot(dx, dy) / length, thick)
 
 
 def quarter(cx, cy, quadrant, s=1.0, o="Quarter"):
@@ -101,9 +113,22 @@ def quarter(cx, cy, quadrant, s=1.0, o="Quarter"):
     return el(o, cx - (ox * c - oy * sn), cy - (ox * sn + oy * c), r, s)
 
 
-def portal(x1, y1, x2, y2):
-    """A pair of linked portal points; whatever enters one leaves the other with its velocity."""
-    return el("PortalPoint", x1, y1, with_=[el("PortalPoint Variant", x2, y2)])
+def gate(x1, y1, x2, y2, r):
+    """A pair of linked line portals, the vanilla arenas' visible gates. Both share one rotation, so whatever
+    enters one leaves the other with its velocity, at the same point along the gate."""
+    return el("PortalLine", x1, y1, r, with_=[el("PortalLine Variant", x2, y2, r)])
+
+
+def gate_on(x1, y1, x2, y2, along, scale, clearance=4.0):
+    """A gate standing across the top of the beam from (x1, y1) to (x2, y2), `along` units in from the first end.
+    The gate keeps its size when the map is scaled, so its offset is worked out at the final scale."""
+    length = math.hypot(x2 - x1, y2 - y1)
+    ux, uy = (x2 - x1) / length, (y2 - y1) / length
+    nx, ny = (-uy, ux) if ux > 0 else (uy, -ux)
+    half_thick = 11.6 * length / 202.0 * scale
+    offset = (GATE_HALF + half_thick + clearance) / scale
+    px, py = x1 + ux * along, y1 + uy * along
+    return px + nx * offset, py + ny * offset, math.degrees(math.atan2(ny, nx))
 
 
 def hover(x, y, r=0.0, s=1.0):
@@ -114,6 +139,30 @@ def hover(x, y, r=0.0, s=1.0):
 def honeycomb(cx, cy, s=1.0):
     """A breakable ice shelf centered on (cx, cy); about 95 x 34 at scale 1."""
     return el("HoneyComb", cx - 39.5 * s, cy + 12.9 * s, 0, s)
+
+
+# The base game's networked level gadgets, which the host spawns beside the editor elements (SurgeParts.cs).
+# Each is placed by its prefab root, at the prefab's own scale unless s says otherwise.
+GADGET_SCALE = {"Box A": 1, "Box B": 1, "Box Wide": 1, "Ball": 1, "Big Spinner": 1, "Spinner": 1.5, "Swing": 1,
+                "SuspendedPrism": 2, "DescendingCage": 1.5, "Moving Platform A": 1, "Moving Platform B": 1,
+                "HingePlatform": 2}
+# Loose bodies the host puts back when they are lost to the lava or drift away
+LOOSE = ("Box A", "Box B", "Box Wide", "Ball")
+# Gadgets that hang under gravity, so they stay upright and need a gravity map
+HANGING = ("Swing", "SuspendedPrism", "DescendingCage", "HingePlatform")
+# Colliders that stay put while the rest of the gadget moves: anchors and hooks
+ANCHORS = {"Swing": {0}, "SuspendedPrism": {2, 3, 4, 5, 6, 7}, "DescendingCage": {2, 3, 4, 5, 6, 7}}
+# A touched rail platform rises this far along its root's up direction, at its prefab scale
+RAIL_TRAVEL = {"Moving Platform A": 198.0, "Moving Platform B": 108.0}
+# A descending cage hangs from 30 to 150 below its hooks at its prefab scale 1.5: about 128 of travel
+CAGE_TRAVEL = 128.0
+
+
+def gadget(o, x, y, r=0.0, s=None, **extra):
+    """A gadget; extra may set motor (degrees per second, Big Spinner) or phase (1 starts a cage low)."""
+    g = {"o": o, "x": round(x, 2), "y": round(y, 2), "r": round(r, 2), "s": round(GADGET_SCALE[o] if s is None else s, 3)}
+    g.update(extra)
+    return g
 
 
 # ---------------------------------------------------------------- maps
@@ -137,54 +186,6 @@ def pipe(points, s=0.6, radius=23.0):
     return out
 
 
-def rotate(elements, cx, cy, deg):
-    """The elements turned by deg degrees around (cx, cy)."""
-    c, sn = math.cos(math.radians(deg)), math.sin(math.radians(deg))
-    out = []
-    for e in elements:
-        m = dict(e)
-        dx, dy = e["x"] - cx, e["y"] - cy
-        m["x"], m["y"], m["r"] = round(cx + dx * c - dy * sn, 2), round(cy + dx * sn + dy * c, 2), round(e["r"] + deg, 2)
-        out.append(m)
-    return out
-
-
-# Ruined arches with a broken deck on top; the arches give cover and hover pads a foothold underneath
-_arches = []
-for ax in (-224, -75, 75, 224):
-    _arches += [quarter(ax, -10, "ul", 1.8), quarter(ax, -10, "ur", 1.8)]
-_pillars = []
-for px, depth in ((-299, 4), (-150, 3), (0, 4), (150, 2), (299, 3)):
-    _pillars += [el("Big Block", px, -31 - 41 * k, 0, 0.65) for k in range(depth)]
-surge_map(
-    "aqueduct", "Aqueduct", DESERT, LAVA_BOTTOM, beginner=True,
-    elements=_arches + _pillars + [
-        el("Loooong Boi", -245, 96), el("Loooong Boi", -95, 96, 0, 0.8),
-        el("Loooong Boi", 120, 96, 0, 0.8), el("Loooong Boi", 262, 96, 0, 0.9),
-        el("Platform", -150, 205, 0, 1.2), el("Platform", 150, 205, 0, 1.2), el("Pancake", 0, 265, 0, 0.9),
-        hover(-224, -110, 0, 1.3), hover(224, -110, 0, 1.3),
-    ],
-    players=[(-200, 128), (-60, 128), (90, 128), (230, 128)],
-    enemies=[(-350, 155), (350, 155), (-300, 280), (300, 280), (-75, -140), (75, -140)],
-    weapons=[(-150.0, 233.0), (150.0, 233.0), (-260.0, 122.0), (-75.0, 122.0), (75.0, 122.0), (262.0, 122.0)],
-    rare=[(0, 291)],
-)
-
-# A W of long ramps; the valleys hold the players, the peaks split the map
-surge_map(
-    "zigzag", "Zigzag", SPACE, LAVA_BOTTOM, beginner=True, scale=0.9,
-    elements=[
-        bar(-380, 130, -190, -40), bar(-190, -40, 0, 110), bar(0, 110, 190, -40), bar(190, -40, 380, 130),
-        el("Platform", -190, 150, 0, 1.3), el("Platform", 190, 150, 0, 1.3),
-        el("Ballish", -190, -40, 0, 0.55), el("Ballish", 0, 110, 0, 0.55), el("Ballish", 190, -40, 0, 0.55),
-        el("Pancake", 0, 250, 0, 1.1), el("Ballish", -330, 260, 0, 0.8), el("Ballish", 330, 260, 0, 0.8),
-    ],
-    players=[(-235, 40), (-145, 32), (145, 32), (235, 40)],
-    enemies=[(-390, -60), (390, -60), (-115, -65), (115, -65), (-315, 335), (315, 335)],
-    weapons=[(-190.0, 0.0), (190.0, 0.0), (-190.0, 180.0), (190.0, 180.0), (-330.0, 300.0), (330.0, 300.0)],
-    rare=[(0, 140)],
-)
-
 # Shelves of breakable ice over one solid floor; floor pads fire up through the gaps once the ice is gone
 surge_map(
     "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM,
@@ -192,12 +193,18 @@ surge_map(
         el("Loooong Boi", 0, -110, 0, 1.4), el("Ballish", -330, -40, 0, 0.9), el("Ballish", 330, -40, 0, 0.9),
         honeycomb(-200, 0, 1.6), honeycomb(200, 0, 1.6), honeycomb(0, 100, 1.6),
         honeycomb(-230, 200, 1.2), honeycomb(230, 200, 1.2),
+        el("Ballish", -110, 275, 0, 0.45), el("Ballish", 110, 275, 0, 0.45),
         el("Jump Pad", -100, -94), el("Jump Pad", 100, -94),
     ],
     players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
     enemies=[(-360, 100), (360, 100), (-250, -135), (250, -135), (-360, 265), (360, 265)],
     weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-230.0, 234.0), (230.0, 234.0)],
     rare=[(0, 147)],
+    # Crates ride the shelves down when the ice breaks; a swing hangs between the top footholds
+    parts=[
+        gadget("Box A", -255, 40), gadget("Box A", 255, 40), gadget("Box B", -190, 236), gadget("Box B", 190, 236),
+        gadget("Swing", 0, 305, s=0.6),
+    ],
 )
 
 # Desert floor with deadly cacti that burn enemies as well as spiders
@@ -205,14 +212,18 @@ surge_map(
     "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.75,
     elements=[
         el("Pancake", -170, -120, 0, 2), el("Pancake", 170, -120, 0, 2),
-        el("DeathSpike", -200, -74, 0, 1.2), el("DeathSpike", 200, -74, 0, 1.2),
+        el("DeathSpike", -200, -87, 0, 0.6), el("DeathSpike", 200, -87, 0, 0.6),
         el("Platform", -120, 40, 0, 1.4), el("Platform", 120, 40, 0, 1.4),
         el("Pancake", 0, 160, 0, 1.3), el("Ballish", -330, 120, 0, 0.9), el("Ballish", 330, 120, 0, 0.9),
     ],
     players=[(-100, -73), (100, -73), (-120, 76), (120, 76)],
-    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -65), (0, 60)],
+    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -170), (0, 250)],
     weapons=[(-330.0, 160.0), (330.0, 160.0), (-120.0, 76.0), (120.0, 76.0), (-100.0, -85.0), (100.0, -85.0)],
     rare=[(0, 192)],
+    # Tumbleweeds roll off the outer islands, and a windmill turns over the central gap
+    parts=[
+        gadget("Ball", -262, -78), gadget("Ball", 262, -78), gadget("Big Spinner", 0, 20, motor=30),
+    ],
 )
 
 # A volcano with a magma pool in its crater and ledges above the rim
@@ -226,9 +237,13 @@ surge_map(
         el("Platform", -200, 150, 0, 1.2), el("Platform", 200, 150, 0, 1.2), el("Pancake", 0, 200),
     ],
     players=[(-250, -26), (-150, 45), (150, 45), (250, -26)],
-    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (65, 265), (0, 60)],
+    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (130, 230), (0, 120)],
     weapons=[(-200, 178), (200, 178), (-305, -75), (305, -75), (-165, 30), (165, 30)],
     rare=[(0, 227)],
+    # A lift rises out of the crater while something stands on it, and crates sit beside the rare weapon
+    parts=[
+        gadget("Moving Platform B", 0, -52), gadget("Box A", -41.2, 227.3), gadget("Box A", 41.2, 227.3),
+    ],
 )
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
@@ -236,97 +251,90 @@ surge_map(
     "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.75,
     elements=[
         el("Pancake", 0, -130, 0, 1.6), bar(-90, -125, -300, 120), bar(90, -125, 300, 120),
-        el("Jump Pad", -50, -114, 0, 1.5), el("Jump Pad", 50, -114, 0, 1.5),
+        el("Jump Pad", -50, -114), el("Jump Pad", 50, -114),
         el("Platform", -130, 170, 0, 1.2), el("Platform", 130, 170, 0, 1.2), el("Ballish", 0, 250),
     ],
     players=[(-130, -30), (-200, 52), (130, -30), (200, 52)],
-    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, 40)],
+    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, -20)],
     weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-85, -82), (85, -82)],
     rare=[(0, 293)],
+    # A crate sits between the pads, and the pads throw spiders into a free spinner above the bowl
+    parts=[
+        gadget("Box B", 0, -94), gadget("Big Spinner", 0, 105, s=0.8),
+    ],
 )
 
-# Floating rocks over the lava, with geysers that blow fallen spiders back up
+# Floating rocks over the lava: vents blow fallen spiders back up, and jump pads on the shelves above them launch higher
 surge_map(
     "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.85,
     elements=[
         el("Pancake", -290, -40, 0, 1.2), el("Pancake", 0, -110, 0, 1.4), el("Pancake", 290, -40, 0, 1.2),
         el("Pancake", -150, 110), el("Pancake", 150, 110), el("Pancake", 0, 240, 0, 0.9),
         el("AeroTube", -150, -205, 0, 1.5), el("AeroTube", 150, -205, 0, 1.5),
+        el("Jump Pad", -175, 121), el("Jump Pad", 175, 121),
     ],
     players=[(-290, -4), (-40, -71), (40, -71), (290, -4)],
-    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (0, 40)],
-    weapons=[(-150.0, 137.0), (150.0, 137.0), (-290.0, -4.0), (290.0, -4.0), (-45.0, -78.0), (45.0, -78.0)],
+    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (-60, 305)],
+    weapons=[(-115.0, 137.0), (115.0, 137.0), (-290.0, -4.0), (290.0, -4.0), (-45.0, -78.0), (45.0, -78.0)],
     rare=[(0, 266)],
-)
-
-# Temple ruins: a long floor with standing, broken and fallen columns
-surge_map(
-    "colonnade", "Colonnade", MOUNTAIN, LAVA_BOTTOM, beginner=True,
-    elements=[
-        el("Loooong Boi", -222, -120, 0, 1.1), el("Loooong Boi", 0, -120, 0, 1.1), el("Loooong Boi", 222, -120, 0, 1.1),
-        el("Loooong Boi", -260, -32, 90, 0.75), el("Loooong Boi", -90, -32, 90, 0.75),
-        el("Loooong Boi", 90, -62, 90, 0.45), el("Loooong Boi", 260, -32, 90, 0.75),
-        el("Loooong Boi", -175, 55, 0, 0.9), el("Triangle", -175, 104, 0, 1.6),
-        el("Pancake", 260, 51, 0, 0.6), bar(130, -103, 245, -5),
-        el("Pancake", 0, 190, 0, 1.1), el("Platform", 300, 200, 0, 1.1),
+    # The vents juggle a ball each; a cage under the top rock sinks to the middle and rises again
+    parts=[
+        gadget("Ball", -150, 10), gadget("Ball", 150, 10), gadget("DescendingCage", 0, 198),
+        gadget("Box A", -335, -12), gadget("Box A", 335, -12),
     ],
-    players=[(-200, -87), (-40, -87), (40, -87), (290, -87)],
-    enemies=[(-340, 40), (345, 35), (-300, 250), (150, 255), (0, 255), (0, -20)],
-    weapons=[(-100.0, 80.0), (0.0, 219.0), (300.0, 228.0), (-200.0, -88.0), (-35.0, -88.0), (300.0, -88.0)],
-    rare=[(260, 73)],
 )
 
-# Two jaws full of teeth, with lava above and below; portals over the lip ends wrap one side to the other
+# Two toothed jaws, with lava above and below. The upper jaw breaks at its corners, its outer teeth and the
+# lower middle tooth burn, and gates in the open sides wrap one side to the other
 surge_map(
     "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.9,
     elements=[
-        el("Loooong Boi", 0, -110, 0, 1.6), bar(-160, -110, -320, -20), bar(160, -110, 320, -20),
-        el("Loooong Boi", 0, 260, 0, 1.6), bar(-160, 260, -320, 170), bar(160, 260, 320, 170),
-        el("Spike", -150, -77, 0, 0.9), el("Spike", 0, -77, 0, 0.9), el("Spike", 150, -77, 0, 0.9),
-        el("Spike", -75, 228, 180, 0.9), el("Spike", 75, 228, 180, 0.9),
-        el("Spike", -210, 222, 180, 0.8), el("Spike", 210, 222, 180, 0.8),
-        el("Pentagon", 0, 90, 0, 0.8), el("Ballish", -250, 90), el("Ballish", 250, 90),
-        portal(-300, 25, 300, 25),
+        el("Loooong Boi", 0, -125, 0, 1.6), bar(-160, -125, -320, -35), bar(160, -125, 320, -35),
+        el("Loooong Boi", 0, 285, 0, 240 / 202, 1.6),
+        bar(-200, 262.5, -320, 195, thick=0.908), bar(200, 262.5, 320, 195, thick=0.908),
+        el("Spike", -150, -92, 0, 0.9), el("DeathSpike", 0, -92, 0, 0.9), el("Spike", 150, -92, 0, 0.9),
+        el("Spike", -75, 253, 180, 0.9), el("Spike", 75, 253, 180, 0.9),
+        el("DeathSpike", -210, 247, 180, 0.8), el("DeathSpike", 210, 247, 180, 0.8),
+        el("Ballish", -230, 90), el("Ballish", 230, 90),
+        gate(-315, 80, 315, 80, 90),
     ],
-    players=[(-75, -72), (75, -72), (-240, -33), (240, -33)],
+    players=[(-75, -87), (75, -87), (-240, -48), (240, -48)],
     enemies=[(-150, 140), (150, 140), (-80, 30), (80, 30), (-300, 300), (300, 300)],
-    weapons=[(-110.0, -78.0), (110.0, -78.0), (-250.0, 135.0), (250.0, 135.0), (-160.0, 292.0), (160.0, 292.0)],
-    rare=[(0, 140)],
+    weapons=[(-110.0, -93.0), (110.0, -93.0), (-230.0, 135.0), (230.0, 135.0), (-75.0, 317.0), (75.0, 317.0)],
+    rare=[(0, 317)],
+    # A turning tongue fills the middle of the mouth, with crates loose on the lower jaw
+    parts=[
+        gadget("Big Spinner", 0, 90, s=0.9, motor=-25), gadget("Box A", -35, -96), gadget("Box A", 35, -96),
+    ],
 )
 
-# Four broken beams frame an open crossing; portals join each lower tip to the opposite upper tip
+# Four broken beams frame an open crossing; gates join each lower tip to the opposite upper tip, so sliding down
+# a lower arm drops a spider onto the opposite upper arm
+_crossbeams = 0.85
+_lower_left = gate_on(-230, -110, -75, 5, 45, _crossbeams)
+_upper_right = gate_on(230, 230, 75, 115, 45, _crossbeams)
 surge_map(
-    "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM, scale=0.85,
+    "crossbeams", "Crossbeams", MULTIVERSE, LAVA_BOTTOM, scale=_crossbeams,
     elements=[
         bar(-75, 5, -230, -110), bar(75, 5, 230, -110),
         bar(-75, 115, -230, 230), bar(75, 115, 230, 230),
         el("Pancake", 0, -120, 0, 1.3),
         el("Platform", -330, 150, 0, 1.2), el("Platform", 330, 150, 0, 1.2), el("Platform", 0, 250),
-        portal(-205, -45, 205, 255), portal(205, -45, -205, 255),
+        gate(_lower_left[0], _lower_left[1], _upper_right[0], _upper_right[1], _lower_left[2]),
+        gate(-_lower_left[0], _lower_left[1], -_upper_right[0], _upper_right[1], -_lower_left[2]),
     ],
     players=[(-120, 10), (120, 10), (-40, -83), (40, -83)],
-    enemies=[(-375, 60), (375, 60), (0, 30), (0, 150), (-110, 315), (110, 315)],
+    enemies=[(-375, 60), (375, 60), (-160, 90), (160, 90), (-60, 330), (60, 330)],
     weapons=[(-330.0, 178.0), (330.0, 178.0), (-40.0, -83.0), (40.0, -83.0), (-125.0, 185.0), (125.0, 185.0)],
     rare=[(0, 275)],
+    # A beam turns in the crossing, and balls roll down the upper arms into it
+    parts=[
+        gadget("Big Spinner", 0, 60, s=0.9, motor=20), gadget("Ball", -212, 250), gadget("Ball", 212, 250),
+    ],
 )
 
-# Broken ladder spines with alternating ledges; no closed cells between rungs
-_ladders = []
-for lx, lean in ((-200, -12), (200, 12)):
-    ladder = [el("Loooong Boi", lx, y, 90, 0.65) for y in (-70, 140)]
-    ladder += [el("Platform", lx + offset, y, 0, 1.3)
-               for offset, y in ((-35, -120), (35, -35), (-35, 65), (35, 165))]
-    _ladders += rotate(ladder, lx, 40, lean)
-surge_map(
-    "ladders", "Ladders", FROSTY, LAVA_TOP_BOTTOM, scale=0.8,
-    elements=_ladders + [el("Ballish", 0, -80, 0, 1.4), el("Pancake", 0, 80, 0, 1.2), el("Ballish", 0, 220, 0, 0.9)],
-    players=[(-183, -15), (255, 15), (-30, 116), (30, 116)],
-    enemies=[(-315, 25), (295, 90), (-315, 250), (295, 250), (20, 305), (70, -155)],
-    weapons=[(-140, 180), (208, 200), (-260, -85), (206, -85), (-235, 99), (250, 5)],
-    rare=[(0, -26)],
-)
-
-# Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap
+# Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap,
+# and jump pads fire up the clear shafts on each side
 surge_map(
     "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.9,
     elements=(
@@ -336,17 +344,21 @@ surge_map(
         + pipe([(120, -20), (120, 30), (260, 30)])
         + pipe([(-120, 240), (180, 240), (180, 150)])
         + pipe([(-340, 110), (-250, 110)]) + pipe([(340, 120), (260, 120)])
-        + [el("AeroTube", 0, -195, 0, 1.5)]
+        + [el("AeroTube", 0, -195, 0, 1.5), el("Jump Pad", -232, -84), el("Jump Pad", 230, 36)]
     ),
     players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
     enemies=[(-275, 40), (270, 180), (-100, -5), (45, -110), (-250, 280), (300, 295)],
     weapons=[(-130.0, 80.0), (190.0, 50.0), (-200.0, -65.0), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
     rare=[(30, 260)],
+    # A cage under the top pipe sinks into the central gap and rises again; loose crates fill the pockets
+    parts=[
+        gadget("DescendingCage", 0, 200), gadget("Ball", -175, 82), gadget("Box B", 150, 51),
+    ],
 )
 
-# A satellite with long solar wings, a dish underneath and debris that drifts when pushed
+# A satellite in zero gravity, with long solar wings, a dish underneath and debris that drifts when pushed
 surge_map(
-    "satellite", "Satellite", SPACE, LAVA_BOTTOM, beginner=True,
+    "satellite", "Satellite", SPACE, LAVA_BOTTOM, zero_gravity=True,
     elements=[
         el("Big Block", 0, 60, 0, 1.4), el("Loooong Boi", -185, 60, 0, 1.2), el("Loooong Boi", 185, 60, 0, 1.2),
         el("Spike", 0, 121, 0, 0.8), quarter(0, -20, "ll", 1.2), quarter(0, -20, "lr", 1.2),
@@ -355,13 +367,44 @@ surge_map(
         hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
-    enemies=[(-335, 150), (340, 150), (0, 300), (-120, -50), (120, -50), (0, -165)],
+    enemies=[(-335, 150), (340, 150), (0, 318), (-120, -50), (120, -50), (0, -165)],
     weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 255.0), (230.0, 275.0)],
     rare=[(10, -40)],
+    # A turning antenna above the body, and loose debris drifting around it
+    parts=[
+        gadget("Big Spinner", 0, 230, s=0.85, motor=20), gadget("Box Wide", -90, 175, r=20), gadget("Box A", 95, 170),
+        gadget("Box B", -335, 30), gadget("Box A", 335, 40), gadget("Ball", -40, -110),
+    ],
+)
+
+# A wrecked station hull in zero gravity: broken plates around a core, turbines still turning inside and
+# cargo floating loose through the gaps
+surge_map(
+    "derelict", "Derelict", SPACE, LAVA_ALL, zero_gravity=True,
+    elements=[
+        el("Loooong Boi", -160, 250, 0, 0.9), el("Loooong Boi", 160, 250, 0, 0.9),
+        el("Loooong Boi", -160, -100, 0, 0.9), el("Loooong Boi", 160, -100, 0, 0.9),
+        el("Loooong Boi", -300, 75, 90, 0.9), el("Loooong Boi", 300, 75, 90, 0.9),
+        el("Big Block", 0, 75, 0, 0.9),
+        el("Platform", -272, 75, 0, 0.6), el("Platform", 272, 75, 0, 0.6),
+        hover(0, 205, 0, 0.8),
+    ],
+    players=[(-215, -75), (-115, -75), (115, -75), (215, -75)],
+    enemies=[(-200, 195), (200, 195), (-90, 15), (90, 15), (-210, 20), (210, 20)],
+    weapons=[(-165, -75), (165, -75), (-160, 275), (160, 275), (-272, 95), (272, 95)],
+    rare=[(0, 118)],
+    # A powered turbine and a free one, a lift that rises out of the floor gap, and cargo adrift
+    parts=[
+        gadget("Big Spinner", -150, 120, s=0.7, motor=35), gadget("Big Spinner", 150, 120, s=0.7),
+        gadget("Moving Platform B", 0, -95),
+        gadget("Box A", -80, 200), gadget("Box B", 80, 195), gadget("Box Wide", -235, 150, r=30),
+        gadget("Box A", 235, 145), gadget("Ball", -40, 300), gadget("Ball", 60, -30),
+    ],
 )
 
 
-# A crescent shelters one side of an arena while its open mouth invites long swings
+# A crescent shelters one side of an arena while its open mouth invites long swings; vents under the open side
+# lift fallen spiders back to the low shelves
 surge_map(
     "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.8,
     elements=[
@@ -369,11 +412,16 @@ surge_map(
         el("Platform", -110, 55, 0, 1.3), el("Platform", -50, -95, 0, 1.4),
         el("Platform", 140, -45, -8, 1.6), el("Pentagon", 255, 120, 12, 1.2),
         el("Platform", 20, 235, 0, 1.4),
+        el("AeroTube", 60, -205, 0, 1.5), el("AeroTube", 250, -205, 0, 1.5),
     ],
     players=[(-125, 88), (-95, 88), (120, -10), (155, -15)],
     enemies=[(-260, 290), (-45, 305), (305, 250), (305, 0), (220, -125), (0, 65)],
     weapons=[(-50.0, -60.0), (20.0, 270.0), (-110.0, 90.0), (140.0, -10.0), (-110.0, 250.0), (-230.0, 175.0)],
     rare=[(255, 200)],
+    # A swing hangs under the top shelf, and a spinner turns in the open side
+    parts=[
+        gadget("Swing", 20, 210, s=0.6), gadget("Big Spinner", 119, 56, s=0.6, motor=40),
+    ],
 )
 
 
@@ -433,6 +481,90 @@ def _ground(x, y, polys, reach):
     return None
 
 
+def _crosses(a, b, c, d):
+    def side(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+    return (side(c, d, a) > 0) != (side(c, d, b) > 0) and (side(a, b, c) > 0) != (side(a, b, d) > 0)
+
+
+def _overlap(p, q):
+    """Whether two outlines touch or one contains the other."""
+    if (max(x for x, _ in p) < min(x for x, _ in q) or max(x for x, _ in q) < min(x for x, _ in p)
+            or max(y for _, y in p) < min(y for _, y in q) or max(y for _, y in q) < min(y for _, y in p)):
+        return False
+    if _inside(*p[0], q) or _inside(*q[0], p):
+        return True
+    return any(_crosses(a, b, c, d) for a, b in zip(p, p[1:] + p[:1]) for c, d in zip(q, q[1:] + q[:1]))
+
+
+def _poses(g):
+    """The motions a gadget's moving colliders go through, as (angle, local pivot, local offset, world offset).
+    The first is its rest pose."""
+    o, s = g["o"], g["s"]
+    if o in ("Big Spinner", "Spinner"):
+        return [(a, (0, 0), (0, 0), (0, 0)) for a in range(0, 360, 15)]
+    if o == "Swing":
+        return [(a, (0.3, -0.9), (0, 0), (0, 0)) for a in (0, -60, -40, -20, 20, 40, 60)]
+    if o == "HingePlatform":
+        return [(a, (0, 23), (0, 0), (0, 0)) for a in (0, -70, -50, -30, -10, 10, 30, 50, 70)]
+    if o == "SuspendedPrism":
+        # Its chains are longer than the gap, so it sags below its hooks and sways
+        return [(0, (0, 0), (0, -5.8), (wx, 0)) for wx in (0, -15, -7.5, 7.5, 15)]
+    if o == "DescendingCage":
+        travel = CAGE_TRAVEL * s / GADGET_SCALE[o] + 10
+        return [(0, (0, 0), (0, 0), (0, -travel * t / 8)) for t in range(9)]
+    if o in RAIL_TRAVEL:
+        return [(0, (0, 0), (0, RAIL_TRAVEL[o] * t / 10), (0, 0)) for t in range(11)]
+    return [(0, (0, 0), (0, 0), (0, 0))]
+
+
+def gadget_shapes(g, shapes, pose=None):
+    """World outlines of a gadget's solid colliders as (moving, outline), with its moving ones in the pose."""
+    angle, (vx, vy), (lx, ly), (wx, wy) = pose or _poses(g)[0]
+    anchors = ANCHORS.get(g["o"], set())
+    c, sn = math.cos(math.radians(g["r"])), math.sin(math.radians(g["r"]))
+    ca, sa = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+    out, seen = [], set()
+    for i, shape in enumerate(shapes[g["o"]]["shapes"]):
+        key = tuple(map(tuple, shape["outline"]))
+        if shape["trigger"] or key in seen:
+            continue
+        seen.add(key)
+        moving = i not in anchors
+        pts = []
+        for px, py in shape["outline"]:
+            if moving:
+                qx, qy = px - vx, py - vy
+                px, py = vx + qx * ca - qy * sa + lx, vy + qx * sa + qy * ca + ly
+            px, py = px * g["s"], py * g["s"]
+            x, y = g["x"] + px * c - py * sn, g["y"] + px * sn + py * c
+            pts.append((x + wx, y + wy) if moving else (x, y))
+        out.append((moving, pts))
+    return out
+
+
+def sweep(g, shapes):
+    """Every outline a gadget's colliders pass through."""
+    out = [pts for pose in _poses(g) for moving, pts in gadget_shapes(g, shapes, pose) if moving]
+    return out + [pts for moving, pts in gadget_shapes(g, shapes) if not moving]
+
+
+def motion(g, shapes):
+    """A cue for a gadget's motion: ("circle", x, y, radius) for spinners, swings and hinges, else ("path", points)."""
+    poses = _poses(g)
+    if g["o"] in ("Big Spinner", "Spinner", "Swing", "HingePlatform"):
+        pv = poses[0][1]
+        c, sn = math.cos(math.radians(g["r"])), math.sin(math.radians(g["r"]))
+        cx, cy = g["x"] + (pv[0] * c - pv[1] * sn) * g["s"], g["y"] + (pv[0] * sn + pv[1] * c) * g["s"]
+        reach = max(math.hypot(x - cx, y - cy) for moving, pts in gadget_shapes(g, shapes) if moving for x, y in pts)
+        return "circle", cx, cy, reach
+    centers = []
+    for pose in poses:
+        pts = [p for moving, outline in gadget_shapes(g, shapes, pose) if moving for p in outline]
+        centers.append((sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts)))
+    return "path", sorted(centers, key=lambda p: (p[1], p[0]))
+
+
 HOVER = "FloatingPlatformWide Variant"
 SPAWNS = ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner")
 
@@ -455,7 +587,8 @@ def camera(m, shapes):
 
 
 def check_gadgets(m, safe):
-    """Pads need footing; portals come in pairs, stay off beginner maps and drop their exits onto solid ground."""
+    """Pads need footing; portals come in pairs, stay off beginner maps and drop their exits onto solid ground.
+    Gates are paired with an exit of the same rotation, so velocity carries straight through."""
     problems = 0
     spawns = [(e["x"], e["y"]) for e in m["elements"] if e["o"] in SPAWNS]
     enemies = [(p["x"], p["y"]) for p in m["enemies"]]
@@ -467,31 +600,90 @@ def check_gadgets(m, safe):
                 print(f'{m["id"]}: Jump Pad at ({e["x"]}, {e["y"]}) has no footing'); problems += 1
             if any(math.hypot(x - e["x"], y - e["y"]) < 30 for x, y in spawns):
                 print(f'{m["id"]}: Jump Pad at ({e["x"]}, {e["y"]}) is under a spawn'); problems += 1
-        if e["o"] == "PortalPoint":
-            pair = [p for p in e.get("with", []) if p["o"] == "PortalPoint Variant"]
+        if e["o"] in PORTALS:
+            pair = [p for p in e.get("with", []) if p["o"] == PORTALS[e["o"]]]
             if len(pair) != 1:
                 print(f'{m["id"]}: portal at ({e["x"]}, {e["y"]}) needs exactly one linked exit'); problems += 1
+            elif e["o"] == "PortalLine" and abs(pair[0]["r"] - e["r"]) > 0.01:
+                print(f'{m["id"]}: gate at ({e["x"]}, {e["y"]}) turns what passes through it, unlike its exit'); problems += 1
             ends += [e] + pair
-        elif e["o"] == "PortalPoint Variant":
+        elif e["o"] in PORTALS.values():
             print(f'{m["id"]}: portal exit at ({e["x"]}, {e["y"]}) is not linked'); problems += 1
     if ends and m["beginner"]:
         print(f'{m["id"]}: beginner maps get no portals'); problems += 1
     for e in ends:
         x, y = e["x"], e["y"]
-        if not (-440 < x < 440 and -150 < y < 330):
+        line = e["o"].startswith("PortalLine")
+        # A point portal is checked at its center; a gate along its whole length, which may stand on a beam
+        points = gate_points(e) if line else [(x, y)]
+        if any(not (-440 < px < 440 and -150 < py < 330) for px, py in points):
             print(f'{m["id"]}: portal at ({x}, {y}) is near the lava'); problems += 1
-        if min(_distance(x, y, pts) for _, pts in safe) < 20:
+        if any(_inside(px, py, pts) or _distance(px, py, pts) < (3 if line else 20) for px, py in points for _, pts in safe):
             print(f'{m["id"]}: portal at ({x}, {y}) is jammed against a solid'); problems += 1
-        if any(math.hypot(px - x, py - y) < 70 for px, py in spawns):
+        near = 45 if line else 70
+        if any(math.hypot(sx - px, sy - py) < near for sx, sy in spawns for px, py in points):
             print(f'{m["id"]}: portal at ({x}, {y}) is too close to a player or weapon spawn'); problems += 1
-        if any(math.hypot(px - x, py - y) < 60 for px, py in enemies):
+        if any(math.hypot(sx - px, sy - py) < near - 10 for sx, sy in enemies for px, py in points):
             print(f'{m["id"]}: portal at ({x}, {y}) is too close to an enemy spawn'); problems += 1
         # Velocity carries through, so a spider falling into one end lands below the other
-        gap = _ground(x, y, safe, 80)
-        under = [o for o, pts in safe if gap is not None and _inside(x, y - gap, pts)]
+        lx, ly = min(points, key=lambda p: p[1])
+        gap = _ground(lx, ly, safe, 80)
+        under = [o for o, pts in safe if gap is not None and _inside(lx, ly - gap, pts)]
         if gap is None or any(o.startswith("Death") or o == HOVER for o in under):
             print(f'{m["id"]}: portal at ({x}, {y}) has no solid footing below'); problems += 1
     return problems
+
+
+def check_parts(m, shapes, safe, box):
+    """Gadgets must move clear of the solids, each other, spawns, portals and pads, and stay in the camera box.
+    Loose boxes and balls only have to start clear, above footing on a gravity map."""
+    problems = 0
+    spawns = [(e["x"], e["y"]) for e in m["elements"] if e["o"] in SPAWNS]
+    enemies = [(p["x"], p["y"]) for p in m["enemies"]]
+    gates = [q for e in m["elements"] if e["o"] in PORTALS for p in [e] + e.get("with", [])
+             for q in (gate_points(p) if p["o"].startswith("PortalLine") else [(p["x"], p["y"])])]
+    pads = [(e["x"], e["y"]) for e in m["elements"] if e["o"] in ("Jump Pad", "AeroTube")]
+    keep_clear = ([(p, 22, "a player or weapon spawn") for p in spawns] + [(p, 30, "an enemy spawn") for p in enemies]
+                  + [(p, 12, "a portal") for p in gates] + [(p, 15, "a pad or vent") for p in pads])
+    swept = []
+    for g in m.get("parts", []):
+        label = f'{m["id"]}: {g["o"]} at ({g["x"]}, {g["y"]})'
+        if g["o"] not in GADGET_SCALE or g["o"] not in shapes:
+            print(f"{label} is not a known gadget"); problems += 1
+            continue
+        if g["o"] in HANGING and (m["zeroGravity"] or abs(g["r"]) > 0.01):
+            print(f"{label} hangs, so it needs gravity and no rotation"); problems += 1
+        if "motor" in g and g["o"] != "Big Spinner":
+            print(f"{label} has no motor to drive"); problems += 1
+        polys = sweep(g, shapes)
+        if g["o"] in LOOSE:
+            if any(_overlap(p, q) for p in polys for _, q in safe):
+                print(f"{label} starts inside a solid"); problems += 1
+            low = min(y for p in polys for _, y in p)
+            vent = any(e["o"] == "AeroTube" and abs(e["x"] - g["x"]) < 25 * e["sx"] and e["y"] < g["y"] for e in m["elements"])
+            if not m["zeroGravity"] and not vent and _ground(g["x"], low - 1, safe, 60) is None:
+                print(f"{label} has no footing to land on"); problems += 1
+        else:
+            hit = next((o for p in polys for o, q in safe if _overlap(p, q)), None)
+            if hit:
+                print(f"{label} runs into a {hit}"); problems += 1
+            if any(not (box["xmin"] <= x <= box["xmax"] and box["ymin"] <= y <= box["ymax"]) for p in polys for x, y in p):
+                print(f"{label} moves out of the camera box"); problems += 1
+        for (x, y), need, what in keep_clear:
+            if any(_inside(x, y, p) or _distance(x, y, p) < need for p in polys):
+                print(f"{label} comes within {need} of {what} at ({x:.0f}, {y:.0f})"); problems += 1
+        for other, others in swept:
+            if any(_overlap(p, q) for p in polys for q in others):
+                print(f'{label} collides with the {other["o"]} at ({other["x"]}, {other["y"]})'); problems += 1
+        swept.append((g, polys))
+    return problems
+
+
+def gate_points(e, count=9):
+    """Points along a gate, end to end."""
+    c, sn = math.cos(math.radians(e["r"])), math.sin(math.radians(e["r"]))
+    half = GATE_HALF * e["sx"]
+    return [(e["x"] + c * half * t, e["y"] + sn * half * t) for t in (2 * i / (count - 1) - 1 for i in range(count))]
 
 
 def check_spawn_distribution(m):
@@ -555,6 +747,7 @@ def check(maps, shapes):
         if max(players) - min(players) > MAX_PLAYER_SPREAD:
             print(f'{m["id"]}: player spawns are {max(players) - min(players):.0f} apart (at most {MAX_PLAYER_SPREAD})'); problems += 1
         box = camera(m, shapes)
+        problems += check_parts(m, shapes, safe, box)
         for p in m["enemies"]:
             # Enemies appear where the camera can show them, as on the base-game arenas
             if not (box["xmin"] < p["x"] < box["xmax"] and box["ymin"] < p["y"] < box["ymax"]):
@@ -598,12 +791,21 @@ def preview(maps, out_dir, shapes):
                 ax.plot(e["x"], e["y"], "D", color="gold" if "Rare" in e["o"] else "#2a2", ms=6)
             elif e["o"] in ("Jump Pad", "AeroTube"):
                 ax.plot(e["x"], e["y"], "^", color="#f80", ms=10)
-            elif e["o"] == "PortalPoint":
+            elif e["o"] in PORTALS:
                 for p in [e] + e.get("with", []):
-                    ax.add_patch(plt.Circle((p["x"], p["y"]), 10, fill=False, ec="#e6b800", lw=2))
-                    ax.add_patch(plt.Circle((p["x"], p["y"]), 15, fill=False, ec="#e6b800", lw=0.8, ls=":"))
+                    if p["o"].startswith("PortalLine"):
+                        ends = gate_points(p, 2)
+                        ax.plot([q[0] for q in ends], [q[1] for q in ends], color="#e6b800", lw=3)
+                    else:
+                        ax.add_patch(plt.Circle((p["x"], p["y"]), 10, fill=False, ec="#e6b800", lw=2))
+                        ax.add_patch(plt.Circle((p["x"], p["y"]), 15, fill=False, ec="#e6b800", lw=0.8, ls=":"))
                 for p in e.get("with", []):
                     ax.plot([e["x"], p["x"]], [e["y"], p["y"]], ":", color="#e6b800", lw=1)
+        for g in m.get("parts", []):
+            for pts in sweep(g, shapes):
+                ax.add_patch(Polygon(pts, closed=True, fill=False, ec="#b07cff", lw=0.4, alpha=0.5))
+            for _, pts in gadget_shapes(g, shapes):
+                ax.add_patch(Polygon(pts, closed=True, fc="#8a4fff", ec="none", alpha=0.9))
         for p in m["enemies"]:
             ax.plot(p["x"], p["y"], "x", color="red", ms=9, mew=2)
         ax.set_xlim(-520, 520); ax.set_ylim(-260, 400); ax.set_aspect("equal")

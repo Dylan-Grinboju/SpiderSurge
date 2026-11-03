@@ -30,6 +30,15 @@ class MapSpawnsTests(unittest.TestCase):
                 self.assertEqual(source, shipped, "Regenerate JSON from layouts.py")
                 self.assertEqual((0, ""), self.problems(shipped))
 
+    def test_every_part_is_a_known_gadget_with_the_fields_surge_parts_reads(self):
+        fields = {"o", "x", "y", "r", "s", "motor", "phase"}
+        for m in layouts.MAPS:
+            for g in m["parts"]:
+                with self.subTest(map=m["id"], part=g["o"]):
+                    self.assertIn(g["o"], layouts.GADGET_SCALE)
+                    self.assertLessEqual(set(g), fields)
+                    self.assertFalse(m["zeroGravity"] and g["o"] in layouts.HANGING)
+
     def test_rejects_original_two_regular_weapon_layout(self):
         arena = self.trampoline()
         weapons = [e for e in arena["elements"] if e["o"] == "Weapon Spawner A"]

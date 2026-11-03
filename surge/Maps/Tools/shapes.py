@@ -18,13 +18,19 @@ NAMES = [
     "DeathQuarter", "DeathSpike", "DeathPentagon", "Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner",
     "Jump Pad", "AeroTube", "DeathZoneBlock", "DeathZoneBall", "DeathZoneLongBoi", "DeathZoneNarrowBlock",
     "DeathZoneTriangle", "DeathZoneSpike", "FloatingPlatformWide Variant", "PortalPoint", "PortalPoint Variant",
+    "PortalLine", "PortalLine Variant",
+]
+# The base game's networked level gadgets, which SurgeParts spawns beside the editor elements
+GADGETS = [
+    "Box A", "Box B", "Box Wide", "Ball", "Big Spinner", "Spinner", "Swing", "SuspendedPrism", "DescendingCage",
+    "Moving Platform A", "Moving Platform B", "HingePlatform",
 ]
 
 
 def extract(uy, lv):
     ctx = lv.Context()
     out = {}
-    for name in NAMES:
+    for name in NAMES + GADGETS:
         path = os.path.join(uy.ASSETS, "GameObject", name + ".prefab")
         if not os.path.exists(path):
             print("missing", name)
@@ -64,4 +70,4 @@ if __name__ == "__main__":
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "shapes.json"), "w", encoding="utf-8") as f:
         json.dump(extract(uy, lv), f, indent=1)
-    print(f"{len(NAMES)} elements written to {args.out}")
+    print(f"{len(NAMES) + len(GADGETS)} elements written to {args.out}")

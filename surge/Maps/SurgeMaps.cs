@@ -33,6 +33,19 @@ namespace SpiderSurge.Maps
         [DataMember] public List<MapPart> with;
     }
 
+    // A base-game level gadget, placed by its prefab root at a uniform scale
+    [DataContract]
+    public class MapGadget
+    {
+        [DataMember] public string o;
+        [DataMember] public float x;
+        [DataMember] public float y;
+        [DataMember] public float r;
+        [DataMember] public float s;
+        [DataMember] public float motor;
+        [DataMember] public int phase;
+    }
+
     [DataContract]
     public class MapPoint
     {
@@ -57,7 +70,9 @@ namespace SpiderSurge.Maps
         [DataMember] public int background;
         [DataMember] public int lava;
         [DataMember] public bool beginner;
+        [DataMember] public bool zeroGravity;
         [DataMember] public List<MapElement> elements;
+        [DataMember] public List<MapGadget> parts;
         [DataMember] public List<MapPoint> enemies;
         [DataMember] public MapRect camera;
 
@@ -195,6 +210,8 @@ namespace SpiderSurge.Maps
             level.AuthorName = "thmrgnd";
             level.serializationMapName = SerializationMapMame.NonPlayable;
             level.beginnerFriendly = map.beginner;
+            // The game sets gravity from the active level, which every peer resolves to the current Surge map
+            level.zeroGravity = map.zeroGravity;
             level.thumbnail = IconLoader.GetIcon("map_" + map.id) ?? LevelController.instance?.customMapGameLevel?.thumbnail;
             level.hideFlags = HideFlags.DontUnloadUnusedAsset;
             _levels.Add(level);
@@ -286,7 +303,8 @@ namespace SpiderSurge.Maps
             Physics2D.SyncTransforms();
         }
 
-        // Host only: the enemy spawn points the custom map elements don't have, and a pathfinding graph that knows the new walls
+        // Host only: the enemy spawn points and gadgets the custom map elements don't have, and a pathfinding graph that
+        // knows the new walls
         public static void OnMapBuilt(SerializedMap serialized)
         {
             SurgeMap map = Current;
@@ -309,6 +327,7 @@ namespace SpiderSurge.Maps
                 EnemySpawns(spawner) = spawns.ToArray();
                 spawner.RandomizeSpawns();
             }
+            SurgeParts.Build(map);
             Physics2D.SyncTransforms();
             Rescan(map);
         }
@@ -363,6 +382,7 @@ namespace SpiderSurge.Maps
                 minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y);
             }
             foreach (MapElement element in map.elements) Add(element.x, element.y);
+            if (map.parts != null) foreach (MapGadget gadget in map.parts) Add(gadget.x, gadget.y);
             foreach (MapPoint point in map.enemies) Add(point.x, point.y);
             return Rect.MinMaxRect(minX - GraphPadding, minY - GraphPadding, maxX + GraphPadding, maxY + GraphPadding);
         }

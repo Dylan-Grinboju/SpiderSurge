@@ -58,9 +58,12 @@ def render(arena, shapes):
         if name.startswith("Death") or name in ("HoneyComb", "HoneycombSector", layouts.HOVER):
             color = (255, 120, 22, 140) if name.startswith("Death") else (55, 185, 210, 90) if name != layouts.HOVER else (40, 110, 255, 120)
             lights.line([point(*p) for p in points + points[:1]], fill=color, width=8)
-    for x, y in portals(arena):
-        cx, cy = point(x, y)
-        lights.ellipse((cx - 22, cy - 22, cx + 22, cy + 22), outline=(255, 223, 0, 170), width=10)
+    for p in portals(arena):
+        if p["o"].startswith("PortalLine"):
+            lights.line([point(*q) for q in layouts.gate_points(p, 2)], fill=(255, 223, 0, 170), width=16)
+        else:
+            cx, cy = point(p["x"], p["y"])
+            lights.ellipse((cx - 22, cy - 22, cx + 22, cy + 22), outline=(255, 223, 0, 170), width=10)
     image = Image.alpha_composite(image.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(8)))
     draw = ImageDraw.Draw(image)
     for name, points in polygons:
@@ -97,17 +100,41 @@ def render(arena, shapes):
             for y in (10, 25, 40):
                 draw.line([local(-7, y), local(0, y + 7), local(7, y)], fill=(53, 107, 128), width=2)
 
-    for x, y in portals(arena):
-        cx, cy = point(x, y)
-        draw.ellipse((cx - 14, cy - 14, cx + 14, cy + 14), outline=(255, 223, 0), width=4)
+    for p in portals(arena):
+        if p["o"].startswith("PortalLine"):
+            draw.line([point(*q) for q in layouts.gate_points(p, 2)], fill=(255, 223, 0), width=6)
+        else:
+            cx, cy = point(p["x"], p["y"])
+            draw.ellipse((cx - 14, cy - 14, cx + 14, cy + 14), outline=(255, 223, 0), width=4)
+
+    # Gadgets: a faint cue for how each one moves, then its rest silhouette
+    for g in arena.get("parts", []):
+        if g["o"] in layouts.LOOSE:
+            continue
+        cue = layouts.motion(g, shapes)
+        if cue[0] == "circle":
+            _, x, y, reach = cue
+            cx, cy = point(x, y)
+            r = reach * SIZE[0] / width
+            hanging = g["o"] in ("Swing", "HingePlatform")
+            draw.arc((cx - r, cy - r, cx + r, cy + r), *((25, 155) if hanging else (0, 360)), fill=(120, 80, 200), width=3)
+        else:
+            path = [point(*p) for p in cue[1]]
+            draw.line([path[0], path[-1]], fill=(120, 80, 200), width=4)
+            for px, py in (path[0], path[-1]):
+                draw.ellipse((px - 5, py - 5, px + 5, py + 5), fill=(120, 80, 200))
+    for g in arena.get("parts", []):
+        for _, points in layouts.gadget_shapes(g, shapes):
+            outline = [point(*p) for p in points]
+            draw.polygon(outline, fill=(24, 12, 44))
+            draw.line(outline + outline[:1], fill=(176, 124, 255), width=2, joint="curve")
 
     return image.convert("RGB").resize((320, 180), Image.Resampling.LANCZOS)
 
 
 def portals(arena):
     """Both ends of every portal pair."""
-    return [(p["x"], p["y"]) for e in arena["elements"] if e["o"] == "PortalPoint"
-            for p in [e] + e.get("with", [])]
+    return [p for e in arena["elements"] if e["o"] in layouts.PORTALS for p in [e] + e.get("with", [])]
 
 
 if __name__ == "__main__":
