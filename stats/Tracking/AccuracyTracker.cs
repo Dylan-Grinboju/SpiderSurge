@@ -33,6 +33,11 @@ namespace StatsMod
             return name;
         }
 
+        // The weapon's own name, as its accuracy is kept, or the attack's category when no weapon is known.
+        // A grenade destroyed by its own blast still reads its name, so the check skips Unity's destroyed-object null
+        internal static string WeaponKey(Weapon weapon, string category) =>
+            !ReferenceEquals(weapon, null) ? WeaponName(weapon.serializationWeaponName) : category;
+
         public static void Fire(Weapon weapon, GameObject source)
         {
             try

@@ -380,4 +380,22 @@ namespace StatsMod
             }
         }
     }
+
+    // The host picks up weapons for every spider; Storage handing a weapon back doesn't go through here
+    [HarmonyPatch(typeof(WeaponManager), "TryPickup")]
+    class WeaponManagerTryPickupPatch
+    {
+        static void Postfix(WeaponManager __instance)
+        {
+            try
+            {
+                if (__instance.equippedWeapon == null || !GameSessionManager.IsRecording) return;
+                PlayerTracker.Instance.IncrementWeaponPickup(Owners.ManagerPlayer(__instance), __instance.equippedWeapon);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error tracking weapon pickup: {ex.Message}");
+            }
+        }
+    }
 }

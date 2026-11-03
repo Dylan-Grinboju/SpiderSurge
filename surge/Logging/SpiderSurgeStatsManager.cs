@@ -189,6 +189,7 @@ namespace SpiderSurge.Logging
                                 stats.WeaponHits[entry.Key] = entry.Value;
                             }
                         }
+                        AddWeapons(stats, data);
                     }
 
                     snapshot.PlayerStats.Add(stats);
@@ -324,6 +325,22 @@ namespace SpiderSurge.Logging
                 Purchases = new List<MeterPurchaseRecord>(_meterPurchases)
             };
             return report;
+        }
+
+        private static void AddWeapons(PlayerStats stats, StatsMod.PlayerTracker.PlayerData data)
+        {
+            foreach (var entry in data.UseByWeapon)
+            {
+                if (entry.Value.Kills == 0 && entry.Value.Shields == 0 && entry.Value.Pickups == 0) continue;
+                stats.Weapons[entry.Key] = new WeaponRecord { Kills = entry.Value.Kills, Shields = entry.Value.Shields, Pickups = entry.Value.Pickups };
+            }
+            foreach (var entry in data.AccuracyByWeapon)
+            {
+                if (entry.Value.ShotsFired == 0) continue;
+                if (!stats.Weapons.TryGetValue(entry.Key, out WeaponRecord record)) stats.Weapons[entry.Key] = record = new WeaponRecord();
+                record.Fired = entry.Value.ShotsFired;
+                record.Hit = entry.Value.ShotsHit;
+            }
         }
 
         // A Null Field that blocked a hit while the spider had no shield, so the hit would have killed it; it counts in the wave the hit landed in

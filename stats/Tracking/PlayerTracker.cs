@@ -30,6 +30,7 @@ namespace StatsMod
             public bool Friendly;
             internal object CleanHandsHarm;
             public string Weapon;
+            internal string WeaponKey;
             internal bool Streak;
             internal int StreakSerial;
             internal bool Airborne;
@@ -147,6 +148,8 @@ namespace StatsMod
             public Dictionary<string, int> WeaponHits { get; set; }
             public WeaponAccuracy ShootingAccuracy { get; } = new WeaponAccuracy();
             public Dictionary<string, WeaponAccuracy> AccuracyByWeapon { get; } = new Dictionary<string, WeaponAccuracy>();
+            // WeaponHits counts mod weapons in the game weapon's category; this keeps every weapon apart
+            public Dictionary<string, WeaponUse> UseByWeapon { get; } = new Dictionary<string, WeaponUse>();
             public Dictionary<string, int> EnemyKills { get; set; }
             public Dictionary<string, int> DeathsPerMap { get; set; }
 
@@ -430,6 +433,7 @@ namespace StatsMod
                 entry.Value.RemoteAlive = null;
                 entry.Value.ShootingAccuracy.Reset();
                 entry.Value.AccuracyByWeapon.Clear();
+                entry.Value.UseByWeapon.Clear();
                 entry.Value.Deaths = 0;
                 entry.Value.LavaDeaths = 0;
                 entry.Value.Kills = 0;
@@ -573,6 +577,10 @@ namespace StatsMod
             {
                 data.WeaponHits[credit.Weapon] = hits - 1;
             }
+            if (credit.WeaponKey != null && data.UseByWeapon.TryGetValue(credit.WeaponKey, out WeaponUse use) && use.Kills > 0)
+            {
+                use.Kills--;
+            }
             if (data.EnemyKills.TryGetValue("Player", out int kills) && kills > 0)
             {
                 data.EnemyKills["Player"] = kills - 1;
@@ -619,9 +627,25 @@ namespace StatsMod
             if (TryRecord(player, out PlayerData data)) data.LavaDeaths++;
         }
 
-        public void IncrementWeaponHit(PlayerController player, string weaponName)
+        public void IncrementWeaponHit(PlayerController player, string weaponName, string weaponKey, bool shield = false)
         {
-            if (TryRecord(player, out PlayerData data)) Bump(data.WeaponHits, weaponName, "weapon", nameof(PlayerData.WeaponHits));
+            if (!TryRecord(player, out PlayerData data)) return;
+            Bump(data.WeaponHits, weaponName, "weapon", nameof(PlayerData.WeaponHits));
+            if (weaponKey == null) return;
+            WeaponUse use = Use(data, weaponKey);
+            if (shield) use.Shields++;
+            else use.Kills++;
+        }
+
+        public void IncrementWeaponPickup(PlayerController player, Weapon weapon)
+        {
+            if (weapon != null && TryRecord(player, out PlayerData data)) Use(data, AccuracyTracker.WeaponKey(weapon, null)).Pickups++;
+        }
+
+        private static WeaponUse Use(PlayerData data, string weaponKey)
+        {
+            if (!data.UseByWeapon.TryGetValue(weaponKey, out WeaponUse use)) data.UseByWeapon[weaponKey] = use = new WeaponUse();
+            return use;
         }
 
         public void IncrementEnemyKillByName(PlayerController player, string enemyName)
