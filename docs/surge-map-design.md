@@ -58,6 +58,14 @@ The custom map scene gives every map the same 930 × 530 camera box, about three
 
 Jump pads keep their force on a scaled map, so they throw relatively higher: on Trampoline a pad launch peaks at y 117, level with the upper platforms and well inside the 236 camera top.
 
+## Spawn supply
+
+The vanilla endless survival pool contains 34 arenas, averaging 7 weapon points and 6.12 enemy points; 31 of those arenas have exactly 6 enemy points. Across all 55 vanilla arenas the averages are 7.04 weapons and 6.02 enemies. Counts include active, enabled weapon spawners and active objects tagged `EnemySpawn`, excluding lobby and parkour scenes.
+
+Every Surge arena now has **6 regular weapon points, 1 rare weapon point and 6 enemy points**. Previously, twelve arenas had only 2 regular weapons and the other two had 3; enemy points numbered 7–8. The new weapon points cover lower recovery routes, intermediate footing and upper platforms. Trampoline gets two points at the foot of the bowl and two along its slopes, in addition to the upper pair and rare point. Thin Ice keeps two regular points over its permanent floor after the shelves break.
+
+All fourteen existing geometries can support this supply without additional platforms. Weapon points stay at least 60 units apart; enemy points stay at least 90 apart and 60 from initial player spawns. The checker rejects insufficient counts, stacked points and missing weapon supply near the lowest player route, in addition to its existing footing, hazard, gadget and camera checks. An arena that cannot meet these requirements within its intended geometry should be removed from the roster.
+
 ## Gadgets
 
 The map editor's gadgets give several arenas a movement idea beyond their silhouette. They are the game's own networked elements, so the host runs them and clients see the result.
@@ -91,6 +99,7 @@ All 14 cards use consistent geometry previews, each framed to its map's camera b
 python surge/Maps/Tools/shapes.py <scratch> --scenedump <workspace>/SceneDump
 python surge/Maps/Tools/layouts.py --shapes <scratch>
 python surge/Maps/Tools/thumbnails.py <scratch>
+python tests/MapSpawns.Tests.py
 ```
 
 `--shapes` is required, because the camera boxes are fitted to the collider outlines. The checker rejects unknown collider data, unsupported spawn positions, solid overlaps, hazard or hover-pad footing, insufficient enemy clearance, enemy spawns outside the camera box, player spawns more than 500 apart, unpaired portals, portals on beginner maps or without footing below their exits, and jump pads without footing. A failure returns a nonzero exit code before writing layouts. `--only id,id` validates and writes only those maps. `--preview` also draws collider diagrams and requires matplotlib.
