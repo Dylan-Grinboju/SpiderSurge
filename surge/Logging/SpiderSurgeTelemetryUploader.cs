@@ -272,8 +272,22 @@ namespace SpiderSurge.Logging
                 "\"killsDuringAbility\":" + player.KillsDuringAbility + "," +
                 "\"meterCharge\":" + player.MeterCharge + "," +
                 "\"enemyKills\":" + JsonCounts(player.EnemyKills) + "," +
-                "\"weaponHits\":" + JsonCounts(player.WeaponHits) +
+                "\"weaponHits\":" + JsonCounts(player.WeaponHits) + "," +
+                "\"weapons\":" + BuildWeaponsJson(player.Weapons) +
                 "}";
+        }
+
+        private static string BuildWeaponsJson(Dictionary<string, WeaponRecord> weapons)
+        {
+            return "{" + string.Join(",", (weapons ?? new Dictionary<string, WeaponRecord>())
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => "\"" + EscapeJson(entry.Key) + "\":{" +
+                    "\"kills\":" + entry.Value.Kills + "," +
+                    "\"shields\":" + entry.Value.Shields + "," +
+                    "\"fired\":" + entry.Value.Fired + "," +
+                    "\"hit\":" + entry.Value.Hit + "," +
+                    "\"pickups\":" + entry.Value.Pickups +
+                    "}")) + "}";
         }
 
         // Titles shown on the end screen come first, so a cut list still has all of them

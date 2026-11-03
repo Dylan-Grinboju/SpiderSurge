@@ -81,6 +81,17 @@ namespace SpiderSurge.Logging
         public int MeterCharge { get; set; }
         public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> WeaponHits { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, WeaponRecord> Weapons { get; set; } = new Dictionary<string, WeaponRecord>();
+    }
+
+    // Each weapon under its own name, mod weapons included, unlike WeaponHits' categories
+    public class WeaponRecord
+    {
+        public int Kills { get; set; }
+        public int Shields { get; set; }
+        public int Fired { get; set; }
+        public int Hit { get; set; }
+        public int Pickups { get; set; }
     }
 
     public class PerkChoiceRecord

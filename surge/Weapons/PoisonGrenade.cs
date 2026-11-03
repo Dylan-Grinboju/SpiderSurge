@@ -123,6 +123,7 @@ namespace SpiderSurge.Weapons
         private bool _dying;
 
         internal PlayerController Owner { get; private set; }
+        internal Weapon Source { get; private set; }
 
         internal void Take(DeathCloud cloud)
         {
@@ -141,6 +142,7 @@ namespace SpiderSurge.Weapons
             _until = Time.time + Values.CloudDuration;
             // Like the Grenade's blast, the cloud is the player's who armed it, or else its last holder's
             if (Bursting != null) Owner = Owners.ExplosiveOwner(Bursting);
+            Source = Bursting;
             if (_layers == 0) _layers = LayerMask.GetMask("Player", "Enemy");
         }
 

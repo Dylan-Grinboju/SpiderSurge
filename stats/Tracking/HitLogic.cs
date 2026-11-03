@@ -239,7 +239,7 @@ namespace StatsMod
 
             if (victim != attacker)
             {
-                StoreHit(lastPlayerHits, id, attacker, CurrentWeaponName, null);
+                StoreHit(lastPlayerHits, id, attacker, CurrentWeaponName, CurrentWeapon);
             }
             else if (damage || stun)
             {
@@ -414,7 +414,7 @@ namespace StatsMod
 
             Logger.LogInfo($"Recording kill for {PlayerLabel(hit.Player)}, target:{enemy.name}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
             PlayerTracker.Instance.IncrementPlayerKill(hit.Player);
-            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
+            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon, WeaponKey(hit));
             if (hit.Weapon == PulseWeapon && hit.DeathZoneDeadline.HasValue && Parts.Surge.Running)
             {
                 SpiderSurge.SurgeAchievements.Unlock(SpiderSurge.SurgeAchievements.Begone, hit.Player);
@@ -473,7 +473,7 @@ namespace StatsMod
 
             Logger.LogDebug($"Recording shield hit on enemy {enemy.name} by {PlayerLabel(hit.Player)}");
             PlayerTracker.Instance.IncrementEnemyShieldsTakenDown(hit.Player);
-            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
+            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon, WeaponKey(hit), shield: true);
         }
 
         public static void OnPlayerShieldBroken(SpiderHealthSystem spider)
@@ -488,7 +488,7 @@ namespace StatsMod
             Logger.LogDebug($"Recording {(friendly ? "friendly" : "opponent")} shield hit by {PlayerLabel(hit.Player)}");
             if (friendly) PlayerTracker.Instance.IncrementFriendlyShieldsHit(hit.Player);
             else PlayerTracker.Instance.IncrementEnemyShieldsTakenDown(hit.Player);
-            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
+            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon, WeaponKey(hit), shield: true);
         }
 
         public static void OnPlayerDeath(SpiderHealthSystem spider)
@@ -505,8 +505,9 @@ namespace StatsMod
             Logger.LogInfo($"Recording {(friendly ? "friendly" : "opponent")} kill for {PlayerLabel(hit.Player)}, weapon:{hit.Weapon}, {Time.time - hit.Time:F2}s after the hit");
             PlayerTracker.KillCredit credit = CreditPlayerKill(hit.Player, friendly);
             credit.Weapon = hit.Weapon;
+            credit.WeaponKey = WeaponKey(hit);
             deathCredits[victim] = credit;
-            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon);
+            PlayerTracker.Instance.IncrementWeaponHit(hit.Player, hit.Weapon, credit.WeaponKey);
             PlayerTracker.Instance.IncrementEnemyKillByName(hit.Player, "Player");
         }
 
@@ -547,6 +548,8 @@ namespace StatsMod
             deathCredits[victim] = CreditPlayerKill(caster, friendly);
             PlayerTracker.Instance.IncrementEnemyKillByName(caster, "Player");
         }
+
+        private static string WeaponKey(HitRecord hit) => AccuracyTracker.WeaponKey(hit.WeaponObject, hit.Weapon);
 
         private static void StoreHit(Dictionary<int, HitRecord> hits, int targetId, PlayerController player, string weaponName, Weapon weapon)
         {
