@@ -8,7 +8,7 @@ using Values = SpiderSurge.Consts.Values.PoisonGrenade;
 
 namespace SpiderSurge.Weapons
 {
-    // A Grenade that bursts into a blue copy of the Hornet Shaman's cloud, which stays where it burst
+    // A Grenade that bursts into a cloud of poison gas, which stays where it burst and kills like the Hornet Shaman's cloud
     public static class PoisonGrenade
     {
         private const string SpriteResource = "SpiderSurge.PoisonGrenadeSprite";
@@ -23,7 +23,7 @@ namespace SpiderSurge.Weapons
             var grenade = CustomWeapons.FindPrefab<Grenade>("Grenade");
             var cloud = CustomWeapons.FindPrefab<DeathCloud>("DeathSmoke");
             if (grenade == null || cloud == null) return;
-            Prefab = Build(grenade, BuildCloud(cloud));
+            Prefab = Build(grenade, BuildCloud(cloud, CustomWeapons.FindPrefab<Flare>("Flare")));
         }
 
         private static GameObject Build(Grenade source, GameObject cloud)
@@ -40,79 +40,44 @@ namespace SpiderSurge.Weapons
             Transform inactiveLights = go.transform.Find("InactiveLights");
             if (inactiveLights != null) inactiveLights.gameObject.SetActive(false);
             CustomWeapons.ReplaceIndicator(go, grenade.lights, "SpiderSurge.PoisonGrenadeArmedSprite", Values.PixelsPerUnit);
+            // The fuse flashes a green glow, as the Grenade's flashes red
+            if (grenade.lights != null)
+            {
+                var fuse = new GameObject("FuseLight");
+                fuse.transform.SetParent(grenade.lights.transform, false);
+                fuse.transform.position = go.transform.position;
+                SurgeVfx.PointLight(fuse, Values.Color, Values.FuseLightIntensity, Values.FuseLightRadius);
+            }
             CustomPrefabNet.RegisterWeapon(go, Values.Name);
             return go;
         }
 
-        // The Shaman's cloud without its network parts or chase, recoloured blue
-        private static GameObject BuildCloud(DeathCloud source)
+        // The Shaman's cloud keeps only its sound sources, so they play through the game's mixer: the Flare's ignition and hiss replace its thunder
+        private static GameObject BuildCloud(DeathCloud source, Flare flare)
         {
             GameObject go = Object.Instantiate(source.gameObject, CustomWeapons.Holder);
             go.name = Values.CloudName;
             DeathCloud vanilla = go.GetComponent<DeathCloud>();
             PoisonCloud cloud = go.AddComponent<PoisonCloud>();
-            cloud.Take(vanilla);
+            cloud.Take(vanilla, flare);
             foreach (NetworkBehaviour behaviour in go.GetComponentsInChildren<NetworkBehaviour>(true)) Object.DestroyImmediate(behaviour);
             foreach (NetworkObject networkObject in go.GetComponentsInChildren<NetworkObject>(true)) Object.DestroyImmediate(networkObject);
             foreach (Collider2D trigger in go.GetComponentsInChildren<Collider2D>(true)) Object.DestroyImmediate(trigger);
             foreach (Rigidbody2D body in go.GetComponentsInChildren<Rigidbody2D>(true)) Object.DestroyImmediate(body);
-
-            foreach (ParticleSystem system in go.GetComponentsInChildren<ParticleSystem>(true)) Recolor(system);
-            foreach (SpriteRenderer sprite in go.GetComponentsInChildren<SpriteRenderer>(true)) sprite.color = Blue(sprite.color);
+            // Its lightning, zaps and glow are leaf children
+            foreach (ParticleSystem system in go.GetComponentsInChildren<ParticleSystem>(true)) if (system.gameObject != go) Object.DestroyImmediate(system.gameObject);
+            foreach (SpriteRenderer sprite in go.GetComponentsInChildren<SpriteRenderer>(true)) if (sprite.gameObject != go) Object.DestroyImmediate(sprite.gameObject);
             return go;
-        }
-
-        private static Color Blue(Color color)
-        {
-            Color.RGBToHSV(color, out _, out float saturation, out float value);
-            Color blue = Color.HSVToRGB(Values.Hue, saturation, value);
-            blue.a = color.a;
-            return blue;
-        }
-
-        private static void Recolor(ParticleSystem system)
-        {
-            ParticleSystem.MainModule main = system.main;
-            ParticleSystem.MinMaxGradient start = main.startColor;
-            start.color = Blue(start.color);
-            start.colorMin = Blue(start.colorMin);
-            start.colorMax = Blue(start.colorMax);
-            if (start.gradient != null) start.gradient = Blue(start.gradient);
-            if (start.gradientMin != null) start.gradientMin = Blue(start.gradientMin);
-            if (start.gradientMax != null) start.gradientMax = Blue(start.gradientMax);
-            main.startColor = start;
-
-            ParticleSystem.ColorOverLifetimeModule overLife = system.colorOverLifetime;
-            ParticleSystem.MinMaxGradient life = overLife.color;
-            life.color = Blue(life.color);
-            if (life.gradient != null) life.gradient = Blue(life.gradient);
-            if (life.gradientMin != null) life.gradientMin = Blue(life.gradientMin);
-            if (life.gradientMax != null) life.gradientMax = Blue(life.gradientMax);
-            overLife.color = life;
-        }
-
-        private static Gradient Blue(Gradient gradient)
-        {
-            GradientColorKey[] keys = gradient.colorKeys;
-            for (int i = 0; i < keys.Length; i++) keys[i].color = Blue(keys[i].color);
-            var blue = new Gradient { mode = gradient.mode };
-            blue.SetKeys(keys, gradient.alphaKeys);
-            return blue;
         }
     }
 
-    // Each peer runs its own cloud for the zaps and sounds; the host's copy kills whatever stays inside it, like the Shaman's cloud
+    // Each peer runs its own cloud for the gas and sounds; the host's copy kills whatever stays inside it, like the Shaman's cloud
     public class PoisonCloud : MonoBehaviour
     {
         internal static Grenade Bursting;
 
-        [SerializeField] private ParticleSystem zap;
-        [SerializeField] private AudioSource zapSound;
-        [SerializeField] private AudioSource killSound;
+        [SerializeField] private AudioSource burstSound;
         [SerializeField] private AudioSource baseLoop;
-        [SerializeField] private ParticleSystem killPs;
-        [SerializeField] private ParticleSystem mainEffect;
-        [SerializeField] private SpriteRenderer glow;
 
         private static int _layers;
         private static Collider2D[] _hits = new Collider2D[64];
@@ -121,19 +86,20 @@ namespace SpiderSurge.Weapons
         private readonly HashSet<Component> _seen = new HashSet<Component>();
         private float _until;
         private bool _dying;
+        private PoisonGas _gas;
 
         internal PlayerController Owner { get; private set; }
         internal Weapon Source { get; private set; }
 
-        internal void Take(DeathCloud cloud)
+        internal void Take(DeathCloud cloud, Flare flare)
         {
-            zap = cloud.zap;
-            zapSound = cloud.zapSound;
-            killSound = cloud.killSound;
+            burstSound = cloud.zapSound;
             baseLoop = cloud.baseLoop;
-            killPs = cloud.killPs;
-            mainEffect = cloud.mainEffect;
-            glow = cloud.glow;
+            if (cloud.killSound != null) cloud.killSound.enabled = false;
+            if (burstSound != null) burstSound.clip = flare != null && flare.triggerSound != null ? flare.triggerSound.clip : null;
+            if (baseLoop == null) return;
+            if (flare != null && flare.flareSound != null) baseLoop.clip = flare.flareSound.clip;
+            else baseLoop.enabled = false;
         }
 
         private void Awake()
@@ -146,20 +112,30 @@ namespace SpiderSurge.Weapons
             if (_layers == 0) _layers = LayerMask.GetMask("Player", "Enemy");
         }
 
+        private void Start()
+        {
+            _gas = PoisonGas.Burst(transform, Values.KillRadius);
+            if (burstSound != null && burstSound.clip != null)
+            {
+                burstSound.pitch = Random.Range(0.8f, 0.9f);
+                burstSound.Play();
+            }
+        }
+
         private void FixedUpdate()
         {
             if (_dying) return;
             if (Time.time >= _until)
             {
                 _dying = true;
-                if (mainEffect != null) mainEffect.Stop();
+                if (_gas != null) _gas.Fade(Values.FadeTime);
                 Destroy(gameObject, Values.FadeTime);
                 return;
             }
             if (baseLoop != null) baseLoop.volume = Mathf.Lerp(baseLoop.volume, 0.2f, 0.1f);
 
             int count;
-            while ((count = Physics2D.OverlapCircleNonAlloc(transform.position, Values.ZapRadius, _hits, _layers)) == _hits.Length)
+            while ((count = Physics2D.OverlapCircleNonAlloc(transform.position, Values.KillRadius, _hits, _layers)) == _hits.Length)
             {
                 System.Array.Resize(ref _hits, _hits.Length * 2);
             }
@@ -182,7 +158,6 @@ namespace SpiderSurge.Weapons
         private void Update()
         {
             if (!_dying) return;
-            if (glow != null) glow.color = Color.Lerp(glow.color, Color.clear, 0.05f);
             if (baseLoop != null) baseLoop.volume = Mathf.Lerp(baseLoop.volume, 0f, 0.05f);
         }
 
@@ -200,18 +175,6 @@ namespace SpiderSurge.Weapons
         {
             Vector3 position = target.transform.position;
             float distance = Vector2.Distance(position, transform.position);
-            if (zap != null && Random.Range(0, (int)distance) < Values.KillRadius / 5f)
-            {
-                zap.transform.right = -(position - transform.position);
-                zap.transform.position = position;
-                zap.Emit(1);
-                if (zapSound != null)
-                {
-                    zapSound.pitch = Random.Range(0.9f, 1.1f);
-                    zapSound.Play();
-                }
-            }
-
             if (distance >= Values.KillRadius)
             {
                 Leave(target);
@@ -226,13 +189,7 @@ namespace SpiderSurge.Weapons
 
             if (Net.IsAuthority) Poison(target, position);
             // The kill effect plays once; the host keeps poisoning whatever a shield, immunity or a teammate's spared hit kept alive
-            if (!_struck.Add(target)) return;
-            if (killSound != null)
-            {
-                killSound.pitch = Random.Range(0.9f, 1.1f);
-                killSound.Play();
-            }
-            if (killPs != null) killPs.Play();
+            if (_struck.Add(target)) PoisonGas.Poisoned(position);
         }
 
         private void Leave(Component target)

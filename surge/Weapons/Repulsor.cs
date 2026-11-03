@@ -28,6 +28,8 @@ namespace SpiderSurge.Weapons
         {
             GameObject go = Object.Instantiate(source.gameObject, CustomWeapons.Holder);
             go.name = Values.Name;
+            // Scaling the whole weapon keeps its grip and muzzle on the art
+            go.transform.localScale = Vector3.Scale(go.transform.localScale, Values.Scale);
             var gun = go.GetComponent<Shotgun>();
             gun.serializationWeaponName = Values.Id;
             gun.usedInCustomTiers = false;

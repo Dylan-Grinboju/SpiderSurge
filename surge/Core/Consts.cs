@@ -361,8 +361,8 @@ namespace SpiderSurge
                 public const string Name = "Daze Dart";
                 public const string ShotName = "Daze Dart Shot";
                 public const float LauncherPixelsPerUnit = 30f;
-                public const float DartPixelsPerUnit = 50f;
-                public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(0.7f, 4.4f);
+                public const float DartPixelsPerUnit = 20f;
+                public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(1.75f, 11f);
                 // A flatter arc than the Grenade Launcher's
                 public const float ShotForce = 240f;
                 public const float DartLifetime = 4f;
@@ -387,6 +387,8 @@ namespace SpiderSurge
                 public const SerializationWeaponName Id = (SerializationWeaponName)102;
                 public const string Name = "Repulsor";
                 public const float PixelsPerUnit = 30f;
+                // Widened more than lengthened: as chunky as the Baby Shotgun, but shorter
+                public static readonly UnityEngine.Vector3 Scale = new UnityEngine.Vector3(1.3f, 1.15f, 1f);
                 public const float Charges = 3f;
                 // The Baby Shotgun's pellet cone: a 120 degree arc of pellets at 250 units a second for 0.3 seconds
                 public const float ConeHalfAngle = 60f;
@@ -400,13 +402,17 @@ namespace SpiderSurge
                 public const string CloudName = "Poison Grenade Cloud";
                 public const float PixelsPerUnit = 30f;
                 public const float CloudDuration = 5f;
-                // The Hornet Shaman's cloud: zaps reach 50 units, and 0.2 seconds within 20 units kills
-                public const float ZapRadius = 50f;
+                // As the Hornet Shaman's cloud: 0.2 seconds within 20 units kills. The gas fills exactly that radius
                 public const float KillRadius = 20f;
                 public const float KillTime = 0.2f;
                 public const float FadeTime = 1f;
-                public const float Hue = 0.6f;
-                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.25f, 0.55f, 1f, 1f);
+                // The fuse light and bubbles are a bright lime; the gas a deeper green
+                public static readonly UnityEngine.Color Color = new UnityEngine.Color(0.66f, 0.95f, 0.25f, 1f);
+                public static readonly UnityEngine.Color GasColor = new UnityEngine.Color(0.36f, 0.78f, 0.16f, 1f);
+                public const float GasAlpha = 0.4f;
+                public const float PuffAlpha = 0.3f;
+                public const float FuseLightIntensity = 3f;
+                public const float FuseLightRadius = 9f;
             }
 
             public static class ShieldBubbles
