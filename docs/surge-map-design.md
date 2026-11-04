@@ -16,7 +16,7 @@ The selection contains 11 arenas. Each earns its place through a recognizable si
 | Pipeworks | Interrupted pipes form pockets with multiple exits; a vent lifts spiders through the central gap and jump pads fire up the clear shafts on each side. |
 | Satellite | Long wings divide upper and lower routes around a central body and dish, with drifting debris below, all in zero gravity. |
 | Crescent | A large curved wall shelters one side while detached islands expose the other; vents under the open side lift fallen spiders back up. |
-| Derelict | A broken station hull in zero gravity: plates with open corners around a core, two turbines inside, a lift rising through the floor gap and cargo floating loose. |
+| Derelict | A broken station hull in zero gravity: a shortened, tilted roof and buckled right wall open an uneven breach around a core. A powered turbine and smaller displaced free rotor sit among floating cargo; the floor gap stays open. |
 
 Ten layouts were removed from the original 20-map selection:
 
@@ -49,7 +49,7 @@ The custom map scene gives every map the same 930 × 530 camera box, about three
 | Pipeworks | 0.9 | 674 × 457 |
 | Satellite | 1 | 718 × 509 |
 | Crescent | 0.8 | 494 × 421 |
-| Derelict | 1 | 670 × 465 |
+| Derelict | 1 | 681 × 465 |
 
 Jump pads keep their force on a scaled map, so they throw relatively higher: on Trampoline a pad launch peaks at y 117, level with the upper platforms and well inside the 236 camera top.
 
@@ -90,10 +90,12 @@ Most base-game arenas have something that moves or can be pushed: 76% of the end
 |---|---|---|---|
 | Crate | `Box A`, `Box B`, `Box Wide` | Loose physics box, pushed by spiders, shots and explosions | Thin Ice, Caldera, Trampoline, Geysers, Jaws, Pipeworks, Satellite, Derelict |
 | Ball | `Ball` | Loose rolling ball | Cactus Garden, Geysers, Crossbeams, Pipeworks, Satellite, Derelict |
-| Turbine | `Big Spinner` | A beam on a center hinge; free, or turned by a motor at the layout's `motor` degrees per second | Cactus Garden, Trampoline, Jaws, Crossbeams, Satellite, Crescent, Derelict |
+| Turbine | `Big Spinner` | A beam on a center hinge; free, or turned by a motor at the layout's `motor` degrees per second | Cactus Garden, Jaws, Satellite, Crescent, Derelict |
 | Swing | `Swing` | A plank on two ropes under a fixed anchor | Thin Ice, Crescent |
 | Cage | `DescendingCage` | Sinks about 128 below its hooks and rises again, waiting 2 seconds at each end | Geysers, Pipeworks |
-| Lift | `Moving Platform B` | Rises 108 along its up direction while something stands on it, then returns | Caldera, Derelict |
+| Lift | `Moving Platform B` | Rises 108 along its up direction while something stands on it, then returns | Caldera |
+
+Trampoline keeps its pad launch path open, and Crossbeams keeps its central crossing open; neither uses a turbine. Their loose crate and balls add physics interactions without competing with their defining movement mechanics.
 
 - **Network:** the prefabs are already registered network prefabs, so the host's spawn reaches clients with no new messages. Their own components carry scale, body motion and joints. The host sets only physics that the client copies cannot fight: motors, shortened ropes and cage travel.
 - **No respawn:** the base game's crates and balls are indestructible, so lava does not remove them, and nothing brings back one that falls through it. Surge keeps that: a crate or ball lost to the lava, or drifting off in zero gravity, stays gone until the level reloads. The reload after everyone dies, and the next map, rebuild every part at its place.

@@ -258,9 +258,9 @@ surge_map(
     enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, -20)],
     weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-85, -82), (85, -82)],
     rare=[(0, 293)],
-    # A crate sits between the pads, and the pads throw spiders into a free spinner above the bowl
+    # A crate sits between the pads; the launch path above the bowl stays open
     parts=[
-        gadget("Box B", 0, -94), gadget("Big Spinner", 0, 105, s=0.8),
+        gadget("Box B", 0, -94),
     ],
 )
 
@@ -327,9 +327,9 @@ surge_map(
     enemies=[(-375, 60), (375, 60), (-160, 90), (160, 90), (-60, 330), (60, 330)],
     weapons=[(-330.0, 178.0), (330.0, 178.0), (-40.0, -83.0), (40.0, -83.0), (-125.0, 185.0), (125.0, 185.0)],
     rare=[(0, 275)],
-    # A beam turns in the crossing, and balls roll down the upper arms into it
+    # Balls roll down the upper arms; the central crossing stays open
     parts=[
-        gadget("Big Spinner", 0, 60, s=0.9, motor=20), gadget("Ball", -212, 250), gadget("Ball", 212, 250),
+        gadget("Ball", -212, 250), gadget("Ball", 212, 250),
     ],
 )
 
@@ -382,23 +382,22 @@ surge_map(
 surge_map(
     "derelict", "Derelict", SPACE, LAVA_ALL, zero_gravity=True,
     elements=[
-        el("Loooong Boi", -160, 250, 0, 0.9), el("Loooong Boi", 160, 250, 0, 0.9),
+        el("Loooong Boi", -160, 250, 0, 0.9), el("Loooong Boi", 185, 225, -15, 0.65),
         el("Loooong Boi", -160, -100, 0, 0.9), el("Loooong Boi", 160, -100, 0, 0.9),
-        el("Loooong Boi", -300, 75, 90, 0.9), el("Loooong Boi", 300, 75, 90, 0.9),
+        el("Loooong Boi", -300, 75, 90, 0.9), el("Loooong Boi", 300, 45, 75, 0.6),
         el("Big Block", 0, 75, 0, 0.9),
-        el("Platform", -272, 75, 0, 0.6), el("Platform", 272, 75, 0, 0.6),
+        el("Platform", -272, 75, 0, 0.6), el("Platform", 272, 45, 0, 0.6),
         hover(0, 205, 0, 0.8),
     ],
     players=[(-215, -75), (-115, -75), (115, -75), (215, -75)],
-    enemies=[(-200, 195), (200, 195), (-90, 15), (90, 15), (-210, 20), (210, 20)],
-    weapons=[(-165, -75), (165, -75), (-160, 275), (160, 275), (-272, 95), (272, 95)],
+    enemies=[(-200, 195), (200, 160), (-90, 15), (90, 15), (-210, 20), (220, -5)],
+    weapons=[(-165, -75), (165, -75), (-160, 275), (185, 250), (-272, 95), (272, 65)],
     rare=[(0, 118)],
-    # A powered turbine and a free one, a lift that rises out of the floor gap, and cargo adrift
+    # A powered turbine and a smaller displaced free rotor, with cargo adrift and an open floor breach
     parts=[
-        gadget("Big Spinner", -150, 120, s=0.7, motor=35), gadget("Big Spinner", 150, 120, s=0.7),
-        gadget("Moving Platform B", 0, -95),
+        gadget("Big Spinner", -150, 120, s=0.7, motor=35), gadget("Big Spinner", 155, 55, r=25, s=0.55),
         gadget("Box A", -80, 200), gadget("Box B", 80, 195), gadget("Box Wide", -235, 150, r=30),
-        gadget("Box A", 235, 145), gadget("Ball", -40, 300), gadget("Ball", 60, -30),
+        gadget("Box A", 245, 125), gadget("Ball", -40, 300), gadget("Ball", 60, -30),
     ],
 )
 

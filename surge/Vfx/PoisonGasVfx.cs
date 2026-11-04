@@ -9,7 +9,6 @@ namespace SpiderSurge.Vfx
     {
         private const int FillOrder = 200;
         private const int PuffOrder = 210;
-        private const float GrowTime = 0.25f;
 
         private static Sprite rim;
         private static Sprite puff;
@@ -20,7 +19,6 @@ namespace SpiderSurge.Vfx
         private ParticleSystem bubbles;
         private Transform cloud;
         private float radius;
-        private float elapsed;
         private float fadeTime = -1f;
         private float fadeElapsed;
 
@@ -66,7 +64,6 @@ namespace SpiderSurge.Vfx
 
         private void Update()
         {
-            elapsed += Time.deltaTime;
             if (cloud == null) Fade(Values.FadeTime);
             if (fadeTime >= 0f)
             {
@@ -80,12 +77,11 @@ namespace SpiderSurge.Vfx
             Apply();
         }
 
-        // The gas swells out to its full radius as it bursts, then holds a fixed edge until it clears
+        // The boundary shows the full danger radius immediately; the puffs swell inside it
         private void Apply()
         {
             if (fill == null) return;
-            float grow = Mathf.SmoothStep(0.35f, 1f, Mathf.Clamp01(elapsed / GrowTime));
-            float scale = radius * 2f * grow / fill.sprite.bounds.size.x;
+            float scale = radius * 2f / fill.sprite.bounds.size.x;
             fill.transform.localScale = new Vector3(scale, scale, 1f);
             float alpha = Values.GasAlpha * (fadeTime >= 0f ? 1f - Mathf.Clamp01(fadeElapsed / fadeTime) : 1f);
             fill.color = SurgeVfx.SetAlpha(Values.GasColor, alpha);
