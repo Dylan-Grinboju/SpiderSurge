@@ -120,7 +120,7 @@ Open the pause menu and pick **Mods** > **SpiderSurge** > **Settings**. Brightne
 
 ### Using the Yaml file:
 
-Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See the [upcoming release's Settings](../NEXT_RELEASE.md#settings) for how the current file works.
+Surge's settings are the `surge` section of `...\Silk\Config\Mods\SpiderSurge.yaml`. See the [Settings](../README.md#settings) for how the current file works.
 
 <details>
 <summary>Explanation of the fields</summary>
