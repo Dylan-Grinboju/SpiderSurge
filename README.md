@@ -12,7 +12,7 @@ SpiderSurge 1.0 brings **SpiderStats into the mod** and adds **team versus**, al
 
 [Download SpiderSurge](https://github.com/Dylan-Grinboju/SpiderSurge/releases) · [Release notes](https://github.com/Dylan-Grinboju/SpiderSurge/releases) · [Ideas, feedback and bugs](https://github.com/Dylan-Grinboju/SpiderSurge/issues)
 
-![Trampoline, one of the new Surge arenas](docs/images/surge-map-trampoline-camera.jpg)
+![A laser-shielded Whisp firing its ring between two spiders](docs/images/laser-ring-active.png)
 
 ## What's in the mod
 
@@ -44,6 +44,8 @@ Your supported old settings migrate automatically into `Silk/Config/Mods/SpiderS
 
 Each player chooses their own starting ability from shared offers, then their own ultimate after wave 30. Mix and match, or double up with a friend. Abilities include Null Field, Overcharge, Kinetic Pulse, Pocket Dimension and Freeze Time; ultimates include Neural Backup, Care Package, Thermal Detonation, Black Hole and Rewind.
 
+![Two players choosing their starting abilities independently](docs/images/starting-ability-choice.png)
+
 - **11 new arenas**, with portals, vents, jump pads, moving machinery and even zero gravity. They join Surge's map choices; ordinary Survival and Versus retain their original map lists.
 - **Chaos challenges and a shop.** Choose marked maps, accept optional challenges, and spend shared points on perks, healing and extra life capacity. Chaos Cartographer and Challenge Seeker improve your rewards.
 - **New enemies**, including Twin and Missile Whisps, Wasp Cocoons that hatch reinforcements, and laser enemies whose red shields power a damaging ring.
@@ -51,7 +53,11 @@ Each player chooses their own starting ability from shared offers, then their ow
 - **25 achievements**, plus a compact run recap of your build, challenges and Chaos spending.
 - **Separate high scores** for Surge. Normal Survival scores stay separate, and Surge runs are not submitted to the game's online leaderboards.
 
+![The Chaos shop beside the perk and map choices, with Bigger Heart selected](docs/images/chaos-shop.png)
+
 See the [Surge guide](surge/README.md) for abilities, perks, enemy behaviour, achievements and tuning.
+
+![Trampoline, one of the new Surge arenas](docs/images/surge-map-trampoline-camera.jpg)
 
 ### New weapons
 
@@ -91,8 +97,6 @@ You can also enable Surge abilities in team versus or free-for-all. For larger g
 **Online support is experimental in 1.0.** Every player must run the same SpiderSurge version in a **P2P lobby**. A modded host refuses players without SpiderSurge or with a different version.
 
 The host controls shared rules and team decisions. Guests can see results, but completed match history and title-collection unlocks stay on the host PC. Online play still needs more real-world testing; [send feedback or report a bug](https://github.com/Dylan-Grinboju/SpiderSurge/issues), especially if something differs between host and guest.
-
-![Two spiders on Crescent, a new Surge arena](docs/images/surge-map-crescent-client.jpg)
 
 ## Controls
 
