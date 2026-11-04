@@ -1,4 +1,4 @@
 <!-- Adapted from Kay Lousberg, 2D Guns (CC0). See docs/WEAPON_ART_CREDITS.md. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="384" height="228" viewBox="0 0 384 228">
-<style>.st0{fill:#414b54}.st1{fill:#242c33}.st2{fill:#697780}.st3{fill:#a9bac2}</style><g transform="translate(33 0)"><path fill="#a8d4ff" d="M133 78H155V94H133Z M179 78H201V94H179Z M225 78H247V94H225Z"/></g>
+<style>.st0{fill:#414b54}.st1{fill:#242c33}.st2{fill:#697780}.st3{fill:#a9bac2}</style><g transform="translate(33 0)"><path fill="#e4ff9e" d="M133 75H155V101H133Z M179 75H201V101H179Z M225 75H247V101H225Z M133 111H155V145H133Z M179 111H201V145H179Z M225 111H247V145H225Z"/></g>
 </svg>

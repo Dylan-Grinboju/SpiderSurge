@@ -188,18 +188,21 @@ namespace SpiderSurge.Vfx
         // A point light that fades out like the game's explosion light
         public static LightFade Flash(Vector3 position, Color color, float intensity, float radius, float duration)
         {
-            return Create<LightFade>("SurgeFlash", position, fade =>
-            {
-                Light2D light = fade.gameObject.AddComponent<Light2D>();
-                light.lightType = Light2D.LightType.Point;
-                light.color = SetAlpha(color, 1f);
-                light.intensity = intensity;
-                light.pointLightInnerRadius = 0f;
-                light.pointLightOuterRadius = radius;
-                if (lightSortingLayers == null) lightSortingLayers = AccessTools.FieldRefAccess<Light2D, int[]>("m_ApplyToSortingLayers");
-                lightSortingLayers(light) = LightLayers;
-                fade.Setup(light, duration);
-            });
+            return Create<LightFade>("SurgeFlash", position, fade => fade.Setup(PointLight(fade.gameObject, color, intensity, radius), duration));
+        }
+
+        // A point light on every sorting layer, as the game's explosion light
+        public static Light2D PointLight(GameObject holder, Color color, float intensity, float radius)
+        {
+            Light2D light = holder.AddComponent<Light2D>();
+            light.lightType = Light2D.LightType.Point;
+            light.color = SetAlpha(color, 1f);
+            light.intensity = intensity;
+            light.pointLightInnerRadius = 0f;
+            light.pointLightOuterRadius = radius;
+            if (lightSortingLayers == null) lightSortingLayers = AccessTools.FieldRefAccess<Light2D, int[]>("m_ApplyToSortingLayers");
+            lightSortingLayers(light) = LightLayers;
+            return light;
         }
 
         // A soft disc that scales between two radii while it fades
