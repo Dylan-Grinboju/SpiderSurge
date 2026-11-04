@@ -361,6 +361,7 @@ namespace SpiderSurge
                 public const string Name = "Daze Dart";
                 public const string ShotName = "Daze Dart Shot";
                 public const float LauncherPixelsPerUnit = 30f;
+                public const float Darts = 3f;
                 public const float DartPixelsPerUnit = 20f;
                 public static readonly UnityEngine.Vector2 DartCollider = new UnityEngine.Vector2(1.75f, 11f);
                 // A flatter arc than the Grenade Launcher's

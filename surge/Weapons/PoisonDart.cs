@@ -8,7 +8,7 @@ using Values = SpiderSurge.Consts.Values.PoisonDart;
 
 namespace SpiderSurge.Weapons
 {
-    // A one-shot launcher built from the Grenade Launcher. Its dart flies in an arc and dazes the enemy or spider it hits
+    // A three-dart launcher built from the Grenade Launcher. Each dart flies in an arc and dazes the enemy or spider it hits
     public static class PoisonDart
     {
         private const string LauncherResource = "SpiderSurge.PoisonDartSprite";
@@ -47,7 +47,7 @@ namespace SpiderSurge.Weapons
             launcher.serializationWeaponName = Values.Id;
             launcher.type = new List<Weapon.WeaponType> { Weapon.WeaponType.Gun };
             launcher.usedInCustomTiers = false;
-            launcher.maxAmmo = 1f;
+            launcher.maxAmmo = Values.Darts;
             launcher.projectile = dart;
             launcher.shotForce = Values.ShotForce;
             launcher.rotationForce = 0f;
