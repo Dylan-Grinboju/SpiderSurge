@@ -91,10 +91,10 @@ namespace SpiderSurge
             bool unlocked = PerksManager.Instance != null && PerksManager.Instance.GetPerkLevel(perkName, playerId) > 0;
             if (player == null || !unlocked) return exists;
             bool alive = exists && ability.IsPlayerAlive();
-            var source = exists ? ability.StatusSource : null;
-            bool active = alive && source.IsActive();
+            var source = exists ? ability.DisplayState : default;
+            bool active = alive && source.Active;
             bool available = alive && ability.HasAvailableAction;
-            bool ready = available && !active && !source.IsOnCooldown();
+            bool ready = available && source.Ready;
             if (ModConfig.IndicatorShowOnlyWhenReady && !ready) return true;
 
             Hud.EnsureFonts();
@@ -110,11 +110,11 @@ namespace SpiderSurge
             string ultimate = PerksManager.Instance.Loadouts.Get(playerId, true);
             abilityName = PerksManager.Instance.GetDisplayName(perkName) + (ultimate != null ? " / " + PerksManager.Instance.GetDisplayName(ultimate) : "");
             string restriction = alive ? ability.ActionRestriction : "";
-            int state = !alive ? 0 : active ? 1 : !available ? 4 : ready ? 2 : 3;
+            int state = !alive ? 0 : !source.Known ? 5 : active ? 1 : !available ? 4 : ready ? 2 : 3;
             int seconds = !alive ? 0 : Mathf.CeilToInt(active ? source.ActiveRemaining : source.CooldownRemaining);
             if (state != lastState || seconds != lastSeconds || restriction != lastRestriction)
             {
-                status = !alive ? "Down" : active ? "Active  " + Hud.Number(seconds) + "s" : !available ? restriction : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
+                status = !alive ? "Down" : !source.Known ? "Syncing" : active ? "Active  " + Hud.Number(seconds) + "s" : !available ? restriction : ready ? "Ready" : "Cooldown  " + Hud.Number(seconds) + "s";
                 if (available && restriction.Length > 0) status = restriction + " · " + status;
                 lastState = state;
                 lastSeconds = seconds;

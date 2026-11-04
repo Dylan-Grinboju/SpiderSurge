@@ -70,7 +70,7 @@ A player below a minimum can't hold that requirement, however high or low their 
 | Surgical Strike | Best Accuracy, Most Offense, Least Friendly Fire |
 | Camper | Best Accuracy, Least Airborne Time, Least Web Swings |
 | Bullet Time | Best Accuracy, Most Airborne Time, Most Kills While Airborne |
-| High Noon | Best Accuracy, Most Gun Kills, Most Kills While Solo |
+| High Noon | Best Accuracy, Most Gun Offense, Most Kills While Solo |
 | Deadeye | Best Accuracy, Most Damage Taken, Most Deaths |
 | Turret | Best Accuracy, Least Web Swings, Least Airborne Time, Lowest Point |
 | Stormtrooper | Worst Accuracy |

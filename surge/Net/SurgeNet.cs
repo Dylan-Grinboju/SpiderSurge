@@ -89,6 +89,8 @@ namespace SpiderSurge
             Net.LeftHost += OnLeftHost;
             ChaosNet.Initialize();
             AbilitySelection.Initialize();
+            AbilityDisplayNet.Initialize();
+            HazardNet.Initialize();
             Vfx.WeaponVfx.Initialize();
             Weapons.BayonetBlade.Initialize();
         }
@@ -112,6 +114,8 @@ namespace SpiderSurge
             Net.LeftHost -= OnLeftHost;
             ChaosNet.Shutdown();
             AbilitySelection.Shutdown();
+            AbilityDisplayNet.Shutdown();
+            HazardNet.Shutdown();
         }
 
         public static void MarkDirty()
@@ -125,6 +129,8 @@ namespace SpiderSurge
         // Called once per frame from SurgeGameModeManager.LateUpdate
         public static void Flush()
         {
+            AbilityDisplayNet.Tick();
+            HazardNet.Tick();
             if (_dirty)
             {
                 SendStateNow();
@@ -234,6 +240,7 @@ namespace SpiderSurge
             Weapons.CustomWeapons.EnsureCreated();
             CustomPrefabNet.RegisterHandlers();
             Net.SendTo(clientId, StateChannel, WriteState);
+            AbilityDisplayNet.SendTo(clientId);
             Weapons.BayonetBlade.SendAllTo(clientId);
 
             // Joiners receive every current freeze; the Black Hole's holds aren't shown as frozen.

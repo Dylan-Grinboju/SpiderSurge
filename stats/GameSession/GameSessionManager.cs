@@ -208,7 +208,7 @@ namespace StatsMod
         public TimeSpan GetCurrentSessionTime()
         {
             if (Net.IsRemoteClient)
-                return TimeSpan.FromSeconds(remoteSessionSeconds + (IsActive ? Time.unscaledTime - remoteReceivedAt : 0f));
+                return TimeSpan.FromSeconds(remoteSessionSeconds + (IsActive && !isPaused ? Time.unscaledTime - remoteReceivedAt : 0f));
             if (!IsActive)
                 return TimeSpan.Zero;
 
@@ -224,6 +224,7 @@ namespace StatsMod
             isPaused = true;
             pauseStartTime = DateTime.Now;
             playerTracker.PauseTimers();
+            StatsNet.SendSnapshot(SnapshotReason.Tick);
         }
 
         public void ResumeTimers()
@@ -235,6 +236,7 @@ namespace StatsMod
             sessionStartTime = sessionStartTime.Add(pausedDuration);
             isPaused = false;
             playerTracker.ResumeTimers();
+            StatsNet.SendSnapshot(SnapshotReason.Tick);
         }
 
         #endregion
@@ -346,6 +348,7 @@ namespace StatsMod
         {
             writer.Write(isSurvivalActive);
             writer.Write(isVersusActive);
+            writer.Write(isPaused);
             writer.Write((int)currentGameMode);
             writer.Write((int)lastGameMode);
             writer.Write((float)GetCurrentSessionTime().TotalSeconds);
@@ -363,6 +366,7 @@ namespace StatsMod
             isMirrored = true;
             isSurvivalActive = reader.ReadBoolean();
             isVersusActive = reader.ReadBoolean();
+            isPaused = reader.ReadBoolean();
             currentGameMode = (GameMode)reader.ReadInt32();
             lastGameMode = (GameMode)reader.ReadInt32();
             remoteSessionSeconds = reader.ReadSingle();
@@ -430,6 +434,7 @@ namespace StatsMod
             lastGameMode = GameMode.None;
             lastGameDuration = TimeSpan.Zero;
             remoteSessionSeconds = 0f;
+            remoteReceivedAt = 0f;
             remoteRestartRequested = false;
             restartRequested = false;
             isMirrored = false;

@@ -39,6 +39,9 @@ namespace SpiderSurge
         public float CooldownRemaining => onCooldown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
         public float ActiveRemaining => isActive ? Mathf.Max(0f, activeEndTime - Time.time) : 0f;
         public float ActiveProgress => activeDuration > 0f ? Mathf.Clamp01(ActiveRemaining / activeDuration) : 1f;
+        internal AbilityDisplayState DisplayState => AbilityDisplayNet.For(this);
+        internal AbilityDisplayState CaptureDisplayState() => new AbilityDisplayState(isActive, onCooldown,
+            ActiveRemaining, activeDuration, CooldownRemaining, cooldownDuration);
 
         // Rate limit for ability not ready sound (once per second, per player)
         private static readonly Dictionary<int, float> lastAbilityNotReadySoundTimeByPlayer = new Dictionary<int, float>();

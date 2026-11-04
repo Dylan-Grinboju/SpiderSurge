@@ -25,6 +25,14 @@ jobs:
       - name: Check map spawn budgets
         run: python tests/MapSpawns.Tests.py
 
+      - name: Run regression tests
+        shell: pwsh
+        run: |
+          foreach ($test in Get-ChildItem tests -Filter '*.Tests.ps1' -File | Sort-Object Name) {
+            & pwsh -NoProfile -File $test.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
       - name: Test update verification and installation
         shell: pwsh
         run: |

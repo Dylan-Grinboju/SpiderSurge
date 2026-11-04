@@ -129,7 +129,7 @@ namespace StatsMod
                     // Weapon hits breakdown
                     if (playerData.WeaponHits != null && playerData.WeaponHits.Any())
                     {
-                        sb.AppendLine($"    Weapon Hits (Kills + Shield Hits):");
+                        sb.AppendLine($"    Weapon offense (kills + shield breaks, including friendly fire):");
                         var sortedWeaponHits = playerData.WeaponHits
                             .Where(w => w.Value > 0)
                             .OrderByDescending(w => w.Value)
@@ -144,7 +144,7 @@ namespace StatsMod
                         }
                         else
                         {
-                            sb.AppendLine($"      No weapon hits recorded");
+                            sb.AppendLine($"      No weapon offense recorded");
                         }
                     }
 

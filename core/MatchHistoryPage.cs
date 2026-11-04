@@ -153,7 +153,7 @@ namespace SpiderSurge.Common
                 foreach (string group in new[] { "stats", "enemies", "weapons", "accuracy", "maps" })
                 {
                     string target = group;
-                    page.Button(group == "stats" ? "Player statistics" : group == "maps" ? "Deaths by map" : char.ToUpperInvariant(group[0]) + group.Substring(1), () => page.Open("history.player." + index + "." + target));
+                    page.Button(group == "stats" ? "Player statistics" : group == "maps" ? "Deaths by map" : group == "weapons" ? "Weapon offense" : char.ToUpperInvariant(group[0]) + group.Substring(1), () => page.Open("history.player." + index + "." + target));
                 }
                 var surge = selected.SurgeStats?.PlayerStats.FirstOrDefault(p => p.PlayerId == player.Id);
                 if (surge != null) page.Line($"Ability uses: {surge.AbilityActivationCount}\nUltimate uses: {surge.UltimateActivationCount}\nNull Field saves: {surge.Saves}");
@@ -172,6 +172,7 @@ namespace SpiderSurge.Common
                 return;
             }
             var rows = category == "enemies" ? player.Enemies : category == "weapons" ? player.Weapons : category == "maps" ? player.DeathsPerMap : player.Stats;
+            if (category == "weapons") page.Note("Kills and shield breaks by weapon, including friendly fire.");
             if (rows.Count == 0) page.Note("None recorded.");
             foreach (var row in rows)
             {

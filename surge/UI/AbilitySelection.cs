@@ -190,7 +190,8 @@ namespace SpiderSurge
             bool ownersChanged = ReconcileOwners();
             bool picksChanged = Round.Reconcile(Missing(Round.Ultimate));
             if (ownersChanged || picksChanged) { completeAt = -1f; SurgeNet.SendStateNow(); }
-            if (!Round.Complete || (HudController.instance != null && HudController.instance.paused)) { completeAt = -1f; return; }
+            if (!Round.CanFinish(Players.All?.Any(player => player != null) == true)
+                || (HudController.instance != null && HudController.instance.paused)) { completeAt = -1f; return; }
             if (completeAt < 0f) completeAt = Time.unscaledTime + 0.5f;
             if (Time.unscaledTime >= completeAt) Finish();
         }

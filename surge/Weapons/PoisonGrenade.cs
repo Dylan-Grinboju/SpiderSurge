@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using HarmonyLib;
 using SpiderSurge.Common;
 using SpiderSurge.Vfx;
@@ -44,9 +45,9 @@ namespace SpiderSurge.Weapons
             if (grenade.lights != null)
             {
                 var fuse = new GameObject("FuseLight");
+                SurgeVfx.PointLight(fuse, Values.Color, Values.FuseLightIntensity, Values.FuseLightRadius);
                 fuse.transform.SetParent(grenade.lights.transform, false);
                 fuse.transform.position = go.transform.position;
-                SurgeVfx.PointLight(fuse, Values.Color, Values.FuseLightIntensity, Values.FuseLightRadius);
             }
             CustomPrefabNet.RegisterWeapon(go, Values.Name);
             return go;
@@ -75,6 +76,10 @@ namespace SpiderSurge.Weapons
     public class PoisonCloud : MonoBehaviour
     {
         internal static Grenade Bursting;
+        private static readonly Dictionary<ulong, PoisonCloud> Active = new Dictionary<ulong, PoisonCloud>();
+        private static ulong? replaying;
+        private ulong? identity;
+        private bool authoritative, replay;
 
         [SerializeField] private AudioSource burstSound;
         [SerializeField] private AudioSource baseLoop;
@@ -104,6 +109,19 @@ namespace SpiderSurge.Weapons
 
         private void Awake()
         {
+            replay = replaying.HasValue;
+            authoritative = Net.IsAuthority && !replay;
+            identity = replaying ?? (Bursting != null ? (ulong?)Bursting.NetworkObjectId : null);
+            if (identity.HasValue)
+            {
+                if (Active.TryGetValue(identity.Value, out var existing) && existing != null)
+                {
+                    enabled = false;
+                    Destroy(gameObject);
+                    return;
+                }
+                Active[identity.Value] = this;
+            }
             transform.rotation = Quaternion.identity;
             _until = Time.time + Values.CloudDuration;
             // Like the Grenade's blast, the cloud is the player's who armed it, or else its last holder's
@@ -114,8 +132,8 @@ namespace SpiderSurge.Weapons
 
         private void Start()
         {
-            _gas = PoisonGas.Burst(transform, Values.KillRadius);
-            if (burstSound != null && burstSound.clip != null)
+            _gas = PoisonGas.Burst(transform, Values.KillRadius, !replay);
+            if (!replay && burstSound != null && burstSound.clip != null)
             {
                 burstSound.pitch = Random.Range(0.8f, 0.9f);
                 burstSound.Play();
@@ -187,7 +205,7 @@ namespace SpiderSurge.Weapons
             }
             if (Time.time - since <= Values.KillTime) return;
 
-            if (Net.IsAuthority) Poison(target, position);
+            if (authoritative) Poison(target, position);
             // The kill effect plays once; the host keeps poisoning whatever a shield, immunity or a teammate's spared hit kept alive
             if (_struck.Add(target)) PoisonGas.Poisoned(position);
         }
@@ -196,6 +214,56 @@ namespace SpiderSurge.Weapons
         {
             _inRange.Remove(target);
             _struck.Remove(target);
+        }
+
+        private void OnDestroy()
+        {
+            if (identity.HasValue && Active.TryGetValue(identity.Value, out var cloud) && cloud == this) Active.Remove(identity.Value);
+        }
+
+        internal static void ClearRemote()
+        {
+            foreach (var cloud in new List<PoisonCloud>(Active.Values))
+                if (cloud != null && !cloud.authoritative) { cloud.enabled = false; Destroy(cloud.gameObject); }
+            Active.Clear();
+        }
+
+        internal static void WriteSnapshot(BinaryWriter writer)
+        {
+            int count = 0;
+            foreach (var cloud in Active.Values) if (cloud != null && cloud.authoritative && !cloud._dying && cloud._until > Time.time) count++;
+            writer.Write(count);
+            foreach (var pair in Active)
+            {
+                var cloud = pair.Value;
+                if (cloud == null || !cloud.authoritative || cloud._dying || cloud._until <= Time.time) continue;
+                writer.Write(pair.Key);
+                writer.Write(cloud.transform.position);
+                writer.Write(cloud._until - Time.time);
+            }
+        }
+
+        internal static void ReadSnapshot(BinaryReader reader)
+        {
+            int count = reader.ReadInt32();
+            if (count < 0 || count > 4096) throw new InvalidDataException("Invalid poison cloud count");
+            for (int i = 0; i < count; i++)
+            {
+                ulong id = reader.ReadUInt64();
+                Vector3 position = reader.ReadVector3();
+                float remaining = reader.ReadSingle();
+                if (remaining <= 0f) continue;
+                if (!Active.TryGetValue(id, out var cloud) || cloud == null)
+                {
+                    PoisonGrenade.EnsureCreated();
+                    if (PoisonGrenade.Prefab == null) continue;
+                    var previous = replaying;
+                    replaying = id;
+                    try { cloud = Instantiate(PoisonGrenade.Prefab.GetComponent<Grenade>().explosion, position, Quaternion.identity).GetComponent<PoisonCloud>(); }
+                    finally { replaying = previous; }
+                }
+                if (!cloud._dying) cloud._until = Time.time + Mathf.Min(remaining, Values.CloudDuration);
+            }
         }
 
         // Stats and Teams take the thrower as the attacker
