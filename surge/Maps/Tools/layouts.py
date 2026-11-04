@@ -146,7 +146,7 @@ def honeycomb(cx, cy, s=1.0):
 GADGET_SCALE = {"Box A": 1, "Box B": 1, "Box Wide": 1, "Ball": 1, "Big Spinner": 1, "Spinner": 1.5, "Swing": 1,
                 "SuspendedPrism": 2, "DescendingCage": 1.5, "Moving Platform A": 1, "Moving Platform B": 1,
                 "HingePlatform": 2}
-# Loose bodies the host puts back when they are lost to the lava or drift away
+# Loose bodies, which only have to start clear; like the base game's, they stay lost once they fall or drift away
 LOOSE = ("Box A", "Box B", "Box Wide", "Ball")
 # Gadgets that hang under gravity, so they stay upright and need a gravity map
 HANGING = ("Swing", "SuspendedPrism", "DescendingCage", "HingePlatform")
