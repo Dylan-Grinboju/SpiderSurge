@@ -9,7 +9,7 @@ namespace SpiderSurge.Maps
 {
     // The base game's networked level gadgets a Surge layout places: boxes, spinners, swings, rails and cages.
     // The host spawns and configures them; their own network components carry scale, motion and joints to clients.
-    // As on the base-game arenas, a crate or ball lost to the lava stays lost until the next map.
+    // As on the base-game arenas, a crate or ball lost to the lava stays lost until the level reloads, which rebuilds them all.
     public static class SurgeParts
     {
         private static readonly AccessTools.FieldRef<GameController, List<GameObject>> Prefabs =
