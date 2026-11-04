@@ -9,7 +9,8 @@ using Logger = Silk.Logger;
 
 namespace SpiderSurge.Weapons
 {
-    // A mod weapon that spawns as one of its own, next to the game weapon it is built from and as often as it until its rarity is set
+    // A mod weapon that spawns as one of its own, next to the game weapon it is built from. Until its rarity is set it spawns as often as that
+    // weapon, or a rare one as often as the list's rarest game weapon
     internal sealed class CustomWeapon
     {
         public readonly SerializationWeaponName Id;
@@ -17,14 +18,16 @@ namespace SpiderSurge.Weapons
         // Its rarity's key in the mod's data
         public readonly string Key;
         public readonly SerializationWeaponName Anchor;
+        private readonly bool _rare;
         private readonly System.Func<GameObject> _prefab;
 
-        public CustomWeapon(SerializationWeaponName id, string name, string key, SerializationWeaponName anchor, System.Func<GameObject> prefab)
+        public CustomWeapon(SerializationWeaponName id, string name, string key, SerializationWeaponName anchor, System.Func<GameObject> prefab, bool rare = false)
         {
             Id = id;
             Name = name;
             Key = key;
             Anchor = anchor;
+            _rare = rare;
             _prefab = prefab;
         }
 
@@ -38,13 +41,21 @@ namespace SpiderSurge.Weapons
             return weapon != null && weapon.serializationWeaponName == Anchor;
         }
 
-        public float AnchorRarity(List<SpawnableWeapon> weapons)
+        // A rare weapon is never more common than its anchor, so it is off while its anchor is
+        public float DefaultRarity(List<SpawnableWeapon> weapons)
         {
             SpawnableWeapon anchor = weapons?.Find(IsAnchor);
-            return anchor != null ? anchor.baseRarity : 0f;
+            if (anchor == null) return 0f;
+            float rarity = anchor.baseRarity;
+            if (!_rare) return rarity;
+            foreach (SpawnableWeapon entry in weapons)
+            {
+                if (entry.baseRarity > 0f && entry.baseRarity < rarity && !CustomWeapons.IsCustom(entry)) rarity = entry.baseRarity;
+            }
+            return rarity;
         }
 
-        // Adds it after its anchor, with the anchor's rarity; a list without the anchor stays as it is
+        // Adds it after its anchor at its default rarity, unrounded because pain levels 4 to 7 use fractions; a list without the anchor stays as it is
         public SpawnableWeapon AddTo(List<SpawnableWeapon> weapons)
         {
             if (weapons == null) return null;
@@ -54,7 +65,7 @@ namespace SpiderSurge.Weapons
             if (index < 0) return null;
             GameObject prefab = _prefab();
             if (prefab == null) return null;
-            var entry = new SpawnableWeapon(prefab.GetComponent<Weapon>(), (int)weapons[index].baseRarity);
+            var entry = new SpawnableWeapon(prefab.GetComponent<Weapon>(), 0) { baseRarity = DefaultRarity(weapons) };
             weapons.Insert(index + 1, entry);
             return entry;
         }
@@ -64,11 +75,12 @@ namespace SpiderSurge.Weapons
     {
         internal static readonly CustomWeapon[] All =
         {
-            new CustomWeapon(Consts.Values.Bayonet.Id, Consts.Values.Bayonet.Name, "bayonet", SerializationWeaponName.MiniShotgun, () =>
+            // A gun and a blade in one, so it is rare. Its key changed with that, so a Versus rarity saved while it followed the Baby Shotgun is dropped
+            new CustomWeapon(Consts.Values.Bayonet.Id, Consts.Values.Bayonet.Name, "bayonet.rare", SerializationWeaponName.MiniShotgun, () =>
             {
                 Bayonet.EnsureCreated();
                 return Bayonet.Prefab;
-            }),
+            }, rare: true),
             new CustomWeapon(Consts.Values.PoisonDart.Id, Consts.Values.PoisonDart.Name, "poisondart", SerializationWeaponName.GrenadeLauncher, () =>
             {
                 PoisonDart.EnsureCreated();
@@ -239,7 +251,7 @@ namespace SpiderSurge.Weapons
             _taken.Clear();
         }
 
-        // Until its rarity is saved, each follows its anchor's, so a player's own weapon choice stays as it was
+        // Until its rarity is saved, each takes its default, so a weapon whose anchor the player turned off stays off
         internal static void LoadRarity()
         {
             List<SpawnableWeapon> weapons = Weapons;
@@ -248,7 +260,7 @@ namespace SpiderSurge.Weapons
             {
                 SpawnableWeapon entry = weapons.Find(weapon.Is);
                 if (entry == null) continue;
-                entry.baseRarity = weapon.AnchorRarity(weapons);
+                entry.baseRarity = weapon.DefaultRarity(weapons);
                 string key = weapon.Key + " ";
                 foreach (string line in ModData.Lines(Section))
                 {
@@ -273,7 +285,7 @@ namespace SpiderSurge.Weapons
             if (lines.Count > 0) ModData.Write(Section, lines.ToArray());
         }
 
-        // The game's own profiles don't list the mod's weapons, so with one of them each follows its anchor
+        // The game's own profiles don't list the mod's weapons, so with one of them each takes its default
         internal static void FollowProfile(VersusProfile profile)
         {
             List<SpawnableWeapon> weapons = Weapons;
@@ -282,7 +294,7 @@ namespace SpiderSurge.Weapons
             {
                 SpawnableWeapon entry = weapons.Find(weapon.Is);
                 if (entry == null || (profile.weapons != null && profile.weapons.Contains(weapon.Id))) continue;
-                entry.baseRarity = weapon.AnchorRarity(weapons);
+                entry.baseRarity = weapon.DefaultRarity(weapons);
             }
             SaveRarity();
         }
