@@ -26,6 +26,10 @@ Assert-Row 'Worst Accuracy (0%)' 'Accuracy' '0%' -1
 Assert-Row 'Best Railvolver Accuracy (80% (8/10))' 'Railvolver accuracy' '80% (8/10)' 1
 Assert-Row 'Most Ability Activations (123456)' 'Ability uses' '123456' 1
 Assert-Row 'Least Ultimate Activations (0)' 'Ultimate uses' '0' -1
+foreach ($category in @('Gun', 'Explosive', 'Blade')) {
+    Assert-Row "Most $category Kills (12)" "$category offense" '12' 1
+    Assert-Row "Most $category Offense (12)" "$category offense" '12' 1
+}
 foreach ($text in @('An unusual achievement', 'Most Custom Stat (3)', 'Most Web Swings', 'Most Web Swings ()', 'Most Web Swings (3')) {
     Assert-Row $text $text '' 0
 }

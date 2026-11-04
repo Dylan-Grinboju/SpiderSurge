@@ -59,6 +59,7 @@ namespace SpiderSurge
         public Dictionary<int, Pick> Picks { get; } = new Dictionary<int, Pick>();
         public bool Open => Offers.Length > 0;
         public bool Complete => Open && Picks.Count > 0 && Picks.Values.All(pick => pick.Ready);
+        public bool CanFinish(bool hasPlayers) => hasPlayers && Open && Picks.Values.All(pick => pick.Ready);
 
         public void Begin(IEnumerable<string> offers, IEnumerable<int> players, bool ultimate)
         {

@@ -196,7 +196,7 @@ namespace SpiderTeams
             switch (mode)
             {
                 case FriendlyFireMode.Ignore:
-                    return "Teammates' hits do nothing at all.";
+                    return "Teammates' hits are ignored. Kinetic Pulse still pushes teammates.";
                 case FriendlyFireMode.Damage:
                     return "Teammates' hits work as normal and can kill.";
                 default:

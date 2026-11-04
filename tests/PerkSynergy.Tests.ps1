@@ -4,6 +4,7 @@ $stubs = @'
 namespace UnityEngine {
     public struct Color { public Color(float r, float g, float b, float a = 1f) {} }
     public struct Vector2 { public Vector2(float x, float y) {} }
+    public struct Vector3 { public Vector3(float x, float y, float z) {} }
 }
 public enum SerializationWeaponName { }
 public class PlayerController {

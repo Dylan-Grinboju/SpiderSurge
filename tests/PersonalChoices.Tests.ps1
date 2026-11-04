@@ -54,6 +54,15 @@ namespace SpiderSurge {
             Check(round.Ultimate && !round.Complete, "Ultimate screen carried over readiness");
             round.Reconcile(new int[0]);
             Check(!round.Complete, "Empty lobby completed a choice");
+            Check(!round.CanFinish(false), "An empty lobby resumed play");
+            loads.Set(0, "pulse", false);
+            round.Begin(abilities, new[] { 1 }, false);
+            Check(!round.CanFinish(true), "Late joiner did not get a choice");
+            round.Reconcile(new int[0]);
+            Check(round.CanFinish(true), "Departed late joiner blocked established players");
+            Check(loads.Get(0, false) == "pulse", "Established loadout changed");
+            round.Reconcile(new[] { 2 });
+            Check(!round.CanFinish(true), "New arrival was skipped before the choice closed");
             loads.Remove(0);
             Check(loads.Get(0, false) == null && loads.Get(0, true) == null && loads.Get(1, false) != null, "Departed slot cleanup damaged another player");
             return checks;

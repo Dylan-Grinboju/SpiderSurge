@@ -9,6 +9,11 @@ namespace SpiderSurge.Enemies
     // Lives on a laser enemy's shield object, so breaking the shield (or killing the enemy) disables the ring
     public class LaserRing : MonoBehaviour
     {
+        internal static readonly HashSet<LaserRing> Active = new HashSet<LaserRing>();
+        internal bool CanSync => health != null && !health.IsDead() && health.NetworkObject != null && health.NetworkObject.IsSpawned;
+        internal ulong NetworkId => health.GetComponent<NetworkObject>().NetworkObjectId;
+        internal float CycleTime => (Time.time - startTime) % Consts.Values.LaserRing.Period;
+        internal bool IsHeld => held || FrozenEnemy.IsHeld(health) || Weapons.DazedEnemy.IsDazed(health) || SwallowedTarget.IsSwallowed(health.gameObject);
         private enum Phase { Idle, Warning, Active }
 
         [SerializeField] private EnemyHealthSystem health;
@@ -78,6 +83,7 @@ namespace SpiderSurge.Enemies
 
         private void OnEnable()
         {
+            Active.Add(this);
             startTime = Time.time;
             phase = Phase.Idle;
             synced = Net.IsAuthority;
@@ -91,6 +97,7 @@ namespace SpiderSurge.Enemies
 
         private void OnDisable()
         {
+            Active.Remove(this);
             GoOut();
         }
 

@@ -178,7 +178,7 @@ $all = ($usings -join "`n") + "`n" + $stubs + "`n" + $accuracy + "`n" + $oldCode
 Add-Type -TypeDefinition $all -ReferencedAssemblies @('System.Linq', 'System.Collections')
 $checks = 0
 function Assert-Same($old, $new, [string]$label) {
-    $old = @($old); $new = @($new)
+    $old = @($old | ForEach-Object { $_.Replace('Most Gun Kills', 'Most Gun Offense').Replace('Most Explosive Kills', 'Most Explosive Offense').Replace('Most Blade Kills', 'Most Blade Offense') }); $new = @($new)
     if ($old.Count -ne $new.Count) { throw "$label line count: old $($old.Count), new $($new.Count)" }
     for ($i = 0; $i -lt $old.Count; $i++) {
         if ($old[$i] -cne $new[$i]) { throw "$label differs:`n  old: $($old[$i])`n  new: $($new[$i])" }

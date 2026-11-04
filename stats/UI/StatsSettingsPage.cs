@@ -17,7 +17,7 @@ namespace StatsMod
         {
             ("Totals", "total"),
             ("Enemy kills", "enemyKills."),
-            ("Weapon kills", "weaponKills."),
+            ("Weapon offense", "weaponKills."),
             ("Shooting accuracy", AccuracyPrefix),
             ("Player stats", ""),
         };
@@ -100,6 +100,7 @@ namespace StatsMod
                 if (page.Current != ColumnsPage + "." + i) continue;
 
                 page.Title(title + " columns");
+                if (prefix == "weaponKills.") page.Note("Kills and shield breaks by weapon, including friendly fire.");
                 if (prefix == AccuracyPrefix)
                 {
                     page.Note("Accuracy is the percentage of shots that hit an enemy or a versus opponent. Each shot counts once; shields, armor and knockback count. Friendly fire does not.");

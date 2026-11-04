@@ -88,7 +88,7 @@ namespace SpiderTeams
             public static readonly string[] AbilityDescriptions =
             {
                 "Become immune to all damage for a short time.",
-                "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a 25% / 50% salvage chance.",
+                "Unlimited ammo for a short burst, then the weapon burns out. Efficiency gives a chance to salvage it.",
                 "Release a pulse that knocks back everyone nearby.",
                 "Store your weapon and swap it back later.",
                 "A new ability every round, the same for everyone.",
@@ -96,10 +96,10 @@ namespace SpiderTeams
 
             public static readonly string[] UltimateDescriptions =
             {
-                "After a cast time, revive a dead teammate next to you. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
+                "After a cast time, revive a dead teammate at the nearest spawn point. With nobody to revive it summons friendly wasps, which only chase AI enemies.",
                 "Spawns weapons at half of the map's weapon spawners, or all of them with Ability Duration level 2.",
                 "The pulse kills anyone close to you; teammates follow the friendly fire rule.",
-                "For 3 seconds, pulls the spiders around you toward you, and any that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is ignored, and swallowed only with it set to damage.",
+                "Briefly pulls nearby spiders toward you, and any that reaches your inner circle goes into the pocket dimension, forever. Teammates are pulled unless friendly fire is ignored, and swallowed only with it set to damage.",
             };
 
             public const string CooldownPerk = SpiderSurge.Consts.PerkNames.AbilityCooldown;

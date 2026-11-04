@@ -23,15 +23,18 @@ namespace SpiderSurge.Vfx
         private float fadeElapsed;
 
         // Unparented, so the cloud's scale stays off it; it removes itself once faded
-        public static PoisonGas Burst(Transform cloud, float radius)
+        public static PoisonGas Burst(Transform cloud, float radius, bool ignition = true)
         {
             Vector3 position = cloud.position;
             return SurgeVfx.Safely(() => SurgeVfx.Create<PoisonGas>("PoisonGas", position, gas =>
             {
                 gas.cloud = cloud;
                 gas.radius = radius;
-                SurgeVfx.Flash(position, Values.Color, 1.6f, radius + 8f, 0.35f);
-                SurgeVfx.Burst(position, Values.Color, Values.GasColor, 26, 25f, 50f, 1f, 2f, 0.25f, 0.45f, 3f, false);
+                if (ignition)
+                {
+                    SurgeVfx.Flash(position, Values.Color, 1.6f, radius + 8f, 0.35f);
+                    SurgeVfx.Burst(position, Values.Color, Values.GasColor, 26, 25f, 50f, 1f, 2f, 0.25f, 0.45f, 3f, false);
+                }
 
                 var disc = new GameObject("PoisonGasFill");
                 disc.transform.SetParent(gas.transform, false);

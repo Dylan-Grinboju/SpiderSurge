@@ -7,7 +7,7 @@ Stats always loads with SpiderSurge, because Surge depends on its tracking. To h
 
 ## Features
 
-- **Extensive Player Statistics**: Tracks a wide range of player stats including kills, deaths, friendly kills, shield interactions, web swings, airborne time, kill streaks, enemy-specific and weapon-specific kills.
+- **Extensive Player Statistics**: Tracks a wide range of player stats including kills, deaths, friendly kills, shield interactions, web swings, airborne time, kill streaks, enemy-specific kills and weapon offense.
 - **Player Titles**: At the end of each Survival run, players are awarded fun titles based on their performance (e.g., "The Survivor", "Phantom Blade", "Lone Wolf"). Each title card shows a picture of the player's spider, hat included. Titles stay hidden during and after Versus matches, with or without teams.
 - **Shooting accuracy**: Optional overall and per-weapon accuracy columns in F2, with successful/fired shot counts in saved stats, and accuracy titles such as "Bullseye", "Bullet Time" and "Stormtrooper". Each shot counts once, including pellet volleys and sustained beams. See [definitions, supported weapons and implementation research](../docs/weapon-accuracy.md).
 - **In-Game Display**: 
@@ -32,7 +32,7 @@ Each spider's offence (kills plus enemy shield breaks) and deaths, next to its c
 ### Big window (F2)
 The run time, enemies killed and a table with a portrait for each spider. Green is good, pink is a hit you took, amber is friendly fire, and zeros are dimmed. In versus it shows the match time instead.
 
-Choose the opening preset with **Settings** > **Stats** > **Starting scoreboard**. **My scoreboard** has editable columns in **Customize scoreboard**. **Combat**, **Enemy kills**, **Weapon kills**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Customize scoreboard page. Each page uses the available width for its columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
+Choose the opening preset with **Settings** > **Stats** > **Starting scoreboard**. **My scoreboard** has editable columns in **Customize scoreboard**. **Combat**, **Enemy kills**, **Weapon offense**, **Accuracy** and **Movement** are fixed presets; hide any you do not want on the Customize scoreboard page. Each page uses the available width for its columns, and the window scales to fit the screen. Move through the pages and presets with **Page Up / Page Down**, **D-pad left / right**, the arrows at the bottom of the window or the mouse wheel over it.
 
 <img width="1600" alt="The big stats window during a Survival run" src="../docs/images/stats-big-window.jpg" />
 
@@ -44,7 +44,7 @@ Each card lists the stats that earned it as compact rows with values on the righ
 <img width="800" alt="In-game title layout fixture with compact stat rows and highest/lowest arrows" src="../docs/images/titles-compact-stats.png" />
 
 ### Title collection
-Every title that shows on the end screen unlocks in your collection. Open it from **Mods** > **SpiderSurge** > **Collection** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
+Every title that shows on the end screen unlocks in the host PC's collection. Online guests see the results, but title unlocks and completed match history are saved only on the host PC. Open it from **Mods** > **SpiderSurge** > **Collection** > **Titles** to see the titles you have unlocked, how many runs you earned each one in and when you first got it, and the ones still locked. Click a locked title (or press A on it) to see what it takes to earn it. Surge mode's titles are listed too. **Reset the title collection** at the bottom of the page locks every title again.
 
 Use **Show** to cycle through All, Locked, Unlocked, Recently earned and New. New shows only unseen unlocks, and the Collection menu shows how many are waiting. Select an unlocked title or use **Mark all seen** to clear its marker. The end screen and saved match history still remember which titles were new that run.
 
@@ -52,7 +52,7 @@ The collection is saved on your PC in the game's own save folder, so updating or
 
 ### Match history
 
-Open **Mods** > **SpiderSurge** > **Match history**, then choose Survival or Versus. Each record shows the outcome, duration and players, plus the wave and pain level for Survival. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. Open a match for player statistics, enemy and weapon kills, shooting accuracy, maps, perks and earned titles, including which titles appeared on the end screen and which were new that run.
+Open **Mods** > **SpiderSurge** > **Match history**, then choose Survival or Versus. Each record shows the outcome, duration and players, plus the wave and pain level for Survival. A Surge badge identifies Surge Survival; Surge abilities marks versus matches that used abilities. Open a match for player statistics, enemy kills and weapon offense, shooting accuracy, maps, perks and earned titles, including which titles appeared on the end screen and which were new that run.
 
 Saving history is independent of text reports and telemetry. All recorded matches are kept on this PC, with 20 matches per list page, in the `SpiderSurge\History` folder beside `progress.dat`. History starts with this update; older text reports are available through **About SpiderSurge** > **Support** > **Open logs**. **Refresh history** rereads the files. **Clear match history** removes history after confirmation and keeps achievements, the title collection and highscores.
 
