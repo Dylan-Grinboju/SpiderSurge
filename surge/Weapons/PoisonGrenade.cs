@@ -45,9 +45,9 @@ namespace SpiderSurge.Weapons
             if (grenade.lights != null)
             {
                 var fuse = new GameObject("FuseLight");
+                SurgeVfx.PointLight(fuse, Values.Color, Values.FuseLightIntensity, Values.FuseLightRadius);
                 fuse.transform.SetParent(grenade.lights.transform, false);
                 fuse.transform.position = go.transform.position;
-                SurgeVfx.PointLight(fuse, Values.Color, Values.FuseLightIntensity, Values.FuseLightRadius);
             }
             CustomPrefabNet.RegisterWeapon(go, Values.Name);
             return go;
