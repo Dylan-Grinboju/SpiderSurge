@@ -31,9 +31,8 @@ namespace SpiderSurge
 
         private sealed class PlayerMarker
         {
-            public Image Image;
+            public PlayerChoiceIcon Image;
             public TMP_Text Label;
-            public Outline Outline;
         }
 
         internal static void Show()
@@ -270,11 +269,10 @@ namespace SpiderSurge
                     var pair = picks[n];
                     if (!markers.TryGetValue(pair.Key, out var marker))
                     {
-                        var icon = new GameObject("Player " + (pair.Key + 1), typeof(RectTransform), typeof(Image), typeof(Outline)).GetComponent<Image>();
+                        var icon = new GameObject("Player " + (pair.Key + 1), typeof(RectTransform), typeof(CanvasRenderer), typeof(PlayerChoiceIcon)).GetComponent<PlayerChoiceIcon>();
                         var template = hud.perkCardPrefab.GetComponent<SurvivalModifierChoiceCard>();
-                        icon.sprite = template.voteImages.FirstOrDefault(vote => vote != null)?.sprite;
                         icon.raycastTarget = false;
-                        marker = new PlayerMarker { Image = icon, Outline = icon.GetComponent<Outline>(), Label = Text(template.perkNameText, icon.transform, "Player label", new Vector2(48, 22), 12) };
+                        marker = new PlayerMarker { Image = icon, Label = Text(template.perkNameText, icon.transform, "Player label", new Vector2(48, 22), 12) };
                         markers.Add(pair.Key, marker);
                     }
                     var controller = Players.ById(pair.Key);
@@ -283,9 +281,7 @@ namespace SpiderSurge
                     marker.Image.rectTransform.sizeDelta = new Vector2(size * .8f, size * .8f);
                     int rowCount = Mathf.Min(columns, picks.Length - n / columns * columns);
                     marker.Image.rectTransform.anchoredPosition = new Vector2((n % columns - (rowCount - 1) / 2f) * 52, (rows - 1) * size / 2 - n / columns * size);
-                    marker.Image.color = new Color(color.r, color.g, color.b, pair.Value.Ready ? 1f : .5f);
-                    marker.Outline.effectColor = pair.Value.Ready ? Color.white : color;
-                    marker.Outline.effectDistance = pair.Value.Ready ? new Vector2(2, 2) : Vector2.one;
+                    marker.Image.color = pair.Value.Ready ? color : Color.Lerp(color, Color.black, .4f);
                     marker.Label.text = $"P{pair.Key + 1}" + (pair.Value.Ready ? " \u2713" : "");
                     marker.Label.fontSize = Mathf.Min(12, size * .45f);
                     marker.Label.rectTransform.anchoredPosition = new Vector2(0, -size * .55f);
