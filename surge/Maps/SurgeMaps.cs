@@ -276,7 +276,12 @@ namespace SpiderSurge.Maps
             if (map == null) return;
             CustomMapEditor.editorState = EditorState.Playing;
             VersusMode.CustomMapString = map.json;
-            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == SceneName) BuildOnClient(CustomMapEditor.instance);
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == SceneName)
+            {
+                // A joiner's scene loaded before the host identified the map; refresh the level that controls gravity.
+                if (LevelController.instance != null) LevelController.instance.activeLevel = map.level;
+                BuildOnClient(CustomMapEditor.instance);
+            }
         }
 
         public static void BuildOnClient(CustomMapEditor editor)
