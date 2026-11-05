@@ -350,6 +350,8 @@ namespace SpiderSurge
                 public const float ThickBladesMinExtraWidth = 3f;
                 public const float ThickBladesMaxExtraWidth = 100f;
                 public const float BladeForce = 400f;
+                // How long a thrown Particle Blade stays lit
+                public const float ThrownBladeSeconds = 3f;
                 // Emitter crown in the sprite, in the weapon's local units
                 public static readonly UnityEngine.Vector2 BladeOrigin = new UnityEngine.Vector2(1.75f, 5.1f);
                 public const float SpritePixelsPerUnit = 20f;

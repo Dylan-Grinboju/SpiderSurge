@@ -110,6 +110,17 @@ namespace SpiderSurge.Weapons
         }
     }
 
+    // A thrown Particle Blade stays lit for a moment (ParticleBlade.OnThrowClientRpc); the Bayonet's blade does too
+    [HarmonyPatch(typeof(Weapon), nameof(Weapon.OnThrow))]
+    internal static class Bayonet_Throw_Patch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(Weapon __instance)
+        {
+            if (Bayonet.Is(__instance)) __instance.GetComponent<BayonetBlade>()?.Throw();
+        }
+    }
+
     // The shotgun's recoil reaches it through Weapon.Impact, which isn't a hit
     [HarmonyPatch(typeof(Shotgun), "ShootClientRpc")]
     internal static class Bayonet_Recoil_Patch
