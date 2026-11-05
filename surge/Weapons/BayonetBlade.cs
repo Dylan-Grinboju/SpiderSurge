@@ -7,11 +7,12 @@ using Mods = SpiderSurge.Consts.ModifierNames;
 
 namespace SpiderSurge.Weapons
 {
-    // Runs on every peer: the blade is lit while the Bayonet is held and has durability left, in the holder's color, and shortens
-    // against walls and as it wears down like the Particle Blade. The host owns the durability and sends it to clients
+    // Runs on every peer: the blade is lit while the Bayonet is held, or briefly after a throw, and has durability left, in the holder's
+    // color, and shortens against walls and as it wears down like the Particle Blade. The host owns the durability and sends it to clients
     public class BayonetBlade : MonoBehaviour
     {
         private const string Channel = "surge.bayonet";
+        private const string ThrowChannel = "surge.bayonet.throw";
 
         public ParticleField field;
         public AudioSource beamSound;
@@ -33,14 +34,21 @@ namespace SpiderSurge.Weapons
         private float _max;
         private float _left;
         private float _restored = -1f;
+        private float _thrownUntil;
+        private bool _wasEquipped;
         private bool _started;
         private bool _lit;
 
-        public static void Initialize() => Net.RegisterFromHost(Channel, OnState);
+        public static void Initialize()
+        {
+            Net.RegisterFromHost(Channel, OnState);
+            Net.RegisterFromHost(ThrowChannel, OnThrown);
+        }
 
         public static void Shutdown()
         {
             Net.Unregister(Channel);
+            Net.Unregister(ThrowChannel);
             _pending.Clear();
         }
 
@@ -80,7 +88,11 @@ namespace SpiderSurge.Weapons
 
         private void Update()
         {
-            bool held = _left > 0f && _gun.equipped && _gun.owner != null && _gun.owner.healthSystem != null;
+            bool equipped = _gun.equipped && _gun.owner != null && _gun.owner.healthSystem != null;
+            // Picking it up again ends the throw, so a later drop douses it at once
+            if (equipped && !_wasEquipped) _thrownUntil = 0f;
+            _wasEquipped = equipped;
+            bool held = _left > 0f && (equipped || (_lit && Time.time < _thrownUntil));
             // Another spider can catch it in the frame it was dropped; the blade then spares its new holder instead
             if (held && _lit && _holder != _gun.owner) Douse(false);
             if (held != _lit)
@@ -157,6 +169,24 @@ namespace SpiderSurge.Weapons
         {
             var blade = Bayonet.Is(weapon) ? weapon.GetComponent<BayonetBlade>() : null;
             if (blade != null && blade._started) blade.SetLeft(Mathf.Min(blade._left, blade._max * fraction));
+        }
+
+        // The host's throw; sent before the unequip so clients keep the blade lit through it
+        internal void Throw()
+        {
+            if (!_started) return;
+            _thrownUntil = Time.time + Values.ThrownBladeSeconds;
+            if (!Net.HasRemotePlayers || _gun.NetworkObject == null || !_gun.NetworkObject.IsSpawned) return;
+            ulong id = _gun.NetworkObjectId;
+            Net.SendToAll(ThrowChannel, writer => writer.Write(id));
+        }
+
+        private static void OnThrown(BinaryReader reader)
+        {
+            ulong id = reader.ReadUInt64();
+            if (!Net.Manager.SpawnManager.SpawnedObjects.TryGetValue(id, out var target) || target == null) return;
+            var blade = target.GetComponent<BayonetBlade>();
+            if (blade != null) blade._thrownUntil = Time.time + Values.ThrownBladeSeconds;
         }
 
         internal void Wear()
