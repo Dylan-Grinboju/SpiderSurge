@@ -35,6 +35,7 @@ namespace SpiderSurge
             OldMods.Check();
             Settings.Load();
             Net.Initialize();
+            PlayerRemoval.Initialize();
             Parts.StartAll();
             Brightness.Attach(CameraEffects.instance);
             ModUpdater.ScheduleCheck();
@@ -80,6 +81,7 @@ namespace SpiderSurge
             Brightness.Shutdown();
             HistoryStore.FinishWrites();
             ModData.FinishWrites();
+            PlayerRemoval.Shutdown();
             Net.Shutdown();
             Settings.Flush();
             OldMods.Release();
