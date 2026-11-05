@@ -14,6 +14,8 @@ namespace SpiderSurge
         private HoldConfirmation _hold;
         private Button _button;
         private ButtonControl _control;
+        private EventSystem _events;
+        private InputAction _submit;
         private RectTransform _progress;
         private Canvas _canvas;
         private bool _pointer;
@@ -25,6 +27,7 @@ namespace SpiderSurge
             _accept = accept;
             _hold = new HoldConfirmation();
             _canvas = GetComponentInParent<Canvas>();
+            SetInputModule(EventSystem.current?.currentInputModule);
             SettingsPage.SetText(label, accept ? "Hold to accept" : "Hold to skip");
             var bar = new GameObject("Hold progress", typeof(RectTransform), typeof(Image));
             _progress = (RectTransform)bar.transform;
@@ -42,21 +45,24 @@ namespace SpiderSurge
         private bool Available => Net.IsAuthority && ChallengeController.Pending && _canvas != null && _canvas.enabled &&
             _button != null && _button.IsInteractable() && Application.isFocused && (HudController.instance == null || !HudController.instance.paused);
 
-        private static InputSystemUIInputModule InputModule => EventSystem.current?.currentInputModule as InputSystemUIInputModule;
+        private void SetInputModule(BaseInputModule module)
+        {
+            _events = module != null ? module.GetComponent<EventSystem>() : EventSystem.current;
+            _submit = (module as InputSystemUIInputModule)?.submit?.action;
+        }
 
-        private static bool ControlsReleased()
+        private bool ControlsReleased()
         {
             if (Mouse.current != null && Mouse.current.leftButton.isPressed) return false;
-            var action = InputModule?.submit?.action;
-            if (action != null)
-                foreach (var control in action.controls)
+            if (_submit != null)
+                foreach (var control in _submit.controls)
                     if (control is ButtonControl button && button.isPressed) return false;
             return true;
         }
 
         private void Update()
         {
-            bool selected = EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject;
+            bool selected = _events != null && _events.currentSelectedGameObject == gameObject;
             bool held = _control != null && _control.isPressed && (_pointer || selected);
             bool confirmed = _hold.Tick(Time.unscaledTime, held, ControlsReleased(), Available);
             if (!held) _control = null;
@@ -68,6 +74,7 @@ namespace SpiderSurge
         public void OnPointerDown(PointerEventData eventData)
         {
             if (!Available || eventData.button != PointerEventData.InputButton.Left) return;
+            SetInputModule(eventData.currentInputModule);
             _control = Mouse.current?.leftButton;
             _pointer = true;
         }
@@ -85,7 +92,16 @@ namespace SpiderSurge
         public void OnSubmit(BaseEventData eventData)
         {
             if (!Available) return;
-            _control = InputModule?.submit?.action?.activeControl as ButtonControl;
+            // Local multiplayer can change EventSystem.current after the originating module sends Submit.
+            SetInputModule(eventData.currentInputModule);
+            _control = _submit?.activeControl as ButtonControl;
+            if ((_control == null || !_control.isPressed) && _submit != null)
+                foreach (var control in _submit.controls)
+                    if (control is ButtonControl button && button.isPressed && button.wasPressedThisFrame)
+                    {
+                        _control = button;
+                        break;
+                    }
             _pointer = false;
         }
 
