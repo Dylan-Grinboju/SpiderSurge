@@ -358,7 +358,7 @@ surge_map(
 
 # A satellite in zero gravity, with long solar wings, a dish underneath and debris that drifts when pushed
 surge_map(
-    "satellite", "Satellite", SPACE, LAVA_BOTTOM, zero_gravity=True,
+    "satellite", "Satellite", SPACE, LAVA_ALL, scale=0.6, zero_gravity=True,
     elements=[
         el("Big Block", 0, 60, 0, 1.4), el("Loooong Boi", -185, 60, 0, 1.2), el("Loooong Boi", 185, 60, 0, 1.2),
         el("Spike", 0, 121, 0, 0.8), quarter(0, -20, "ll", 1.2), quarter(0, -20, "lr", 1.2),
@@ -367,8 +367,8 @@ surge_map(
         hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
-    enemies=[(-335, 150), (340, 150), (0, 318), (-120, -50), (120, -50), (0, -165)],
-    weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 255.0), (230.0, 275.0)],
+    enemies=[(-335, 150), (340, 150), (0, 358), (-170, -30), (170, -30), (0, -165)],
+    weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 266.0), (230.0, 275.0)],
     rare=[(10, -40)],
     # A turning antenna above the body, and loose debris drifting around it
     parts=[

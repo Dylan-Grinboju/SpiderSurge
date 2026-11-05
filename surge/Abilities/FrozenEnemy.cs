@@ -538,7 +538,8 @@ namespace SpiderSurge
             EnemyHealthSystem shaman = __instance.origin != null ? __instance.origin.GetComponentInParent<EnemyHealthSystem>() : null;
             if (FrozenEnemy.IsFrozen(shaman) && FreezeAbility.HasLineOfSight(shaman.transform.position, __instance.transform.position))
                 FrozenCloud.Freeze(__instance, FrozenEnemy.ThawTimeOf(shaman));
-            if (!FrozenCloud.IsFrozen(__instance) && !Weapons.DazedEnemy.IsDazed(shaman)) return true;
+            if (!FrozenCloud.IsFrozen(__instance) && !FrozenEnemy.IsHeld(shaman) &&
+                !SwallowedTarget.IsSwallowed(shaman != null ? shaman.gameObject : null) && !Weapons.DazedEnemy.IsDazed(shaman)) return true;
             if (__instance.rb2d != null) __instance.rb2d.velocity = Vector2.zero;
             return false;
         }

@@ -22,6 +22,7 @@ namespace SpiderSurge
         private readonly List<CaughtEnemy> _caught = new List<CaughtEnemy>();
         private readonly BlackHoleMeal _achievementMeal = new BlackHoleMeal();
         private static readonly RaycastHit2D[] WallHits = new RaycastHit2D[8];
+        private static readonly List<BlackHoleField> ActiveFields = new List<BlackHoleField>();
 
         private class CaughtEnemy
         {
@@ -45,12 +46,26 @@ namespace SpiderSurge
             field._lastPosition = caster.transform.position;
             field.transform.position = field._lastPosition;
             field._enemyPull = EnemyPull(range);
+            ActiveFields.Add(field);
             field._vfx = StorageVfx.BlackHoleOpen(field._body, range, Consts.Values.Storage.BlackHolePullTime);
             if (authority) field.CatchEnemies();
             return field;
         }
 
         private bool CasterAlive => _caster != null && !_caster.dead && !_caster.astralDead;
+
+        public static bool ProtectsFromPoison(SpiderHealthSystem spider)
+        {
+            if (spider == null) return false;
+            foreach (BlackHoleField field in ActiveFields)
+            {
+                if (field != null && field.isActiveAndEnabled && field._caster == spider && field.CasterAlive &&
+                    field._elapsed < Consts.Values.Storage.BlackHolePullTime) return true;
+            }
+            return false;
+        }
+
+        private void OnDestroy() => ActiveFields.Remove(this);
 
         // Scale the acceleration from the reference distance so the pull brings enemies in faster at every range
         private static float EnemyPull(float range)
