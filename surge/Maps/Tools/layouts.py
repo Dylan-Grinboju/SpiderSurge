@@ -67,6 +67,8 @@ def scaled(e, f):
     px, py = SCALE_PIVOT
     m = dict(e)
     m["x"], m["y"] = round(px + (e["x"] - px) * f, 2), round(py + (e["y"] - py) * f, 2)
+    if e["o"] in ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner"):
+        m["y"] = round(m["y"] + 12 * (1 - f), 2)
     if e["o"] not in FIXED_SIZE:
         m["sx"], m["sy"] = round(e["sx"] * f, 3), round(e["sy"] * f, 3)
     if "with" in e:
@@ -188,7 +190,7 @@ def pipe(points, s=0.6, radius=23.0):
 
 # Shelves of breakable ice over one solid floor; floor pads fire up through the gaps once the ice is gone
 surge_map(
-    "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM,
+    "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM, scale=0.6,
     elements=[
         el("Loooong Boi", 0, -110, 0, 1.4), el("Ballish", -330, -40, 0, 0.9), el("Ballish", 330, -40, 0, 0.9),
         honeycomb(-200, 0, 1.6), honeycomb(200, 0, 1.6), honeycomb(0, 100, 1.6),
@@ -209,7 +211,7 @@ surge_map(
 
 # Desert floor with deadly cacti that burn enemies as well as spiders
 surge_map(
-    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.75,
+    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.52,
     elements=[
         el("Pancake", -170, -120, 0, 2), el("Pancake", 170, -120, 0, 2),
         el("DeathSpike", -200, -87, 0, 0.6), el("DeathSpike", 200, -87, 0, 0.6),
@@ -228,7 +230,7 @@ surge_map(
 
 # A volcano with a magma pool in its crater and ledges above the rim
 surge_map(
-    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.85,
+    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.58,
     elements=[
         bar(-360, -150, -100, 40), bar(360, -150, 100, 40),
         el("Ballish", -100, 45, 0, 0.8), el("Ballish", 100, 45, 0, 0.8),
@@ -248,7 +250,7 @@ surge_map(
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
 surge_map(
-    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.75,
+    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.55,
     elements=[
         el("Pancake", 0, -130, 0, 1.6), bar(-90, -125, -300, 120), bar(90, -125, 300, 120),
         el("Jump Pad", -50, -114), el("Jump Pad", 50, -114),
@@ -266,7 +268,7 @@ surge_map(
 
 # Floating rocks over the lava: vents blow fallen spiders back up, and jump pads on the shelves above them launch higher
 surge_map(
-    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.85,
+    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.58,
     elements=[
         el("Pancake", -290, -40, 0, 1.2), el("Pancake", 0, -110, 0, 1.4), el("Pancake", 290, -40, 0, 1.2),
         el("Pancake", -150, 110), el("Pancake", 150, 110), el("Pancake", 0, 240, 0, 0.9),
@@ -287,7 +289,7 @@ surge_map(
 # Two toothed jaws, with lava above and below. The upper jaw breaks at its corners, its outer teeth and the
 # lower middle tooth burn, and gates in the open sides wrap one side to the other
 surge_map(
-    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.9,
+    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.6,
     elements=[
         el("Loooong Boi", 0, -125, 0, 1.6), bar(-160, -125, -320, -35), bar(160, -125, 320, -35),
         el("Loooong Boi", 0, 285, 0, 240 / 202, 1.6),
@@ -310,7 +312,7 @@ surge_map(
 
 # Four broken beams frame an open crossing; gates join each lower tip to the opposite upper tip, so sliding down
 # a lower arm drops a spider onto the opposite upper arm
-_crossbeams = 0.85
+_crossbeams = 0.58
 _lower_left = gate_on(-230, -110, -75, 5, 45, _crossbeams)
 _upper_right = gate_on(230, 230, 75, 115, 45, _crossbeams)
 surge_map(
@@ -336,7 +338,7 @@ surge_map(
 # Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap,
 # and jump pads fire up the clear shafts on each side
 surge_map(
-    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.9,
+    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.6,
     elements=(
         pipe([(-340, 180), (-340, -90), (-100, -90)])
         + pipe([(100, -90), (340, -90), (340, 180)])
@@ -358,7 +360,7 @@ surge_map(
 
 # A satellite in zero gravity, with long solar wings, a dish underneath and debris that drifts when pushed
 surge_map(
-    "satellite", "Satellite", SPACE, LAVA_BOTTOM, zero_gravity=True,
+    "satellite", "Satellite", SPACE, LAVA_BOTTOM, scale=0.6, zero_gravity=True,
     elements=[
         el("Big Block", 0, 60, 0, 1.4), el("Loooong Boi", -185, 60, 0, 1.2), el("Loooong Boi", 185, 60, 0, 1.2),
         el("Spike", 0, 121, 0, 0.8), quarter(0, -20, "ll", 1.2), quarter(0, -20, "lr", 1.2),
@@ -380,7 +382,7 @@ surge_map(
 # A wrecked station hull in zero gravity: broken plates around a core, turbines still turning inside and
 # cargo floating loose through the gaps
 surge_map(
-    "derelict", "Derelict", SPACE, LAVA_ALL, zero_gravity=True,
+    "derelict", "Derelict", SPACE, LAVA_ALL, scale=0.62, zero_gravity=True,
     elements=[
         el("Loooong Boi", -160, 250, 0, 0.9), el("Loooong Boi", 185, 225, -15, 0.65),
         el("Loooong Boi", -160, -100, 0, 0.9), el("Loooong Boi", 160, -100, 0, 0.9),
@@ -405,7 +407,7 @@ surge_map(
 # A crescent shelters one side of an arena while its open mouth invites long swings; vents under the open side
 # lift fallen spiders back to the low shelves
 surge_map(
-    "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.8,
+    "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.58,
     elements=[
         quarter(-80, 65, "ul", 3.3), quarter(-80, 65, "ll", 3.3),
         el("Platform", -110, 55, 0, 1.3), el("Platform", -50, -95, 0, 1.4),

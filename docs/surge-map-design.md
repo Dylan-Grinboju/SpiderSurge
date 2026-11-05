@@ -35,23 +35,24 @@ The custom map scene gives every map the same 930 Ã— 530 camera box, about three
 - **Camera box:** each layout stores a box fitted to its colliders and vents, reaching 25 past the sides, 30 below and 65 above, the base-game arenas' median margins. Host and clients apply it when the map loads, so the camera no longer follows players into empty space or zooms out further than on a base-game arena.
 - **Enemy spawns** lie inside that box, as they do on the base-game arenas. Before, they sat up to 110 units outside the outermost platforms.
 - **Player spawns** are at most 500 apart; the widest base-game spread is 511.
-- **Scale:** `surge_map(..., scale=f)` shrinks a whole arena toward (0, -150). Spawns, jump pads (whose force is fixed) and portals keep their size. Eight arenas are scaled from 0.75 to 0.9, so the selection runs from compact (Crescent 494 and Trampoline 511 wide) to large (Thin Ice 762), with a median of about 670 Ã— 440.
+- **Compact layouts:** all eleven arenas now use substantially smaller footprints. Horizontal gaps, vertical tiers, moving parts and spawn routes shrink together; player and weapon spawn clearance retains a small fixed allowance. Pads and gates retain their native size. Crossbeams recomputes gate offsets for its smaller beams.
+- **Design target:** keep encounters close, with short recovery routes between the defining structures. Thin Ice, Satellite and Derelict now receive the same compact treatment as the rest of the roster.
 
-| Arena | Scale | Camera box |
-|---|---|---|
-| Thin Ice | 1 | 762 Ã— 500 |
-| Cactus Garden | 0.75 | 584 Ã— 342 |
-| Caldera | 0.85 | 670 Ã— 409 |
-| Trampoline | 0.75 | 511 Ã— 420 |
-| Geysers | 0.85 | 668 Ã— 442 |
-| Jaws | 0.9 | 630 Ã— 496 |
-| Crossbeams | 0.85 | 675 Ã— 436 |
-| Pipeworks | 0.9 | 674 Ã— 457 |
-| Satellite | 1 | 718 Ã— 509 |
-| Crescent | 0.8 | 494 Ã— 421 |
-| Derelict | 1 | 681 Ã— 465 |
+| Arena | Camera box |
+|---|---|
+| Thin Ice | 477 × 343 |
+| Cactus Garden | 420 × 266 |
+| Caldera | 473 × 311 |
+| Trampoline | 388 × 334 |
+| Geysers | 471 × 333 |
+| Jaws | 437 × 362 |
+| Crossbeams | 476 × 328 |
+| Pipeworks | 466 × 338 |
+| Satellite | 451 × 345 |
+| Derelict | 442 × 324 |
+| Crescent | 372 × 332 |
 
-Jump pads keep their force on a scaled map, so they throw relatively higher: on Trampoline a pad launch peaks at y 117, level with the upper platforms and well inside the 236 camera top.
+The updated roster below is rendered from collider geometry. Gameplay, jump-pad trajectories and online behavior have not been tested for this revision.
 
 ## Spawn supply
 
