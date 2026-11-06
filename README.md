@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/github/downloads/Dylan-Grinboju/SpiderSurge/total?color=ff0061)](https://github.com/Dylan-Grinboju/SpiderSurge/releases)
 [![Silk](https://img.shields.io/badge/Silk-0.7.0-ff0061)](https://github.com/SilkModding/Silk)
 
-SpiderSurge 1.0 brings **SpiderStats into the mod** and adds **team versus**, alongside new maps, weapons, abilities and plenty of ways to make questionable decisions with your friends. Jump into Surge Survival, split into teams for Versus, or keep ordinary Survival and enjoy the stats.
+SpiderSurge brings **SpiderStats into the mod** and adds **team versus**, alongside new maps, weapons, abilities and plenty of ways to make questionable decisions with your friends. Jump into Surge Survival, split into teams for Versus, or keep ordinary Survival and enjoy the stats.
 
 **Online support is experimental.** Use a **P2P lobby**, with **the same SpiderSurge version on every player's PC**. Please report desyncs, late-join problems and anything else that looks wrong. See [Online play](#online-play) for details.
 
@@ -94,7 +94,7 @@ You can also enable Surge abilities in team versus or free-for-all. For larger g
 
 ## Online play
 
-**Online support is experimental in 1.0.** Every player must run the same SpiderSurge version in a **P2P lobby**. A modded host refuses players without SpiderSurge or with a different version.
+**Online support is experimental.** Every player must run the same SpiderSurge version in a **P2P lobby**. A modded host refuses players without SpiderSurge or with a different version.
 
 The host controls shared rules and team decisions. Guests can see results, but completed match history and title-collection unlocks stay on the host PC. Online play still needs more real-world testing; [send feedback or report a bug](https://github.com/Dylan-Grinboju/SpiderSurge/issues), especially if something differs between host and guest.
 
@@ -111,6 +111,10 @@ The host controls shared rules and team decisions. Guests can see results, but c
 | Switch team in the lobby | **T** | **Y / Triangle** |
 
 The controller ability button replaces its normal game action, so use **A or L1 to jump**. To remap it, hold **Select** and double-tap another button. Release Select, then hold it for three seconds to reset to L2. Each player chooses their own binding; it lasts until they leave the game.
+
+Controls you change in **Options > Keyboard Options** or **Controller Options** also apply in Surge. A control remapped onto an ability button is turned off during Surge, so that button only uses the ability.
+
+To let one player leave mid-game, open the pause menu and choose **Remove Players**. The host can remove anyone; online guests can remove their own local players. The others keep playing.
 
 During a match, the controller window cycle offers the small window and Off. In the lobby, it also offers the big scoreboard and Survival titles. The scoreboard's arrows and mouse wheel move through its pages and presets too.
 
