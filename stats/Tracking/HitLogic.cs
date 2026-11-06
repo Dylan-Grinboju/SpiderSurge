@@ -70,6 +70,9 @@ namespace StatsMod
         // The latest damaging hit on each spider and when it landed, for the cause of its death
         private static readonly Dictionary<int, (string Cause, float Time)> lastDamageCauses = new Dictionary<int, (string, float)>();
         private const float DeathCauseWindow = 1f;
+        // Enemy shots that carry no owner of their own (a Khepri's energy ball), by the ball's instance id
+        private static readonly Dictionary<int, (string Cause, float Time)> enemyShots = new Dictionary<int, (string, float)>();
+        internal static EnemyHealthSystem EnemyShooter;
         private static float lastPruneTime = 0f;
         private static float ownersSince = float.NegativeInfinity;
         // Players who left no longer own the weapons they dropped
@@ -164,6 +167,7 @@ namespace StatsMod
             lastEnemyHits.Clear();
             lastPlayerHits.Clear();
             lastDamageCauses.Clear();
+            enemyShots.Clear();
             rollerFuses.Clear();
             explosionOwners.Clear();
             deathCredits.Clear();
@@ -541,11 +545,20 @@ namespace StatsMod
             }
             Component source = Attacks.Source ?? SpiderSurge.SurgeAttacks.Source;
             if (source == null) return "Other";
+            if (source is EnergyBall shot && shot.owner == null && enemyShots.TryGetValue(shot.GetInstanceID(), out var enemyShot)) return enemyShot.Cause;
             EnemyHealthSystem enemy = source is EnergyBall ball && ball.owner != null
                 ? ball.owner.GetComponentInParent<EnemyHealthSystem>()
                 : SpiderSurge.AbilityAchievementTracker.EnemyOf(source);
             if (enemy != null) return TryGetKillCategory(enemy, out string name) ? name : "Enemy";
             return source is Explosion ? "Explosion" : source.GetType().Name;
+        }
+
+        // The shooter's kill name is kept at the launch, since the Khepri can die before its ball lands
+        internal static void OnEnemyShot(EnergyBall ball)
+        {
+            if (ball == null || EnemyShooter == null) return;
+            PruneIfDue();
+            enemyShots[ball.GetInstanceID()] = (TryGetKillCategory(EnemyShooter, out string name) ? name : "Enemy", Time.time);
         }
 
         // The Astral Heckhound modifier's revive undoes the death, so it takes back the kill too
@@ -615,6 +628,7 @@ namespace StatsMod
             PruneStale(rollerFuses, hit => hit.Time, now, StaleFuseAge);
             PruneStale(explosionOwners, owner => owner.Time, now);
             PruneStale(lastDamageCauses, hit => hit.Time, now, DeathCauseWindow);
+            PruneStale(enemyShots, shot => shot.Time, now);
             ownersSince = Math.Max(ownersSince, now - StaleHitAge);
             departed.RemoveWhere(player => player == null);
             lastPruneTime = now;
