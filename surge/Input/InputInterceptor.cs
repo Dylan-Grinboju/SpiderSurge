@@ -169,6 +169,13 @@ namespace SpiderSurge
             if (!restoredBindings.TryGetValue(bindingPath, out List<BindingRestoreInfo> backups))
                 return;
 
+            // A removed player's input is destroyed with it, so there is nothing left to restore
+            if (playerInput == null)
+            {
+                restoredBindings.Remove(bindingPath);
+                return;
+            }
+
             foreach (var backup in backups)
             {
                 try
@@ -177,7 +184,7 @@ namespace SpiderSurge
                     {
                         backup.Action.ApplyBindingOverride(backup.BindingIndex, backup.Original);
                     }
-                    else if (playerInput?.actions != null)
+                    else if (playerInput.actions != null)
                     {
                         RestoreBindingOnCurrentAsset(backup);
                     }
@@ -192,7 +199,7 @@ namespace SpiderSurge
 
         private bool IsActionFromCurrentAsset(InputAction action)
         {
-            if (playerInput?.actions == null) return false;
+            if (playerInput == null || playerInput.actions == null) return false;
             foreach (var a in playerInput.actions)
             {
                 if (a == action) return true;

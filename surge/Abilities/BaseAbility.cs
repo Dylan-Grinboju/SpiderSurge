@@ -480,6 +480,24 @@ namespace SpiderSurge
             }
         }
 
+        // The regular ability of a living player: running (not the ultimate), or castable now; actions are the player's abilities, gathered once by the caller
+        internal static (bool Running, bool Ready) RegularStatus(List<BaseAbility> actions)
+        {
+            BaseAbility regular = null;
+            bool active = false, ultimate = false, cooling = false;
+            foreach (var action in actions)
+            {
+                if (!action.IsUnlocked()) continue;
+                if (regular == null && action.IsRegularUnlocked()) regular = action;
+                active |= action.isActive;
+                ultimate |= action.isUltimateActive;
+                cooling |= action.onCooldown;
+            }
+            if (regular == null || !regular.IsPlayerAlive()) return (false, false);
+            if (active) return (!ultimate, false);
+            return (false, !cooling && !FrozenSpider.IsFrozen(regular.spiderHealthSystem) && ChallengeController.CanActivate(false) && regular.CanActivate(false));
+        }
+
         public bool HasAvailableAction => GetComponents<BaseAbility>().Any(action =>
             action.IsRegularUnlocked() && ChallengeController.CanActivate(false) || action.IsUltimateUnlocked() && ChallengeController.CanActivate(true));
 

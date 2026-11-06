@@ -180,6 +180,7 @@ namespace SpiderSurge
         {
             if (!Net.IsAuthority || ____exploding || __instance.ignoreIndirectDamage) return;
             AchievementTracker.Run("Ability kill", static enemy => AbilityAchievementTracker.EnemyKilled(enemy), __instance);
+            Logging.SpiderSurgeStatsManager.RunSafely("ability effect kill", _ => Logging.AbilityEffects.EnemyDied(__instance));
         }
     }
 

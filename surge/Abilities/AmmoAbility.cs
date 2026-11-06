@@ -40,6 +40,7 @@ namespace SpiderSurge
         private Weapon trackedWeapon;
         private float trackedAmmo;
         private bool burstInterrupted;
+        private int shotsAtCast = -1;
         private WeaponAura aura;
         private static WeaponSpawner[] cachedWeaponSpawners;
         private static string cachedSceneName;
@@ -113,12 +114,17 @@ namespace SpiderSurge
             trackedAmmo = trackedWeapon.ammo;
             burstInterrupted = false;
             overchargedWeapons[trackedWeapon] = this;
+            shotsAtCast = IsAuthority ? ShotsFired() : -1;
             PlayCasterSound(Consts.SoundNames.AmmoAbility, Consts.SoundVolumes.AmmoAbility);
             ClipVfx.Cast(trackedWeapon.transform.position);
             ShowAura(trackedWeapon.transform);
             SurgeNet.SendFx(SurgeFx.Clip, PlayerId, trackedWeapon.transform.position, 0f, true);
             UnlimitedPowerAchievement.Cast(this);
         }
+
+        // Stats' shot count for this player; -1 without Stats
+        private int ShotsFired() =>
+            Parts.Stats.Running && StatsMod.PlayerTracker.Instance.TryGetPlayer(playerController, out var data) ? data.ShootingAccuracy.ShotsFired : -1;
 
         private void ShowAura(Transform weapon)
         {
@@ -153,6 +159,8 @@ namespace SpiderSurge
         {
             StopAura();
             SurgeNet.SendFx(SurgeFx.Clip, PlayerId, Vector3.zero, 0f, false);
+            if (shotsAtCast >= 0) Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.OverchargedShots, ShotsFired() - shotsAtCast);
+            shotsAtCast = -1;
             Weapon weapon = trackedWeapon;
             float originalAmmo = trackedAmmo;
             trackedWeapon = null;

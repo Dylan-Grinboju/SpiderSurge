@@ -94,6 +94,12 @@ namespace SpiderSurge
             {
                 if (!wasHitDuringSession) hitWave = Logging.SpiderSurgeStatsManager.Instance.CurrentWaveRecord;
                 wasHitDuringSession = true;
+                // Lava touches every tick and a blast reaches several colliders, so blocked hits count at most once per moment
+                if (!lava && Time.time >= nextCountedHit)
+                {
+                    nextCountedHit = Time.time + 0.15f;
+                    Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.HitsBlocked);
+                }
                 if (IsAuthority && Time.time >= nextHitAccent)
                 {
                     nextHitAccent = Time.time + 0.15f;
@@ -105,6 +111,7 @@ namespace SpiderSurge
         }
 
         private float nextHitAccent;
+        private float nextCountedHit;
 
         public static void ShowRemoteHit(int playerId, Vector3 direction)
         {

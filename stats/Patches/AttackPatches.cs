@@ -302,4 +302,30 @@ namespace StatsMod
             }
         }
     }
+
+    // A Khepri's energy ball has no owner, so the ball it spawns keeps the Khepri for death causes
+    [HarmonyPatch(typeof(KhepriBrain), "LaunchChargeAttack")]
+    class KhepriShotPatch
+    {
+        static void Prefix(KhepriBrain __instance) => HitLogic.EnemyShooter = __instance.GetComponent<EnemyHealthSystem>();
+
+        static void Finalizer() => HitLogic.EnemyShooter = null;
+    }
+
+    [HarmonyPatch(typeof(Unity.Netcode.NetworkObject), "Spawn", new[] { typeof(bool) })]
+    class EnemyShotSpawnPatch
+    {
+        static void Postfix(Unity.Netcode.NetworkObject __instance)
+        {
+            if (HitLogic.EnemyShooter == null) return;
+            try
+            {
+                HitLogic.OnEnemyShot(__instance.GetComponent<EnergyBall>());
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error recording an enemy's shot: {ex.Message}");
+            }
+        }
+    }
 }
