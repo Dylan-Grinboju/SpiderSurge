@@ -333,8 +333,44 @@ namespace SpiderSurge.Maps
                 spawner.RandomizeSpawns();
             }
             SurgeParts.Build(map);
+            FitLava(map);
             Physics2D.SyncTransforms();
             Rescan(map);
+        }
+
+        // The scene's lava on every side starts far outside a Surge map's camera box. As on the base-game zero-gravity
+        // arenas, the host moves each wall in to LavaGap past the box; its network transform carries the move to clients.
+        private const int LavaAllSides = 3;
+        private const float LavaGap = 30f; // layouts.py LAVA_GAP
+
+        private static void FitLava(SurgeMap map)
+        {
+            GameObject[] sets = CustomMapEditor.instance?.deathZones;
+            if (map.lava != LavaAllSides || map.camera == null || sets == null || map.lava >= sets.Length || sets[map.lava] == null) return;
+            MapRect box = map.camera;
+            var corners = new[]
+            {
+                new Vector2(box.xmin - LavaGap, box.ymin - LavaGap), new Vector2(box.xmax + LavaGap, box.ymin - LavaGap),
+                new Vector2(box.xmin - LavaGap, box.ymax + LavaGap), new Vector2(box.xmax + LavaGap, box.ymax + LavaGap),
+            };
+            foreach (DeathZone zone in sets[map.lava].GetComponentsInChildren<DeathZone>(true))
+            {
+                // Each wall faces the arena along its up direction; its surface is its colliders' furthest point that way
+                Transform wall = zone.transform;
+                Vector2 up = wall.up;
+                float surface = float.MinValue;
+                foreach (PolygonCollider2D collider in zone.GetComponents<PolygonCollider2D>())
+                {
+                    if (!collider.enabled) continue;
+                    foreach (Vector2 point in collider.points)
+                    {
+                        surface = Mathf.Max(surface, Vector2.Dot(up, wall.TransformPoint(point + collider.offset)));
+                    }
+                }
+                if (surface == float.MinValue) continue;
+                float target = corners.Min(corner => Vector2.Dot(up, corner));
+                wall.position += (Vector3)(up * (target - surface));
+            }
         }
 
         // The custom map scene's grid covers only part of its play area, so it is fitted to the map before the scan

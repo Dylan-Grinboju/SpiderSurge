@@ -8,7 +8,7 @@ The selection contains 11 arenas. Each earns its place through a recognizable si
 |---|---|
 | Thin Ice | Breakable shelves disappear above a permanent recovery floor, whose jump pads fire up through the shelf gaps; two small footholds sit above the top shelves. |
 | Cactus Garden | Exposed islands with lethal cacti make low footing hazardous. |
-| Caldera | Outer slopes surround a central lava crater. |
+| Caldera | Outer slopes surround an open central crater, with a lift rising out of it. |
 | Trampoline | A deep bowl funnels players toward jump pads at its base. |
 | Geysers | Air vents beneath floating shelves provide recovery from below; jump pads on the shelves above them launch higher. |
 | Jaws | Opposing toothed surfaces frame a horizontal arena with lava above and below. The upper jaw is open at its corners, its outer teeth and the lower middle tooth burn, and gates in the open sides wrap one side to the other. |
@@ -40,17 +40,17 @@ The custom map scene gives every map the same 930 Ã— 530 camera box, about three
 
 | Arena | Camera box |
 |---|---|
-| Thin Ice | 477 × 343 |
-| Cactus Garden | 420 × 266 |
-| Caldera | 473 × 311 |
-| Trampoline | 388 × 334 |
-| Geysers | 471 × 333 |
-| Jaws | 437 × 362 |
-| Crossbeams | 476 × 328 |
-| Pipeworks | 466 × 338 |
-| Satellite | 451 × 345 |
-| Derelict | 442 × 324 |
-| Crescent | 372 × 332 |
+| Thin Ice | 477 Ã— 343 |
+| Cactus Garden | 420 Ã— 266 |
+| Caldera | 473 Ã— 311 |
+| Trampoline | 388 Ã— 334 |
+| Geysers | 471 Ã— 333 |
+| Jaws | 437 Ã— 362 |
+| Crossbeams | 476 Ã— 328 |
+| Pipeworks | 466 Ã— 338 |
+| Satellite | 451 Ã— 345 |
+| Derelict | 442 Ã— 324 |
+| Crescent | 372 Ã— 332 |
 
 The updated roster below is rendered from collider geometry. Gameplay, jump-pad trajectories and online behavior have not been tested for this revision.
 
@@ -89,8 +89,8 @@ Most base-game arenas have something that moves or can be pushed: 76% of the end
 
 | Part | Prefab | Behavior | Used on |
 |---|---|---|---|
-| Crate | `Box A`, `Box B`, `Box Wide` | Loose physics box, pushed by spiders, shots and explosions | Thin Ice, Caldera, Trampoline, Geysers, Jaws, Pipeworks, Satellite, Derelict |
-| Ball | `Ball` | Loose rolling ball | Cactus Garden, Geysers, Crossbeams, Pipeworks, Satellite, Derelict |
+| Crate | `Box A`, `Box B`, `Box Wide` | Loose physics box, pushed by spiders, shots and explosions | Thin Ice, Cactus Garden, Trampoline, Geysers, Jaws, Pipeworks, Satellite, Derelict |
+| Ball | `Ball` | Loose rolling ball | Geysers, Crossbeams, Satellite, Derelict |
 | Turbine | `Big Spinner` | A beam on a center hinge; free, or turned by a motor at the layout's `motor` degrees per second | Cactus Garden, Jaws, Satellite, Crescent, Derelict |
 | Swing | `Swing` | A plank on two ropes under a fixed anchor | Thin Ice, Crescent |
 | Cage | `DescendingCage` | Sinks about 128 below its hooks and rises again, waiting 2 seconds at each end | Geysers, Pipeworks |
@@ -100,10 +100,14 @@ Trampoline keeps its pad launch path open, and Crossbeams keeps its central cros
 
 - **Network:** the prefabs are already registered network prefabs, so the host's spawn reaches clients with no new messages. Their own components carry scale, body motion and joints. The host sets only physics that the client copies cannot fight: motors, shortened ropes and cage travel.
 - **No respawn:** the base game's crates and balls are indestructible, so lava does not remove them, and nothing brings back one that falls through it. Surge keeps that: a crate or ball lost to the lava, or drifting off in zero gravity, stays gone until the level reloads. The reload after everyone dies, and the next map, rebuild every part at its place.
-- **Size:** parts never widen the camera box, which stays fitted to the static geometry. The checker sweeps every moving part through its motion and keeps it inside the box, clear of solids, other parts, spawns (22 from player and weapon points, 30 from enemy points), portals and pads. Loose parts only need to start clear, with footing or a vent below on a gravity map. Swings and cages hang, so they need gravity and no rotation.
+- **Size:** crates and balls keep their prefab size on every map, as on the base-game arenas, so they do not shrink with a compact layout; turbines, swings, cages and lifts scale with it. Parts never widen the camera box, which stays fitted to the static geometry. The checker sweeps every moving part through its motion and keeps it inside the box, clear of solids, other parts, spawns (22 from player and weapon points, 30 from enemy points), portals and pads. Loose parts only need to start clear, with footing or a vent below on a gravity map. Swings and cages hang, so they need gravity and no rotation.
 - The small `Spinner`, `SuspendedPrism` and `HingePlatform` are also supported, though no layout uses them yet. Danger and hammer spinners and the Tumbler are not: the danger spinner hurts only spiders, the hammer's clockwork motor fights the client's sync, and the Tumbler is too large for these arenas.
 
-Satellite and Derelict are the zero-gravity arenas. Their layouts set the game's own `zeroGravity` level flag, so it behaves like the base game's space arenas for host and clients. No Surge map is marked beginner-friendly.
+Satellite and Derelict are the zero-gravity arenas. Their layouts set the game's own `zeroGravity` level flag, so it behaves like the base game's space arenas for host and clients. They have lava on every side. The custom map scene places those walls at its own edges, far outside a compact camera box, so only the bottom one showed. The base-game zero-gravity arenas keep their walls just outside their camera box, so the host moves each wall in to 30 units past the map's box when it loads, and the walls' network transforms carry the move to clients. The checker tests spawns, portals and solids against those walls.
+
+![Satellite lava walls around its camera box](images/satellite-arena.png)
+
+No Surge map is marked beginner-friendly.
 
 Base-game arenas remain in Surge's pool. These maps do not replace their geometry or change their behavior; normal Wave Survival and Versus keep their original pools.
 
