@@ -1,8 +1,9 @@
 """Source of the Surge map layouts: writes surge/Maps/Layouts/<id>.json, and with --preview draws each map.
 
 Coordinates are world units in the game's custom map scene (MapEditorBase). The playable box is about
-x -500..500, y -222..381; the bottom lava starts at y -222. Element names are the map editor's prefab names.
-Each map also gets a camera box fitted to its geometry, with the margins of the base-game arenas.
+x -500..500, y -222..381, where the lava starts. Element names are the map editor's prefab names.
+Each map also gets a camera box fitted to its geometry, with the margins of the base-game arenas. On maps with lava
+on every side, the game moves the four walls in to LAVA_GAP past that box (SurgeMaps.FitLava).
 Run: py surge/Maps/Tools/layouts.py --shapes <folder from shapes.py> [--preview] [--only id,id]
 """
 
@@ -78,7 +79,8 @@ def scaled(e, f):
 
 def surge_map(id, name, background, lava, elements, players, enemies, weapons, rare=(), beginner=False, scale=1.0,
               zero_gravity=False, parts=()):
-    """Coordinates are written at full size; scale shrinks the whole arena toward SCALE_PIVOT."""
+    """Coordinates are written at full size; scale shrinks the whole arena toward SCALE_PIVOT.
+    Loose crates and balls keep their prefab size, as on every base-game arena."""
     assert len(players) == 4, f"{id}: needs 4 player spawns"
     assert len(enemies) == ENEMY_SPAWN_COUNT, f"{id}: needs {ENEMY_SPAWN_COUNT} enemy spawns"
     px, py = SCALE_PIVOT
@@ -92,7 +94,11 @@ def surge_map(id, name, background, lava, elements, players, enemies, weapons, r
         items = [scaled(e, scale) for e in items]
         for g in parts:
             g["x"], g["y"] = round(px + (g["x"] - px) * scale, 2), round(py + (g["y"] - py) * scale, 2)
-            g["s"] = round(g["s"] * scale, 3)
+            if g["o"] in LOOSE:
+                # Its bottom stays where the scaled part's would have rested
+                g["y"] = round(g["y"] + LOOSE_HALF_HEIGHT[g["o"]] * g["s"] * (1 - scale), 2)
+            else:
+                g["s"] = round(g["s"] * scale, 3)
     MAPS.append({
         "id": id, "name": name, "background": background, "lava": lava, "beginner": beginner,
         "zeroGravity": zero_gravity, "elements": items, "parts": parts,
@@ -150,6 +156,8 @@ GADGET_SCALE = {"Box A": 1, "Box B": 1, "Box Wide": 1, "Ball": 1, "Big Spinner":
                 "HingePlatform": 2}
 # Loose bodies, which only have to start clear; like the base game's, they stay lost until the level reloads
 LOOSE = ("Box A", "Box B", "Box Wide", "Ball")
+# Their collider half-heights at prefab scale
+LOOSE_HALF_HEIGHT = {"Box A": 10.1, "Box B": 12.6, "Box Wide": 5.3, "Ball": 13.4}
 # Gadgets that hang under gravity, so they stay upright and need a gravity map
 HANGING = ("Swing", "SuspendedPrism", "DescendingCage", "HingePlatform")
 # Colliders that stay put while the rest of the gadget moves: anchors and hooks
@@ -200,11 +208,11 @@ surge_map(
     ],
     players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
     enemies=[(-360, 100), (360, 100), (-250, -135), (250, -135), (-360, 265), (360, 265)],
-    weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-240, 234), (240, 234)],
+    weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-255, 234), (255, 234)],
     rare=[(0, 147)],
     # Crates ride the shelves down when the ice breaks; a swing hangs between the top footholds
     parts=[
-        gadget("Box A", -255, 40), gadget("Box A", 255, 40), gadget("Box B", -190, 236), gadget("Box B", 190, 236),
+        gadget("Box A", -255, 40), gadget("Box A", 255, 40), gadget("Box B", -195, 236), gadget("Box B", 195, 236),
         gadget("Swing", 0, 305, s=0.6),
     ],
 )
@@ -222,30 +230,27 @@ surge_map(
     enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -199), (0, 267)],
     weapons=[(-330.0, 160.0), (330.0, 160.0), (-120.0, 76.0), (120.0, 76.0), (-100.0, -85.0), (100.0, -85.0)],
     rare=[(0, 192)],
-    # Tumbleweeds roll off the outer islands, and a windmill turns over the central gap
+    # Crates sit on the outer islands, and a windmill turns over the central gap
     parts=[
-        gadget("Ball", -262, -78), gadget("Ball", 262, -78), gadget("Big Spinner", 0, 20, motor=30),
+        gadget("Box A", -262, -78), gadget("Box A", 262, -78), gadget("Big Spinner", 0, 20, motor=30),
     ],
 )
 
-# A volcano with a magma pool in its crater and ledges above the rim
+# A volcano with an open crater and ledges above the rim
 surge_map(
     "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.58,
     elements=[
         bar(-360, -150, -100, 40), bar(360, -150, 100, 40),
         el("Ballish", -100, 45, 0, 0.8), el("Ballish", 100, 45, 0, 0.8),
         bar(-100, 40, -75, -75), bar(100, 40, 75, -75),
-        el("DeathZoneLongBoi", 0, -85, 0, 0.4),
         el("Platform", -200, 150, 0, 1.2), el("Platform", 200, 150, 0, 1.2), el("Pancake", 0, 200),
     ],
     players=[(-250, -26), (-150, 45), (150, 45), (250, -26)],
     enemies=[(-370, -40), (370, -40), (-300, 265), (300, 265), (135, 235), (-17, 293)],
     weapons=[(-200, 178), (200, 178), (-305, -75), (305, -75), (-165, 30), (165, 30)],
     rare=[(0, 253)],
-    # A lift rises out of the crater while something stands on it, and crates sit beside the rare weapon
-    parts=[
-        gadget("Moving Platform B", 0, -52), gadget("Box A", -41.2, 227.3), gadget("Box A", 41.2, 227.3),
-    ],
+    # A lift rises out of the crater while something stands on it
+    parts=[gadget("Moving Platform B", 0, -52)],
 )
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
@@ -257,7 +262,7 @@ surge_map(
         el("Platform", -130, 170, 0, 1.2), el("Platform", 130, 170, 0, 1.2), el("Ballish", 0, 250),
     ],
     players=[(-130, -30), (-200, 52), (130, -30), (200, 52)],
-    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 361), (0, -20)],
+    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 361), (0, -5)],
     weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-90, -82), (90, -82)],
     rare=[(0, 293)],
     # A crate sits between the pads; the launch path above the bowl stays open
@@ -282,7 +287,7 @@ surge_map(
     # The vents juggle a ball each; a cage under the top rock sinks to the middle and rises again
     parts=[
         gadget("Ball", -150, 10), gadget("Ball", 150, 10), gadget("DescendingCage", 0, 198),
-        gadget("Box A", -335, -12), gadget("Box A", 335, -12),
+        gadget("Box A", -345, -12), gadget("Box A", 345, -12),
     ],
 )
 
@@ -300,13 +305,13 @@ surge_map(
         el("Ballish", -230, 90), el("Ballish", 230, 90),
         gate(-315, 80, 315, 80, 90),
     ],
-    players=[(-80, -82), (80, -82), (-240, -48), (240, -48)],
+    players=[(-95, -82), (95, -82), (-240, -48), (240, -48)],
     enemies=[(-150, 370), (150, 370), (-85, 30), (85, 30), (-300, 305), (300, 305)],
     weapons=[(-110.0, -93.0), (110.0, -93.0), (-230.0, 135.0), (230.0, 135.0), (-100, 317), (100, 317)],
     rare=[(0, 317)],
     # A turning tongue fills the middle of the mouth, with crates loose on the lower jaw
     parts=[
-        gadget("Big Spinner", 0, 90, s=0.9, motor=-25), gadget("Box A", -35, -96), gadget("Box A", 35, -96),
+        gadget("Big Spinner", 0, 90, s=0.9, motor=-25), gadget("Box A", -37, -96), gadget("Box A", 37, -96),
     ],
 )
 
@@ -349,12 +354,12 @@ surge_map(
         + [el("AeroTube", 0, -195, 0, 1.5), el("Jump Pad", -232, -84), el("Jump Pad", 230, 36)]
     ),
     players=[(-300, -68), (-175, -73), (140, -63), (260, -63)],
-    enemies=[(-175, 150), (265, 205), (-120, -172), (30, -120), (-250, 280), (320, 345)],
-    weapons=[(-125, 80), (200, 70), (-145, -65), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
+    enemies=[(-165, 155), (265, 205), (-120, -172), (30, -120), (-250, 280), (320, 345)],
+    weapons=[(-110, 80), (200, 70), (-145, -65), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
     rare=[(30, 260)],
     # A cage under the top pipe sinks into the central gap and rises again; loose crates fill the pockets
     parts=[
-        gadget("DescendingCage", 0, 200), gadget("Ball", -175, 82), gadget("Box B", 150, 51),
+        gadget("DescendingCage", 0, 200), gadget("Box A", -175, 79), gadget("Box A", 145, 48.5),
     ],
 )
 
@@ -398,8 +403,8 @@ surge_map(
     # A powered turbine and a smaller displaced free rotor, with cargo adrift and an open floor breach
     parts=[
         gadget("Big Spinner", -150, 120, s=0.7, motor=35), gadget("Big Spinner", 155, 55, r=25, s=0.55),
-        gadget("Box A", -80, 200), gadget("Box B", 80, 195), gadget("Box Wide", -235, 150, r=30),
-        gadget("Box A", 245, 125), gadget("Ball", -40, 300), gadget("Ball", 60, -30),
+        gadget("Box A", -80, 200), gadget("Box B", 80, 195), gadget("Box Wide", -225, 165, r=30),
+        gadget("Box A", 260, 130), gadget("Ball", -40, 300), gadget("Ball", 60, -30),
     ],
 )
 
@@ -575,6 +580,23 @@ CAMERA_SIDE, CAMERA_BELOW, CAMERA_ABOVE = 25, 30, 65
 SCENE_CAMERA = (-465, 465, -185, 345)
 # The widest player spawn spread among the base-game arenas is 511
 MAX_PLAYER_SPREAD = 500
+# Where the custom map scene's lava starts: left, right, bottom, top
+SCENE_LAVA = (-500, 500, -222, 381)
+# Lava on every side closes in to this far past the camera box, so it stays in view as on the base-game zero-gravity
+# arenas. Keep in step with SurgeMaps.LavaGap.
+LAVA_GAP = 30
+
+
+def lava_edges(m, box):
+    """Where the map's lava starts (left, right, bottom, top)."""
+    if m["lava"] != LAVA_ALL:
+        return SCENE_LAVA
+    return box["xmin"] - LAVA_GAP, box["xmax"] + LAVA_GAP, box["ymin"] - LAVA_GAP, box["ymax"] + LAVA_GAP
+
+
+def near_lava(edges, x, y, margin):
+    x0, x1, y0, y1 = edges
+    return not (x0 + margin < x < x1 - margin and y0 + margin < y < y1 - margin)
 
 
 def camera(m, shapes):
@@ -587,7 +609,7 @@ def camera(m, shapes):
             "ymin": round(max(y0, min(ys) - CAMERA_BELOW), 1), "ymax": round(min(y1, max(ys) + CAMERA_ABOVE), 1)}
 
 
-def check_gadgets(m, safe):
+def check_gadgets(m, safe, lava):
     """Pads need footing; portals come in pairs, stay off beginner maps and drop their exits onto solid ground.
     Gates are paired with an exit of the same rotation, so velocity carries straight through."""
     problems = 0
@@ -617,7 +639,7 @@ def check_gadgets(m, safe):
         line = e["o"].startswith("PortalLine")
         # A point portal is checked at its center; a gate along its whole length, which may stand on a beam
         points = gate_points(e) if line else [(x, y)]
-        if any(not (-440 < px < 440 and -150 < py < 330) for px, py in points):
+        if any(near_lava(lava, px, py, 60) for px, py in points):
             print(f'{m["id"]}: portal at ({x}, {y}) is near the lava'); problems += 1
         if any(_inside(px, py, pts) or _distance(px, py, pts) < (3 if line else 20) for px, py in points for _, pts in safe):
             print(f'{m["id"]}: portal at ({x}, {y}) is jammed against a solid'); problems += 1
@@ -725,12 +747,14 @@ def check(maps, shapes):
         if not safe:
             print(f'{m["id"]}: no solid ground'); problems += 1
             continue
+        box = camera(m, shapes)
+        lava = lava_edges(m, box)
         for e in m["elements"]:
             kind = e["o"]
             if kind not in ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner"):
                 continue
             x, y = e["x"], e["y"]
-            if not (-470 < x < 470 and -190 < y < 350):
+            if near_lava(lava, x, y, 30):
                 print(f'{m["id"]}: {kind} at ({x}, {y}) is near the lava'); problems += 1
             if any(_inside(x, y, pts) for _, pts in safe) or min(_distance(x, y, pts) for _, pts in safe) < 8:
                 print(f'{m["id"]}: {kind} at ({x}, {y}) is inside a solid'); problems += 1
@@ -743,11 +767,10 @@ def check(maps, shapes):
                 print(f'{m["id"]}: {kind} at ({x}, {y}) stands on a hazard'); problems += 1
             if HOVER in under:
                 print(f'{m["id"]}: {kind} at ({x}, {y}) stands on a floating platform that drifts'); problems += 1
-        problems += check_gadgets(m, safe)
+        problems += check_gadgets(m, safe, lava)
         players = [e["x"] for e in m["elements"] if e["o"] == "Player Spawn Point"]
         if max(players) - min(players) > MAX_PLAYER_SPREAD:
             print(f'{m["id"]}: player spawns are {max(players) - min(players):.0f} apart (at most {MAX_PLAYER_SPREAD})'); problems += 1
-        box = camera(m, shapes)
         problems += check_parts(m, shapes, safe, box)
         for p in m["enemies"]:
             # Enemies appear where the camera can show them, as on the base-game arenas
@@ -756,10 +779,10 @@ def check(maps, shapes):
             d = min(_distance(p["x"], p["y"], pts) for _, pts in safe)
             if d < 45 or any(_inside(p["x"], p["y"], pts) for _, pts in safe):
                 print(f'{m["id"]}: enemy spawn ({p["x"]}, {p["y"]}) is {d:.0f} from a solid'); problems += 1
-            if not (-470 < p["x"] < 470 and -190 < p["y"] < 350):
+            if near_lava(lava, p["x"], p["y"], 30):
                 print(f'{m["id"]}: enemy spawn ({p["x"]}, {p["y"]}) is near the lava'); problems += 1
         for o, pts in polys:
-            if any(not (-490 < x < 490 and -215 < y < 375) for x, y in pts):
+            if any(near_lava(lava, x, y, 7) for x, y in pts):
                 print(f'{m["id"]}: {o} reaches the lava'); problems += 1
                 break
     return problems
@@ -777,11 +800,12 @@ def preview(maps, out_dir, shapes):
         box = m.get("camera") or camera(m, shapes)
         ax.add_patch(plt.Rectangle((box["xmin"], box["ymin"]), box["xmax"] - box["xmin"], box["ymax"] - box["ymin"],
                                    fill=False, ec="#88f", ls=":"))
-        ax.axhspan(-300, -222, color="#ffcc88")
+        x0, x1, y0, y1 = lava_edges(m, box)
+        ax.axhspan(-300, y0, color="#ffcc88")
         if m["lava"] in (LAVA_TOP_BOTTOM, LAVA_ALL):
-            ax.axhspan(381, 460, color="#ffcc88")
+            ax.axhspan(y1, 460, color="#ffcc88")
         if m["lava"] in (LAVA_SIDES_BOTTOM, LAVA_ALL):
-            ax.axvspan(-560, -500, color="#ffcc88"); ax.axvspan(500, 560, color="#ffcc88")
+            ax.axvspan(-560, x0, color="#ffcc88"); ax.axvspan(x1, 560, color="#ffcc88")
         for o, pts in solids(m, shapes):
             col = "#e03030" if o.startswith("Death") else "#48c" if o == HOVER else "#4a7"
             ax.add_patch(Polygon(pts, closed=True, fc=col, ec="none", alpha=0.9))
