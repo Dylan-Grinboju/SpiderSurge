@@ -97,11 +97,12 @@ namespace SpiderSurge
             }
         }
 
-        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack
+        // A freeze on an enemy that is already frozen only lasts until the later of the two thaws, so casts never stack; the first freezer keeps it
         public static bool Freeze(EnemyHealthSystem enemy, float duration, int playerId)
         {
             if (!Apply(enemy, duration, visualOnly: false)) return false;
-            enemy.GetComponent<FrozenEnemy>()._frozenBy = playerId;
+            FrozenEnemy frozen = enemy.GetComponent<FrozenEnemy>();
+            if (frozen._frozenBy < 0) frozen._frozenBy = playerId;
             SurgeNet.SendEnemyFx(EnemyFx.Frozen, enemy.GetComponent<NetworkObject>(), duration);
             return true;
         }

@@ -85,10 +85,11 @@ namespace SpiderSurge
                 if (!HasLineOfSight(origin, position)) continue;
                 var laser = enemy.GetComponentInChildren<Enemies.LaserRing>();
                 bool firing = !FrozenEnemy.IsHeld(enemy) && laser != null && laser.IsFiring;
+                bool alreadyFrozen = FrozenEnemy.FreezerOf(enemy) >= 0;
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
-                    Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.EnemiesFrozen);
+                    if (!alreadyFrozen) Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.EnemiesFrozen);
                     AchievementTracker.Run("Freeze Time", static hit => AbilityAchievementTracker.FreezeEnemy(hit.enemy, hit.achievementCast, hit.firing), (enemy, achievementCast, firing));
                 }
             }

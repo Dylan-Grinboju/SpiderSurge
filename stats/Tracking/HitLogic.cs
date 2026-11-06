@@ -233,7 +233,11 @@ namespace StatsMod
             if (!spider.dead && !spider.astralDead) AccuracyTracker.PlayerHit(Attacks.Source, victim);
             int id = spider.GetInstanceID();
             PlayerController attacker = CurrentAttacker;
-            if (damage && victim != null) lastDamageCauses[id] = (DamageCause(victim, attacker), Time.time);
+            if (damage && victim != null)
+            {
+                PruneIfDue();
+                lastDamageCauses[id] = (DamageCause(victim, attacker), Time.time);
+            }
             if (attacker == null)
             {
                 if (damage || (Attacks.Active && stun)) lastPlayerHits.Remove(id);
@@ -610,6 +614,7 @@ namespace StatsMod
             PruneStale(lastPlayerHits, hit => hit.Time, now);
             PruneStale(rollerFuses, hit => hit.Time, now, StaleFuseAge);
             PruneStale(explosionOwners, owner => owner.Time, now);
+            PruneStale(lastDamageCauses, hit => hit.Time, now, DeathCauseWindow);
             ownersSince = Math.Max(ownersSince, now - StaleHitAge);
             departed.RemoveWhere(player => player == null);
             lastPruneTime = now;

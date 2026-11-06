@@ -62,6 +62,8 @@ namespace SpiderSurge.Logging
         private readonly Dictionary<int, Dictionary<string, int>> _abilityEffects = new Dictionary<int, Dictionary<string, int>>();
         private readonly Dictionary<int, WavePlayerRecord> _wavePlayers = new Dictionary<int, WavePlayerRecord>();
         private readonly Dictionary<int, (int Kills, int Deaths, float Alive)> _waveStartTotals = new Dictionary<int, (int, int, float)>();
+        private readonly Dictionary<int, (int Kills, int Deaths, float Alive)> _closedWaveStartTotals = new Dictionary<int, (int, int, float)>();
+        private WaveRecord _closedWave;
         private readonly List<BaseAbility> _abilityBuffer = new List<BaseAbility>();
         private readonly List<PerkChoiceRecord> _perkChoices = new List<PerkChoiceRecord>();
         private readonly List<WaveRecord> _waves = new List<WaveRecord>();
@@ -112,6 +114,8 @@ namespace SpiderSurge.Logging
             _abilityEffects.Clear();
             _wavePlayers.Clear();
             _waveStartTotals.Clear();
+            _closedWaveStartTotals.Clear();
+            _closedWave = null;
             AbilityEffects.Clear();
             _meterPurchases.Clear();
             _perkChoices.Clear();
@@ -138,6 +142,7 @@ namespace SpiderSurge.Logging
             if (!_isTracking) return;
 
             CloseWave(WaveResults.Quit);
+            SettleClosedWave();
             RecordUnansweredPerkChoice();
             _isTracking = false;
             SetDeathCounting(false);
@@ -212,8 +217,11 @@ namespace SpiderSurge.Logging
                 }
             }
 
-            // A pad that left before the end still counts its ability and ultimate uses
-            foreach (int playerId in _abilityActivationsPerPlayer.Keys.Union(_ultimateActivationsPerPlayer.Keys).Union(_savesPerPlayer.Keys))
+            // A pad that left before the end still counts its ability use and its share of each wave
+            var departed = _abilityActivationsPerPlayer.Keys.Union(_ultimateActivationsPerPlayer.Keys).Union(_savesPerPlayer.Keys)
+                .Union(_readySeconds.Keys).Union(_activeSeconds.Keys).Union(_abilityEffects.Keys)
+                .Union(_waves.SelectMany(wave => wave.Players).Select(record => record.PlayerId));
+            foreach (int playerId in departed)
             {
                 if (snapshot.PlayerStats.Exists(stats => stats.PlayerId == playerId)) continue;
                 var stats = new PlayerStats
@@ -305,7 +313,8 @@ namespace SpiderSurge.Logging
                 _ultimateActivationsPerPlayer[playerId] = 0;
             }
             _ultimateActivationsPerPlayer[playerId]++;
-            if (!_firstUltimateWave.ContainsKey(playerId)) _firstUltimateWave[playerId] = _currentWaveRecord != null ? _currentWaveRecord.Wave : _currentWave;
+            if (!_firstUltimateWave.ContainsKey(playerId)) _firstUltimateWave[playerId] = _currentWaveRecord != null ? _currentWaveRecord.Wave
+                : SurvivalMode.instance != null ? SurvivalMode.instance.CurrentWave : _currentWave;
             if (_currentWaveRecord != null)
             {
                 _currentWaveRecord.UltimateUses++;
@@ -322,7 +331,7 @@ namespace SpiderSurge.Logging
             effects[effect] = count + amount;
         }
 
-        // The host runs every player's ability, so it samples each one through the wave: ready (alive, off cooldown, unused) or running
+        // The host runs every player's ability, so it samples each one through the wave: ready (alive, off cooldown and castable) or its regular cast running
         private void Update()
         {
             if (!_isTracking || !_surgeRun || _currentWaveRecord == null) return;
@@ -333,23 +342,20 @@ namespace SpiderSurge.Logging
             {
                 if (controller == null) continue;
                 controller.GetComponents(_abilityBuffer);
-                foreach (var ability in _abilityBuffer)
+                if (_abilityBuffer.Count == 0) continue;
+                var (running, ready) = BaseAbility.RegularStatus(_abilityBuffer);
+                if (!running && !ready) continue;
+                int playerId = _abilityBuffer[0].PlayerId;
+                if (running)
                 {
-                    if (!ability.IsRegularUnlocked()) continue;
-                    if (!ability.IsPlayerAlive()) break;
-                    int playerId = ability.PlayerId;
-                    if (ability.StatusSource.IsActive())
-                    {
-                        _activeSeconds.TryGetValue(playerId, out float active);
-                        _activeSeconds[playerId] = active + dt;
-                    }
-                    else if (!ability.StatusSource.IsOnCooldown() && ChallengeController.CanActivate(false))
-                    {
-                        _readySeconds.TryGetValue(playerId, out float ready);
-                        _readySeconds[playerId] = ready + dt;
-                        WavePlayer(playerId).ReadySeconds += dt;
-                    }
-                    break;
+                    _activeSeconds.TryGetValue(playerId, out float active);
+                    _activeSeconds[playerId] = active + dt;
+                }
+                else
+                {
+                    _readySeconds.TryGetValue(playerId, out float readyFor);
+                    _readySeconds[playerId] = readyFor + dt;
+                    WavePlayer(playerId).ReadySeconds += dt;
                 }
             }
         }
@@ -583,6 +589,7 @@ namespace SpiderSurge.Logging
 
         private void CloseWave(string result)
         {
+            SettleClosedWave();
             if (_currentWaveRecord == null) return;
 
             var wave = _currentWaveRecord;
@@ -600,8 +607,27 @@ namespace SpiderSurge.Logging
             });
             wave.Players = _wavePlayers.Values.OrderBy(record => record.PlayerId).ToList();
             _wavePlayers.Clear();
+            foreach (var entry in _waveStartTotals) _closedWaveStartTotals[entry.Key] = entry.Value;
             _waveStartTotals.Clear();
+            _closedWave = wave;
             _waves.Add(wave);
+        }
+
+        // The Astral Heckhound revive at a won wave's end takes back a death and its kill after the wave closed, so its kills and deaths are taken again before the next wave or the report
+        private void SettleClosedWave()
+        {
+            if (_closedWave == null) return;
+            var wave = _closedWave;
+            ForEachTrackedPlayer((playerId, data) =>
+            {
+                if (!_closedWaveStartTotals.TryGetValue(playerId, out var start)) return;
+                var record = wave.Players.Find(player => player.PlayerId == playerId);
+                if (record == null) return;
+                record.Kills = data.Kills - start.Kills;
+                record.Deaths = data.Deaths - start.Deaths;
+            });
+            _closedWave = null;
+            _closedWaveStartTotals.Clear();
         }
 
         private static void ForEachTrackedPlayer(Action<int, StatsMod.PlayerTracker.PlayerData> action)
@@ -631,9 +657,11 @@ namespace SpiderSurge.Logging
 
         private void OnTrackedDeathCountChanged(int change)
         {
-            if (_currentWaveRecord != null && _currentWaveRecord.Deaths >= 0)
+            // A revive after the wave closed takes the death back from that wave
+            var wave = _currentWaveRecord ?? (change < 0 ? _closedWave : null);
+            if (wave != null && wave.Deaths >= 0)
             {
-                _currentWaveRecord.Deaths = Math.Max(0, _currentWaveRecord.Deaths + change);
+                wave.Deaths = Math.Max(0, wave.Deaths + change);
             }
         }
 

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using HarmonyLib;
 using UnityEngine;
 using SpiderSurge.Common;
 
@@ -46,16 +45,5 @@ namespace SpiderSurge.Logging
         }
 
         public static void Clear() => Launches.Clear();
-    }
-
-    [HarmonyPatch(typeof(EnemyHealthSystem), nameof(EnemyHealthSystem.Explode))]
-    internal static class AbilityEffectsEnemyDeathPatch
-    {
-        [HarmonyPrefix]
-        private static void Prefix(EnemyHealthSystem __instance, bool ____exploding)
-        {
-            if (!Net.IsAuthority || ____exploding || __instance.ignoreIndirectDamage) return;
-            SpiderSurgeStatsManager.RunSafely("ability effect kill", _ => AbilityEffects.EnemyDied(__instance));
-        }
     }
 }
