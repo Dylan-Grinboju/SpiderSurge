@@ -345,6 +345,7 @@ namespace SpiderSurge
                 if (enemy != null && !enemy.dead)
                 {
                     PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
+                    if (!deadly) Logging.AbilityEffects.Launched(enemy, PlayerId);
                     if (enemy.needToKillToCompleteLevel)
                     {
                         launched++;

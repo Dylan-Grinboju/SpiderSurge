@@ -152,6 +152,9 @@ namespace StatsMod
             public Dictionary<string, WeaponUse> UseByWeapon { get; } = new Dictionary<string, WeaponUse>();
             public Dictionary<string, int> EnemyKills { get; set; }
             public Dictionary<string, int> DeathsPerMap { get; set; }
+            // What killed the spider each time; an astral return takes back the latest
+            public Dictionary<string, int> DeathCauses { get; } = new Dictionary<string, int>();
+            internal string LastDeathCause;
 
             public PlayerData(int id, string name = "Player")
             {
@@ -359,6 +362,9 @@ namespace StatsMod
                 if (TryRecord(playerInput, out PlayerData data))
                 {
                     data.Deaths++;
+                    data.LastDeathCause = HitLogic.TakeDeathCause(spiderHealth);
+                    data.DeathCauses.TryGetValue(data.LastDeathCause, out int caused);
+                    data.DeathCauses[data.LastDeathCause] = caused + 1;
                     DeathCountChanged?.Invoke(1);
                     data.KillRunDeathSerial = data.KillRun.End();
                     data.SoloRunDeathSerial = data.SoloRun.End();
@@ -400,6 +406,12 @@ namespace StatsMod
                 {
                     data.Deaths--;
                     data.AstralReturns++;
+                    if (data.LastDeathCause != null && data.DeathCauses.TryGetValue(data.LastDeathCause, out int caused))
+                    {
+                        if (caused > 1) data.DeathCauses[data.LastDeathCause] = caused - 1;
+                        else data.DeathCauses.Remove(data.LastDeathCause);
+                        data.LastDeathCause = null;
+                    }
                     DeathCountChanged?.Invoke(-1);
 
                     // Undo death on the current map
@@ -465,6 +477,8 @@ namespace StatsMod
                     entry.Value.EnemyKills[enemyKey] = 0;
                 }
                 entry.Value.DeathsPerMap.Clear();
+                entry.Value.DeathCauses.Clear();
+                entry.Value.LastDeathCause = null;
             }
         }
 

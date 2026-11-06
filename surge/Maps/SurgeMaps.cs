@@ -131,6 +131,10 @@ namespace SpiderSurge.Maps
         public static string MapKey(string sceneName) =>
             sceneName == SceneName && Current != null ? "Surge " + Current.name : sceneName;
 
+        // The same key for a level offered on a perk card, before it loads
+        public static string LevelKey(GameLevel level) =>
+            level == null ? "" : Of(level) is SurgeMap map ? "Surge " + map.name : level.name;
+
         public static void Initialize()
         {
             Load();

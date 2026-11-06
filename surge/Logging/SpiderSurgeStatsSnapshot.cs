@@ -79,6 +79,12 @@ namespace SpiderSurge.Logging
         public int Saves { get; set; }
         public int KillsDuringAbility { get; set; }
         public int MeterCharge { get; set; }
+        // Seconds in waves, alive, with the ability off cooldown and unused, and with it running
+        public float ReadySeconds { get; set; }
+        public float ActiveSeconds { get; set; }
+        public int FirstUltimateWave { get; set; } = -1;
+        public Dictionary<string, int> AbilityEffects { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> DeathCauses { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> EnemyKills { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> WeaponHits { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, WeaponRecord> Weapons { get; set; } = new Dictionary<string, WeaponRecord>();
@@ -100,6 +106,8 @@ namespace SpiderSurge.Logging
         public int Wave { get; set; }
         public string Kind { get; set; }
         public List<string> Offered { get; set; } = new List<string>();
+        // The map paired with each offered card, in the same order
+        public List<string> OfferedMaps { get; set; } = new List<string>();
         public List<string> LuckyOffered { get; set; } = new List<string>();
         public string Picked { get; set; }
         public int Level { get; set; }
@@ -121,5 +129,18 @@ namespace SpiderSurge.Logging
         public int UltimateUses { get; set; }
         public int Saves { get; set; }
         public int MeterCharge { get; set; }
+        public List<WavePlayerRecord> Players { get; set; } = new List<WavePlayerRecord>();
+    }
+
+    // One player's share of a wave; kills, deaths and alive time need Stats
+    public class WavePlayerRecord
+    {
+        public int PlayerId { get; set; }
+        public int AbilityUses { get; set; }
+        public int UltimateUses { get; set; }
+        public float ReadySeconds { get; set; }
+        public int? Kills { get; set; }
+        public int? Deaths { get; set; }
+        public float? AliveSeconds { get; set; }
     }
 }

@@ -148,15 +148,16 @@ namespace SpiderSurge.Logging
             if (perkChoicesTruncated) perkChoices.RemoveRange(0, perkChoices.Count - Consts.Telemetry.MaxPerkChoiceRecords);
             if (wavesTruncated) waves.RemoveRange(0, waves.Count - Consts.Telemetry.MaxWaveRecords);
 
-            var perkChoiceJsons = perkChoices.Select(choice => new KeyValuePair<int, string>(choice.Wave, BuildPerkChoiceJson(choice))).ToList();
-            var waveJsons = waves.Select(wave => new KeyValuePair<int, string>(wave.Wave, BuildWaveJson(wave))).ToList();
-            var eventJsons = (snapshot.Meter?.Events ?? new List<ChaosEventRecord>()).Select(entry => new KeyValuePair<int, string>(entry.Wave, BuildChaosEventJson(entry))).ToList();
-            bool eventsTruncated = false;
             // The relay takes player indexes 0-7; with more than 8 players (InfiniteFriends) the ids can be higher, so the kept players are numbered in order instead
             bool idsFit = playerStats.All(p => p.PlayerId >= 0 && p.PlayerId < Consts.Telemetry.MaxPlayerStats);
             string playerStatsJson = "[" + string.Join(",", playerStats.Select((p, i) => BuildPlayerJson(p, idsFit ? p.PlayerId : i))) + "]";
             var playerIndexes = new Dictionary<int, int>();
             for (int i = 0; i < playerStats.Count; i++) playerIndexes[playerStats[i].PlayerId] = idsFit ? playerStats[i].PlayerId : i;
+
+            var perkChoiceJsons = perkChoices.Select(choice => new KeyValuePair<int, string>(choice.Wave, BuildPerkChoiceJson(choice))).ToList();
+            var waveJsons = waves.Select(wave => new KeyValuePair<int, string>(wave.Wave, BuildWaveJson(wave, playerIndexes))).ToList();
+            var eventJsons = (snapshot.Meter?.Events ?? new List<ChaosEventRecord>()).Select(entry => new KeyValuePair<int, string>(entry.Wave, BuildChaosEventJson(entry))).ToList();
+            bool eventsTruncated = false;
             string titlesJson = BuildTitlesJson(snapshot.Titles, playerIndexes);
 
             // The relay rejects bodies over its size limit, so the oldest waves, perk choices and chaos events are dropped until the report fits; a wave goes first on a tie
@@ -223,6 +224,7 @@ namespace SpiderSurge.Logging
                 "\"titles\":" + titlesJson + "," +
                 "\"meter\":" + BuildMeterJson(snapshot.Meter, eventJsons, eventsTruncated) + "," +
                 "\"perkChoices\":" + perkChoicesJson + "," +
+                "\"wavePlayerFields\":" + JsonStringArray(WavePlayerFields) + "," +
                 "\"waves\":" + wavesJson +
                 "}";
         }
@@ -270,6 +272,11 @@ namespace SpiderSurge.Logging
                 "\"aliveSeconds\":" + Math.Max(0, player.AliveSeconds) + "," +
                 "\"saves\":" + player.Saves + "," +
                 "\"killsDuringAbility\":" + player.KillsDuringAbility + "," +
+                "\"readySeconds\":" + JsonSeconds(player.ReadySeconds) + "," +
+                "\"activeSeconds\":" + JsonSeconds(player.ActiveSeconds) + "," +
+                "\"firstUltimateWave\":" + (player.FirstUltimateWave >= 0 ? player.FirstUltimateWave.ToString(CultureInfo.InvariantCulture) : "null") + "," +
+                "\"abilityEffects\":" + JsonCounts(player.AbilityEffects) + "," +
+                "\"deathCauses\":" + JsonCounts(player.DeathCauses) + "," +
                 "\"meterCharge\":" + player.MeterCharge + "," +
                 "\"enemyKills\":" + JsonCounts(player.EnemyKills) + "," +
                 "\"weaponHits\":" + JsonCounts(player.WeaponHits) + "," +
@@ -323,6 +330,7 @@ namespace SpiderSurge.Logging
                 "\"wave\":" + choice.Wave + "," +
                 "\"kind\":\"" + EscapeJson(choice.Kind) + "\"," +
                 "\"offered\":" + JsonStringArray(choice.Offered) + "," +
+                "\"offeredMaps\":" + JsonStringArray(choice.OfferedMaps) + "," +
                 "\"lucky\":" + JsonStringArray(choice.LuckyOffered) + "," +
                 "\"picked\":" + (choice.Picked != null ? "\"" + EscapeJson(choice.Picked) + "\"" : "null") + "," +
                 "\"level\":" + choice.Level + "," +
@@ -333,7 +341,20 @@ namespace SpiderSurge.Logging
                 "}";
         }
 
-        private static string BuildWaveJson(WaveRecord wave)
+        // Each wave's per-player entries are arrays in this order, to keep long runs under the relay's size limit
+        private static readonly string[] WavePlayerFields = { "playerIndex", "abilityUses", "ultimateUses", "readySeconds", "kills", "deaths", "aliveSeconds" };
+
+        private static string BuildWavePlayersJson(List<WavePlayerRecord> players, Dictionary<int, int> playerIndexes)
+        {
+            var entries = (players ?? new List<WavePlayerRecord>())
+                .Where(player => playerIndexes.ContainsKey(player.PlayerId))
+                .Select(player => "[" + playerIndexes[player.PlayerId] + "," + player.AbilityUses + "," + player.UltimateUses + "," +
+                    JsonSeconds(player.ReadySeconds) + "," + JsonNumber(player.Kills) + "," + JsonNumber(player.Deaths) + "," +
+                    (player.AliveSeconds.HasValue ? JsonSeconds(player.AliveSeconds.Value) : "null") + "]");
+            return "[" + string.Join(",", entries) + "]";
+        }
+
+        private static string BuildWaveJson(WaveRecord wave, Dictionary<int, int> playerIndexes)
         {
             return "{" +
                 "\"wave\":" + wave.Wave + "," +
@@ -344,7 +365,8 @@ namespace SpiderSurge.Logging
                 "\"abilityUses\":" + wave.AbilityUses + "," +
                 "\"ultimateUses\":" + wave.UltimateUses + "," +
                 "\"saves\":" + wave.Saves + "," +
-                "\"meterCharge\":" + wave.MeterCharge +
+                "\"meterCharge\":" + wave.MeterCharge + "," +
+                "\"players\":" + BuildWavePlayersJson(wave.Players, playerIndexes) +
                 (wave.Deaths >= 0 ? ",\"deaths\":" + wave.Deaths : "") +
                 "}";
         }

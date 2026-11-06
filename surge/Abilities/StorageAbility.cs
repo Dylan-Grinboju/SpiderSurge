@@ -144,10 +144,12 @@ namespace SpiderSurge
             _storedWeaponData = StoreWeapon(heldWeaponObj);
             _retrieving = storedWeaponObj;
             SurgeNet.MarkDirty();
+            if (_storedWeaponData != null) Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.WeaponsStored);
 
             yield return new WaitForSeconds(AbilityDuration);
 
             _retrieving = null;
+            if (storedWeaponObj != null) Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.WeaponsRetrieved);
             RetrieveWeapon(storedWeaponObj);
         }
 

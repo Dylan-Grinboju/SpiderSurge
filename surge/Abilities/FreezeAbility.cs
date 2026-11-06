@@ -88,6 +88,7 @@ namespace SpiderSurge
                 if (FrozenEnemy.Freeze(enemy, duration, PlayerId))
                 {
                     _frozeAny = true;
+                    Logging.AbilityEffects.Count(PlayerId, Logging.AbilityEffects.EnemiesFrozen);
                     AchievementTracker.Run("Freeze Time", static hit => AbilityAchievementTracker.FreezeEnemy(hit.enemy, hit.achievementCast, hit.firing), (enemy, achievementCast, firing));
                 }
             }
