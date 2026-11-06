@@ -37,6 +37,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
     - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
     - **Reset**: Release Select after remapping, then hold it for 3 seconds to go back to L2. Keeping Select held after a successful remap does not undo it.
+    - **Game remaps**: Controls changed in **Options > Keyboard Options** or **Controller Options** apply in Surge. A control remapped onto an ability button is turned off during Surge, so that button only uses the ability.
 - **Pause menu confirmations**: **Restart** and **Main Menu** in the pause menu ask "Are you sure?" before acting.
 - **Team Versus**: Everyone can get the same Surge ability in versus, set up with [Teams](../teams/README.md).
 
