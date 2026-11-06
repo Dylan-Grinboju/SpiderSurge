@@ -20,7 +20,7 @@ namespace SpiderSurge
         {
             public InputAction Action;
             public int BindingIndex;
-            public string OriginalPath;
+            public InputBinding Original;
         }
         private readonly Dictionary<string, List<BindingRestoreInfo>> restoredBindings = new Dictionary<string, List<BindingRestoreInfo>>();
         private InputActionAsset _originalActions;
@@ -47,6 +47,7 @@ namespace SpiderSurge
 
                 // Create a clean instance of the actions for this player
                 _instantiatedActions = Instantiate(playerInput.actions);
+                CopyBindingOverrides(_originalActions, _instantiatedActions);
                 playerInput.actions = _instantiatedActions;
 
                 // Restoring the scheme re-binds the devices to the new action asset
@@ -67,6 +68,19 @@ namespace SpiderSurge
         }
 
         public bool IsReady => _started && _instantiatedActions != null;
+
+        // Instantiate skips the player's rebinds (binding overrides are not serialized), so copy them like PlayerInput does
+        private static void CopyBindingOverrides(InputActionAsset from, InputActionAsset to)
+        {
+            for (int m = 0; m < from.actionMaps.Count; m++)
+            {
+                var bindings = from.actionMaps[m].bindings;
+                for (int b = 0; b < bindings.Count; b++)
+                {
+                    to.actionMaps[m].ApplyBindingOverride(b, bindings[b]);
+                }
+            }
+        }
 
         /// <summary>
         /// Register an ability with its activation button. This will override the original input binding.
@@ -161,7 +175,7 @@ namespace SpiderSurge
                 {
                     if (backup.Action != null && IsActionFromCurrentAsset(backup.Action))
                     {
-                        backup.Action.ChangeBinding(backup.BindingIndex).WithPath(backup.OriginalPath);
+                        backup.Action.ApplyBindingOverride(backup.BindingIndex, backup.Original);
                     }
                     else if (playerInput?.actions != null)
                     {
@@ -196,13 +210,9 @@ namespace SpiderSurge
             {
                 if (action.name == actionName)
                 {
-                    var bindings = action.bindings;
-                    for (int i = 0; i < bindings.Count; i++)
+                    if (backup.BindingIndex < action.bindings.Count && action.bindings[backup.BindingIndex].path == backup.Original.path)
                     {
-                        if (i == backup.BindingIndex || bindings[i].path == backup.OriginalPath)
-                        {
-                            action.ChangeBinding(i).WithPath(backup.OriginalPath);
-                        }
+                        action.ApplyBindingOverride(backup.BindingIndex, backup.Original);
                     }
                 }
             }
@@ -304,22 +314,17 @@ namespace SpiderSurge
                         for (int i = 0; i < bindings.Count; i++)
                         {
                             var binding = bindings[i];
-                            string effectivePath = binding.effectivePath ?? "";
-                            string path = binding.path ?? "";
-
-                            if (string.Equals(effectivePath, bindingPath, System.StringComparison.OrdinalIgnoreCase) || string.Equals(path, bindingPath, System.StringComparison.OrdinalIgnoreCase))
+                            // Only the key the player actually uses counts; a rebound binding's default path is inactive
+                            if (string.Equals(binding.effectivePath, bindingPath, System.StringComparison.OrdinalIgnoreCase))
                             {
-                                if (!string.IsNullOrEmpty(path))
+                                restoredBindings[bindingPath].Add(new BindingRestoreInfo
                                 {
-                                    restoredBindings[bindingPath].Add(new BindingRestoreInfo
-                                    {
-                                        Action = action,
-                                        BindingIndex = i,
-                                        OriginalPath = path
-                                    });
+                                    Action = action,
+                                    BindingIndex = i,
+                                    Original = binding
+                                });
 
-                                    action.ChangeBinding(i).WithPath("");
-                                }
+                                action.ApplyBindingOverride(i, "");
                             }
                         }
                     }
