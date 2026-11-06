@@ -67,6 +67,8 @@ def scaled(e, f):
     px, py = SCALE_PIVOT
     m = dict(e)
     m["x"], m["y"] = round(px + (e["x"] - px) * f, 2), round(py + (e["y"] - py) * f, 2)
+    if e["o"] in ("Player Spawn Point", "Weapon Spawner A", "Rare Weapon Spawner"):
+        m["y"] = round(m["y"] + 12 * (1 - f), 2)
     if e["o"] not in FIXED_SIZE:
         m["sx"], m["sy"] = round(e["sx"] * f, 3), round(e["sy"] * f, 3)
     if "with" in e:
@@ -188,7 +190,7 @@ def pipe(points, s=0.6, radius=23.0):
 
 # Shelves of breakable ice over one solid floor; floor pads fire up through the gaps once the ice is gone
 surge_map(
-    "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM,
+    "thin_ice", "Thin Ice", FROSTY, LAVA_BOTTOM, scale=0.6,
     elements=[
         el("Loooong Boi", 0, -110, 0, 1.4), el("Ballish", -330, -40, 0, 0.9), el("Ballish", 330, -40, 0, 0.9),
         honeycomb(-200, 0, 1.6), honeycomb(200, 0, 1.6), honeycomb(0, 100, 1.6),
@@ -198,7 +200,7 @@ surge_map(
     ],
     players=[(-40, 147), (40, 147), (-45, -74), (45, -74)],
     enemies=[(-360, 100), (360, 100), (-250, -135), (250, -135), (-360, 265), (360, 265)],
-    weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-230.0, 234.0), (230.0, 234.0)],
+    weapons=[(-55.0, -80.0), (55.0, -80.0), (-200.0, 38.0), (200.0, 38.0), (-240, 234), (240, 234)],
     rare=[(0, 147)],
     # Crates ride the shelves down when the ice breaks; a swing hangs between the top footholds
     parts=[
@@ -209,7 +211,7 @@ surge_map(
 
 # Desert floor with deadly cacti that burn enemies as well as spiders
 surge_map(
-    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.75,
+    "cactus", "Cactus Garden", DESERT, LAVA_BOTTOM, scale=0.52,
     elements=[
         el("Pancake", -170, -120, 0, 2), el("Pancake", 170, -120, 0, 2),
         el("DeathSpike", -200, -87, 0, 0.6), el("DeathSpike", 200, -87, 0, 0.6),
@@ -217,7 +219,7 @@ surge_map(
         el("Pancake", 0, 160, 0, 1.3), el("Ballish", -330, 120, 0, 0.9), el("Ballish", 330, 120, 0, 0.9),
     ],
     players=[(-100, -73), (100, -73), (-120, 76), (120, 76)],
-    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -170), (0, 250)],
+    enemies=[(-365, 0), (365, 0), (-250, 235), (250, 235), (0, -199), (0, 267)],
     weapons=[(-330.0, 160.0), (330.0, 160.0), (-120.0, 76.0), (120.0, 76.0), (-100.0, -85.0), (100.0, -85.0)],
     rare=[(0, 192)],
     # Tumbleweeds roll off the outer islands, and a windmill turns over the central gap
@@ -228,7 +230,7 @@ surge_map(
 
 # A volcano with a magma pool in its crater and ledges above the rim
 surge_map(
-    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.85,
+    "caldera", "Caldera", MOUNTAIN, LAVA_BOTTOM, scale=0.58,
     elements=[
         bar(-360, -150, -100, 40), bar(360, -150, 100, 40),
         el("Ballish", -100, 45, 0, 0.8), el("Ballish", 100, 45, 0, 0.8),
@@ -237,9 +239,9 @@ surge_map(
         el("Platform", -200, 150, 0, 1.2), el("Platform", 200, 150, 0, 1.2), el("Pancake", 0, 200),
     ],
     players=[(-250, -26), (-150, 45), (150, 45), (250, -26)],
-    enemies=[(-370, -50), (370, -50), (-300, 265), (300, 265), (130, 230), (0, 120)],
+    enemies=[(-370, -40), (370, -40), (-300, 265), (300, 265), (135, 235), (-17, 293)],
     weapons=[(-200, 178), (200, 178), (-305, -75), (305, -75), (-165, 30), (165, 30)],
-    rare=[(0, 227)],
+    rare=[(0, 253)],
     # A lift rises out of the crater while something stands on it, and crates sit beside the rare weapon
     parts=[
         gadget("Moving Platform B", 0, -52), gadget("Box A", -41.2, 227.3), gadget("Box A", 41.2, 227.3),
@@ -248,15 +250,15 @@ surge_map(
 
 # A bowl with jump pads at the bottom that throw spiders up into the fight
 surge_map(
-    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.75,
+    "trampoline", "Trampoline", SPACE, LAVA_SIDES_BOTTOM, scale=0.55,
     elements=[
         el("Pancake", 0, -130, 0, 1.6), bar(-90, -125, -300, 120), bar(90, -125, 300, 120),
         el("Jump Pad", -50, -114), el("Jump Pad", 50, -114),
         el("Platform", -130, 170, 0, 1.2), el("Platform", 130, 170, 0, 1.2), el("Ballish", 0, 250),
     ],
     players=[(-130, -30), (-200, 52), (130, -30), (200, 52)],
-    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 345), (0, -20)],
-    weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-85, -82), (85, -82)],
+    enemies=[(-315, -50), (315, -50), (-315, 250), (315, 250), (20, 361), (0, -20)],
+    weapons=[(-130, 198), (130, 198), (-212, 68), (212, 68), (-90, -82), (90, -82)],
     rare=[(0, 293)],
     # A crate sits between the pads; the launch path above the bowl stays open
     parts=[
@@ -266,16 +268,16 @@ surge_map(
 
 # Floating rocks over the lava: vents blow fallen spiders back up, and jump pads on the shelves above them launch higher
 surge_map(
-    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.85,
+    "geysers", "Geysers", DESOLATION, LAVA_BOTTOM, scale=0.58,
     elements=[
         el("Pancake", -290, -40, 0, 1.2), el("Pancake", 0, -110, 0, 1.4), el("Pancake", 290, -40, 0, 1.2),
         el("Pancake", -150, 110), el("Pancake", 150, 110), el("Pancake", 0, 240, 0, 0.9),
         el("AeroTube", -150, -205, 0, 1.5), el("AeroTube", 150, -205, 0, 1.5),
         el("Jump Pad", -175, 121), el("Jump Pad", 175, 121),
     ],
-    players=[(-290, -4), (-40, -71), (40, -71), (290, -4)],
-    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (60, 305), (-60, 305)],
-    weapons=[(-115.0, 137.0), (115.0, 137.0), (-290.0, -4.0), (290.0, -4.0), (-45.0, -78.0), (45.0, -78.0)],
+    players=[(-285, -4), (-40, -71), (40, -71), (285, -4)],
+    enemies=[(-370, 100), (370, 100), (-300, 250), (300, 250), (80, 326), (-80, 326)],
+    weapons=[(-115.0, 137.0), (115.0, 137.0), (-285, -4), (285, -4), (-55, -78), (55, -78)],
     rare=[(0, 266)],
     # The vents juggle a ball each; a cage under the top rock sinks to the middle and rises again
     parts=[
@@ -287,7 +289,7 @@ surge_map(
 # Two toothed jaws, with lava above and below. The upper jaw breaks at its corners, its outer teeth and the
 # lower middle tooth burn, and gates in the open sides wrap one side to the other
 surge_map(
-    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.9,
+    "jaws", "Jaws", CAVE, LAVA_TOP_BOTTOM, scale=0.6,
     elements=[
         el("Loooong Boi", 0, -125, 0, 1.6), bar(-160, -125, -320, -35), bar(160, -125, 320, -35),
         el("Loooong Boi", 0, 285, 0, 240 / 202, 1.6),
@@ -298,9 +300,9 @@ surge_map(
         el("Ballish", -230, 90), el("Ballish", 230, 90),
         gate(-315, 80, 315, 80, 90),
     ],
-    players=[(-75, -87), (75, -87), (-240, -48), (240, -48)],
-    enemies=[(-150, 140), (150, 140), (-80, 30), (80, 30), (-300, 300), (300, 300)],
-    weapons=[(-110.0, -93.0), (110.0, -93.0), (-230.0, 135.0), (230.0, 135.0), (-75.0, 317.0), (75.0, 317.0)],
+    players=[(-80, -82), (80, -82), (-240, -48), (240, -48)],
+    enemies=[(-150, 370), (150, 370), (-85, 30), (85, 30), (-300, 305), (300, 305)],
+    weapons=[(-110.0, -93.0), (110.0, -93.0), (-230.0, 135.0), (230.0, 135.0), (-100, 317), (100, 317)],
     rare=[(0, 317)],
     # A turning tongue fills the middle of the mouth, with crates loose on the lower jaw
     parts=[
@@ -310,7 +312,7 @@ surge_map(
 
 # Four broken beams frame an open crossing; gates join each lower tip to the opposite upper tip, so sliding down
 # a lower arm drops a spider onto the opposite upper arm
-_crossbeams = 0.85
+_crossbeams = 0.58
 _lower_left = gate_on(-230, -110, -75, 5, 45, _crossbeams)
 _upper_right = gate_on(230, 230, 75, 115, 45, _crossbeams)
 surge_map(
@@ -323,9 +325,9 @@ surge_map(
         gate(_lower_left[0], _lower_left[1], _upper_right[0], _upper_right[1], _lower_left[2]),
         gate(-_lower_left[0], _lower_left[1], -_upper_right[0], _upper_right[1], -_lower_left[2]),
     ],
-    players=[(-120, 10), (120, 10), (-40, -83), (40, -83)],
-    enemies=[(-375, 60), (375, 60), (-160, 90), (160, 90), (-60, 330), (60, 330)],
-    weapons=[(-330.0, 178.0), (330.0, 178.0), (-40.0, -83.0), (40.0, -83.0), (-125.0, 185.0), (125.0, 185.0)],
+    players=[(-141, -21), (141, -21), (-40, -83), (40, -83)],
+    enemies=[(-375, 60), (375, 60), (-186, 85), (186, 85), (-143, 372), (143, 372)],
+    weapons=[(-330.0, 178.0), (330.0, 178.0), (-56, -83), (56, -83), (-115, 169), (115, 169)],
     rare=[(0, 275)],
     # Balls roll down the upper arms; the central crossing stays open
     parts=[
@@ -336,7 +338,7 @@ surge_map(
 # Broken pipe runs leave a second exit from every interior pocket; a vent blows up through the central gap,
 # and jump pads fire up the clear shafts on each side
 surge_map(
-    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.9,
+    "pipeworks", "Pipeworks", DESOLATION, LAVA_BOTTOM, scale=0.6,
     elements=(
         pipe([(-340, 180), (-340, -90), (-100, -90)])
         + pipe([(100, -90), (340, -90), (340, 180)])
@@ -346,9 +348,9 @@ surge_map(
         + pipe([(-340, 110), (-250, 110)]) + pipe([(340, 120), (260, 120)])
         + [el("AeroTube", 0, -195, 0, 1.5), el("Jump Pad", -232, -84), el("Jump Pad", 230, 36)]
     ),
-    players=[(-270, -63), (-140, -63), (140, -63), (260, -63)],
-    enemies=[(-275, 40), (270, 180), (-100, -5), (45, -110), (-250, 280), (300, 295)],
-    weapons=[(-130.0, 80.0), (190.0, 50.0), (-200.0, -65.0), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
+    players=[(-300, -68), (-175, -73), (140, -63), (260, -63)],
+    enemies=[(-175, 150), (265, 205), (-120, -172), (30, -120), (-250, 280), (320, 345)],
+    weapons=[(-125, 80), (200, 70), (-145, -65), (200.0, -65.0), (-290.0, 130.0), (290.0, 140.0)],
     rare=[(30, 260)],
     # A cage under the top pipe sinks into the central gap and rises again; loose crates fill the pockets
     parts=[
@@ -358,7 +360,7 @@ surge_map(
 
 # A satellite in zero gravity, with long solar wings, a dish underneath and debris that drifts when pushed
 surge_map(
-    "satellite", "Satellite", SPACE, LAVA_BOTTOM, zero_gravity=True,
+    "satellite", "Satellite", SPACE, LAVA_ALL, scale=0.6, zero_gravity=True,
     elements=[
         el("Big Block", 0, 60, 0, 1.4), el("Loooong Boi", -185, 60, 0, 1.2), el("Loooong Boi", 185, 60, 0, 1.2),
         el("Spike", 0, 121, 0, 0.8), quarter(0, -20, "ll", 1.2), quarter(0, -20, "lr", 1.2),
@@ -367,8 +369,8 @@ surge_map(
         hover(-120, -140, 12), hover(120, -150, -12),
     ],
     players=[(-120, 95), (-250, 95), (120, 95), (250, 95)],
-    enemies=[(-335, 150), (340, 150), (0, 318), (-120, -50), (120, -50), (0, -165)],
-    weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 255.0), (230.0, 275.0)],
+    enemies=[(-340, 150), (340, 150), (0, 358), (-170, -30), (170, -30), (0, -165)],
+    weapons=[(-300.0, -54.0), (310.0, -40.0), (-185.0, 95.0), (185.0, 95.0), (-200.0, 266.0), (230.0, 275.0)],
     rare=[(10, -40)],
     # A turning antenna above the body, and loose debris drifting around it
     parts=[
@@ -380,7 +382,7 @@ surge_map(
 # A wrecked station hull in zero gravity: broken plates around a core, turbines still turning inside and
 # cargo floating loose through the gaps
 surge_map(
-    "derelict", "Derelict", SPACE, LAVA_ALL, zero_gravity=True,
+    "derelict", "Derelict", SPACE, LAVA_ALL, scale=0.62, zero_gravity=True,
     elements=[
         el("Loooong Boi", -160, 250, 0, 0.9), el("Loooong Boi", 185, 225, -15, 0.65),
         el("Loooong Boi", -160, -100, 0, 0.9), el("Loooong Boi", 160, -100, 0, 0.9),
@@ -389,8 +391,8 @@ surge_map(
         el("Platform", -272, 75, 0, 0.6), el("Platform", 272, 45, 0, 0.6),
         hover(0, 205, 0, 0.8),
     ],
-    players=[(-215, -75), (-115, -75), (115, -75), (215, -75)],
-    enemies=[(-200, 195), (200, 160), (-90, 15), (90, 15), (-210, 20), (220, -5)],
+    players=[(-215, -85), (-134, -80), (120, -85), (215, -80)],
+    enemies=[(-195, 336), (185, 141), (-95, 20), (5, -142), (-324, -94), (326, -78)],
     weapons=[(-165, -75), (165, -75), (-160, 275), (185, 250), (-272, 95), (272, 65)],
     rare=[(0, 118)],
     # A powered turbine and a smaller displaced free rotor, with cargo adrift and an open floor breach
@@ -405,7 +407,7 @@ surge_map(
 # A crescent shelters one side of an arena while its open mouth invites long swings; vents under the open side
 # lift fallen spiders back to the low shelves
 surge_map(
-    "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.8,
+    "crescent", "Crescent", SPACE, LAVA_BOTTOM, scale=0.58,
     elements=[
         quarter(-80, 65, "ul", 3.3), quarter(-80, 65, "ll", 3.3),
         el("Platform", -110, 55, 0, 1.3), el("Platform", -50, -95, 0, 1.4),
@@ -413,9 +415,9 @@ surge_map(
         el("Platform", 20, 235, 0, 1.4),
         el("AeroTube", 60, -205, 0, 1.5), el("AeroTube", 250, -205, 0, 1.5),
     ],
-    players=[(-125, 88), (-95, 88), (120, -10), (155, -15)],
-    enemies=[(-260, 290), (-45, 305), (305, 250), (305, 0), (220, -125), (0, 65)],
-    weapons=[(-50.0, -60.0), (20.0, 270.0), (-110.0, 90.0), (140.0, -10.0), (-110.0, 250.0), (-230.0, 175.0)],
+    players=[(-125, 88), (-95, 88), (150, -20), (180, -24)],
+    enemies=[(-260, 290), (-50, 321), (305, 250), (305, 5), (220, -135), (10, 65)],
+    weapons=[(-50.0, -60.0), (20.0, 270.0), (-110.0, 90.0), (150, -20), (-110.0, 250.0), (-230.0, 175.0)],
     rare=[(255, 200)],
     # A swing hangs under the top shelf, and a spinner turns in the open side
     parts=[
