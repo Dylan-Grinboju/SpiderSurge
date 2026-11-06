@@ -657,8 +657,8 @@ namespace SpiderSurge.Logging
 
         private void OnTrackedDeathCountChanged(int change)
         {
-            // A revive after the wave closed takes the death back from that wave
-            var wave = _currentWaveRecord ?? (change < 0 ? _closedWave : null);
+            // Deaths and revives after a wave closes count for it until it is settled, like its players' rows
+            var wave = _currentWaveRecord ?? _closedWave;
             if (wave != null && wave.Deaths >= 0)
             {
                 wave.Deaths = Math.Max(0, wave.Deaths + change);

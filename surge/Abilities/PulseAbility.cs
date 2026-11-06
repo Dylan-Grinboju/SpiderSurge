@@ -345,9 +345,9 @@ namespace SpiderSurge
                 if (enemy != null && !enemy.dead)
                 {
                     PulseKnockback.LaunchEnemy(enemy, p.Position, p.EnemyLaunchSpeed);
-                    if (!deadly) Logging.AbilityEffects.Launched(enemy, PlayerId);
                     if (enemy.needToKillToCompleteLevel)
                     {
+                        if (!deadly) Logging.AbilityEffects.Launched(enemy, PlayerId);
                         launched++;
                         var origin = EnemyAchievementOrigin.Of(enemy);
                         origin.PulsePlayer = playerController;

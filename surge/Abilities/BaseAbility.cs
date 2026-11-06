@@ -495,10 +495,10 @@ namespace SpiderSurge
             }
             if (regular == null || !regular.IsPlayerAlive()) return (false, false);
             if (active) return (!ultimate, false);
-            return (false, !cooling && ChallengeController.CanActivate(false) && regular.CanActivate(false));
+            return (false, !cooling && !FrozenSpider.IsFrozen(regular.spiderHealthSystem) && ChallengeController.CanActivate(false) && regular.CanActivate(false));
         }
 
-        public bool HasAvailableAction =>GetComponents<BaseAbility>().Any(action =>
+        public bool HasAvailableAction => GetComponents<BaseAbility>().Any(action =>
             action.IsRegularUnlocked() && ChallengeController.CanActivate(false) || action.IsUltimateUnlocked() && ChallengeController.CanActivate(true));
 
         public string ActionRestriction => ChallengeController.Pending ? "Choose a challenge" :
