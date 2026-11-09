@@ -322,7 +322,7 @@ namespace StatsMod
                 else if (source is Weapon weapon)
                 {
                     PlayerController player = Owners.ExplosiveOwner(weapon);
-                    owner = new Owner { Player = player != null && !departed.Contains(player) ? player : null, Weapon = weapon };
+                    owner = new Owner { Player = player != null && !departed.Contains(player) ? player : null, Weapon = LaunchedFrom(weapon) };
                 }
                 if (owner.Player == null) owner = new Owner { Player = CurrentAttacker, Weapon = CurrentWeapon };
                 if (owner.Player != null)
@@ -376,6 +376,19 @@ namespace StatsMod
         public static PlayerController GetBallReflector(EnergyBall ball)
         {
             return Owners.TryGet(ball.gameObject, out Owners.Record record) && record.Reflector != null && Fresh(record.ReflectedAt) ? record.Reflector : null;
+        }
+
+        // A Khepri Staff's ball counts for the staff; a turned ball keeps its EnergyBall category
+        public static Weapon GetBallLauncher(EnergyBall ball)
+        {
+            return Owners.TryGet(ball.gameObject, out Owners.Record record) && record.Reflector == null ? record.Launcher : null;
+        }
+
+        // A grenade, blade or mine that a weapon fired counts for that weapon until a player equips it
+        private static Weapon LaunchedFrom(Weapon weapon)
+        {
+            // An empty launcher can be destroyed before its projectile hits; its managed weapon name is still readable.
+            return weapon != null && Owners.TryGet(weapon.gameObject, out Owners.Record record) && !ReferenceEquals(record.Launcher, null) ? record.Launcher : weapon;
         }
 
         // The player who equips a weapon owns it until someone else equips it, also after it is thrown; a launched weapon
@@ -604,7 +617,7 @@ namespace StatsMod
         private static void StoreHit(Dictionary<int, HitRecord> hits, int targetId, PlayerController player, string weaponName, Weapon weapon)
         {
             PruneIfDue();
-            hits[targetId] = new HitRecord { Player = player, Weapon = weaponName, WeaponObject = weapon, Time = Time.time, FootingSince = -1f };
+            hits[targetId] = new HitRecord { Player = player, Weapon = weaponName, WeaponObject = LaunchedFrom(weapon), Time = Time.time, FootingSince = -1f };
         }
 
         private static void StoreOwner(Dictionary<int, Owner> owners, int id, PlayerController player, Weapon weapon = null)

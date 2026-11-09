@@ -40,7 +40,7 @@ namespace StatsMod
             Add<LaserCube>("Beam", "Laser Cube", HitLogic.WeaponPlayer, weapon => weapon);
             Add<ForceField>("Damage", "Particle Blade", field => HitLogic.WeaponPlayer(field.GetComponentInParent<Weapon>()), field => field.GetComponentInParent<Weapon>());
             Add<SawDisc>("TryDamage", "SawDisc", disc => HitLogic.GetDiscOwner(disc.gameObject), disc => HitLogic.GetDiscWeapon(disc.gameObject));
-            Add<EnergyBall>("OnCollisionEnter2D", "EnergyBall", EnergyBallOwner);
+            Add<EnergyBall>("OnCollisionEnter2D", "EnergyBall", EnergyBallOwner, HitLogic.GetBallLauncher);
             Add<KhepriStaff>("Zap", "KhepriStaff", HitLogic.WeaponPlayer, weapon => weapon);
             Add<Explosion>("KnockBack", "Explosions", ExplosionOwner, HitLogic.GetExplosionWeapon);
             Add<SpiderHealthSystem>("AfterlifeExplosion", "Explosions", spider => spider.GetComponentInParent<PlayerController>());
