@@ -387,7 +387,8 @@ namespace StatsMod
         // A grenade, blade or mine that a weapon fired counts for that weapon until a player equips it
         private static Weapon LaunchedFrom(Weapon weapon)
         {
-            return weapon != null && Owners.TryGet(weapon.gameObject, out Owners.Record record) && record.Launcher != null ? record.Launcher : weapon;
+            // An empty launcher can be destroyed before its projectile hits; its managed weapon name is still readable.
+            return weapon != null && Owners.TryGet(weapon.gameObject, out Owners.Record record) && !ReferenceEquals(record.Launcher, null) ? record.Launcher : weapon;
         }
 
         // The player who equips a weapon owns it until someone else equips it, also after it is thrown; a launched weapon
