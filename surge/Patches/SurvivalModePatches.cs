@@ -13,7 +13,7 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalMode), "StartGame")]
     public class SurvivalMode_StartGame_Patch
     {
-        private static bool ShouldApplySurge(SurvivalConfig survivalConfig)
+        internal static bool ShouldApplySurge(SurvivalConfig survivalConfig)
         {
             return SurgeGameModeManager.IsModeEnabled
                 && survivalConfig != null

@@ -200,13 +200,15 @@ namespace SpiderSurge.Weapons
         }
     }
 
-    // Survival's weapon list is copied from its config when a run starts; the mod's weapons join it next to their anchors
+    // Survival's weapon list is copied from its config when a run starts; in a Surge run the mod's weapons join it next to their anchors.
+    // Normal Wave Survival keeps the game's weapons only
     [HarmonyPatch(typeof(SurvivalMode), nameof(SurvivalMode.StartGame))]
     internal static class CustomWeapons_SurvivalWeapons_Patch
     {
         [HarmonyPostfix]
-        private static void Postfix(SurvivalMode __instance)
+        private static void Postfix(SurvivalMode __instance, SurvivalConfig survivalConfig)
         {
+            if (!SurvivalMode_StartGame_Patch.ShouldApplySurge(survivalConfig)) return;
             CustomWeapons.AddTo(GameFields.SurvivalWeapons?.Invoke(__instance));
         }
     }

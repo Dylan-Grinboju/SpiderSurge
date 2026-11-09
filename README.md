@@ -68,7 +68,7 @@ See the [Surge guide](surge/README.md) for abilities, perks, enemy behaviour, ac
 | **Repulsor** | Three charges of cone-shaped knockback. Push enemies, spiders and loose objects away |
 | **Poison Grenade** | A green, beeping grenade that leaves a five-second poison cloud |
 
-Each weapon has its own Versus selection option.
+They spawn in Surge Survival runs and Versus; normal Wave Survival keeps the game's own weapons. Each weapon has its own Versus selection option.
 
 ![A spider holding the Bayonet](docs/images/bayonet.png)
 
