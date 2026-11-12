@@ -181,15 +181,17 @@ namespace SpiderSurge
             SurgeNet.MarkDirty();
         }
 
-        public bool IsAvailable(string perkName)
+        public bool IsAvailable(string perkName) => CanReachLevel(perkName, GetPerkLevel(perkName) + 1);
+
+        // Ability Cooldown and Duration level 2 improve the ultimate, so neither a pick nor a Lucky Upgrade reaches it before one is owned
+        public bool CanReachLevel(string perkName, int level)
         {
             if (!maxLevels.TryGetValue(perkName, out int maxLevel)) return false;
             if (SurgeGameModeManager.AbilitiesDisabled && perkName != Consts.PerkNames.PerkLuck &&
                 perkName != Consts.PerkNames.ChaosCartographer && perkName != Consts.PerkNames.ChallengeSeeker) return false;
-            int level = GetPerkLevel(perkName);
-            if (level >= maxLevel) return false;
+            if (level > maxLevel) return false;
 
-            if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level == 1)
+            if ((perkName == Consts.PerkNames.AbilityCooldown || perkName == Consts.PerkNames.AbilityDuration) && level >= 2)
             {
                 if (!HasAnyUltimate()) return false;
             }

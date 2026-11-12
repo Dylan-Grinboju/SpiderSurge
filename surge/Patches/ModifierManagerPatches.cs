@@ -97,6 +97,9 @@ namespace SpiderSurge
     [HarmonyPatch(typeof(SurvivalModifierChoiceCard), "SetupCard")]
     public class SurvivalModifierChoiceCard_SetupCard_Patch
     {
+        // The game's tint for a perk offered at its upgraded level
+        private static readonly UnityEngine.Color UpgradeTint = (UnityEngine.Color.magenta + UnityEngine.Color.white) / 2f;
+
         [HarmonyPostfix]
         public static void Postfix(SurvivalModifierChoiceCard __instance, Modifier m, GameLevel gl, int id, bool showTwitchVotes)
         {
@@ -110,6 +113,10 @@ namespace SpiderSurge
             }
             bool isSurgePerk = PerksManager.Instance.GetAllPerkNames().Contains(key);
             bool isLucky = ModifierManager_GetNonMaxedSurvivalMods_Patch.LuckyPerkKeys.Contains(key);
+
+            // A Lucky Upgrade goes straight to the upgraded level; redraws after the levels change also take the current tint
+            if (__instance.modifierIconImage != null)
+                __instance.modifierIconImage.color = m.levelInSurvival == 1 || isLucky ? UpgradeTint : UnityEngine.Color.white;
 
             TMP_Text perkNameText = __instance.perkNameText;
             TMP_Text perkDescriptionText = __instance.perkDescriptionText;
@@ -252,6 +259,7 @@ namespace SpiderSurge
                 // Only apply luck to perks with max level > 1
                 if (mod.data.maxLevel <= 1) continue;
                 if (mod.levelInSurvival > 0) continue;
+                if (perksManager.GetAllPerkNames().Contains(mod.data.key) && !perksManager.CanReachLevel(mod.data.key, 2)) continue;
 
                 if (UnityEngine.Random.value < chance)
                 {
