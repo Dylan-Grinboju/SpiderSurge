@@ -32,7 +32,7 @@ To play, stand on the **Surge Survival** platform above and to the left of **Wav
 - **Perk Synergy System**: Gain unique bonuses when combining specific mod abilities with vanilla perks (e.g., Overcharge + Efficiency).
 - **Ultimate Upgrades**: After wave 30, everyone sees the same random ultimate offers and chooses their own. Any ultimate works with any regular ability, and duplicate choices are allowed. The normal shared perk/map choice follows. No later ultimate swap is offered. [Pain 8](#pain-level-8) makes the separate ultimate choice before wave 1. Each player retains one shared cooldown for their regular ability and ultimate.
 - **Achievements**: 25 achievements for ability and combat feats, listed in **Mods** > **SpiderSurge** > **Collection** > **Surge achievements**. See [Achievements](#achievements).
-- **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades.
+- **Luck Perk**: A new perk that provides a chance to skip perk levels and jump straight to higher-tier upgrades. A Lucky Upgrade card has the purple icon of an upgraded perk. Ability Cooldown and Ability Duration level 2 improve the ultimate, so neither is offered at level 2, even as a Lucky Upgrade, until you have an ultimate.
 - **Custom Controls**:
     - **Ability**: **Q** or **L2**. **Ultimate**: **C**, or **L3 + R3** together. These are fixed. The controller ability button replaces that button's game action, so L2 no longer jumps (A and L1 still do).
     - **Per-Player Remapping**: While holding **Select**, **double-tap** any button to set it as your ability key. It works in the lobby, in a run or Team Versus match, and while your spider is dead, and lasts until you leave the game.
